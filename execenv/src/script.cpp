@@ -26,3 +26,4 @@ void Script::kill() {
 }
 
 int Script::id() { return _id; }
+ExecEnv *Script::owner() { return _owner; }

@@ -77,11 +77,6 @@ public:
        Returns the ID of the Script.
     */
     int push(const char *name);
-    /* Pushes a Script instance into the erasure queue of the environment. Upon calling exec_erasequeue(), this ID will be
-       made available for use with push(). Note that it is undefined behavior to use the passed ID after calling this.
-       id - ID of Script to be erased 
-    */
-    void erase(int id);
 
     /* Returns a pointer to a Script instance in the environment corresponding to the provided ID. Returns nullptr if the
        ID does not exist in the environment.
@@ -89,19 +84,30 @@ public:
     */
     Script* const get(int id);
 
+    /* Returns true if the provided ID is valid; false otherwise.
+       id - ID of Script to check validity of
+    */
+    bool has(int id);
+
     /* Queues a Script instance corresponding to the ID provided to be executed when exec() is called.
        id - ID of Script to queue
     */
-    void queue(int id);
+    void queueExec(int id);
     /* Queues all Script instances in environment. */
-    void queueall();
+    void queueExecAll();
+    /* Pushes a Script instance into the erasure queue of the environment. Upon calling exec_erasequeue(), this ID will be
+       made available for use with push(). This will not immediately deallocate the Script memory. Note that it is undefined 
+       behavior to use the passed ID after calling this.
+       id - ID of Script to be erased 
+    */
+    void queueErase(int id);
 
     /* Executes all currently queued Scripts, and dequeues them. This will call the (init() method if it has not yet been
        called, and the) base() method on every active Script. */
-    void exec();
+    void runExec();
     /* Calls the kill() method on all erasure-queued Scripts if it has not been called yet, and erases the Script from the
        environment, making all erased IDs available. */
-    void exec_erasequeue();
+    void runErase();
 };
 
 #endif

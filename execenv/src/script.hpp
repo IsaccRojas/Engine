@@ -3,6 +3,9 @@
 #ifndef SCRIPT_HPP_
 #define SCRIPT_HPP_
 
+// prototype
+class ExecEnv;
+
 /* Class to represent a runnable script by an owning ExecEnv instance.
    The owning ExecEnv will call init(), base(), and kill() as needed, and
    excepts _init(), _base(), and _kill() to be implemented by children. 
@@ -11,6 +14,8 @@ class Script {
     // allow ExecEnv to access private fields
     friend class ExecEnv;
 
+    // ExecEnv instance that owns this Script
+    ExecEnv *_owner;
     // flags of whether this script has been initialized or killed, maintained by ExecEnv
     bool _initialized;
     bool _killed;
@@ -42,6 +47,7 @@ public:
 
     /* Returns the ID of the Script given by its owning ExecEnv. */
     int id();
+    ExecEnv *owner();
 };
 
 #endif

@@ -1,27 +1,56 @@
 #include "loop.hpp"
 
+class Square : public Script {
+    GLEnv *_glenv;
+    Quad *_quad;
+    int _quadid;
+    int _i;
+
+    void _init() {
+        std::cout << "Square created" << std::endl;
+    }
+    void _base() { 
+        // update quad's y coordinate according to sine function
+        _quad->pos.v.y = glm::sin(float(_i) / 64.0f);
+        _i++;
+
+        // erase self after 5 executions
+        if (_i >= 180)
+            this->owner()->queueErase(this->id());
+    }
+    void _kill() {
+        std::cout << "Square killed" << std::endl;
+
+        // erase own quad
+        _glenv->erase(_quadid);
+    }
+
+public:
+    Square(GLEnv *glenv) : Script(), _glenv(glenv), _i(0) {
+        _quadid = _glenv->genQuad(
+            glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(1.0f, 1.0f, 0.0f),
+            glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec2(0.0f, 0.0f)
+        );
+        _quad = _glenv->get(_quadid);
+    }
+    ~Square() {}
+};
+
+Script *Square_allocator(GLEnv *glenv) {
+    return new Square(glenv);
+}
+
 void loop(GLFWwindow *winhandle) {
-    /*
+    
     // initialize GLEnv instance
     std::cout << "Setting up glenv" << std::endl;
-    GLEnv glenv{16};
+    GLEnv glenv{256};
     glenv.settexarray(8, 8, 1);
     glenv.settexture(Image("texture.png"), 0, 0, 0);
     glenv.setview(glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
     glenv.setproj(glm::ortho(-4.0f, 4.0f, -4.0f, 4.0f, 0.0f, 16.0f));
-
-    // generate some initial quads
-    std::cout << "Generating initial quads" << std::endl;
-    float tcoord;
-    for (int i = 0; i < 10; i++) {
-        tcoord = (i % 2) ? 2.0f : 0.0f;
-        glenv.genQuad(
-            glm::vec3(0.0f, 0.0f, 0.0f),
-            glm::vec3(1.0f, 1.0f, 1.0f),
-            glm::vec3(tcoord, tcoord, 0.0f),
-            glm::vec2(3.0f, 3.0f)
-        );
-    }
 
     // set up some opengl parameters
     std::cout << "Setting up some OpenGL parameters" << std::endl;
@@ -29,75 +58,33 @@ void loop(GLFWwindow *winhandle) {
     glClearColor(0.2f, 0.2f, 0.2f, 0.0f);
     glEnable(GL_DEPTH_TEST);
     
-    // set up loop
-    std::cout << "Setting up loop" << std::endl;
-    int i = 0;
-    float offset = 0.0f;
-    std::chrono::duration<float> diff;
-    std::chrono::milliseconds diffmilli;
-    auto prevtime = std::chrono::system_clock::now();
-    std::vector<int> quadids = glenv.getids();
-    Quad *quad;
-    int spawnmode = 0;
-    srand(time(NULL));
-    */
+    // set up ExecEnv instance
+    ExecEnv execenv{256};
 
-    ExecEnv execenv(256);
+    // bind GLEnv instance to allocator and add allocator to ExecEnv
+    execenv.add(std::bind(Square_allocator, &glenv), "Square");
 
-    // --- loop setup ---
-
-    //start loop
+    // start loop
     std::cout << "Starting loop" << std::endl;
+    int i = 0;
     while (!glfwWindowShouldClose(winhandle)) {
         glfwPollEvents();
-
-        /*
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        //decide whether to spawn or erase
-        if (spawnmode == 0) {
-            if (quadids.size() <= 1)
-                spawnmode = 1;
-        }
-        else {
-            if (quadids.size() >= 10)
-                spawnmode = 0;
-        }
+        if (i == 0)
+            execenv.push("Square");
 
-        //get time and spawn or delete a random quad every second
-        diff = std::chrono::system_clock::now() - prevtime;
-        diffmilli = std::chrono::duration_cast<std::chrono::milliseconds>(diff);
-        if (diffmilli.count() >= 250) {
-            prevtime = std::chrono::system_clock::now();
-            
-            //spawn or delete a random quad
-            if (spawnmode)
-                glenv.genQuad(
-                    glm::vec3(0.0f, 0.0f, 0.0f),
-                    glm::vec3(rand() % 2 + 1, rand() % 2 + 1, 1.0f),
-                    glm::vec3(rand() % 5, rand() % 5, 0.0f),
-                    glm::vec2(3.0f, 3.0f)
-                );
-            else
-                glenv.erase(quadids[rand() % quadids.size()]);
+        // run execution environment
+        execenv.queueExecAll();
+        execenv.runExec();
+        execenv.runErase();
 
-            quadids = glenv.getids();
-        }
-
-        //draw quads in a circle, with an offset based on the number of quads
-        for (int j = 0; j < quadids.size(); j++) {
-            offset = (float(j) / float(quadids.size())) * PI * 2.0f;
-            quad = glenv.get(quadids[j]);
-            quad->pos.v.x = glm::cos((float(i) / 64.0f) + offset);
-            quad->pos.v.y = glm::sin((float(i) / 64.0f) + offset);
-        }
-
+        // update graphic environment and draw
         glenv.update();
         glenv.draw();
 
         glfwSwapBuffers(winhandle);
         i++;
-        */
     };
     
     // terminate GLFW

@@ -25,7 +25,8 @@ int ExecEnv::push(Script *script) {
     // allocate new script
     _scripts[id] = std::unique_ptr<Script>(script);
     
-    // initialize ID and flags
+    // initialize owner, ID and flags
+    _scripts[id]->_owner = this;
     _scripts[id]->_id = id;
     _scripts[id]->_initialized = false;
     _scripts[id]->_killed = false;
@@ -42,11 +43,6 @@ void ExecEnv::_erase(int id) {
     _ids.erase_at(id);
 }
 
-void ExecEnv::erase(int id) {
-    // put script into erase queue
-    _erasequeue.push(id);
-}
-
 Script* const ExecEnv::get(int id) {
     if (_ids.at(id))
         // return "view" of stored Script
@@ -55,18 +51,27 @@ Script* const ExecEnv::get(int id) {
         return nullptr;
 }
 
-void ExecEnv::queue(int id) {
+bool ExecEnv::has(int id) {
+    return _ids.at(id);
+}
+
+void ExecEnv::queueExec(int id) {
     _execqueue.push(id);
 }
 
-void ExecEnv::queueall() {
+void ExecEnv::queueExecAll() {
     // queue all scripts for execution
     for (unsigned i = 0; i < _ids.size(); i++)
         if (_ids.at(i))
             _execqueue.push(i);
 }
 
-void ExecEnv::exec() {
+void ExecEnv::queueErase(int id) {
+    // put script into erase queue
+    _erasequeue.push(id);
+}
+
+void ExecEnv::runExec() {
     unsigned id;
     while (!(_execqueue.empty())) {
         id = _execqueue.front();
@@ -84,7 +89,7 @@ void ExecEnv::exec() {
     }
 }
 
-void ExecEnv::exec_erasequeue() {
+void ExecEnv::runErase() {
     unsigned id;
     while (!(_erasequeue.empty())) {
         id = _erasequeue.front();
