@@ -3,7 +3,7 @@
 Cycle::Cycle(bool loop) : _loop(loop) {}
 Cycle::Cycle(const Cycle &other) : _loop(other._loop), _frames(other._frames) {}
 
-Cycle& Cycle::addFrame(glm::vec2 texpos, glm::vec2 texsize, glm::vec3 offset, int duration) {
+Cycle& Cycle::addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 offset, int duration) {
     _frames.push_back(Frame{texpos, texsize, offset, duration});
     return *this;
 }
@@ -57,6 +57,15 @@ AnimationState::AnimationState(Animation *animation) :
     _currentcycle = &(_animation->getCycle(_cyclestate));
     _currentframe = &(_currentcycle->getFrame(_framestate));
 }
+AnimationState::AnimationState() :
+    _step(0),
+    _framestate(0),
+    _cyclestate(0),
+    _completed(false),
+    _animation(nullptr),
+    _currentcycle(nullptr),
+    _currentframe(nullptr)
+{}
 AnimationState::AnimationState(const AnimationState &other) : 
     _step(other._step), 
     _framestate(other._framestate), 
@@ -66,6 +75,16 @@ AnimationState::AnimationState(const AnimationState &other) :
     _currentcycle(other._currentcycle),
     _currentframe(other._currentframe)
 {}
+
+void AnimationState::setAnimation(Animation *animation) {
+    _step = 0;
+    _framestate = 0;
+    _cyclestate = 0;
+    _completed = false;
+    _animation = animation;
+    _currentcycle = &(_animation->getCycle(_cyclestate));
+    _currentframe = &(_currentcycle->getFrame(_framestate));
+}
 
 /* Sets the animation state, using the cycle corresponding to the provided state 
     for future operations.
@@ -119,8 +138,8 @@ void AnimationState::step() {
 
 /* Gets the current frame of the cycle. Causes an error if no frames exist.
 */
-const Frame& AnimationState::getCurrent() {
-    return *_currentframe;
+Frame *AnimationState::getCurrent() {
+    return _currentframe;
 }
 
 /* Returns whether the cycle has completed or not (always false if looping is set to true).
@@ -199,6 +218,7 @@ std::unordered_map<std::string, Animation> loadAnimations(std::string dir) {
 
         // check if file ends in .json
         if (endsWith(filename, ".json")) {
+            
             // try to parse .json file
             try {
                 data = nlohmann::json::parse(std::ifstream(filename));
@@ -242,7 +262,7 @@ std::unordered_map<std::string, Animation> loadAnimations(std::string dir) {
                                     Frame frame;
                                     
                                     // get frame texpos
-                                    if (frame_data.contains("texpos") && frame_data["texpos"].is_array() && frame_data["texpos"].size() == 2) {
+                                    if (frame_data.contains("texpos") && frame_data["texpos"].is_array() && frame_data["texpos"].size() == 3) {
                                         // get first value
                                         auto value0 = frame_data["texpos"][0];
                                         if (value0.is_number_float()) {
@@ -260,8 +280,17 @@ std::unordered_map<std::string, Animation> loadAnimations(std::string dir) {
                                             std::cerr << "Error loading .json file '" << filename << "': index 1 of field 'texpos' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' is not a floating point number" << std::endl;
                                             goto dir_loop_end;
                                         }
+
+                                        // get third value
+                                        auto value2 = frame_data["texpos"][2];
+                                        if (value2.is_number_float()) {
+                                            frame.texpos.z = value2;
+                                        } else {
+                                            std::cerr << "Error loading .json file '" << filename << "': index 1 of field 'texpos' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' is not a floating point number" << std::endl;
+                                            goto dir_loop_end;
+                                        }
                                     } else {
-                                        std::cerr << "Error loading .json file '" << filename << "': field 'texpos' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' does not exist, is not an array, or is not length 2" << std::endl;
+                                        std::cerr << "Error loading .json file '" << filename << "': field 'texpos' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' does not exist, is not an array, or is not length 3" << std::endl;
                                         goto dir_loop_end;
                                     }
 

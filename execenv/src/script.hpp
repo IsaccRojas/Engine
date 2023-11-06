@@ -23,7 +23,7 @@ class Script {
     int _id;
 
 protected:
-    /* Functions to be overwritten by children.
+    /* Functions to be overridden by children.
        - _init() is called by init(). init() is called on execution, only for the first time the script is queued.
        - _base() is called by base(). base() is called on execution, each time the script is queued.
        - _kill() is called by kill(). kill() is called on erasure.
@@ -34,7 +34,6 @@ protected:
     
 public:
     Script();
-    virtual ~Script() = default;
     
     /* Functions wrapping the virtual versions of the same method, which are directly called by the ExecEnv.
        - init() is called on execution, only for the first time the script is queued.

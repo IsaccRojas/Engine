@@ -12,7 +12,7 @@
 #include "json.hpp"
 
 struct Frame {
-    glm::vec2 texpos;
+    glm::vec3 texpos;
     glm::vec2 texsize;
     glm::vec3 offset;
     int duration;
@@ -29,7 +29,7 @@ public:
     /* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
     corresponding to the desired order of the frames.
     */
-    Cycle& addFrame(glm::vec2 texpos, glm::vec2 texsize, glm::vec3 offset, int duration);
+    Cycle& addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 offset, int duration);
     Cycle& addFrame(const Frame &frame);
 
     void setLoop(bool loop);
@@ -70,7 +70,11 @@ class AnimationState {
 
 public:
     AnimationState(Animation *animation);
+    AnimationState();
     AnimationState(const AnimationState &other);
+
+    /* Sets up instance to preserve state of provided animation. */
+    void setAnimation(Animation *animation);
 
     /* Sets the animation state, using the cycle corresponding to the provided state 
        for future operations.
@@ -89,7 +93,7 @@ public:
 
     /* Gets the current frame of the cycle. Causes an error if no frames exist.
     */
-    const Frame& getCurrent();
+    Frame *getCurrent();
 
     /* Returns whether the cycle has completed or not (always false if looping is set to true).
     */

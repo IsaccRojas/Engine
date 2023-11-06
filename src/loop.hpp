@@ -3,8 +3,7 @@
 #ifndef LOOP_HPP_
 #define LOOP_HPP_
 
-#include "../glenv/src/glenv.hpp"
-#include "../execenv/src/execenv.hpp"
+#include "entity.hpp"
 
 #include <iostream>
 #include <chrono>

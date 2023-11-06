@@ -15,6 +15,8 @@ LIBDIRS += -L./execenv
 SRCS = src/main.cpp
 SRCS += src/loop.cpp
 SRCS += src/glinit.cpp
+SRCS += src/entity.cpp
+SRCS += src/animation.cpp
 
 all: out
 
