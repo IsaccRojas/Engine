@@ -6,18 +6,18 @@ void Script::_init() {}
 void Script::_base() {}
 void Script::_kill() {}
 
-void Script::init() {
+void Script::_runInit() {
     // check if Script has been initialized yet
     if (!_initialized) {
         _init();
         _initialized = true;
     }
 }
-void Script::base() {
+void Script::_runBase() {
     _base();
 }
 
-void Script::kill() {
+void Script::_runKill() {
     // check if Script has been killed yet
     if (!_killed) {
         _kill();

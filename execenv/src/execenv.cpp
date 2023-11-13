@@ -1,18 +1,11 @@
 #include "execenv.hpp"
 
 ExecEnv::ExecEnv(int maxcount) : 
-    _maxcount(maxcount)
-{
-    // initialize _maxcount unique_ptrs to Scripts
-    for (int i = 0; i < _maxcount; i++)
-        _scripts.push_back(std::unique_ptr<Script>(nullptr));
-}
+    _maxcount(maxcount),
+    _scripts(maxcount, nullptr)
+{}
 
 ExecEnv::~ExecEnv() {}
-
-void ExecEnv::add(std::function<Script*(void)> allocator, const char *name) {
-    _scripttypes[name] = _ScriptType{allocator, name};
-}
 
 int ExecEnv::push(Script *script) {
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
@@ -23,7 +16,7 @@ int ExecEnv::push(Script *script) {
     int id = _ids.push();
 
     // allocate new script
-    _scripts[id] = std::unique_ptr<Script>(script);
+    _scripts[id] = script;
     
     // initialize owner, ID and flags
     _scripts[id]->_owner = this;
@@ -32,10 +25,6 @@ int ExecEnv::push(Script *script) {
     _scripts[id]->_killed = false;
 
     return id;
-}
-int ExecEnv::push(const char *name) {
-    // call push() with pointer returned from stored allocator
-    return push(_scripttypes[name].allocator());
 }
 
 void ExecEnv::_erase(int id) {
@@ -46,7 +35,7 @@ void ExecEnv::_erase(int id) {
 Script* const ExecEnv::get(int id) {
     if (_ids.at(id))
         // return "view" of stored Script
-        return _scripts[id].get();
+        return _scripts[id];
     else
         return nullptr;
 }
@@ -80,9 +69,9 @@ void ExecEnv::runExec() {
         if (_ids.at(id)) {
             // check if script needs to be initialized
             if (!(_scripts[id]->_initialized))
-                _scripts[id]->init();
+                _scripts[id]->_runInit();
 
-            _scripts[id]->base();
+            _scripts[id]->_runBase();
         }
 
         _execqueue.pop();
@@ -98,7 +87,7 @@ void ExecEnv::runErase() {
         if (_ids.at(id)) {
             // check if script needs to be killed
             if (!(_scripts[id]->_killed))
-                _scripts[id]->kill();
+                _scripts[id]->_runKill();
 
             _erase(id);
         }

@@ -24,6 +24,8 @@ public:
     Test() {}    
 };
 
+Entity *testallocator() { return new Test; }
+
 void loop(GLFWwindow *winhandle) {
     
     // initialize GLEnv instance
@@ -48,10 +50,16 @@ void loop(GLFWwindow *winhandle) {
     std::cout << "Setting up animations" << std::endl;
     auto animations = loadAnimations(".");
 
-    // create entity
-    std::cout << "Creating an entity" << std::endl;
-    Test testentity;
-    execenv.push(&testentity);
+    // set up spawner
+    std::cout << "Setting up spawner" << std::endl;
+    EntitySpawner spawner(&glenv);
+    spawner.loadAnimations(".");
+    spawner.add(testallocator, "Test", "Test");
+
+    // set up test entity
+    std::cout << "Setting up test entity" << std::endl;
+    Entity* test = spawner.spawn("Test");
+    execenv.push(test);
 
     // start loop
     std::cout << "Starting loop" << std::endl;
@@ -72,6 +80,7 @@ void loop(GLFWwindow *winhandle) {
     
     // terminate GLFW
     std::cout << "Terminating" << std::endl;
+    delete test;
     glfwDestroyWindow(winhandle);
     glfwTerminate();
 }

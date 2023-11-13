@@ -24,25 +24,25 @@ class Script {
 
 protected:
     /* Functions to be overridden by children.
-       - _init() is called by init(). init() is called on execution, only for the first time the script is queued.
-       - _base() is called by base(). base() is called on execution, each time the script is queued.
-       - _kill() is called by kill(). kill() is called on erasure.
+       - _init() is called by _runInit(). _runInit() is called on execution, only for the first time the script is queued.
+       - _base() is called by _runBase(). _runBase() is called on execution, each time the script is queued.
+       - _kill() is called by _runKill(). _runKill() is called on erasure.
     */
     virtual void _init();
     virtual void _base();
     virtual void _kill();
-    
+
+    /* Functions wrapping the virtual versions of the same method, which are directly called by the ExecEnv.
+       - _runInit() is called on execution, only for the first time the script is queued.
+       - _runBase() is called on execution, each time the script is queued.
+       - _runKill() is called on erasure.
+    */
+    void _runInit();
+    void _runBase();
+    void _runKill();
+
 public:
     Script();
-    
-    /* Functions wrapping the virtual versions of the same method, which are directly called by the ExecEnv.
-       - init() is called on execution, only for the first time the script is queued.
-       - base() is called on execution, each time the script is queued.
-       - kill() is called on erasure.
-    */
-    void init();
-    void base();
-    void kill();
 
     /* Returns the ID of the Script given by its owning ExecEnv. */
     int id();

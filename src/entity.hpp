@@ -7,7 +7,11 @@
 #include "../glenv/src/glenv.hpp"
 #include "../execenv/src/execenv.hpp"
 
+class EntitySpawner;
+
 class Entity : public Script {
+    friend EntitySpawner;
+
     // environmental references
     GLEnv *_glenv;
 
@@ -42,6 +46,40 @@ public:
     ~Entity();
 
     Quad *quad();
+};
+
+class EntitySpawner {
+    // struct holding entity information mapped to a name
+    struct _EntityType {
+        std::function<Entity*(void)> allocator;
+        std::string entityname;
+        std::string animationname;
+    };
+
+    // resources
+    GLEnv *_glenv;
+    std::unordered_map<std::string, Animation> _animations;
+    bool _animloaded;
+
+    // allocator variables
+    std::unordered_map<std::string, _EntityType> _entitytypes;
+public:
+    /* ...
+    */
+    EntitySpawner(GLEnv *glenv);
+    //TODO: write copy/move constr., destr.
+
+    /* ...
+    */    
+    void loadAnimations(const char *directory);
+
+    /* Maps a function returning a new entity to a string and animation.
+    */
+    int add(std::function<Entity*(void)> allocator, const char *entityname, const char *animationname);
+
+    /* ...
+    */
+    Entity *spawn(const char *entityname);
 };
 
 #endif

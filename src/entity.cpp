@@ -10,20 +10,21 @@ Entity::~Entity() {
 
 void Entity::_setup(GLEnv *glenv, Animation *animation) {
     _glenv = glenv;
-    _animstate.setAnimation(animation);
-    
-    // get quad data
-    _quadid = _glenv->genQuad(glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(0.0f), glm::vec2(0.0f));
-    _quad = _glenv->get(_quadid);
 
+    _animstate.setAnimation(animation);
     _frame = _animstate.getCurrent();
 
     _ready = true;
 }
 
 void Entity::_init() {
-    if (_ready)
+    if (_ready) {
         _initEntity();
+
+        // get quad data
+        _quadid = _glenv->genQuad(glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(0.0f), glm::vec2(0.0f));
+        _quad = _glenv->get(_quadid);
+    }
 }
 
 void Entity::_base() {
@@ -43,6 +44,9 @@ void Entity::_base() {
         _quad->texpos.v = _frame->texpos;
         _quad->texsize.v = _frame->texsize;
         _quad->update();
+
+        // requeue
+        //owner()->queueExec(id());
     }
 }
 
@@ -63,3 +67,29 @@ void Entity::_baseEntity() {}
 void Entity::_killEntity() {}
 
 Quad *Entity::quad() { return _quad; }
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+EntitySpawner::EntitySpawner(GLEnv *glenv) :
+    _glenv(glenv), _animloaded(false)
+{}
+
+void EntitySpawner::loadAnimations(const char *directory) {
+    _animations = ::loadAnimations(directory);
+    _animloaded = true;
+}
+
+int EntitySpawner::add(std::function<Entity*(void)> allocator, const char *entityname, const char *animationname) {
+    if (_animloaded) {
+        _entitytypes[entityname] = _EntityType{allocator, entityname, animationname};
+        return 1;
+    }
+    return -1;
+}
+
+Entity *EntitySpawner::spawn(const char *entityname) {
+    _EntityType& enttype = _entitytypes[entityname];
+    Entity *ent = enttype.allocator();
+    ent->_setup(_glenv, &_animations[enttype.animationname]);
+    return ent;
+}

@@ -19,20 +19,11 @@
 
 */
 class ExecEnv {
-    /* Struct to wrap together allocators with their names.
-    */
-    struct _ScriptType {
-        std::function<Script*(void)> allocator;
-        std::string name;
-    };
-
     /* Script data structures */
     // IDs to distribute to Scripts
     Partitioner _ids;
     // vector of unique_ptrs of Scripts
-    std::vector<std::unique_ptr<Script>> _scripts;
-    // map storage of allocators mapped to strings
-    std::unordered_map<std::string, _ScriptType> _scripttypes;
+    std::vector<Script*> _scripts;
 
     /* Execution data structures */
     // queue of IDs to be executed
@@ -54,30 +45,14 @@ public:
     ~ExecEnv();
     ExecEnv(const ExecEnv &other) = delete;
     ExecEnv operator=(const ExecEnv &other) = delete;
-
-    /* Adds an allocator mapped to a string to the environment. The allocator must not have any parameters, and 
-       must return a pointer to a Script or to a child of Script. You can then invoke this allocator by calling push() 
-       and passing the mapped string. The environment will have ownership over the returned pointer of the allocator.
-       allocator - function to allocate a Script instance
-       name - name to map to the allocator, to use to invoke the allocator
-    */
-    void add(std::function<Script*(void)> allocator, const char *name);
     
     /* Pushes a Script instance to the environment. This will generate an ID that will be used by the environment for
-       checks and execution. This ID will be valid for the lifetime of the Script instance within the system. Note that
-       the environment take ownership of the passed instance.
+       checks and execution. This ID will be valid for the lifetime of the Script instance within the system. 
        script - pointer to an instance of Script
        Returns the ID of the Script.
     */
     int push(Script *script);
-    /* Pushes a Script instance to the environment, using an allocator mapped to the provided name. This will generate 
-       an ID that will be used by the environment for checks and execution. This ID will be valid until the Script is erased
-       from the system (see erase()). Note that the environment will own the instance returned by the allocator.
-       name - name mapped to an allocator
-       Returns the ID of the Script.
-    */
-    int push(const char *name);
-
+    
     /* Returns a pointer to a Script instance in the environment corresponding to the provided ID. Returns nullptr if the
        ID does not exist in the environment.
        id - ID of Script to get pointer of
