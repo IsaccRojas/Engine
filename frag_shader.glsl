@@ -16,6 +16,9 @@ void main() {
         ), 
         0
     );
+
+    if (texel.xyz == vec3(255.0 / 255.0, 0.0, 128.0 / 255.0))
+        discard;
     
     fragcolor = texel;
 }

@@ -5,7 +5,7 @@ int main() {
     // --- OpenGL and window setup ---
 
     std::cout << "Initializing OpenGL" << std::endl;
-    GLFWwindow *win_h = glinit(400, 400, "title", false);
+    GLFWwindow *win_h = glinit(512, 512, "title", false);
 
     // --- main loop ---
 

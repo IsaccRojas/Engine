@@ -1,21 +1,38 @@
 {
-	"name" : "Test",
+	"name" : "Test1",
 	"cycles" : {
 		"cycle1" : {
-            		"frames" : {
-                		"frame1" : {
-                    			"texpos" : [0.0, 0.0, 0.0],
-                    			"texsize" : [3.0, 3.0],
-                    			"offset" : [0.0, 0.0, 0.0],
-                    			"duration" : 16
-                		},
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 0.0, 0.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 16
+				},
 				"frame2" : {
-                    			"texpos" : [4.0, 4.0, 0.0],
-                    			"texsize" : [3.0, 3.0],
-                    			"offset" : [0.0, 0.0, 0.0],
-                    			"duration" : 16
-                		}
-            		},
+					"texpos" : [16.0, 0.0, 0.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 16
+				}
+			},
+			"loop" : true
+		},
+		"cycle2" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 16.0, 0.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 16
+				},
+				"frame2" : {
+					"texpos" : [16.0, 16.0, 0.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 16
+				}
+			},
 			"loop" : true
 		}
 	}

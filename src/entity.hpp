@@ -5,7 +5,7 @@
 
 #include "animation.hpp"
 #include "../glenv/src/glenv.hpp"
-#include "../execenv/src/execenv.hpp"
+#include "../executor/src/executor.hpp"
 
 class EntitySpawner;
 
@@ -17,17 +17,14 @@ class Entity : public Script {
 
     // sprite objects
     Quad *_quad;
-    AnimationState _animstate;
     Frame *_frame;
 
     // sprite variables/flags
-    int _quadid;
-    bool _firststep;
-    bool _ready;
+    int _quad_id;
+    bool _first_step;
 
-    // called by spawner to properly set up internal values; _init(),
-    // _base(), and _kill() do nothing until this is called
-    void _setup(GLEnv *glenv, Animation *animation);
+    bool _spawner_ready;
+    bool _quad_ready;
 
     // called by execution environment
     void _init();
@@ -35,7 +32,8 @@ class Entity : public Script {
     void _kill();
 
 protected:
-    glm::vec3 pos;
+    glm::vec3 _visualpos;
+    AnimationState _animstate;
 
     virtual void _initEntity();
     virtual void _baseEntity();
@@ -45,37 +43,42 @@ public:
     Entity();
     ~Entity();
 
-    Quad *quad();
+    /* Sets the entity up with graphics and animation resources. This
+       enables the use of the genQuad(), getQuad(), and eraseQuad()
+       methods.
+    */
+    void entitySetup(GLEnv *glenv, Animation *animation);
+
+    void genQuad(glm::vec3 pos, glm::vec3 scale);
+    void eraseQuad();
+    Quad *getQuad();
 };
+
+// --------------------------------------------------------------------------------------------------------------------------
 
 class EntitySpawner {
     // struct holding entity information mapped to a name
     struct _EntityType {
         std::function<Entity*(void)> allocator;
         std::string entityname;
-        std::string animationname;
     };
-
-    // resources
-    GLEnv *_glenv;
-    std::unordered_map<std::string, Animation> _animations;
-    bool _animloaded;
 
     // allocator variables
     std::unordered_map<std::string, _EntityType> _entitytypes;
+
 public:
     /* ...
     */
-    EntitySpawner(GLEnv *glenv);
+    EntitySpawner();
     //TODO: write copy/move constr., destr.
 
-    /* ...
-    */    
-    void loadAnimations(const char *directory);
-
-    /* Maps a function returning a new entity to a string and animation.
+    /* Maps a function returning a new entity to a string.
     */
-    int add(std::function<Entity*(void)> allocator, const char *entityname, const char *animationname);
+    void add(std::function<Entity*(void)> allocator, const char *entityname);
+
+    /* ...
+    */
+    bool has(const char *name);
 
     /* ...
     */

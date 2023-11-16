@@ -1,95 +1,105 @@
 #include "entity.hpp"
 
-Entity::Entity() : _ready(false), _firststep(true), _quadid(-1), _glenv(nullptr), _quad(nullptr), _frame(nullptr) {}
+Entity::Entity() : _spawner_ready(false), _first_step(true), _quad_id(-1), _glenv(nullptr), _quad(nullptr), _frame(nullptr), Script() {}
 Entity::~Entity() {
-    if (_quadid >= 0) {
-        // quad was not removed by a call to _kill(), must remove it here
-        _glenv->erase(_quadid);
-    }
-}
-
-void Entity::_setup(GLEnv *glenv, Animation *animation) {
-    _glenv = glenv;
-
-    _animstate.setAnimation(animation);
-    _frame = _animstate.getCurrent();
-
-    _ready = true;
+    // try erasing existing quad
+    this->eraseQuad();
 }
 
 void Entity::_init() {
-    if (_ready) {
-        _initEntity();
-
-        // get quad data
-        _quadid = _glenv->genQuad(glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(0.0f), glm::vec2(0.0f));
-        _quad = _glenv->get(_quadid);
-    }
+    _initEntity();
 }
 
 void Entity::_base() {
-    if (_ready) {
-        _baseEntity();
+    _baseEntity();
 
-        if (!_firststep) {
+    if (_spawner_ready) {
+
+        if (!_first_step) {
             // step animation and retrieve current frame
             _animstate.step();
             _frame = _animstate.getCurrent();
         } else {
-            _firststep = false;
+            _first_step = false;
         }
 
-        // write frame data to quad and update quad
-        _quad->pos.v = pos;
-        _quad->texpos.v = _frame->texpos;
-        _quad->texsize.v = _frame->texsize;
-        _quad->update();
+        // only attempt to write animation data if quad is available
+        if (_quad_ready) {
+            // write frame data to quad and update quad
+            _quad->pos.v = _visualpos;
+            _quad->texpos.v = _frame->texpos;
+            _quad->texsize.v = _frame->texsize;
+            _quad->update();
+        }
 
-        // requeue
-        //owner()->queueExec(id());
     }
 }
 
 void Entity::_kill() {
-    if (_ready) {
-        _killEntity();
-
-        // erase quad
-        _glenv->erase(_quadid);
-
-        // set quad ID to invalid value
-        _quadid = -1;
-    }
+    _killEntity();
 }
 
 void Entity::_initEntity() {}
 void Entity::_baseEntity() {}
 void Entity::_killEntity() {}
 
-Quad *Entity::quad() { return _quad; }
+void Entity::entitySetup(GLEnv *glenv, Animation *animation) {
+    // try erasing existing quad
+    this->eraseQuad();
+
+    _glenv = glenv;
+
+    _animstate.setAnimation(animation);
+    _frame = _animstate.getCurrent();
+
+    _spawner_ready = true;
+}
+
+void Entity::genQuad(glm::vec3 pos, glm::vec3 scale) {
+    if (_spawner_ready) {
+        // erase existing quad
+        if (_quad_ready)
+            this->eraseQuad();
+
+        // get quad data
+        _quad_id = _glenv->genQuad(pos, scale, _frame->texpos, _frame->texsize);
+        
+        // if successful, retrieve quad
+        if (_quad_id >= 0) {
+            _quad = _glenv->get(_quad_id);
+            _quad_ready = true;
+        }
+    }
+}
+
+void Entity::eraseQuad() {
+    if (_quad_id >= 0) {
+        _glenv->erase(_quad_id);
+        _quad_id = -1;
+
+        _quad_ready = false;
+    }
+}
+
+Quad *Entity::getQuad() { 
+    if (_quad_ready)
+        return _quad;
+    else
+        return NULL;
+}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-EntitySpawner::EntitySpawner(GLEnv *glenv) :
-    _glenv(glenv), _animloaded(false)
-{}
+EntitySpawner::EntitySpawner() {}
 
-void EntitySpawner::loadAnimations(const char *directory) {
-    _animations = ::loadAnimations(directory);
-    _animloaded = true;
+void EntitySpawner::add(std::function<Entity*(void)> allocator, const char *entityname) {
+    _entitytypes[entityname] = _EntityType{allocator, entityname};
 }
 
-int EntitySpawner::add(std::function<Entity*(void)> allocator, const char *entityname, const char *animationname) {
-    if (_animloaded) {
-        _entitytypes[entityname] = _EntityType{allocator, entityname, animationname};
-        return 1;
-    }
-    return -1;
+bool EntitySpawner::has(const char *name) {
+    return !(_entitytypes.find(name) == _entitytypes.end());
 }
 
 Entity *EntitySpawner::spawn(const char *entityname) {
-    _EntityType& enttype = _entitytypes[entityname];
-    Entity *ent = enttype.allocator();
-    ent->_setup(_glenv, &_animations[enttype.animationname]);
-    return ent;
+    return _entitytypes[entityname].allocator();
 }

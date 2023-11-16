@@ -90,6 +90,8 @@ void AnimationState::setAnimation(Animation *animation) {
     for future operations.
 */
 void AnimationState::setAnimState(int state) {
+    if (state == _cyclestate)
+        return;
     _cyclestate = state;
     _currentcycle = &(_animation->getCycle(_cyclestate));
     this->setCycleState(0);

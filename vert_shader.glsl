@@ -13,13 +13,13 @@ layout(location = 7) uniform mat4 u_proj;
 out vec3 f_texcoords;
 
 void main() {
-    //get final texture coordinates by adding the texsize by model positions (are either 0.0 or 1.0), and flip the vertical shift
+    //get final texture coordinates by adding: texsize multiplied by model positions (are either 0.0 or 1.0), and flip the vertical shift
     f_texcoords = 
         v_texpos 
         + 
         (
             vec3(v_model.x, 1.0 - v_model.y, 0.0) 
-            * vec3(v_texsize, 0.0)
+            * vec3(v_texsize - vec2(1.0f, 1.0f), 0.0)
         )
     ;
     

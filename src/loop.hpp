@@ -3,7 +3,7 @@
 #ifndef LOOP_HPP_
 #define LOOP_HPP_
 
-#include "entity.hpp"
+#include "object.hpp"
 
 #include <iostream>
 #include <chrono>

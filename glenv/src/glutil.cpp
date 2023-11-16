@@ -314,8 +314,8 @@ void GLTexture2DArray::alloc(GLint levels, GLenum storeformat, GLenum dataformat
     _allocated = true;
 }
 
-void GLTexture2DArray::subimage(GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, const void *data) {
-    glTextureSubImage3D(_tex_h, level, xoffset, yoffset, zoffset, width, height, 1, _dataformat, _type, data);
+void GLTexture2DArray::subimage(GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, const void *data) {
+    glTextureSubImage3D(_tex_h, level, xoffset, yoffset, zoffset, width, height, depth, _dataformat, _type, data);
 }
 
 void GLTexture2DArray::clear() {

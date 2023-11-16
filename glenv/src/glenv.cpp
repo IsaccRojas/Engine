@@ -98,13 +98,6 @@ GLEnv::GLEnv(int maxcount) :
     _glb_texpos.bindindex(3, 0, 3 * sizeof(GLfloat));
     _glb_texsize.bindindex(4, 0, 2 * sizeof(GLfloat));
     _glb_draw.bindindex(5, 0, 1 * sizeof(GLfloat));
-
-    /* set up texture structure */
-
-    // read image texture.png, allocate 8x8x1 texture space, and write image into it
-    Image img("texture.png");
-    _texarray.alloc(1, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, 8, 8, 1);
-    _texarray.subimage(0, 0, 0, 0, img.width(), img.height(), img.copydata());
 }
 
 void GLEnv::settexarray(GLuint width, GLuint height, GLuint depth) {
@@ -112,7 +105,7 @@ void GLEnv::settexarray(GLuint width, GLuint height, GLuint depth) {
 }
 
 void GLEnv::settexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset) {
-    _texarray.subimage(0, xoffset, yoffset, zoffset, img.width(), img.height(), img.copydata());
+    _texarray.subimage(0, xoffset, yoffset, zoffset, img.width(), img.height(), 1, img.copydata());
 }
 
 void GLEnv::setviewport(GLint x, GLint y, GLint width, GLint height) {

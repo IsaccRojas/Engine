@@ -76,8 +76,8 @@ public:
     /* Sets up instance to preserve state of provided animation. */
     void setAnimation(Animation *animation);
 
-    /* Sets the animation state, using the cycle corresponding to the provided state 
-       for future operations.
+    /* Sets the animation state, using the cycle corresponding to the provided state for
+       future operations. Does nothing if the state provided is the same as the current one.
     */
     void setAnimState(int state);
 
