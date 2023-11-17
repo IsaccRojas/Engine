@@ -62,6 +62,10 @@ int Manager::spawnEntity(const char *entityname) {
     _scripts[id] = std::unique_ptr<Script>(entity);
     _scriptvalues[id] = _ScriptValues{MNG_TYPE_ENTITY, id, entity->_executor_id, -1, entityname, entity, nullptr};
 
+    // enqueue if set
+    if (type._force_enqueue)
+        entity->enqueue();
+    
     return id;
 }
 
@@ -89,6 +93,10 @@ int Manager::spawnObject(const char *objectname) {
     int id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(object);
     _scriptvalues[id] = _ScriptValues{MNG_TYPE_OBJECT, id, object->_executor_id, object->_collider_id, objectname, object, object};
+
+    // enqueue if set
+    if (type._entitytype._force_enqueue)
+        object->enqueue();
 
     return id;
 }
@@ -140,21 +148,23 @@ void Manager::removeObject(int id) {
     _ids.erase_at(values._manager_id);
 };
 
-void Manager::addEntity(std::function<Entity*(void)> allocator, const char *name, bool force_scriptsetup, bool force_entitysetup, const char *animation_name) {
+void Manager::addEntity(std::function<Entity*(void)> allocator, const char *name, bool force_scriptsetup, bool force_enqueue, bool force_entitysetup, const char *animation_name) {
     if (!hasEntity(name))
         _entitytypes[name] = _EntityType{
             force_scriptsetup,
+            force_enqueue,
             force_entitysetup,
             animation_name,
             allocator
         };
 }
 
-void Manager::addObject(std::function<Object*(void)> allocator, const char *name, bool force_scriptsetup, bool force_entitysetup, const char *animation_name, bool force_objectsetup) {
+void Manager::addObject(std::function<Object*(void)> allocator, const char *name, bool force_scriptsetup, bool force_enqueue, bool force_entitysetup, const char *animation_name, bool force_objectsetup) {
     if (!hasObject(name))
         _objecttypes[name] = _ObjectType{
             _EntityType{
                 force_scriptsetup,
+                force_enqueue,
                 force_entitysetup,
                 animation_name,
                 nullptr

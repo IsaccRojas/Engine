@@ -125,18 +125,13 @@ void loop(GLFWwindow *winhandle) {
 
     // add objects to manager
     std::cout << "Adding objects to manager" << std::endl;
-    manager.addObject(test1allocator, "Test1", true, true, "Test1", true);
-    manager.addObject(test2allocator, "Test2", true, true, "Test2", true);
+    manager.addObject(test1allocator, "Test1", true, true, true, "Test1", true);
+    manager.addObject(test2allocator, "Test2", true, true, true, "Test2", true);
 
     // set up test entities
     std::cout << "Setting up test objects" << std::endl;
-    Object* test1 = manager.getObject(manager.spawnObject("Test1"));
-    Object* test2 = manager.getObject(manager.spawnObject("Test2"));
-
-    // enqueue objects
-    std::cout << "Enqueuing objects" << std::endl;
-    test1->enqueue();
-    test2->enqueue();
+    manager.spawnObject("Test1");
+    manager.spawnObject("Test2");
 
     // start loop
     std::cout << "Starting loop" << std::endl;
@@ -157,9 +152,6 @@ void loop(GLFWwindow *winhandle) {
     
     // terminate GLFW
     std::cout << "Terminating GLFW" << std::endl;
-    delete test1, test2;
     glfwDestroyWindow(winhandle);
     glfwTerminate();
-
-    std::cout << "Ending" << std::endl;
 }

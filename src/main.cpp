@@ -11,5 +11,7 @@ int main() {
 
     loop(win_h);
 
+    std::cout << "Ending program" << std::endl;
+    
     return 0;
 }

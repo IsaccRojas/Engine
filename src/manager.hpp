@@ -19,6 +19,7 @@ class Manager {
     // struct holding entity information mapped to a name
     struct _EntityType {
         bool _force_scriptsetup;
+        bool _force_enqueue;
         bool _force_entitysetup;
         std::string _animation_name;
         std::function<Entity*(void)> _allocator = nullptr;
@@ -71,8 +72,8 @@ public:
     Object *getObject(int id);
     void removeEntity(int id);
     void removeObject(int id);
-    void addEntity(std::function<Entity*(void)> allocator, const char *name, bool force_scriptsetup, bool force_entitysetup, const char *animation_name);
-    void addObject(std::function<Object*(void)> allocator, const char *name, bool force_scriptsetup, bool force_entitysetup, const char *animation_name, bool force_objectsetup);
+    void addEntity(std::function<Entity*(void)> allocator, const char *name, bool force_scriptsetup, bool force_enqueue, bool force_entitysetup, const char *animation_name);
+    void addObject(std::function<Object*(void)> allocator, const char *name, bool force_scriptsetup, bool force_enqueue, bool force_entitysetup, const char *animation_name, bool force_objectsetup);
     
     void setExecutor(Executor *executor);
     void setGLEnv(GLEnv *glenv);
