@@ -6,9 +6,11 @@
 #include "entity.hpp"
 
 class Collider;
+class Manager;
 
 class Object : public Entity {
     friend Collider;
+    friend Manager;
     
     // environmental references
     Collider *_collider;    
@@ -51,37 +53,6 @@ public:
     void disableCollision();
 
     bool hasCollisionEnabled();
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-class ObjectSpawner {
-    // struct holding entity information mapped to a name
-    struct _ObjectType {
-        std::function<Object*(void)> allocator;
-        std::string objectname;
-    };
-
-    // allocator variables
-    std::unordered_map<std::string, _ObjectType> _objecttypes;
-
-public:
-    /* ...
-    */
-    ObjectSpawner();
-    //TODO: write copy/move constr., destr.
-
-    /* Maps a function returning a new entity to a string and animation.
-    */
-    void add(std::function<Object*(void)> allocator, const char *objectname);
-
-    /* ...
-    */
-    bool has(const char *name);
-
-    /* ...
-    */
-    Object *spawn(const char *objectname);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

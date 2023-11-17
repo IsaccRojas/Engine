@@ -115,24 +115,26 @@ void loop(GLFWwindow *winhandle) {
     std::cout << "Setting up collider" << std::endl;
     Collider collider{256};
 
-    // set up spawner
-    std::cout << "Setting up spawner" << std::endl;
-    ObjectSpawner spawner;
-    spawner.add(test1allocator, "Test1");
-    spawner.add(test2allocator, "Test2");
+    // set up manager
+    std::cout << "Setting up manager" << std::endl;
+    Manager manager{256};
+    manager.setExecutor(&executor);
+    manager.setGLEnv(&glenv);
+    manager.setAnimations(&animations);
+    manager.setCollider(&collider);
+
+    // add objects to manager
+    std::cout << "Adding objects to manager" << std::endl;
+    manager.addObject(test1allocator, "Test1", true, true, "Test1", true);
+    manager.addObject(test2allocator, "Test2", true, true, "Test2", true);
 
     // set up test entities
     std::cout << "Setting up test objects" << std::endl;
-    Object* test1 = spawner.spawn("Test1");
-    test1->scriptSetup(&executor);
-    test1->entitySetup(&glenv, &animations["Test1"]);
-    test1->objectSetup(&collider);
-    
-    Object* test2 = spawner.spawn("Test2");
-    test2->scriptSetup(&executor);
-    test2->entitySetup(&glenv, &animations["Test2"]);
-    test2->objectSetup(&collider);
+    Object* test1 = manager.getObject(manager.spawnObject("Test1"));
+    Object* test2 = manager.getObject(manager.spawnObject("Test2"));
 
+    // enqueue objects
+    std::cout << "Enqueuing objects" << std::endl;
     test1->enqueue();
     test2->enqueue();
 

@@ -1,6 +1,15 @@
 #include "executor.hpp"
 
-Script::Script() : _initialized(false), _killed(false), _execqueued(false), _killqueued(false), _executor_ready(false), _executor_id(-1), _hasmanager(false) {}
+Script::Script() :
+    _initialized(false), 
+    _killed(false), 
+    _execqueued(false), 
+    _killqueued(false), 
+    _executor_ready(false), 
+    _executor_id(-1), 
+    _hasmanager(false),
+    _manager(nullptr)
+{}
 Script::~Script() {
     // try removing from existing executor
     if (_executor_ready)

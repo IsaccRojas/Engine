@@ -23,6 +23,7 @@ class ManagerPtr;
 class Script {
     // allow Executor to access private fields
     friend class Executor;
+    friend class Manager;
 
     // flags of whether this script has been initialized or killed, maintained by Executor
     bool _initialized;
@@ -35,8 +36,9 @@ class Script {
     int _executor_id;
     bool _executor_ready;
 
-    // Manager instance that owns this Script
+    // Manager instance that owns this Script, and internal name
     ManagerPtr *_manager;
+
     // flag of whether or not this script has a manager or not
     bool _hasmanager;
 

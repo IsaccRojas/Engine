@@ -1,6 +1,6 @@
 #include "entity.hpp"
 
-Entity::Entity() : _spawner_ready(false), _first_step(true), _quad_id(-1), _glenv(nullptr), _quad(nullptr), _frame(nullptr), Script() {}
+Entity::Entity() : _setup_ready(false), _first_step(true), _quad_id(-1), _glenv(nullptr), _quad(nullptr), _frame(nullptr), Script() {}
 Entity::~Entity() {
     // try erasing existing quad
     this->eraseQuad();
@@ -13,7 +13,7 @@ void Entity::_init() {
 void Entity::_base() {
     _baseEntity();
 
-    if (_spawner_ready) {
+    if (_setup_ready) {
 
         if (!_first_step) {
             // step animation and retrieve current frame
@@ -52,11 +52,11 @@ void Entity::entitySetup(GLEnv *glenv, Animation *animation) {
     _animstate.setAnimation(animation);
     _frame = _animstate.getCurrent();
 
-    _spawner_ready = true;
+    _setup_ready = true;
 }
 
 void Entity::genQuad(glm::vec3 pos, glm::vec3 scale) {
-    if (_spawner_ready) {
+    if (_setup_ready) {
         // erase existing quad
         if (_quad_ready)
             this->eraseQuad();
@@ -86,20 +86,4 @@ Quad *Entity::getQuad() {
         return _quad;
     else
         return NULL;
-}
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-EntitySpawner::EntitySpawner() {}
-
-void EntitySpawner::add(std::function<Entity*(void)> allocator, const char *entityname) {
-    _entitytypes[entityname] = _EntityType{allocator, entityname};
-}
-
-bool EntitySpawner::has(const char *name) {
-    return !(_entitytypes.find(name) == _entitytypes.end());
-}
-
-Entity *EntitySpawner::spawn(const char *entityname) {
-    return _entitytypes[entityname].allocator();
 }

@@ -7,11 +7,7 @@
 #include "../glenv/src/glenv.hpp"
 #include "../executor/src/executor.hpp"
 
-class EntitySpawner;
-
 class Entity : public Script {
-    friend EntitySpawner;
-
     // environmental references
     GLEnv *_glenv;
 
@@ -23,7 +19,7 @@ class Entity : public Script {
     int _quad_id;
     bool _first_step;
 
-    bool _spawner_ready;
+    bool _setup_ready;
     bool _quad_ready;
 
     // called by execution environment
@@ -52,37 +48,6 @@ public:
     void genQuad(glm::vec3 pos, glm::vec3 scale);
     void eraseQuad();
     Quad *getQuad();
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-class EntitySpawner {
-    // struct holding entity information mapped to a name
-    struct _EntityType {
-        std::function<Entity*(void)> allocator;
-        std::string entityname;
-    };
-
-    // allocator variables
-    std::unordered_map<std::string, _EntityType> _entitytypes;
-
-public:
-    /* ...
-    */
-    EntitySpawner();
-    //TODO: write copy/move constr., destr.
-
-    /* Maps a function returning a new entity to a string.
-    */
-    void add(std::function<Entity*(void)> allocator, const char *entityname);
-
-    /* ...
-    */
-    bool has(const char *name);
-
-    /* ...
-    */
-    Entity *spawn(const char *entityname);
 };
 
 #endif

@@ -81,22 +81,6 @@ bool Object::hasCollisionEnabled() {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-ObjectSpawner::ObjectSpawner() {}
-
-void ObjectSpawner::add(std::function<Object*(void)> allocator, const char *objectname) {
-    _objecttypes[objectname] = _ObjectType{allocator, objectname};
-}
-
-bool ObjectSpawner::has(const char *name) {
-    return !(_objecttypes.find(name) == _objecttypes.end());
-}
-
-Object *ObjectSpawner::spawn(const char *objectname) {
-    return _objecttypes[objectname].allocator();
-}
-
-// --------------------------------------------------------------------------------------------------------------------------
-
 Collider::Collider(int maxcount) : 
     _maxcount(maxcount),
     _objects(maxcount, nullptr)
