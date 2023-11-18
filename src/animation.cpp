@@ -2,6 +2,7 @@
 
 Cycle::Cycle(bool loop) : _loop(loop) {}
 Cycle::Cycle(const Cycle &other) : _loop(other._loop), _frames(other._frames) {}
+Cycle::~Cycle() {}
 
 Cycle& Cycle::addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 offset, int duration) {
     _frames.push_back(Frame{texpos, texsize, offset, duration});
@@ -30,6 +31,7 @@ bool Cycle::loops() const {
 
 Animation::Animation() {}
 Animation::Animation(const Animation &other) : _cycles(other._cycles) {}
+Animation::~Animation() {}
 
 /* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
 corresponding to the desired order of the frames.
@@ -75,6 +77,7 @@ AnimationState::AnimationState(const AnimationState &other) :
     _currentcycle(other._currentcycle),
     _currentframe(other._currentframe)
 {}
+AnimationState::~AnimationState() {}
 
 void AnimationState::setAnimation(Animation *animation) {
     _step = 0;

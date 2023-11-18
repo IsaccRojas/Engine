@@ -351,6 +351,7 @@ BVec2::BVec2(const BVec2 &other) {
     v = other.v;
 }
 BVec2::BVec2() {}
+BVec2::~BVec2() {}
 
 BVec2& BVec2::operator=(const BVec2 &other) {
     _buf = other._buf;
@@ -383,6 +384,7 @@ BVec3::BVec3(const BVec3 &other) {
     v = other.v;
 }
 BVec3::BVec3() {}
+BVec3::~BVec3() {}
 
 BVec3& BVec3::operator=(const BVec3 &other) {
     _buf = other._buf;

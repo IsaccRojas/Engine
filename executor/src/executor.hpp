@@ -63,7 +63,7 @@ protected:
 
 public:
     Script();
-    ~Script();
+    virtual ~Script();
 
     /* Sets the object up with an executor. This enables the use of 
        the enqueue and dequeue methods. Pushes the object into the

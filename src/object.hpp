@@ -38,7 +38,7 @@ protected:
 
 public:
     Object(glm::vec3 dimensions = glm::vec3(0.0f));
-    ~Object();
+    virtual ~Object();
 
     /* Sets the object up with a collider. This enables the use of 
        the enableCollision() and disableCollision() methods. Does not
@@ -65,6 +65,8 @@ class Collider {
     int _maxcount;
 public:
     Collider(int maxcount);
+    ~Collider();
+    
     int push(Object *object);
     void erase(int id);
 

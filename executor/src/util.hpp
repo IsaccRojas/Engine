@@ -51,7 +51,7 @@ public:
     int push();
 
     //sets element i to false and pushes its index to freeIDs
-    bool erase_at(int i);
+    void erase_at(int i);
 
     //get vector of all indices that are true
     std::vector<int> getused();

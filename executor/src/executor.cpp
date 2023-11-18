@@ -89,7 +89,7 @@ int Executor::push(Script *script) {
 
 void Executor::erase(int id) {
     // free ID from partitioner
-    if (_ids[id]) {
+    if (_ids.at(id)) {
         Script *script = _scripts[id];
         script->_initialized = false;
         script->_killed = false;

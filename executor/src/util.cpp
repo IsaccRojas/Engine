@@ -58,9 +58,7 @@ int Image::size() { return _size; }
 bool Image::empty() { return (_data == NULL); }
 
 Partitioner::Partitioner() {}
-Partitioner::~Partitioner() {
-    clear();
-}
+Partitioner::~Partitioner() {}
 
 //occupies an index in IDs (use last index from freeIDs if available),
 //and return ID
@@ -77,13 +75,11 @@ int Partitioner::push() {
 }
 
 //sets element i to false and pushes its index to freeIDs
-bool Partitioner::erase_at(int i) {
+void Partitioner::erase_at(int i) {
     if (IDs[i]) {
         IDs[i] = false;
         freeIDs.push_back(i);
-        return true;
     }
-    return false;
 }
 
 //get vector of all indices that are true

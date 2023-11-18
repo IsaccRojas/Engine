@@ -10,6 +10,7 @@ Quad::Quad(const Quad &other) {
     texsize = other.texsize;
 }
 Quad::Quad() {}
+Quad::~Quad() {}
 
 Quad& Quad::operator=(const Quad& other) {
     pos = other.pos;
@@ -99,6 +100,7 @@ GLEnv::GLEnv(int maxcount) :
     _glb_texsize.bindindex(4, 0, 2 * sizeof(GLfloat));
     _glb_draw.bindindex(5, 0, 1 * sizeof(GLfloat));
 }
+GLEnv::~GLEnv() {}
 
 void GLEnv::settexarray(GLuint width, GLuint height, GLuint depth) {
     _texarray.alloc(1, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, width, height, depth);

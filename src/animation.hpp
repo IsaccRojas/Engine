@@ -25,6 +25,7 @@ class Cycle {
 public:
     Cycle(bool loop = false);
     Cycle(const Cycle &other);
+    ~Cycle();
 
     /* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
     corresponding to the desired order of the frames.
@@ -46,6 +47,7 @@ class Animation {
 public:
     Animation();
     Animation(const Animation &other);
+    ~Animation();
 
     /* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
     corresponding to the desired order of the frames.
@@ -72,6 +74,7 @@ public:
     AnimationState(Animation *animation);
     AnimationState();
     AnimationState(const AnimationState &other);
+    ~AnimationState();
 
     /* Sets up instance to preserve state of provided animation. */
     void setAnimation(Animation *animation);

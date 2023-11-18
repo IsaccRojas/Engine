@@ -36,8 +36,6 @@ class Manager {
     struct _ScriptValues {
         ManagerType _type;
         int _manager_id;
-        int _executor_id;
-        int _collider_id;
         const char *_manager_name;
         Entity *_entity_ref;
         Object *_object_ref;
@@ -90,6 +88,7 @@ class ManagerPtr {
     Manager *_manager;
 public:
     ManagerPtr(Manager *manager);
+    ~ManagerPtr();
     bool hasEntity(const char *entityname);
     bool hasObject(const char *objectname);
     int spawnEntity(const char *entityname);

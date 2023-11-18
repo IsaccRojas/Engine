@@ -168,6 +168,7 @@ public:
     BVec2(const BVec2 &other);
     BVec2& operator=(const BVec2 &other);
     BVec2();
+    ~BVec2();
 
     BVec2(BVec2 &&other) = delete;
     BVec2& operator=(BVec2 &&other) = delete;
@@ -187,6 +188,7 @@ public:
     BVec3(const BVec3 &other);
     BVec3& operator=(const BVec3 &other);
     BVec3();
+    ~BVec3();
 
     BVec3(BVec3 &&other) = delete;
     BVec3& operator=(BVec3 &&other) = delete;

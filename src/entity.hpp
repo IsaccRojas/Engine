@@ -37,7 +37,7 @@ protected:
 
 public:
     Entity();
-    ~Entity();
+    virtual ~Entity();
 
     /* Sets the entity up with graphics and animation resources. This
        enables the use of the genQuad(), getQuad(), and eraseQuad()

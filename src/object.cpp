@@ -85,6 +85,7 @@ Collider::Collider(int maxcount) :
     _maxcount(maxcount),
     _objects(maxcount, nullptr)
 {}
+Collider::~Collider() {}
 
 int Collider::push(Object *object) {
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
@@ -101,7 +102,7 @@ int Collider::push(Object *object) {
 }
 
 void Collider::erase(int id) {
-    if (_ids[id])
+    if (_ids.at(id))
         _ids.erase_at(id);
 }
 

@@ -10,11 +10,12 @@ Manager::Manager(int maxcount) :
 {
     for (int i = 0; i < maxcount; i++) {
         _scripts.push_back(std::unique_ptr<Script>(nullptr));
-        _scriptvalues.push_back(_ScriptValues{MNG_TYPE_NONE, -1, -1, -1, NULL, nullptr, nullptr});
+        _scriptvalues.push_back(_ScriptValues{MNG_TYPE_NONE, -1, NULL, nullptr, nullptr});
     }
     _managerptr = new ManagerPtr(this);
 }
 Manager::~Manager() {
+    /* TODO: consider whether it is necessary to do this or not
     // iterate on existing ids
     auto ids = _ids.getused();
     for (int i = 0; i < ids.size(); i++) {
@@ -33,6 +34,8 @@ Manager::~Manager() {
             
         }
     }
+    */
+
     delete _managerptr;
 }
 
@@ -60,7 +63,7 @@ int Manager::spawnEntity(const char *entityname) {
     // push to internal storage
     int id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(entity);
-    _scriptvalues[id] = _ScriptValues{MNG_TYPE_ENTITY, id, entity->_executor_id, -1, entityname, entity, nullptr};
+    _scriptvalues[id] = _ScriptValues{MNG_TYPE_ENTITY, id, entityname, entity, nullptr};
 
     // enqueue if set
     if (type._force_enqueue)
@@ -92,7 +95,7 @@ int Manager::spawnObject(const char *objectname) {
     // push to internal storage
     int id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(object);
-    _scriptvalues[id] = _ScriptValues{MNG_TYPE_OBJECT, id, object->_executor_id, object->_collider_id, objectname, object, object};
+    _scriptvalues[id] = _ScriptValues{MNG_TYPE_OBJECT, id, objectname, object, object};
 
     // enqueue if set
     if (type._entitytype._force_enqueue)
@@ -118,34 +121,15 @@ Object *Manager::getObject(int id) {
 void Manager::removeEntity(int id) {
     if (!_ids.at(id))
         return;
-
-    _ScriptValues &values = _scriptvalues[id];
-    _EntityType &type = _entitytypes[values._manager_name];
-
-    // remove from anything it was pushed into
-    if (type._force_scriptsetup)
-        if (_executor)
-            _executor->erase(values._executor_id);
     
-    _ids.erase_at(values._manager_id);
+    _ids.erase_at(_scriptvalues[id]._manager_id);
 };
 
 void Manager::removeObject(int id) {
     if (!_ids.at(id))
         return;
-        
-    _ScriptValues &values = _scriptvalues[id];
-    _ObjectType &type = _objecttypes[values._manager_name];
-
-    // remove from anything it was pushed into
-    if (type._entitytype._force_scriptsetup)
-        if (_executor)
-            _executor->erase(values._executor_id);
-    if (type._force_objectsetup)
-        if (_collider)
-            _collider->erase(values._collider_id);
     
-    _ids.erase_at(values._manager_id);
+    _ids.erase_at(_scriptvalues[id]._manager_id);
 };
 
 void Manager::addEntity(std::function<Entity*(void)> allocator, const char *name, bool force_scriptsetup, bool force_enqueue, bool force_entitysetup, const char *animation_name) {
@@ -182,6 +166,7 @@ void Manager::setCollider(Collider *collider) { if (!_collider) _collider = coll
 // --------------------------------------------------------------------------------------------------------------------------
 
 ManagerPtr::ManagerPtr(Manager *manager) : _manager(manager) {}
+ManagerPtr::~ManagerPtr() {}
 
 bool ManagerPtr::hasEntity(const char *entityname) {
     return _manager->hasEntity(entityname);

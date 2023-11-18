@@ -30,6 +30,7 @@ public:
     Quad(const Quad& other);
     Quad();
     Quad& operator=(const Quad& other);
+    ~Quad();
 
     /* Calls update() on all internal BVec instances, writing their respective data into their respective buffers. */
     void update();
@@ -85,6 +86,7 @@ class GLEnv {
 public:
     /* max_count - maximum number of quads allowed to be active */
     GLEnv(int maxcount);
+    ~GLEnv();
 
     /* Initializes texture array space with unsigned byte storage in RGBA format.
        width - width of space
