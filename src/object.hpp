@@ -26,10 +26,10 @@ class Object : public Entity {
     void _baseEntity();
     void _killEntity();
 
-protected:
     // physics variables
     glm::vec3 _physpos;
     glm::vec3 _physdim;
+protected:
 
     virtual void _initObject();
     virtual void _baseObject();
@@ -51,6 +51,9 @@ public:
 
     /* Removes the object from the collider. */
     void disableCollision();
+
+    glm::vec3 getPhysPos();
+    void setPhysPos(glm::vec3 newpos);
 
     bool hasCollisionEnabled();
 };

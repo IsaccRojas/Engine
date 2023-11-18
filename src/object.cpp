@@ -75,6 +75,9 @@ void Object::disableCollision() {
     }
 }
 
+glm::vec3 Object::getPhysPos() { return _physpos; }
+void Object::setPhysPos(glm::vec3 newpos) { _physpos = newpos; }
+
 bool Object::hasCollisionEnabled() {
     return _collision_enabled;
 }

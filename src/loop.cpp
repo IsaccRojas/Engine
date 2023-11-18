@@ -11,21 +11,13 @@ class Test1 : public Object {
         enableCollision();
 
         _i = 0;
-        _colliding = false;
     };
 
     void _baseObject() {
-        _physpos = glm::vec3(0.0f, glm::sin(double(_i) / 64.0f) * 32.0f, 0.0f);
+        setPhysPos(glm::vec3(0.0f, glm::sin(double(_i) / 64.0f) * 32.0f, 0.0f));
         _i++;
-
-        if (_colliding)
-            _animstate.setAnimState(1);
-        else
-            _animstate.setAnimState(0);
-        _colliding = false;
         
-        _visualpos = _physpos;
-
+        setVisPos(getPhysPos());
         enqueue();
     };
 
@@ -44,35 +36,7 @@ public:
     Test1() : Object(glm::vec3(16.0f, 16.0f, 0.0f)) {}
 };
 
-class Test2 : public Object {
-    void _initObject() {
-        std::cout << "Test2 instance initialized" << std::endl;
-        
-        genQuad(glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 1.0f));
-        enableCollision();
-    };
-
-    void _baseObject() {
-        _visualpos = _physpos;
-
-        enqueue();
-    };
-
-    void _killObject() {
-        std::cout << "Test2 instance being killed" << std::endl;
-
-        eraseQuad();
-        disableCollision();
-    };
-
-    void _collisionObject(int x) {}
-
-public:
-    Test2() : Object(glm::vec3(16.0f, 16.0f, 0.0f)) {}
-};
-
 Object *test1allocator() { return new Test1; }
-Object *test2allocator() { return new Test2; }
 
 void loop(GLFWwindow *winhandle) {
     
@@ -81,12 +45,12 @@ void loop(GLFWwindow *winhandle) {
     GLEnv glenv{256};
 
     std::cout << "Setting up texture array" << std::endl;
-    glenv.settexarray(32, 48, 1);
+    glenv.settexarray(32, 32, 1);
     std::cout << "Setting texture" << std::endl;
-    glenv.settexture(Image("texture.png"), 0, 0, 0);
+    glenv.settexture(Image("objects.png"), 0, 0, 0);
 
-    int pixelwidth = 128;
-    int pixelheight = 128;
+    int pixelwidth = 256;
+    int pixelheight = 256;
     int pixellayers = 16;
 
     float halfwidth = float(pixelwidth) / 2.0f;
@@ -126,12 +90,10 @@ void loop(GLFWwindow *winhandle) {
     // add objects to manager
     std::cout << "Adding objects to manager" << std::endl;
     manager.addObject(test1allocator, "Test1", true, true, true, "Test1", true);
-    manager.addObject(test2allocator, "Test2", true, true, true, "Test2", true);
 
     // set up test entities
-    std::cout << "Setting up test objects" << std::endl;
+    std::cout << "Setting up test object" << std::endl;
     manager.spawnObject("Test1");
-    manager.spawnObject("Test2");
 
     // start loop
     std::cout << "Starting loop" << std::endl;

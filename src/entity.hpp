@@ -22,14 +22,16 @@ class Entity : public Script {
     bool _setup_ready;
     bool _quad_ready;
 
+    // controllable variables
+    glm::vec3 _visualpos;
+    AnimationState _animstate;
+
     // called by execution environment
     void _init();
     void _base();
     void _kill();
 
 protected:
-    glm::vec3 _visualpos;
-    AnimationState _animstate;
 
     virtual void _initEntity();
     virtual void _baseEntity();
@@ -44,6 +46,9 @@ public:
        methods.
     */
     void entitySetup(GLEnv *glenv, Animation *animation);
+
+    glm::vec3 getVisPos();
+    void setVisPos(glm::vec3 newpos);
 
     void genQuad(glm::vec3 pos, glm::vec3 scale);
     void eraseQuad();

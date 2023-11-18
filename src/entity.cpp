@@ -43,6 +43,9 @@ void Entity::_initEntity() {}
 void Entity::_baseEntity() {}
 void Entity::_killEntity() {}
 
+glm::vec3 Entity::getVisPos() { return _visualpos; }
+void Entity::setVisPos(glm::vec3 newpos) { _visualpos = newpos; }
+
 void Entity::entitySetup(GLEnv *glenv, Animation *animation) {
     // try erasing existing quad
     this->eraseQuad();
