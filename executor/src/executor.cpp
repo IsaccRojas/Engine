@@ -21,15 +21,15 @@ void Script::_init() {}
 void Script::_base() {}
 void Script::_kill() {}
 
-void Script::_runInit() {
+void Script::runInit() {
     _init();
 
 }
-void Script::_runBase() {
+void Script::runBase() {
     _base();
 }
 
-void Script::_runKill() {
+void Script::runKill() {
     _kill();
 }
 
@@ -44,6 +44,30 @@ void Script::scriptSetup(Executor *executor) {
 
     _executor_ready = true;
 }
+
+void Script::scriptResetFlags() {
+    // reset flags
+    _initialized = false;
+    _killed = false;
+    _execqueued = false;
+    _killqueued = false;
+}
+
+void Script::scriptResetExec() {
+    // reset executor fields
+    _executor = nullptr;
+    _executor_id = -1;
+    _executor_ready = false;
+}
+
+void Script::setInitialized(bool initialized) { _initialized = initialized; }
+bool Script::getInitialized() { return _initialized; }
+void Script::setKilled(bool killed) { _killed = killed; }
+bool Script::getKilled() { return _killed; }
+void Script::setExecQueued(bool execqueued) { _execqueued = execqueued; }
+bool Script::getExecQueued() { return _execqueued; }
+void Script::setKillQueued(bool killqueued) { _killqueued = killqueued; }
+bool Script::getKillQueued() { return _killqueued; }
 
 void Script::enqueue() {
     if (_executor_ready)
@@ -74,12 +98,6 @@ int Executor::push(Script *script) {
     
     // get a new unique ID
     int id = _ids.push();
-    
-    // initialize flags
-    script->_initialized = false;
-    script->_killed = false;
-    script->_execqueued = false;
-    script->_killqueued = false;
 
     // store script
     _scripts[id] = script;
@@ -91,10 +109,10 @@ void Executor::erase(int id) {
     // free ID from partitioner
     if (_ids.at(id)) {
         Script *script = _scripts[id];
-        script->_initialized = false;
-        script->_killed = false;
-        script->_execqueued = false;
-        script->_killqueued = false;
+
+        // remove executor information
+        script->scriptResetExec();
+
         _ids.erase_at(id);
     }
 }
@@ -115,9 +133,9 @@ void Executor::queueExec(int id) {
     // if id exists, and not already queued, queue
     if (_ids.at(id)) {
         Script *script = _scripts[id];
-        if (!(script->_execqueued)) {
+        if (!(script->getExecQueued())) {
             _pushexecqueue.push(id);
-            script->_execqueued = true;
+            script->setExecQueued(true);
         }
     }
 }
@@ -126,9 +144,9 @@ void Executor::queueKill(int id) {
     // if id exists, and not already killed, queue
     if (_ids.at(id)) {
         Script *script = _scripts[id];
-        if (!(script->_killqueued)) {
+        if (!(script->getKillQueued())) {
             _pushkillqueue.push(id);
-            script->_killqueued = true;
+            script->setKillQueued(true);
         }
     }
 }
@@ -147,13 +165,13 @@ void Executor::runExec() {
             script = _scripts[id];
 
             // check if script needs to be initialized
-            if (!(script->_initialized)) {
-                script->_runInit();
-                script->_initialized = true;
+            if (!(script->getInitialized())) {
+                script->runInit();
+                script->setInitialized(true);
             }
 
-            script->_execqueued = false;
-            script->_runBase();
+            script->setExecQueued(false);
+            script->runBase();
         }
 
         _runexecqueue.pop();
@@ -174,10 +192,10 @@ void Executor::runKill() {
             script = _scripts[id];
 
             // check if script needs to be killed
-            if (!(script->_killed)) {
-                script->_killqueued = false;
-                script->_runKill();
-                script->_killed = true;
+            if (!(script->getKilled())) {
+                script->setKillQueued(false);
+                script->runKill();
+                script->setKilled(true);
             }
         }
 

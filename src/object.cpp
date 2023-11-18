@@ -1,8 +1,9 @@
 #include "object.hpp"
 
-Object::Object(glm::vec3 dimensions) : 
-    _physdim(dimensions), 
-    _physpos(glm::vec3(0.0f)), 
+Object::Object() : 
+    _physdim(glm::vec3(0.0f)), 
+    _physpos(glm::vec3(0.0f)),
+    _physvel(glm::vec3(0.0f)),
     _collider_ready(false),
     _collision_enabled(false), 
     _collider_id(-1),
@@ -13,15 +14,13 @@ Object::~Object() {
     disableCollision();
 }
 
-void Object::_collision(int x) {
-    _collisionObject(x);
-}
-
 void Object::_initEntity() {
     _initObject();
 }
 void Object::_baseEntity() {
     _baseObject();
+
+    _physpos = _physpos + _physvel;
 }
 void Object::_killEntity() {
     _killObject();
@@ -38,7 +37,7 @@ void Object::_killEntity() {
 void Object::_initObject() {}
 void Object::_baseObject() {}
 void Object::_killObject() {}
-void Object::_collisionObject(int x) {}
+void Object::_collisionObject(Object *other) {}
 
 void Object::objectSetup(Collider *collider) {
     // try removing from any existing collider
@@ -46,6 +45,16 @@ void Object::objectSetup(Collider *collider) {
 
     _collider = collider;
     _collider_ready = true;
+}
+
+void Object::objectResetCollider() {
+    _collider = nullptr;
+    _collider_ready = false;
+    _collider_id = -1;
+}
+
+void Object::collide(Object *other) {
+    _collisionObject(other);
 }
 
 void Object::enableCollision() {
@@ -77,6 +86,10 @@ void Object::disableCollision() {
 
 glm::vec3 Object::getPhysPos() { return _physpos; }
 void Object::setPhysPos(glm::vec3 newpos) { _physpos = newpos; }
+glm::vec3 Object::getPhysVel() { return _physvel; }
+void Object::setPhysVel(glm::vec3 newvel) { _physvel = newvel; }
+glm::vec3 Object::getPhysDim() { return _physdim; }
+void Object::setPhysDim(glm::vec3 newdim) { _physdim = newdim; }
 
 bool Object::hasCollisionEnabled() {
     return _collision_enabled;
@@ -118,8 +131,8 @@ void Collider::collide() {
                 if (_ids[j]) {
 
                     if (detectCollision(*_objects[i], *_objects[j])) {
-                        _objects[i]->_collision(j);
-                        _objects[j]->_collision(i);
+                        _objects[i]->collide(_objects[j]);
+                        _objects[j]->collide(_objects[i]);
                     }
 
                 }
@@ -129,11 +142,11 @@ void Collider::collide() {
 }
 
 // only detects 2D collision for now
-bool Collider::detectCollision(const Object &obj1, const Object &obj2) {
-    const glm::vec3 &physpos1 = obj1._physpos;
-    const glm::vec3 &physdim1 = obj1._physdim;
-    const glm::vec3 &physpos2 = obj2._physpos;
-    const glm::vec3 &physdim2 = obj2._physdim;
+bool Collider::detectCollision(Object &obj1, Object &obj2) {
+    const glm::vec3 &physpos1 = obj1.getPhysPos();
+    const glm::vec3 &physdim1 = obj1.getPhysDim();
+    const glm::vec3 &physpos2 = obj2.getPhysPos();
+    const glm::vec3 &physdim2 = obj2.getPhysDim();
     return 
         (glm::abs(physpos1.x - physpos2.x) * 2 < (physdim1.x + physdim2.x)) 
         && (glm::abs(physpos1.y - physpos2.y) * 2 < (physdim1.y + physdim2.y));

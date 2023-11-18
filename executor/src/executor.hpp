@@ -17,12 +17,11 @@ class Executor;
 class ManagerPtr;
 
 /* Class to represent a runnable script by an owning Executor instance.
-   The owning Executor will call init(), base(), and kill() as needed, and
+   The owning Executor will call runInit(), runBase(), and runKill() as needed, and
    expects _init(), _base(), and _kill() to be implemented by children. 
 */
 class Script {
-    // allow Executor to access private fields
-    friend class Executor;
+    // allow Manager to access private fields
     friend class Manager;
 
     // flags of whether this script has been initialized or killed, maintained by Executor
@@ -52,24 +51,44 @@ protected:
     virtual void _base();
     virtual void _kill();
 
-    /* Functions wrapping the virtual versions of the same method, which are directly called by the Executor.
-       - _runInit() is called on execution, only for the first time the script is queued.
-       - _runBase() is called on execution, each time the script is queued.
-       - _runKill() is called on erasure.
-    */
-    void _runInit();
-    void _runBase();
-    void _runKill();
-
 public:
     Script();
     virtual ~Script();
+
+   /* Functions wrapping the virtual versions of the same method, which are directly called by the Executor.
+       - runInit() is called on execution, only for the first time the script is queued.
+       - runBase() is called on execution, each time the script is queued.
+       - runKill() is called on erasure.
+    */
+    void runInit();
+    void runBase();
+    void runKill();
 
     /* Sets the object up with an executor. This enables the use of 
        the enqueue and dequeue methods. Pushes the object into the
        executor.
     */
     void scriptSetup(Executor *executor);
+
+    /* Resets internal execution flags.
+    */
+    void scriptResetFlags();
+    
+    /* Resets executor information.
+    */
+    void scriptResetExec();
+
+    /* Sets various internal flags used by executors to control state. Can be set manually to manipulate
+       execution behavior.
+    */
+    void setInitialized(bool initialized);
+    bool getInitialized();
+    void setKilled(bool killed);
+    bool getKilled();
+    void setExecQueued(bool execqueued);
+    bool getExecQueued();
+    void setKillQueued(bool killqueued);
+    bool getKillQueued();
 
     /* Enqueues the script for execution.
     */

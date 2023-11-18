@@ -10,7 +10,7 @@ Manager::Manager(int maxcount) :
 {
     for (int i = 0; i < maxcount; i++) {
         _scripts.push_back(std::unique_ptr<Script>(nullptr));
-        _scriptvalues.push_back(_ScriptValues{MNG_TYPE_NONE, -1, NULL, nullptr, nullptr});
+        _scriptvalues.push_back(_ScriptValues{MNG_TYPE_NONE, -1, NULL, nullptr, nullptr, nullptr});
     }
     _managerptr = new ManagerPtr(this);
 }
@@ -39,9 +39,37 @@ Manager::~Manager() {
     delete _managerptr;
 }
 
+bool Manager::hasScript(const char *scriptname) { return !(_scripttypes.find(scriptname) == _scripttypes.end()); }
+
 bool Manager::hasEntity(const char *entityname) { return !(_entitytypes.find(entityname) == _entitytypes.end()); }
 
 bool Manager::hasObject(const char *objectname) { return !(_objecttypes.find(objectname) == _objecttypes.end()); }
+
+int Manager::spawnScript(const char *scriptname) {
+    // fail if exceeding max size
+    if (_ids.fillsize() >= _maxcount)
+        return -1;
+
+    _ScriptType &type = _scripttypes[scriptname];
+    Script *script = type._allocator();
+    
+    // set up script
+    if (type._force_scriptsetup)
+        if (_executor)
+            script->scriptSetup(_executor);
+    script->_manager = _managerptr;
+
+    // push to internal storage
+    int id = _ids.push();
+    _scripts[id] = std::unique_ptr<Script>(script);
+    _scriptvalues[id] = _ScriptValues{MNG_TYPE_SCRIPT, id, scriptname, script, nullptr, nullptr};
+
+    // enqueue if set
+    if (type._force_enqueue)
+        script->enqueue();
+    
+    return id;
+}
 
 int Manager::spawnEntity(const char *entityname) {
     // fail if exceeding max size
@@ -52,7 +80,7 @@ int Manager::spawnEntity(const char *entityname) {
     Entity *entity = type._allocator();
     
     // set up entity
-    if (type._force_scriptsetup)
+    if (type._scripttype._force_scriptsetup)
         if (_executor)
             entity->scriptSetup(_executor);
     if (type._force_entitysetup)
@@ -63,10 +91,10 @@ int Manager::spawnEntity(const char *entityname) {
     // push to internal storage
     int id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(entity);
-    _scriptvalues[id] = _ScriptValues{MNG_TYPE_ENTITY, id, entityname, entity, nullptr};
+    _scriptvalues[id] = _ScriptValues{MNG_TYPE_ENTITY, id, entityname, entity, entity, nullptr};
 
     // enqueue if set
-    if (type._force_enqueue)
+    if (type._scripttype._force_enqueue)
         entity->enqueue();
     
     return id;
@@ -81,7 +109,7 @@ int Manager::spawnObject(const char *objectname) {
     Object *object = type._allocator();
     
     // set up object
-    if (type._entitytype._force_scriptsetup)
+    if (type._entitytype._scripttype._force_scriptsetup)
         if (_executor)
             object->scriptSetup(_executor);
     if (type._entitytype._force_entitysetup)
@@ -95,13 +123,20 @@ int Manager::spawnObject(const char *objectname) {
     // push to internal storage
     int id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(object);
-    _scriptvalues[id] = _ScriptValues{MNG_TYPE_OBJECT, id, objectname, object, object};
+    _scriptvalues[id] = _ScriptValues{MNG_TYPE_OBJECT, id, objectname, object, object, object};
 
     // enqueue if set
-    if (type._entitytype._force_enqueue)
+    if (type._entitytype._scripttype._force_enqueue)
         object->enqueue();
 
     return id;
+}
+
+Script *Manager::getScript(int id) {
+    if (_ids.at(id))
+        return _scriptvalues[id]._script_ref;
+    else
+        return nullptr;
 }
 
 Entity *Manager::getEntity(int id) {
@@ -118,25 +153,30 @@ Object *Manager::getObject(int id) {
         return nullptr;
 }
 
-void Manager::removeEntity(int id) {
+void Manager::remove(int id) {
     if (!_ids.at(id))
         return;
     
     _ids.erase_at(_scriptvalues[id]._manager_id);
-};
+}
 
-void Manager::removeObject(int id) {
-    if (!_ids.at(id))
-        return;
-    
-    _ids.erase_at(_scriptvalues[id]._manager_id);
-};
+void Manager::addScript(std::function<Script*(void)> allocator, const char *name, bool force_scriptsetup, bool force_enqueue) {
+    if (!hasScript(name))
+        _scripttypes[name] = _ScriptType{
+            force_scriptsetup,
+            force_enqueue,
+            allocator
+        };
+}
 
 void Manager::addEntity(std::function<Entity*(void)> allocator, const char *name, bool force_scriptsetup, bool force_enqueue, bool force_entitysetup, const char *animation_name) {
     if (!hasEntity(name))
         _entitytypes[name] = _EntityType{
-            force_scriptsetup,
-            force_enqueue,
+            _ScriptType{
+                force_scriptsetup,
+                force_enqueue,
+                nullptr
+            },
             force_entitysetup,
             animation_name,
             allocator
@@ -147,8 +187,11 @@ void Manager::addObject(std::function<Object*(void)> allocator, const char *name
     if (!hasObject(name))
         _objecttypes[name] = _ObjectType{
             _EntityType{
-                force_scriptsetup,
-                force_enqueue,
+                _ScriptType{
+                    force_scriptsetup,
+                    force_enqueue,
+                    nullptr
+                },
                 force_entitysetup,
                 animation_name,
                 nullptr
@@ -163,10 +206,16 @@ void Manager::setGLEnv(GLEnv *glenv) { if (!_glenv) _glenv = glenv; }
 void Manager::setAnimations(std::unordered_map<std::string, Animation> *animations) { if (!_animations) _animations = animations; }
 void Manager::setCollider(Collider *collider) { if (!_collider) _collider = collider; }
 
+int Manager::getMaxID() { return _ids.size(); }
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 ManagerPtr::ManagerPtr(Manager *manager) : _manager(manager) {}
 ManagerPtr::~ManagerPtr() {}
+
+bool ManagerPtr::hasScript(const char *scriptname) {
+    return _manager->hasScript(scriptname);
+}
 
 bool ManagerPtr::hasEntity(const char *entityname) {
     return _manager->hasEntity(entityname);
@@ -174,6 +223,10 @@ bool ManagerPtr::hasEntity(const char *entityname) {
 
 bool ManagerPtr::hasObject(const char *objectname) {
     return _manager->hasObject(objectname);
+}
+
+int ManagerPtr::spawnScript(const char *scriptname) {
+    return _manager->spawnScript(scriptname);
 }
 
 int ManagerPtr::spawnEntity(const char *entityname) {
@@ -184,10 +237,18 @@ int ManagerPtr::spawnObject(const char *objectname) {
     return _manager->spawnObject(objectname);
 }
 
+Script *ManagerPtr::getScript(int id) {
+    return _manager->getScript(id);
+}
+
 Entity *ManagerPtr::getEntity(int id) {
     return _manager->getEntity(id);
 }
 
 Object *ManagerPtr::getObject(int id) {
     return _manager->getObject(id);
+}
+
+int ManagerPtr::getMaxID() {
+    return _manager->getMaxID();
 }

@@ -9,18 +9,12 @@ class Collider;
 class Manager;
 
 class Object : public Entity {
-    friend Collider;
-    friend Manager;
-    
     // environmental references
     Collider *_collider;    
     int _collider_id;
-
     bool _collider_ready;
-    bool _collision_enabled;
 
-    // called by collider
-    void _collision(int x);
+    bool _collision_enabled;
 
     void _initEntity();
     void _baseEntity();
@@ -28,16 +22,17 @@ class Object : public Entity {
 
     // physics variables
     glm::vec3 _physpos;
+    glm::vec3 _physvel;
     glm::vec3 _physdim;
 protected:
 
     virtual void _initObject();
     virtual void _baseObject();
     virtual void _killObject();
-    virtual void _collisionObject(int x);
+    virtual void _collisionObject(Object *other);
 
 public:
-    Object(glm::vec3 dimensions = glm::vec3(0.0f));
+    Object();
     virtual ~Object();
 
     /* Sets the object up with a collider. This enables the use of 
@@ -45,6 +40,17 @@ public:
        push the object into the collider.
     */
     void objectSetup(Collider *collider);
+
+    /* Resets internal collider flags.
+    */
+    void objectResetFlags();
+    
+    /* Resets collider information.
+    */
+    void objectResetCollider();
+
+    // called by collider
+    void collide(Object *other);
 
     /* Pushes the object into the collider. */
     void enableCollision();
@@ -54,6 +60,10 @@ public:
 
     glm::vec3 getPhysPos();
     void setPhysPos(glm::vec3 newpos);
+    glm::vec3 getPhysVel();
+    void setPhysVel(glm::vec3 newvel);
+    glm::vec3 getPhysDim();
+    void setPhysDim(glm::vec3 newdim);
 
     bool hasCollisionEnabled();
 };
@@ -76,7 +86,7 @@ public:
     // checks for pair-wise collision between all pushed objects
     void collide();
 
-    static bool detectCollision(const Object &obj1, const Object &obj2);
+    static bool detectCollision(Object &obj1, Object &obj2);
 };
 
 #endif
