@@ -291,7 +291,7 @@ std::unordered_map<std::string, Animation> loadAnimations(std::string dir) {
                                         if (value2.is_number_float()) {
                                             frame.texpos.z = value2;
                                         } else {
-                                            std::cerr << "Error loading .json file '" << filename << "': index 1 of field 'texpos' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' is not a floating point number" << std::endl;
+                                            std::cerr << "Error loading .json file '" << filename << "': index 2 of field 'texpos' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' is not a floating point number" << std::endl;
                                             goto dir_loop_end;
                                         }
                                     } else {

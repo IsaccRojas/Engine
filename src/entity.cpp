@@ -1,9 +1,9 @@
 #include "entity.hpp"
 
-Entity::Entity() : _setup_ready(false), _first_step(true), _quad_id(-1), _glenv(nullptr), _quad(nullptr), _frame(nullptr), Script() {}
+Entity::Entity() : _visualpos(glm::vec3(0.0f)), _glenv_ready(false), _first_step(true), _quad_id(-1), _glenv(nullptr), _quad(nullptr), _frame(nullptr), Script() {}
 Entity::~Entity() {
     // try erasing existing quad
-    this->eraseQuad();
+    eraseQuad();
 }
 
 void Entity::_init() {
@@ -13,7 +13,7 @@ void Entity::_init() {
 void Entity::_base() {
     _baseEntity();
 
-    if (_setup_ready) {
+    if (_glenv_ready) {
 
         if (!_first_step) {
             // step animation and retrieve current frame
@@ -45,24 +45,25 @@ void Entity::_killEntity() {}
 
 glm::vec3 Entity::getVisPos() { return _visualpos; }
 void Entity::setVisPos(glm::vec3 newpos) { _visualpos = newpos; }
+AnimationState &Entity::getAnimState() { return _animstate; }
 
 void Entity::entitySetup(GLEnv *glenv, Animation *animation) {
     // try erasing existing quad
-    this->eraseQuad();
+    eraseQuad();
 
     _glenv = glenv;
 
     _animstate.setAnimation(animation);
     _frame = _animstate.getCurrent();
 
-    _setup_ready = true;
+    _glenv_ready = true;
 }
 
 void Entity::genQuad(glm::vec3 pos, glm::vec3 scale) {
-    if (_setup_ready) {
+    if (_glenv_ready) {
         // erase existing quad
         if (_quad_ready)
-            this->eraseQuad();
+            eraseQuad();
 
         // get quad data
         _quad_id = _glenv->genQuad(pos, scale, _frame->texpos, _frame->texsize);

@@ -1,0 +1,16 @@
+{
+	"name" : "Block1",
+	"cycles" : {
+		"cycle1" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 32.0, 0.0],
+					"texsize" : [32.0, 32.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 1
+				}
+			},
+			"loop" : false
+		}
+	}
+}

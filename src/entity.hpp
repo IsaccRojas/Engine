@@ -19,7 +19,7 @@ class Entity : public Script {
     int _quad_id;
     bool _first_step;
 
-    bool _setup_ready;
+    bool _glenv_ready;
     bool _quad_ready;
 
     // controllable variables
@@ -49,6 +49,7 @@ public:
 
     glm::vec3 getVisPos();
     void setVisPos(glm::vec3 newpos);
+    AnimationState &getAnimState();
 
     void genQuad(glm::vec3 pos, glm::vec3 scale);
     void eraseQuad();

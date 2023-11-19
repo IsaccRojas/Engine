@@ -18,8 +18,10 @@ enum ManagerType{ MNG_TYPE_NONE, MNG_TYPE_SCRIPT, MNG_TYPE_ENTITY, MNG_TYPE_OBJE
 class Manager {
     // struct holding entity information mapped to a name
     struct _ScriptType {
+        int _internal_type;
         bool _force_scriptsetup;
         bool _force_enqueue;
+        bool _force_removeonkill;
         std::function<Script*(void)> _allocator = nullptr;
     };
 
@@ -40,7 +42,7 @@ class Manager {
 
     // struct holding IDs and other flags belonging to the managed entity
     struct _ScriptValues {
-        ManagerType _type;
+        ManagerType _manager_type;
         int _manager_id;
         const char *_manager_name;
         Script *_script_ref;
@@ -79,10 +81,11 @@ public:
     Script *getScript(int id);
     Entity *getEntity(int id);
     Object *getObject(int id);
+    std::string getName(int id);
     void remove(int id);
-    void addScript(std::function<Script*(void)> allocator, const char *name, bool force_scriptsetup, bool force_enqueue);
-    void addEntity(std::function<Entity*(void)> allocator, const char *name, bool force_scriptsetup, bool force_enqueue, bool force_entitysetup, const char *animation_name);
-    void addObject(std::function<Object*(void)> allocator, const char *name, bool force_scriptsetup, bool force_enqueue, bool force_entitysetup, const char *animation_name, bool force_objectsetup);
+    void addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill);
+    void addEntity(std::function<Entity*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name);
+    void addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, bool force_objectsetup);
     
     void setExecutor(Executor *executor);
     void setGLEnv(GLEnv *glenv);
@@ -112,6 +115,7 @@ public:
     Entity *getEntity(int id);
     Object *getObject(int id);
     int getMaxID();
+    void remove();
 };  
 
 #endif

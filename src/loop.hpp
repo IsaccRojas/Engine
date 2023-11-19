@@ -5,6 +5,7 @@
 
 #include "manager.hpp"
 
+#include "glm\gtx\rotate_vector.hpp"
 #include <iostream>
 #include <chrono>
 #include <stdlib.h>

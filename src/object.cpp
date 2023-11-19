@@ -11,7 +11,7 @@ Object::Object() :
 {}
 Object::~Object() {
     // try removing from any existing collider
-    disableCollision();
+    objectResetCollider();
 }
 
 void Object::_initEntity() {
@@ -24,14 +24,6 @@ void Object::_baseEntity() {
 }
 void Object::_killEntity() {
     _killObject();
-
-    if (_collider_ready) {
-        // remove from collider
-        _collider->erase(_collider_id);
-
-        // set collider ID to invalid value
-        _collider_id = -1;
-    }
 }
 
 void Object::_initObject() {}
@@ -41,13 +33,17 @@ void Object::_collisionObject(Object *other) {}
 
 void Object::objectSetup(Collider *collider) {
     // try removing from any existing collider
-    disableCollision();
+    objectResetCollider();
 
     _collider = collider;
     _collider_ready = true;
 }
 
 void Object::objectResetCollider() {
+    if (_collider_ready)
+        if (_collider_id >= 0)
+            _collider->erase(_collider_id);
+
     _collider = nullptr;
     _collider_ready = false;
     _collider_id = -1;
@@ -78,8 +74,9 @@ void Object::disableCollision() {
 
             // set collider ID to invalid value
             _collider_id = -1;
-
             _collision_enabled = false;
+
+            // keep collider reference and ready flag
         }
     }
 }
@@ -105,8 +102,10 @@ Collider::~Collider() {}
 
 int Collider::push(Object *object) {
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
-    if (_ids.fillsize() >= _maxcount)
+    if (_ids.fillsize() >= _maxcount) {
+        std::cerr << "WARN: limit reached in Collider " << this << std::endl;
         return -1;
+    }
     
     // get a new unique ID
     int id = _ids.push();
@@ -118,6 +117,15 @@ int Collider::push(Object *object) {
 }
 
 void Collider::erase(int id) {
+    if (id < 0) {
+        std::cerr << "WARN: attempt to remove negative value from Collider " << this << std::endl;
+        return;
+    }
+    if (_ids.empty()) {
+        std::cerr << "WARN: attempt to remove value from empty Collider " << this << std::endl;
+        return;
+    }
+
     if (_ids.at(id))
         _ids.erase_at(id);
 }
@@ -125,10 +133,10 @@ void Collider::erase(int id) {
 void Collider::collide() {
     int ids_size = _ids.size();
     for (int i = 0; i < ids_size; i++) {
-        if (_ids[i]) {
+        if (_ids.at(i)) {
 
             for (int j = i + 1; j < ids_size; j++) {
-                if (_ids[j]) {
+                if (_ids.at(j)) {
 
                     if (detectCollision(*_objects[i], *_objects[j])) {
                         _objects[i]->collide(_objects[j]);

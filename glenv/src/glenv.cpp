@@ -124,8 +124,10 @@ void GLEnv::setproj(glm::mat4 proj) {
 
 int GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 texsize) {
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
-    if (_ids.fillsize() >= _maxcount)
+    if (_ids.fillsize() >= _maxcount) {
+        std::cerr << "WARN: limit reached in GLEnv " << this << std::endl;
         return -1;
+    }
 
     // get a new unique ID
     int id = _ids.push();
@@ -153,7 +155,11 @@ int GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 t
 }
 
 Quad *GLEnv::get(int i) {
-    return &_quads[i];
+    if (i < 0)
+        std::cerr << "WARN: attempt to get address with negative value from GLEnv " << this << std::endl;
+    if (i >= 0 && _ids[i])
+        return &_quads[i];
+    return nullptr;
 }
 
 void GLEnv::update() {
@@ -165,8 +171,14 @@ void GLEnv::update() {
 
 int GLEnv::erase(int id) {
     // if attempting to erase an id from empty system, return -1
-    if (_ids.empty())
+    if (id < 0) {
+        std::cerr << "WARN: attempt to remove negative value from GLEnv " << this << std::endl;
         return -1;
+    }
+    if (_ids.empty()) {
+        std::cerr << "WARN: attempt to remove value from empty GLEnv " << this << std::endl;
+        return -1;
+    }
 
     // call _ids to make the ID usable again
     _ids.erase_at(id);

@@ -47,8 +47,10 @@ bool Manager::hasObject(const char *objectname) { return !(_objecttypes.find(obj
 
 int Manager::spawnScript(const char *scriptname) {
     // fail if exceeding max size
-    if (_ids.fillsize() >= _maxcount)
+    if (_ids.fillsize() >= _maxcount) {
+        std::cerr << "WARN: limit reached in Manager " << this << std::endl;
         return -1;
+    }
 
     _ScriptType &type = _scripttypes[scriptname];
     Script *script = type._allocator();
@@ -58,6 +60,7 @@ int Manager::spawnScript(const char *scriptname) {
         if (_executor)
             script->scriptSetup(_executor);
     script->_manager = _managerptr;
+    script->setType(type._internal_type);
 
     // push to internal storage
     int id = _ids.push();
@@ -73,8 +76,10 @@ int Manager::spawnScript(const char *scriptname) {
 
 int Manager::spawnEntity(const char *entityname) {
     // fail if exceeding max size
-    if (_ids.fillsize() >= _maxcount)
+    if (_ids.fillsize() >= _maxcount) {
+        std::cerr << "WARN: limit reached in Manager " << this << std::endl;
         return -1;
+    }
 
     _EntityType &type = _entitytypes[entityname];
     Entity *entity = type._allocator();
@@ -87,6 +92,7 @@ int Manager::spawnEntity(const char *entityname) {
         if (_glenv && _animations)
             entity->entitySetup(_glenv, &(*_animations)[type._animation_name]);
     entity->_manager = _managerptr;
+    entity->setType(type._scripttype._internal_type);
 
     // push to internal storage
     int id = _ids.push();
@@ -102,8 +108,10 @@ int Manager::spawnEntity(const char *entityname) {
 
 int Manager::spawnObject(const char *objectname) {
     // fail if exceeding max size
-    if (_ids.fillsize() >= _maxcount)
+    if (_ids.fillsize() >= _maxcount) {
+        std::cerr << "WARN: limit reached in Manager " << this << std::endl;
         return -1;
+    }
 
     _ObjectType &type = _objecttypes[objectname];
     Object *object = type._allocator();
@@ -119,6 +127,7 @@ int Manager::spawnObject(const char *objectname) {
         if (_collider)
             object->objectSetup(_collider);
     object->_manager = _managerptr;
+    object->setType(type._entitytype._scripttype._internal_type);
 
     // push to internal storage
     int id = _ids.push();
@@ -133,48 +142,86 @@ int Manager::spawnObject(const char *objectname) {
 }
 
 Script *Manager::getScript(int id) {
-    if (_ids.at(id))
+    if (id >= 0 && _ids.at(id))
         return _scriptvalues[id]._script_ref;
     else
         return nullptr;
 }
 
 Entity *Manager::getEntity(int id) {
-    if (_ids.at(id))
+    if (id >= 0 && _ids.at(id))
         return _scriptvalues[id]._entity_ref;
     else
         return nullptr;
 }
 
 Object *Manager::getObject(int id) {
-    if (_ids.at(id))
+    if (id >= 0 && _ids.at(id))
         return _scriptvalues[id]._object_ref;
     else
         return nullptr;
 }
 
-void Manager::remove(int id) {
-    if (!_ids.at(id))
-        return;
-    
-    _ids.erase_at(_scriptvalues[id]._manager_id);
+std::string Manager::getName(int id) {
+    if (id >= 0 && _ids.at(id))
+        return _scriptvalues[id]._manager_name;
+    return "";
 }
 
-void Manager::addScript(std::function<Script*(void)> allocator, const char *name, bool force_scriptsetup, bool force_enqueue) {
+void Manager::remove(int id) {
+    if (id < 0) {
+        std::cerr << "WARN: attempt to remove negative value from Manager " << this << std::endl;
+        return;
+    }
+    if (_ids.empty()) {
+        std::cerr << "WARN: attempt to remove value from empty Manager " << this << std::endl;
+        return;
+    }
+
+    if (_ids.at(id)) {
+        // get info and remove from respective systems
+        _ScriptValues &values = _scriptvalues[id];
+        switch (values._manager_type) {
+            case MNG_TYPE_OBJECT:
+                values._object_ref->objectResetCollider();
+                values._object_ref->eraseQuad();
+                values._object_ref->scriptResetExec();
+                break;
+            case MNG_TYPE_ENTITY:
+                values._entity_ref->eraseQuad();
+                values._entity_ref->scriptResetExec();
+                break;
+            case MNG_TYPE_SCRIPT:
+                values._script_ref->scriptResetExec();
+                break;
+            default:
+                std::cerr << "WARN: unknown type removed from Manager " << this << std::endl;
+                break;
+        }
+    
+        _ids.erase_at(_scriptvalues[id]._manager_id);
+    }
+}
+
+void Manager::addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill) {
     if (!hasScript(name))
         _scripttypes[name] = _ScriptType{
+            type,
             force_scriptsetup,
             force_enqueue,
+            force_removeonkill,
             allocator
         };
 }
 
-void Manager::addEntity(std::function<Entity*(void)> allocator, const char *name, bool force_scriptsetup, bool force_enqueue, bool force_entitysetup, const char *animation_name) {
+void Manager::addEntity(std::function<Entity*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name) {
     if (!hasEntity(name))
         _entitytypes[name] = _EntityType{
             _ScriptType{
+                type,
                 force_scriptsetup,
                 force_enqueue,
+                force_removeonkill,
                 nullptr
             },
             force_entitysetup,
@@ -183,13 +230,15 @@ void Manager::addEntity(std::function<Entity*(void)> allocator, const char *name
         };
 }
 
-void Manager::addObject(std::function<Object*(void)> allocator, const char *name, bool force_scriptsetup, bool force_enqueue, bool force_entitysetup, const char *animation_name, bool force_objectsetup) {
+void Manager::addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, bool force_objectsetup) {
     if (!hasObject(name))
         _objecttypes[name] = _ObjectType{
             _EntityType{
                 _ScriptType{
+                    type,
                     force_scriptsetup,
                     force_enqueue,
+                    force_removeonkill,
                     nullptr
                 },
                 force_entitysetup,
@@ -251,4 +300,8 @@ Object *ManagerPtr::getObject(int id) {
 
 int ManagerPtr::getMaxID() {
     return _manager->getMaxID();
+}
+
+void ManagerPtr::remove(int id) {
+    return _manager->remove(id);
 }

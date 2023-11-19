@@ -41,6 +41,9 @@ class Script {
     // flag of whether or not this script has a manager or not
     bool _hasmanager;
 
+    // settable integer usable for identification
+    int _type;
+
 protected:
     /* Functions to be overridden by children.
        - _init() is called by _runInit(). _runInit() is called on execution, only for the first time the script is queued.
@@ -89,6 +92,8 @@ public:
     bool getExecQueued();
     void setKillQueued(bool killqueued);
     bool getKillQueued();
+    void setType(int type);
+    int getType();
 
     /* Enqueues the script for execution.
     */

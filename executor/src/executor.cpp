@@ -12,9 +12,7 @@ Script::Script() :
 {}
 Script::~Script() {
     // try removing from existing executor
-    if (_executor_ready)
-        if (_executor_id >= 0)
-            _executor->erase(_executor_id);
+    scriptResetExec();
 }
 
 void Script::_init() {}
@@ -35,14 +33,14 @@ void Script::runKill() {
 
 void Script::scriptSetup(Executor *executor) {
     // try removing from existing executor
-    if (_executor_ready)
-        if (_executor_id >= 0)
-            _executor->erase(_executor_id);
+    scriptResetExec();
     
     _executor = executor;
     _executor_id = _executor->push(this);
 
     _executor_ready = true;
+
+    scriptResetFlags();
 }
 
 void Script::scriptResetFlags() {
@@ -55,6 +53,10 @@ void Script::scriptResetFlags() {
 
 void Script::scriptResetExec() {
     // reset executor fields
+    if (_executor_ready)
+        if (_executor_id >= 0)
+            _executor->erase(_executor_id);
+    
     _executor = nullptr;
     _executor_id = -1;
     _executor_ready = false;
@@ -68,6 +70,8 @@ void Script::setExecQueued(bool execqueued) { _execqueued = execqueued; }
 bool Script::getExecQueued() { return _execqueued; }
 void Script::setKillQueued(bool killqueued) { _killqueued = killqueued; }
 bool Script::getKillQueued() { return _killqueued; }
+void Script::setType(int type) { _type = type; }
+int Script::getType() { return _type; }
 
 void Script::enqueue() {
     if (_executor_ready)
@@ -93,8 +97,10 @@ Executor::~Executor() {}
 
 int Executor::push(Script *script) {
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
-    if (_ids.fillsize() >= _maxcount)
+    if (_ids.fillsize() >= _maxcount) {
+        std::cerr << "WARN: limit reached in Executor " << this << std::endl;
         return -1;
+    }
     
     // get a new unique ID
     int id = _ids.push();
@@ -106,19 +112,21 @@ int Executor::push(Script *script) {
 }
 
 void Executor::erase(int id) {
-    // free ID from partitioner
-    if (_ids.at(id)) {
-        Script *script = _scripts[id];
-
-        // remove executor information
-        script->scriptResetExec();
-
-        _ids.erase_at(id);
+    if (id < 0) {
+        std::cerr << "WARN: attempt to remove negative value from Executor " << this << std::endl;
+        return;
     }
+    if (_ids.empty()) {
+        std::cerr << "WARN: attempt to remove value from empty Executor " << this << std::endl;
+        return;
+    }
+
+    if (id >= 0 && _ids.at(id))
+        _ids.erase_at(id);
 }
 
 Script* const Executor::get(int id) {
-    if (_ids.at(id))
+    if (id >= 0 && _ids.at(id))
         // return "view" of stored Script
         return _scripts[id];
     else
@@ -126,12 +134,14 @@ Script* const Executor::get(int id) {
 }
 
 bool Executor::has(int id) {
-    return _ids.at(id);
+    if (id >= 0)
+        return _ids.at(id);
+    return false;
 }
 
 void Executor::queueExec(int id) {
     // if id exists, and not already queued, queue
-    if (_ids.at(id)) {
+    if (id >= 0 && _ids.at(id)) {
         Script *script = _scripts[id];
         if (!(script->getExecQueued())) {
             _pushexecqueue.push(id);
@@ -142,7 +152,7 @@ void Executor::queueExec(int id) {
 
 void Executor::queueKill(int id) {
     // if id exists, and not already killed, queue
-    if (_ids.at(id)) {
+    if (id >= 0 && _ids.at(id)) {
         Script *script = _scripts[id];
         if (!(script->getKillQueued())) {
             _pushkillqueue.push(id);
@@ -161,7 +171,7 @@ void Executor::runExec() {
         id = _runexecqueue.front();
 
         // check if ID is active
-        if (_ids.at(id)) {
+        if (id >= 0 && _ids.at(id)) {
             script = _scripts[id];
 
             // check if script needs to be initialized
@@ -188,7 +198,7 @@ void Executor::runKill() {
         id = _runkillqueue.front();
         
         // check if ID is active
-        if (_ids.at(id)) {
+        if (id >= 0 && _ids.at(id)) {
             script = _scripts[id];
 
             // check if script needs to be killed
