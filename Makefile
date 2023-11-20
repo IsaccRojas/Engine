@@ -20,7 +20,6 @@ SRCS += src/glinit.cpp
 SRCS += src/entity.cpp
 SRCS += src/animation.cpp
 SRCS += src/object.cpp
-SRCS += src/manager.cpp
 
 all: out
 

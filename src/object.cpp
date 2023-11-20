@@ -92,6 +92,8 @@ bool Object::hasCollisionEnabled() {
     return _collision_enabled;
 }
 
+ObjectManager *Object::getManager() { return _objectmanager; }
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 Collider::Collider(int maxcount) : 
@@ -159,3 +161,109 @@ bool Collider::detectCollision(Object &obj1, Object &obj2) {
         (glm::abs(physpos1.x - physpos2.x) * 2 < (physdim1.x + physdim2.x)) 
         && (glm::abs(physpos1.y - physpos2.y) * 2 < (physdim1.y + physdim2.y));
 }
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+ObjectManager::ObjectManager(int maxcount) : EntityManager(maxcount), _collider(nullptr) {
+    for (int i = 0; i < maxcount; i++)
+        _objectvalues.push_back(ObjectValues{nullptr});
+}
+ObjectManager::~ObjectManager() {}
+
+void ObjectManager::_objectSetup(Object *object, ObjectType &objecttype, EntityType &entitytype, ScriptType &scripttype, int id) {
+    _entitySetup(object, entitytype, scripttype, id);
+
+    if (objecttype._force_objectsetup)
+        if (_collider)
+            object->objectSetup(_collider);
+
+    object->_objectmanager = this;
+}
+
+void ObjectManager::_objectRemoval(ObjectValues &objectvalues, EntityValues &entityvalues, ScriptValues &scriptvalues) {
+    _entityRemoval(entityvalues, scriptvalues);
+    if (objectvalues._object_ref)
+        objectvalues._object_ref->objectResetCollider();
+}
+
+bool ObjectManager::hasObject(const char *objectname) { return !(_objecttypes.find(objectname) == _objecttypes.end()); }
+
+Object *ObjectManager::getObject(int id) {
+    if (id >= 0 && _ids.at(id))
+        return _objectvalues[id]._object_ref;
+    else
+        return nullptr;
+}
+
+int ObjectManager::spawnScript(const char *scriptname) {
+    int id = EntityManager::spawnScript(scriptname);
+    _objectvalues[id] = ObjectValues{nullptr};
+    return id;
+}
+
+int ObjectManager::spawnEntity(const char *entityname) {
+    int id = EntityManager::spawnEntity(entityname);
+    _objectvalues[id] = ObjectValues{nullptr};
+    return id;
+}
+
+int ObjectManager::spawnObject(const char *objectname) {
+    // fail if exceeding max size
+    if (_ids.fillsize() >= _maxcount) {
+        std::cerr << "WARN: limit reached in EntityManager " << this << std::endl;
+        return -1;
+    }
+
+    // get type information
+    ScriptType &scripttype = _scripttypes[objectname];
+    EntityType &entitytype = _entitytypes[objectname];
+    ObjectType &objecttype = _objecttypes[objectname];
+
+    // push to internal storage
+    Object *object = objecttype._allocator();
+    int id = _ids.push();
+    _scripts[id] = std::unique_ptr<Script>(object);
+    _objectvalues[id] = ObjectValues{object};
+    _entityvalues[id] = EntityValues{object};
+    _scriptvalues[id] = ScriptValues{id, objectname, object};
+    
+    // set up entity
+    _objectSetup(object, objecttype, entitytype, scripttype, id);
+    
+    return id;
+}
+
+void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, bool force_objectsetup) {
+    if (!hasObject(name) && !hasEntity(name) && !hasScript(name)) {
+        _objecttypes[name] = ObjectType{
+            force_objectsetup,
+            allocator
+        };
+        addEntity(allocator, name, type, force_scriptsetup, force_enqueue, force_removeonkill, force_entitysetup, animation_name);
+    }
+}
+
+void ObjectManager::remove(int id) {
+    if (id < 0) {
+        std::cerr << "WARN: attempt to remove negative value from Manager " << this << std::endl;
+        return;
+    }
+    if (_ids.empty()) {
+        std::cerr << "WARN: attempt to remove value from empty Manager " << this << std::endl;
+        return;
+    }
+
+    if (_ids.at(id)) {
+        // get info
+        ScriptValues &scriptvalues = _scriptvalues[id];
+        EntityValues &entityvalues = _entityvalues[id];
+        ObjectValues &objectvalues = _objectvalues[id];
+
+        // remove from object-related, entity-related and script-related systems
+        _objectRemoval(objectvalues, entityvalues, scriptvalues);
+    
+        _ids.erase_at(id);
+    }
+}
+
+void ObjectManager::setCollider(Collider *collider) { if (!_collider) _collider = collider; }

@@ -14,15 +14,14 @@
 
 // prototype
 class Executor;
-class ManagerPtr;
+class ScriptManager;
 
 /* Class to represent a runnable script by an owning Executor instance.
    The owning Executor will call runInit(), runBase(), and runKill() as needed, and
    expects _init(), _base(), and _kill() to be implemented by children. 
 */
 class Script {
-    // allow Manager to access private fields
-    friend class Manager;
+    friend ScriptManager;
 
     // flags of whether this script has been initialized or killed, maintained by Executor
     bool _initialized;
@@ -35,11 +34,11 @@ class Script {
     int _executor_id;
     bool _executor_ready;
 
-    // Manager instance that owns this Script, and internal name
-    ManagerPtr *_manager;
-
-    // flag of whether or not this script has a manager or not
-    bool _hasmanager;
+    // Manager instance that owns this Script, ID, and removeonkill flag; maintained by Manager
+    ScriptManager *_scriptmanager;
+    int _scriptmanager_id;
+    bool _scriptmanager_ready;
+    bool _scriptmanager_removeonkill;
 
     // settable integer usable for identification
     int _type;
@@ -67,7 +66,7 @@ public:
     void runBase();
     void runKill();
 
-    /* Sets the object up with an executor. This enables the use of 
+    /* Sets the script up with an executor. This enables the use of 
        the enqueue and dequeue methods. Pushes the object into the
        executor.
     */
@@ -103,9 +102,10 @@ public:
     */
     void kill();
     
-    ManagerPtr *getManager();
-    bool hasManager(); 
+    ScriptManager *getManager();
 };
+
+// --------------------------------------------------------------------------------------------------------------------------
 
 /* Class to encapsulate execution environment for queue-able, inheritable Script instances.
    Uses queues to control execution and erasure of Script instances.
@@ -174,6 +174,66 @@ public:
     void runExec();
     /* Calls the kill() method on all erasure-queued Scripts if it has not been called yet. */
     void runKill();
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+/* Class to manage and control internal instances of Scripts. 
+   Can also be given 
+   an executor and collider to automatically pass instances
+   to these mechanisms.
+*/
+
+class ScriptManager {
+public:
+    // struct holding entity information mapped to a name
+    struct ScriptType {
+        int _internal_type;
+        bool _force_scriptsetup;
+        bool _force_enqueue;
+        bool _force_removeonkill;
+        std::function<Script*(void)> _allocator = nullptr;
+    };
+
+    // struct holding IDs and other flags belonging to the managed entity for runtime
+    struct ScriptValues {
+        int _manager_id;
+        const char *_manager_name;
+        Script *_script_ref;
+    };
+
+protected:
+    // internal variables for added scripts and existing scripts
+    std::unordered_map<std::string, ScriptType> _scripttypes;
+    std::vector<ScriptValues> _scriptvalues;
+    
+    // "managed" structures
+    Executor *_executor;
+
+    // IDs to distribute to Scripts
+    Partitioner _ids;
+    // vector of unique_ptrs of Scripts
+    std::vector<std::unique_ptr<Script>> _scripts;
+    
+    int _maxcount;
+
+    void _scriptSetup(Script *script, ScriptType &type, int id);
+    void _scriptRemoval(ScriptValues &values);
+   
+public:
+    ScriptManager(int maxcount);
+    virtual ~ScriptManager();
+
+    bool hasScript(const char *scriptname);
+    virtual int spawnScript(const char *scriptname);
+    Script *getScript(int id);
+    std::string getName(int id);
+    void addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill);
+    void remove(int id);
+
+    void setExecutor(Executor *executor);
+
+    int getMaxID();
 };
 
 #endif

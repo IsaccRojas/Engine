@@ -91,3 +91,103 @@ Quad *Entity::getQuad() {
     else
         return NULL;
 }
+
+EntityManager *Entity::getManager() { return _entitymanager; }
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+EntityManager::EntityManager(int maxcount) : ScriptManager(maxcount), _glenv(nullptr), _animations(nullptr) {
+    for (int i = 0; i < maxcount; i++)
+        _entityvalues.push_back(EntityValues{nullptr});
+}
+EntityManager::~EntityManager() {}
+
+void EntityManager::_entitySetup(Entity *entity, EntityType &entitytype, ScriptType &scripttype, int id) {
+    _scriptSetup(entity, scripttype, id);
+
+    if (entitytype._force_entitysetup)
+        if (_glenv && _animations)
+            entity->entitySetup(_glenv, &(*_animations)[entitytype._animation_name]);
+            
+    entity->_entitymanager = this;
+}
+void EntityManager::_entityRemoval(EntityValues &entityvalues, ScriptValues &scriptvalues) {
+    _scriptRemoval(scriptvalues);
+    if (entityvalues._entity_ref)
+        entityvalues._entity_ref->eraseQuad();
+}
+
+bool EntityManager::hasEntity(const char *entityname) { return !(_entitytypes.find(entityname) == _entitytypes.end()); }
+
+Entity *EntityManager::getEntity(int id) {
+    if (id >= 0 && _ids.at(id))
+        return _entityvalues[id]._entity_ref;
+    else
+        return nullptr;
+}
+
+int EntityManager::spawnScript(const char *scriptname) {
+    int id = ScriptManager::spawnScript(scriptname);
+    _entityvalues[id] = EntityValues{nullptr};
+    return id;
+}
+
+int EntityManager::spawnEntity(const char *entityname) {
+    // fail if exceeding max size
+    if (_ids.fillsize() >= _maxcount) {
+        std::cerr << "WARN: limit reached in EntityManager " << this << std::endl;
+        return -1;
+    }
+
+    // get type information
+    ScriptType &scripttype = _scripttypes[entityname];
+    EntityType &entitytype = _entitytypes[entityname];
+
+    // push to internal storage
+    Entity *entity = entitytype._allocator();
+    int id = _ids.push();
+    _scripts[id] = std::unique_ptr<Script>(entity);
+    _entityvalues[id] = EntityValues{entity};
+    _scriptvalues[id] = ScriptValues{id, entityname, entity};
+    
+    // set up entity
+    _entitySetup(entity, entitytype, scripttype, id);
+    
+    return id;
+}
+
+void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name) {
+    if (!hasEntity(name) && !hasScript(name)) {
+        _entitytypes[name] = EntityType{
+            force_entitysetup,
+            animation_name,
+            allocator
+        };
+        addScript(allocator, name, type, force_scriptsetup, force_enqueue, force_removeonkill);
+    }
+}
+
+void EntityManager::remove(int id) {
+    if (id < 0) {
+        std::cerr << "WARN: attempt to remove negative value from Manager " << this << std::endl;
+        return;
+    }
+    if (_ids.empty()) {
+        std::cerr << "WARN: attempt to remove value from empty Manager " << this << std::endl;
+        return;
+    }
+
+    if (_ids.at(id)) {
+        // get info
+        ScriptValues &scriptvalues = _scriptvalues[id];
+        EntityValues &entityvalues = _entityvalues[id];
+
+        // remove from entity-related and script-related systems
+        _entityRemoval(entityvalues, scriptvalues);
+    
+        _ids.erase_at(id);
+    }
+}
+
+void EntityManager::setGLEnv(GLEnv *glenv) { if (!_glenv) _glenv = glenv; }
+void EntityManager::setAnimations(std::unordered_map<std::string, Animation> *animations) { if (!_animations) _animations = animations; }

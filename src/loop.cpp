@@ -184,7 +184,7 @@ public:
 
 class Gravity : public Script {
     glm::vec3 _accl;
-    Manager *_manager;
+    ObjectManager *_manager;
     bool _ready;
 
     void _init() {}
@@ -203,7 +203,7 @@ class Gravity : public Script {
 public:
     Gravity() : Script(), _accl(glm::vec3(0.0f)), _manager(nullptr), _ready(false) {}
 
-    void gravitySetup(glm::vec3 accl, Manager *manager) {
+    void gravitySetup(glm::vec3 accl, ObjectManager *manager) {
         _accl = accl;
         _manager = manager;
         _ready = true;
@@ -262,7 +262,7 @@ void loop(GLFWwindow *winhandle) {
 
     // set up manager
     std::cout << "Setting up manager" << std::endl;
-    Manager obj_manager{256};
+    ObjectManager obj_manager{256};
     obj_manager.setExecutor(&obj_executor);
     obj_manager.setGLEnv(&obj_glenv);
     obj_manager.setAnimations(&animations);

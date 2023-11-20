@@ -5,10 +5,13 @@ Script::Script() :
     _killed(false), 
     _execqueued(false), 
     _killqueued(false), 
+    _executor(nullptr),
     _executor_ready(false), 
-    _executor_id(-1), 
-    _hasmanager(false),
-    _manager(nullptr)
+    _executor_id(-1),
+    _scriptmanager(nullptr),
+    _scriptmanager_id(-1),
+    _scriptmanager_removeonkill(false),
+    _scriptmanager_ready(false)
 {}
 Script::~Script() {
     // try removing from existing executor
@@ -29,6 +32,12 @@ void Script::runBase() {
 
 void Script::runKill() {
     _kill();
+    if (_scriptmanager_removeonkill)
+        if (_scriptmanager_ready)
+            if (_scriptmanager)
+                if (_scriptmanager_id >= 0)
+                    getManager()->remove(_scriptmanager_id);
+
 }
 
 void Script::scriptSetup(Executor *executor) {
@@ -83,8 +92,7 @@ void Script::kill() {
         _executor->queueKill(_executor_id);
 }
 
-ManagerPtr *Script::getManager() { return _manager; }
-bool Script::hasManager() { return _hasmanager; }
+ScriptManager *Script::getManager() { return _scriptmanager; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -212,3 +220,112 @@ void Executor::runKill() {
         _runkillqueue.pop();
     }
 }
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+ScriptManager::ScriptManager(int maxcount) :
+    _maxcount(maxcount),
+    _executor(nullptr)
+{
+    for (int i = 0; i < maxcount; i++) {
+        _scripts.push_back(std::unique_ptr<Script>(nullptr));
+        _scriptvalues.push_back(ScriptValues{-1, NULL, nullptr});
+    }
+}
+ScriptManager::~ScriptManager() {}
+
+void ScriptManager::_scriptSetup(Script *script, ScriptType &type, int id) {
+    // set up script
+    if (type._force_scriptsetup)
+        if (_executor)
+            script->scriptSetup(_executor);
+    script->setType(type._internal_type);
+
+    // set up internal fields
+    script->_scriptmanager = this;
+    script->_scriptmanager_id = id;
+    script->_scriptmanager_removeonkill = type._force_removeonkill;
+    script->_scriptmanager_ready = true;
+
+    // enqueue if set
+    if (type._force_enqueue)
+        script->enqueue();
+}
+
+void ScriptManager::_scriptRemoval(ScriptValues &values) {
+    if (values._script_ref)
+        values._script_ref->scriptResetExec();
+}
+
+bool ScriptManager::hasScript(const char *scriptname) { return !(_scripttypes.find(scriptname) == _scripttypes.end()); }
+
+int ScriptManager::spawnScript(const char *scriptname) {
+    // fail if exceeding max size
+    if (_ids.fillsize() >= _maxcount) {
+        std::cerr << "WARN: limit reached in ScriptManager " << this << std::endl;
+        return -1;
+    }
+
+    // get type information
+    ScriptType &type = _scripttypes[scriptname];
+
+    // push to internal storage
+    Script *script = type._allocator();
+    int id = _ids.push();
+    _scripts[id] = std::unique_ptr<Script>(script);
+    _scriptvalues[id] = ScriptValues{id, scriptname, script};
+
+    // set up script internals
+    _scriptSetup(script, type, id);
+    
+    return id;
+}
+
+Script *ScriptManager::getScript(int id) {
+    if (id >= 0 && _ids.at(id))
+        return _scriptvalues[id]._script_ref;
+    else
+        return nullptr;
+}
+
+std::string ScriptManager::getName(int id) {
+    if (id >= 0 && _ids.at(id))
+        return _scriptvalues[id]._manager_name;
+    return "";
+}
+
+void ScriptManager::remove(int id) {
+    if (id < 0) {
+        std::cerr << "WARN: attempt to remove negative value from Manager " << this << std::endl;
+        return;
+    }
+    if (_ids.empty()) {
+        std::cerr << "WARN: attempt to remove value from empty Manager " << this << std::endl;
+        return;
+    }
+
+    if (_ids.at(id)) {
+        // get info
+        ScriptValues &values = _scriptvalues[id];
+
+        // remove from script-related systems
+        _scriptRemoval(values);    
+    
+        _ids.erase_at(id);
+    }
+}
+
+void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill) {
+    if (!hasScript(name))
+        _scripttypes[name] = ScriptType{
+            type,
+            force_scriptsetup,
+            force_enqueue,
+            force_removeonkill,
+            allocator
+        };
+}
+
+void ScriptManager::setExecutor(Executor *executor) { if (!_executor) _executor = executor; }
+
+int ScriptManager::getMaxID() { return _ids.size(); }
