@@ -3,7 +3,7 @@
 #ifndef LOOP_HPP_
 #define LOOP_HPP_
 
-#include "manager.hpp"
+#include "object.hpp"
 
 #include "glm\gtx\rotate_vector.hpp"
 #include <iostream>
