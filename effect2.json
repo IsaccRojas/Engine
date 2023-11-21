@@ -7,7 +7,7 @@
 					"texpos" : [0.0, 48.0, 1.0],
 					"texsize" : [20.0, 20.0],
 					"offset" : [0.0, 0.0, 0.0],
-					"duration" : 4
+					"duration" : 8
 				},
 				"frame2" : {
 					"texpos" : [20.0, 48.0, 1.0],
@@ -30,7 +30,7 @@
 					"texpos" : [0.0, 68.0, 1.0],
 					"texsize" : [20.0, 20.0],
 					"offset" : [0.0, 0.0, 0.0],
-					"duration" : 4
+					"duration" : 8
 				},
 				"frame2" : {
 					"texpos" : [20.0, 68.0, 1.0],

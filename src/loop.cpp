@@ -1,5 +1,10 @@
 #include "loop.hpp"
 
+// rotates the vector with respect to the Z axis, within a range of [-deg, deg]
+glm::vec3 random_angle(glm::vec3 v, float deg) {
+    return glm::rotate(v, glm::radians((-1.0f * deg) + float(rand() % int(deg * 2.0f))), glm::vec3(0.0f, 0.0f, 1.0f));
+}
+
 enum Type { T_BLOCK1, T_TEST1, T_TEST2, T_EFFECT1, T_EFFECT2, T_EFFECT3 };
 
 class Block1 : public Object {
@@ -30,7 +35,7 @@ class Test1 : public Object {
         setPhysDim(glm::vec3(16.0f, 16.0f, 0.0f));
         enableCollision();
         _i = 0;
-        _lifetime = 150;
+        _lifetime = 600;
     };
 
     void _baseObject() {
@@ -56,7 +61,7 @@ class Test1 : public Object {
             // set velocity of new test2s to opposite of this object's velocity with random magnitude, rotated randomly
             glm::vec3 newvel = getPhysVel();
             newvel = glm::vec3(newvel.x, -1.0f * getPhysVel().y, getPhysVel().z) * (0.4f + (float(rand() % 50) / 100.0f));
-            newvel = glm::rotate(newvel, glm::radians(-35.0f + float(rand() % 70)), glm::vec3(0.0f, 0.0f, 1.0f));
+            newvel = random_angle(newvel, 35.0f);
             test2->setPhysVel(newvel);
             test2->setPhysPos(getPhysPos() + newvel);
         }
@@ -121,7 +126,7 @@ class Effect1 : public Entity {
         genQuad(getVisPos(), glm::vec3(24.0f, 24.0f, 1.0f));
         getAnimState().setAnimState(rand() % 2);
         _i = 0;
-        _lifetime = 12;
+        _lifetime = 16;
     }
     void _baseEntity() {
         _i++;
@@ -144,7 +149,7 @@ class Effect2 : public Entity {
         genQuad(getVisPos(), glm::vec3(20.0f, 20.0f, 1.0f));
         getAnimState().setAnimState(rand() % 2);
         _i = 0;
-        _lifetime = 12;
+        _lifetime = 16;
     }
     void _baseEntity() {
         _i++;
@@ -167,7 +172,7 @@ class Effect3 : public Entity {
         genQuad(getVisPos(), glm::vec3(24.0f, 24.0f, 1.0f));
         getAnimState().setAnimState(rand() % 2);
         _i = 0;
-        _lifetime = 16;
+        _lifetime = 20;
     }
     void _baseEntity() {
         _i++;
@@ -296,10 +301,13 @@ void loop(GLFWwindow *winhandle) {
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        if (i % 240 == 0) {
-            obj_manager.spawnEntity("Effect3");
+        if (i % 15 == 0) {
+            Entity *effect3 = obj_manager.getEntity(obj_manager.spawnEntity("Effect3"));
             Object *test1 = obj_manager.getObject(obj_manager.spawnObject("Test1"));
-            test1->setPhysVel(glm::vec3(0.2f, 1.25f, 0.0f));
+
+            effect3->setVisPos(glm::vec3(0.0f, 64.0f, 0.0f));
+            test1->setPhysPos(glm::vec3(0.0f, 64.0f, 0.0f));
+            test1->setPhysVel(random_angle(glm::vec3(0.0f, 1.25f, 0.0f), 15.0f));
         }
 
         // run global scripts
