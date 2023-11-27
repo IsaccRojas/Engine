@@ -48,7 +48,7 @@ void GLStage::program(const char *shader_srcs[], GLenum shader_types[], int coun
             char *logstr = new char[logsize];
             glGetShaderInfoLog(shaders[i], logsize, NULL, logstr);
             std::cout << logstr << std::endl;
-            delete logstr;
+            delete[] logstr;
         }
 
     }
@@ -70,7 +70,7 @@ void GLStage::program(const char *shader_srcs[], GLenum shader_types[], int coun
         char *logstr = new char[logsize];
         glGetProgramInfoLog(_program_h, logsize, NULL, logstr);
         std::cout << logstr << std::endl;
-        delete logstr;
+        delete[] logstr;
     }
 
     //detach and delete shaders
@@ -194,7 +194,7 @@ const char *GLBuffer::copy_mem() {
     if (res)
         return mem;
     else {
-        delete mem;
+        delete[] mem;
         return nullptr;
     }
 }

@@ -4,6 +4,7 @@
 #define OBJECT_HPP_
 
 #include "entity.hpp"
+#include "glm\gtx\rotate_vector.hpp"
 
 class Collider;
 class ObjectManager;
@@ -15,8 +16,11 @@ class Object : public Entity {
     Collider *_collider;    
     int _collider_id;
     bool _collider_ready;
+    glm::vec3 _collision_prevpos;
 
     bool _collision_enabled;
+    bool _collision_correction;
+    bool _collision_elastic;
 
     void _initEntity();
     void _baseEntity();
@@ -26,6 +30,7 @@ class Object : public Entity {
     glm::vec3 _physpos;
     glm::vec3 _physvel;
     glm::vec3 _physdim;
+    float _physorient;
 
     // Manager instance that owns this Object; maintained by Manager
     ObjectManager *_objectmanager;
@@ -46,10 +51,6 @@ public:
        push the object into the collider.
     */
     void objectSetup(Collider *collider);
-
-    /* Resets internal collider flags.
-    */
-    void objectResetFlags();
     
     /* Resets collider information.
     */
@@ -64,14 +65,29 @@ public:
     /* Removes the object from the collider. */
     void disableCollision();
 
+    bool hasCollisionEnabled();
+
+    /* Used to control whether position correction after collision should occur. 
+       Does nothing if collision is disabled.
+    */
+    bool getCorrection();
+    void setCorrection(bool correction);
+    
+    /* Used to control whether elastic velocity change after collision should occur.
+       Does nothing if collision is disabled.
+    */
+    bool getElastic();
+    void setElastic(bool elastic);
+
     glm::vec3 getPhysPos();
     void setPhysPos(glm::vec3 newpos);
     glm::vec3 getPhysVel();
     void setPhysVel(glm::vec3 newvel);
     glm::vec3 getPhysDim();
     void setPhysDim(glm::vec3 newdim);
-
-    bool hasCollisionEnabled();
+    float getPhysOrient();
+    void setPhysOrient(float neworient);
+    glm::vec3 getPrevPos();
 
     ObjectManager *getManager();
 };
@@ -83,9 +99,9 @@ class Collider {
     std::vector<Object*> _objects;
     Partitioner _ids;
 
-    int _maxcount;
+    unsigned _maxcount;
 public:
-    Collider(int maxcount);
+    Collider(unsigned maxcount);
     ~Collider();
     
     int push(Object *object);
@@ -93,8 +109,16 @@ public:
 
     // checks for pair-wise collision between all pushed objects
     void collide();
+    
+    /* Detects and handles AABB collision.
+    */
+    static void collisionAABB(Object *obj1, Object *obj2);
 
-    static bool detectCollision(Object &obj1, Object &obj2);
+    /* Gets distance of collision. This is equal to the distance between the objects' centers
+       minus the overlap of that distance over each figure. If this value is less than 0, there
+       is a collision.
+    */
+    static float collisionDistance(Object &obj1, Object &obj2);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -140,5 +164,25 @@ public:
 
     void setCollider(Collider *collider);
 };
+
+/* Rotates the vector with respect to the Z axis, within a range of [-deg, deg]. */
+glm::vec3 random_angle(glm::vec3 v, float deg);
+
+/* Returns true if the signs of x and y are equal, false otherwise. */
+bool signequal(float x, float y);
+
+/* Returns an integer based on the "side" the vector is closest to (i.e. quadrant, but rotated 45 degrees).
+   v - vector specifying direction
+   dim - dimensions of quad
+   orientation - orientation of quad in radians (0 is up direction, goes clockwise)
+
+   Returns:
+   0: upper side
+   1: right side
+   2: lower side
+   3: left side
+   Currently ignores 3rd axis.
+*/
+int side(glm::vec3 v, glm::vec3 dim, float orientation);
 
 #endif

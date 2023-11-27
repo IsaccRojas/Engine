@@ -1,7 +1,12 @@
 #include "animation.hpp"
 
-Cycle::Cycle(bool loop) : _loop(loop) {}
-Cycle::Cycle(const Cycle &other) : _loop(other._loop), _frames(other._frames) {}
+Cycle::Cycle(bool loop) :
+    _loop(loop) 
+{}
+Cycle::Cycle(const Cycle &other) : 
+    _frames(other._frames), 
+    _loop(other._loop)
+{}
 Cycle::~Cycle() {}
 
 Cycle& Cycle::addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 offset, int duration) {
@@ -30,7 +35,9 @@ bool Cycle::loops() const {
 }
 
 Animation::Animation() {}
-Animation::Animation(const Animation &other) : _cycles(other._cycles) {}
+Animation::Animation(const Animation &other) : 
+    _cycles(other._cycles)
+{}
 Animation::~Animation() {}
 
 /* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
@@ -50,43 +57,46 @@ int Animation::count() {
 }
 
 AnimationState::AnimationState(Animation *animation) :
+    _animation(animation),
+    _currentcycle(nullptr),
+    _currentframe(nullptr),
     _step(0), 
     _framestate(0), 
     _cyclestate(0), 
-    _completed(false), 
-    _animation(animation)
+    _completed(false)
 {
     _currentcycle = &(_animation->getCycle(_cyclestate));
     _currentframe = &(_currentcycle->getFrame(_framestate));
 }
 AnimationState::AnimationState() :
+    _animation(nullptr),
+    _currentcycle(nullptr),
+    _currentframe(nullptr),
     _step(0),
     _framestate(0),
     _cyclestate(0),
-    _completed(false),
-    _animation(nullptr),
-    _currentcycle(nullptr),
-    _currentframe(nullptr)
+    _completed(false)
 {}
 AnimationState::AnimationState(const AnimationState &other) : 
+    _animation(other._animation),
+    _currentcycle(other._currentcycle),
+    _currentframe(other._currentframe),
     _step(other._step), 
     _framestate(other._framestate), 
     _cyclestate(other._cyclestate), 
-    _completed(other._completed), 
-    _animation(other._animation),
-    _currentcycle(other._currentcycle),
-    _currentframe(other._currentframe)
+    _completed(other._completed)
 {}
 AnimationState::~AnimationState() {}
 
 void AnimationState::setAnimation(Animation *animation) {
+    _animation = animation;
+    _currentcycle = &(_animation->getCycle(_cyclestate));
+    _currentframe = &(_currentcycle->getFrame(_framestate));
+    
     _step = 0;
     _framestate = 0;
     _cyclestate = 0;
     _completed = false;
-    _animation = animation;
-    _currentcycle = &(_animation->getCycle(_cyclestate));
-    _currentframe = &(_currentcycle->getFrame(_framestate));
 }
 
 /* Sets the animation state, using the cycle corresponding to the provided state 
@@ -155,14 +165,14 @@ bool AnimationState::completed() {
 
 /* Checks if provided string ends with the provided suffix.
 */
-static bool endsWith(const std::string& str, const std::string& suffix)
+bool endsWith(const std::string& str, const std::string& suffix)
 {
     return str.size() >= suffix.size() && 0 == str.compare(str.size()-suffix.size(), suffix.size(), suffix);
 }
 
 /* Checks if provided string starts with the provided prefix
 */
-static bool startsWith(const std::string& str, const std::string& prefix)
+bool startsWith(const std::string& str, const std::string& prefix)
 {
     return str.size() >= prefix.size() && 0 == str.compare(0, prefix.size(), prefix);
 }
@@ -398,12 +408,12 @@ std::unordered_map<std::string, Animation> loadAnimations(std::string dir) {
 
             // push loaded animation data to map
             animations[name] = Animation();
-            for (int i = 0; i < cycles.size(); i++) {
+            for (unsigned i = 0; i < cycles.size(); i++) {
                 animations[name].addCycle(cycles[i]);
             }
         }
         dir_loop_end:
-        0;
+        continue;
     }
 
     return animations;

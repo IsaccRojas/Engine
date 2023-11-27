@@ -1,4 +1,4 @@
-CXXFLAGS = -ggdb
+CXXFLAGS = -ggdb -Wall -O
 
 # graphics environment libraries
 GLLIBS = -lglenv

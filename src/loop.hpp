@@ -5,11 +5,12 @@
 
 #include "object.hpp"
 
-#include "glm\gtx\rotate_vector.hpp"
 #include <iostream>
 #include <chrono>
 #include <stdlib.h>
 #include <time.h>
+
+#include <thread>
 
 const float PI = 3.14159265f;
 

@@ -1,6 +1,16 @@
 #include "entity.hpp"
 
-Entity::Entity() : _visualpos(glm::vec3(0.0f)), _glenv_ready(false), _first_step(true), _quad_id(-1), _glenv(nullptr), _quad(nullptr), _frame(nullptr), Script() {}
+Entity::Entity() : 
+    Script(),
+    _glenv(nullptr),
+    _quad(nullptr),
+    _frame(nullptr),
+    _quad_id(-1),
+    _first_step(true),
+    _glenv_ready(false),
+    _visualpos(glm::vec3(0.0f)),
+    _entitymanager(nullptr)
+{}
 Entity::~Entity() {
     // try erasing existing quad
     eraseQuad();

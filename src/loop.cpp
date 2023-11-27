@@ -1,16 +1,12 @@
 #include "loop.hpp"
 
-// rotates the vector with respect to the Z axis, within a range of [-deg, deg]
-glm::vec3 random_angle(glm::vec3 v, float deg) {
-    return glm::rotate(v, glm::radians((-1.0f * deg) + float(rand() % int(deg * 2.0f))), glm::vec3(0.0f, 0.0f, 1.0f));
-}
-
 enum Type { T_BLOCK1, T_TEST1, T_TEST2, T_EFFECT1, T_EFFECT2, T_EFFECT3 };
 
 class Block1 : public Object {
     void _initObject() {
         genQuad(glm::vec3(0.0f), glm::vec3(192.0f, 32.0f, 1.0f));
         setVisPos(getPhysPos());
+        
         setPhysDim(glm::vec3(192.0f, 32.0f, 0.0f));
         enableCollision();
     };
@@ -32,8 +28,11 @@ class Test1 : public Object {
     void _initObject() {
         genQuad(glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 1.0f));
         setVisPos(getPhysPos());
+
         setPhysDim(glm::vec3(16.0f, 16.0f, 0.0f));
         enableCollision();
+        setCorrection(true);
+        
         _i = 0;
         _lifetime = 600;
     };
@@ -87,7 +86,7 @@ class Test2 : public Object {
         setPhysDim(glm::vec3(12.0f, 12.0f, 0.0f));
         enableCollision();
         _i = 0;
-        _lifetime = 150;
+        _lifetime = 600;
     };
 
     void _baseObject() {
@@ -301,6 +300,7 @@ void loop(GLFWwindow *winhandle) {
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // previously 15
         if (i % 15 == 0) {
             Entity *effect3 = obj_manager.getEntity(obj_manager.spawnEntity("Effect3"));
             Object *test1 = obj_manager.getObject(obj_manager.spawnObject("Test1"));
@@ -308,6 +308,7 @@ void loop(GLFWwindow *winhandle) {
             effect3->setVisPos(glm::vec3(0.0f, 64.0f, 0.0f));
             test1->setPhysPos(glm::vec3(0.0f, 64.0f, 0.0f));
             test1->setPhysVel(random_angle(glm::vec3(0.0f, 1.25f, 0.0f), 15.0f));
+            //test1->setPhysVel(glm::vec3(0.0f, -15.0f, 0.0f));
         }
 
         // run global scripts
@@ -323,6 +324,8 @@ void loop(GLFWwindow *winhandle) {
         obj_glenv.draw();
 
         glfwSwapBuffers(winhandle);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
         i++;
     };
     

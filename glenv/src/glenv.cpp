@@ -30,8 +30,7 @@ void Quad::update() {
 
 // _______________________________________ GLEnv _______________________________________
 
-GLEnv::GLEnv(int maxcount) :
-    _maxcount(maxcount),
+GLEnv::GLEnv(unsigned maxcount) :
     _glb_modelbuf(GL_STATIC_DRAW, 16 * sizeof(GLfloat)), 
     _glb_elembuf(GL_STATIC_DRAW, 6 * sizeof(GLuint)), 
     _glb_pos(GL_DYNAMIC_DRAW, (maxcount * 3) * sizeof(GLfloat)),
@@ -39,7 +38,8 @@ GLEnv::GLEnv(int maxcount) :
     _glb_texpos(GL_DYNAMIC_DRAW, (maxcount * 3) * sizeof(GLfloat)), 
     _glb_texsize(GL_DYNAMIC_DRAW, (maxcount * 2) * sizeof(GLfloat)), 
     _glb_draw(GL_DYNAMIC_DRAW, (maxcount * 1) * sizeof(GLfloat)),
-    _quads(maxcount, Quad())
+    _quads(maxcount, Quad()),
+    _maxcount(maxcount)
 {
     /* setup variables */
 
@@ -163,7 +163,7 @@ Quad *GLEnv::get(int i) {
 }
 
 void GLEnv::update() {
-    for (int i = 0; i < _ids.size(); i++)
+    for (unsigned i = 0; i < _ids.size(); i++)
         // only try calling update on index i if it is an active ID in _ids
         if (_ids[i])
             _quads[i].update();

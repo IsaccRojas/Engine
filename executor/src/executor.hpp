@@ -127,10 +127,10 @@ class Executor {
     
     /* environment system variables */
     // maximum number of active scripts allowed
-    int _maxcount;
+    unsigned _maxcount;
 
 public:
-    Executor(int maxcount);
+    Executor(unsigned maxcount);
     ~Executor();
     Executor(const Executor &other) = delete;
     Executor operator=(const Executor &other) = delete;
@@ -215,13 +215,13 @@ protected:
     // vector of unique_ptrs of Scripts
     std::vector<std::unique_ptr<Script>> _scripts;
     
-    int _maxcount;
+    unsigned _maxcount;
 
     void _scriptSetup(Script *script, ScriptType &type, int id);
     void _scriptRemoval(ScriptValues &values);
    
 public:
-    ScriptManager(int maxcount);
+    ScriptManager(unsigned maxcount);
     virtual ~ScriptManager();
 
     bool hasScript(const char *scriptname);

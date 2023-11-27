@@ -105,11 +105,11 @@ public:
 
 /* Checks if provided string ends with the provided suffix.
 */
-static bool endsWith(const std::string& str, const std::string& suffix);
+bool endsWith(const std::string& str, const std::string& suffix);
 
 /* Checks if provided string starts with the provided prefix
 */
-static bool startsWith(const std::string& str, const std::string& prefix);
+bool startsWith(const std::string& str, const std::string& prefix);
 
 /* Searches the provided directory for .json files, and parses them to load animation data. Returns
    an unordered map mapping .json file names (excluding the .json extension) to their defined

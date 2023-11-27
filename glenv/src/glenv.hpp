@@ -81,11 +81,11 @@ class GLEnv {
     // quad pointers
     std::vector<Quad> _quads;
     // maximum number of active quads allowed
-    int _maxcount;
+    unsigned _maxcount;
 
 public:
     /* max_count - maximum number of quads allowed to be active */
-    GLEnv(int maxcount);
+    GLEnv(unsigned maxcount);
     ~GLEnv();
 
     /* Initializes texture array space with unsigned byte storage in RGBA format.

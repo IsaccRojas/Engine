@@ -6,12 +6,12 @@ Script::Script() :
     _execqueued(false), 
     _killqueued(false), 
     _executor(nullptr),
-    _executor_ready(false), 
     _executor_id(-1),
+    _executor_ready(false),
     _scriptmanager(nullptr),
     _scriptmanager_id(-1),
-    _scriptmanager_removeonkill(false),
-    _scriptmanager_ready(false)
+    _scriptmanager_ready(false),
+    _scriptmanager_removeonkill(false)
 {}
 Script::~Script() {
     // try removing from existing executor
@@ -96,9 +96,9 @@ ScriptManager *Script::getManager() { return _scriptmanager; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-Executor::Executor(int maxcount) : 
-    _maxcount(maxcount),
-    _scripts(maxcount, nullptr)
+Executor::Executor(unsigned maxcount) :
+    _scripts(maxcount, nullptr),
+    _maxcount(maxcount)
 {}
 
 Executor::~Executor() {}
@@ -223,11 +223,11 @@ void Executor::runKill() {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-ScriptManager::ScriptManager(int maxcount) :
-    _maxcount(maxcount),
-    _executor(nullptr)
+ScriptManager::ScriptManager(unsigned maxcount) :
+    _executor(nullptr),
+    _maxcount(maxcount)
 {
-    for (int i = 0; i < maxcount; i++) {
+    for (unsigned i = 0; i < maxcount; i++) {
         _scripts.push_back(std::unique_ptr<Script>(nullptr));
         _scriptvalues.push_back(ScriptValues{-1, NULL, nullptr});
     }
