@@ -181,6 +181,7 @@ void Executor::runExec() {
         // check if ID is active
         if (id >= 0 && _ids.at(id)) {
             script = _scripts[id];
+            script->setExecQueued(false);
 
             // check if script needs to be initialized
             if (!(script->getInitialized())) {
@@ -188,8 +189,9 @@ void Executor::runExec() {
                 script->setInitialized(true);
             }
 
-            script->setExecQueued(false);
-            script->runBase();
+            // check if script hasn't been killed yet
+            if (!(script->getKilled()))
+                script->runBase();
         }
 
         _runexecqueue.pop();
@@ -208,10 +210,10 @@ void Executor::runKill() {
         // check if ID is active
         if (id >= 0 && _ids.at(id)) {
             script = _scripts[id];
+            script->setKillQueued(false);
 
             // check if script needs to be killed
             if (!(script->getKilled())) {
-                script->setKillQueued(false);
                 script->runKill();
                 script->setKilled(true);
             }
