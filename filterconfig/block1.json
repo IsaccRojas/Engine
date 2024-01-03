@@ -1,0 +1,6 @@
+{
+	"name" : "Block1",
+    "id" : 0,
+    "whitelist" : [0],
+    "blacklist" : [0]
+}
