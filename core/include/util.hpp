@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef UTIL_HPP_
 #define UTIL_HPP_
 
@@ -27,7 +25,7 @@ public:
     void load(const char *filename);
     void free();
 
-    unsigned char* copydata() const;
+    unsigned char* copyData() const;
     int width();
     int height();
     int components();
@@ -35,40 +33,46 @@ public:
     bool empty();
 };
 
-//TODO: consider pre-allocation methods
+/* class Partitioner
+   Provides and manages unique values on push and removal.
+*/
 class Partitioner {
     //main ID vector
-    std::vector<bool> IDs;
+    std::vector<bool> _IDs;
     //vector of free IDs
-    std::vector<int> freeIDs;
+    std::vector<int> _freeIDs;
 
 public:
     Partitioner();
     ~Partitioner();
 
-    //occupies an index in IDs (use last index from freeIDs if available),
-	//and return ID
+    /* Occupies an index in IDs (use last index from freeIDs if available),
+	   and returns the ID.
+    */
     int push();
 
-    //sets element i to false and pushes its index to freeIDs
-    void erase_at(int i);
+    /* Sets element i to false and pushes its index to freeIDs. */
+    void remove(int i);
 
-    //get vector of all indices that are true
-    std::vector<int> getused();
+    /* Returns a vector of all indices that are true. */
+    std::vector<int> getUsed();
 
+    /* Empties IDs and freeIDs. */
     void clear();
 
-    //access element i
+    /* Returns whether ID i is active or not. */
     bool at(int i);
     bool operator[](int i);
-    //get whether used IDs are empty
+
+    /* Returns true if active IDs are empty. */
     bool empty();
-    //get size of IDs (includes free IDs)
+
+    /* Returns count of IDs (includes free IDs). */
     unsigned size();
-    //get size of free IDs
-    unsigned freesize();
-    //get size of used IDs
-    unsigned fillsize();
+    /* Returns count of free IDs. */
+    unsigned freeSize();
+    /* Returns size of active IDs (O(n) time). */
+    unsigned fillSize();
 };
 
 #endif

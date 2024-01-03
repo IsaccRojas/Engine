@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef ANIMATION_HPP_
 #define ANIMATION_HPP_
 
@@ -11,6 +9,13 @@
 #include <fstream>
 #include "json.hpp"
 
+/* struct Frame
+   Represents a graphical frame; the data corresponding to a single "image" in an animation.
+   - texpos - texture position
+   - texsize - width and height of texture
+   - offset - physical offset to apply to instance using this data (currently unused)
+   - duration - number of time steps this frame lasts
+*/
 struct Frame {
     glm::vec3 texpos;
     glm::vec2 texsize;
@@ -18,6 +23,9 @@ struct Frame {
     int duration;
 };
 
+/* class Cycle
+   Represents a set of frames that can be added or removed.
+*/
 class Cycle {
     std::vector<Frame> _frames;
     bool _loop;
@@ -42,6 +50,9 @@ public:
     bool loops() const;
 };
 
+/* class Animation
+   Represents a set of cycles that can be added or removed, collectively forming an animation.
+*/
 class Animation {
     std::vector<Cycle> _cycles;
 public:
@@ -59,6 +70,11 @@ public:
     int count();
 };
 
+/* class AnimationState
+   Provides a view of an animation, allowing the client to step through a provided animation's
+   frames in order, based on the internal frame durations. Holds state information to control
+   this stepping.
+*/
 class AnimationState {
     Animation *_animation;
     Cycle *_currentcycle;

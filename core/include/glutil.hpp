@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef GLUTIL_HPP_
 #define GLUTIL_HPP_
 
@@ -41,10 +39,10 @@ public:
         offset - offset of index in buffer per element, in bytes (e.g. 12 if values are after a vec3's values)
         divisor - number of instances to process before changing value (0 for per vertex, 1 for per instance, etc.)
     */
-    void formatattrib(GLuint index, GLint size, GLenum type, GLuint byteoffset, GLuint divisor);
+    void formatAttrib(GLuint index, GLint size, GLenum type, GLuint byteoffset, GLuint divisor);
     
     // bind attribute to buffer index
-    void bindattrib(GLuint attribindex, GLuint bindingindex);
+    void bindAttrib(GLuint attribindex, GLuint bindingindex);
     
     // set uniform value in program
     void uniformi(GLuint index, GLint value);
@@ -61,7 +59,7 @@ public:
     void render(GLsizei count);
 
     // render provided number of elements, as numinst instances
-    void renderinst(GLsizei count, GLuint numinst);
+    void renderInst(GLsizei count, GLuint numinst);
 
     // run compute shader on specified groups
     void compute(GLuint groups_x, GLuint groups_y, GLuint groups_z);
@@ -91,13 +89,13 @@ public:
     void bind(GLenum target);
 
     //binds buffer handle of GLBuffer to attribute index binding point; size and offset in bytes (e.g. 16 for 4 4-byte vertices)
-    void bindindex(GLuint index, GLintptr offset, GLsizei stride);
+    void bindIndex(GLuint index, GLintptr offset, GLsizei stride);
 
     //binds buffer handle of GLBuffer to target at base
-    void bindbase(GLenum target, GLuint index);
+    void bindBase(GLenum target, GLuint index);
 
     //update sub data in GLBuffer; size and offset in bytes (e.g. 16 for 4 4-byte vertices)
-    void subdata(GLsizeiptr data_size, const void *data, GLsizeiptr offset);
+    void subData(GLsizeiptr data_size, const void *data, GLsizeiptr offset);
 
     GLuint size();
     GLenum usage();
@@ -144,7 +142,7 @@ public:
     void alloc(GLint levels, GLenum storeformat, GLenum dataformat, GLenum type, GLsizei width, GLsizei height, GLsizei depth);
 
     //write sub image data into level of allocated storage
-    void subimage(GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, const void *data);
+    void subImage(GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, const void *data);
 
     void clear();
 

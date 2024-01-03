@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef GLENV_HPP_
 #define GLENV_HPP_
 
@@ -36,9 +34,10 @@ public:
     void update();
 };
 
-/* Class to encapsulate all OpenGL environment related data and methods. 
-   Currently restricted to draw quads with a simple fragment shader and vertex shader, and parameterized
-   view and projection matrices. The following parameters exist per quad:
+/* class GLEnv
+   Encapsulate all OpenGL environment related data and methods. 
+   Currently restricted to draw Quads with a simple fragment shader and vertex shader, and parameterized
+   view and projection matrices. The following parameters exist per Quad:
 
    - Quad position (vec3)
    - Quad scale (vec3)
@@ -46,7 +45,7 @@ public:
    - Quad texture size (vec2) (added to positions to get a rectangle)
    - Quad drawing flag (float) (NOT controllable by user; GLEnv automatically sets/unsets this)
 
-   The maximum amount of quads allowed by the system can be specified. This also
+   The maximum amount of Quads allowed by the system can be specified. This also
    guarantees that no more than max_count IDs will be generated and tracked. The environment will
    throw an exception if more than the allowed amount is generated.
 */
@@ -76,15 +75,15 @@ class GLEnv {
     GLBuffer _glb_draw;
 
     /* environment system variables */
-    // IDs to distribute to quads
+    // IDs to distribute to Quads
     Partitioner _ids;
     // quad pointers
     std::vector<Quad> _quads;
-    // maximum number of active quads allowed
+    // maximum number of active Quads allowed
     unsigned _maxcount;
 
 public:
-    /* max_count - maximum number of quads allowed to be active */
+    /* max_count - maximum number of Quads allowed to be active */
     GLEnv(unsigned maxcount);
     ~GLEnv();
 
@@ -93,7 +92,7 @@ public:
        height - height of space
        depth - depth of space
     */
-    void settexarray(GLuint width, GLuint height, GLuint depth);
+    void setTexArray(GLuint width, GLuint height, GLuint depth);
 
     /* Loads image into texture space using Image structure (uses complete width and height of passed image).
        img - Image structure containing RGBA unsigned byte image data
@@ -101,7 +100,7 @@ public:
        yoffset - y offset in image space to write image data into
        zoffset - z offset in image space to write image data into
     */
-    void settexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset);
+    void setTexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset);
 
     /* Sets OpenGL viewport.
        x - x coordinate of viewport
@@ -109,56 +108,56 @@ public:
        width - width of viewport
        height - height of viewport
     */
-    void setviewport(GLint x, GLint y, GLint width, GLint height);
+    void setViewport(GLint x, GLint y, GLint width, GLint height);
 
     /* Sets view matrix for vertex shader.
        view - GLM mat4 matrix
     */
-    void setview(glm::mat4 view);
+    void setView(glm::mat4 view);
 
     /* Sets projection matrix for vertex shader.
        proj - GLM mat4 matrix
     */
-    void setproj(glm::mat4 proj);
+    void setProj(glm::mat4 proj);
 
-    /* Generates an active quad in system. This call does not write the new quad into graphic memory. You 
-       must call the update() method on the environment or a reference to the quad itself.
-       pos - GLM vec3 position of quad
-       scale - GLM vec3 scale of quad
-       texpos - GLM vec3 texture position of quad (multi-level 2D texture space)
-       texsize - GLM vec2 texture size of quad (added to positions to get a rectangle)
-       Returns the integer ID of quad. This number can be used to index into the internal quad container and
+    /* Generates an active Quad in system. This call does not write the new Quad into graphic memory. You 
+       must call the update() method on the environment or a reference to the Quad itself.
+       pos - GLM vec3 position of Quad
+       scale - GLM vec3 scale of Quad
+       texpos - GLM vec3 texture position of Quad (multi-level 2D texture space)
+       texsize - GLM vec2 texture size of Quad (added to positions to get a rectangle)
+       Returns the integer ID of Quad. This number can be used to index into the internal Quad container and
        obtain a reference (see the get() method). This ID is unique and will be valid for the lifetime 
-       of the quad (see the erase() method). If the maximum number of active quads allowed is exceeded, -1 is
+       of the Quad (see the erase() method). If the maximum number of active Quads allowed is exceeded, -1 is
        returned instead.
     */
     int genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 texsize);
 
-    /* Returns a raw Quad pointer to the quad with the specified ID. 
-       i - ID of quad to get reference of
+    /* Returns a raw Quad pointer to the Quad with the specified ID. 
+       i - ID of Quad to get reference of
     */
     Quad *get(int i);
 
     /* Writes data of all quads in system to their respective buffers. */
     void update();
 
-    /* Erases the quad with the provided ID from the system. This will cause the provided ID to be 
+    /* Removes the Quad with the provided ID from the system. This will cause the provided ID to be 
        invalid until returned again by the genQuad() method. Note that this method does not actually
        free any GPU memory; it simply makes the specific ID usable again by the system. Attempting to use
        the same ID after erasing it and before receiving it again by genQuad() will result in undefined 
        behavior.
-       id - ID of quad to erase
+       id - ID of Quad to remove
        Returns 0 on success, -1 on failure.
     */
-    int erase(int id);
+    int remove(int id);
 
-    /* Draws quads in memory using internal shader program. This is done by drawing a number of unit quad
-       instances corresponding to the number of IDs generated, and using the specific quad parameters and
+    /* Draws Quads in memory using internal shader program. This is done by drawing a number of unit Quad
+       instances corresponding to the number of IDs generated, and using the specific Quad parameters and
        shader matrices to transform them. */
     void draw();
 
     /* Returns all active IDs in system. (note that this allocates a vector and will take O(n) time) */
-    std::vector<int> getids();
+    std::vector<int> getIDs();
 };
 
 #endif

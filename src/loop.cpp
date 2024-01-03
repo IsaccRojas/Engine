@@ -4,41 +4,42 @@ enum Type { T_BLOCK1, T_TEST1, T_TEST2, T_EFFECT1, T_EFFECT2, T_EFFECT3 };
 
 class Block1 : public Object {
     void _initObject() {
-        genQuad(glm::vec3(0.0f), glm::vec3(192.0f, 32.0f, 1.0f));
-        setVisPos(getPhysPos());
-        
-        setPhysDim(glm::vec3(192.0f, 32.0f, 0.0f));
-        enableCollision();
+        getBox()->dim = glm::vec3(192.0f, 32.0f, 0.0f);
+
+        getQuad()->scale.v = glm::vec3(192.0f, 32.0f, 1.0f);
+        getQuad()->pos.v = getBox()->pos;
     };
 
     void _baseObject() {};
 
     void _killObject() {
-        eraseQuad();
-        disableCollision();
+        removeBox();
+        removeQuad();
     };
 
-    void _collisionObject(Object *obj) {}
+    void _collisionObject(Box *box) {}
 };
 
 class Test1 : public Object {
     int _i;
     int _lifetime;
+    bool _collided;
 
     void _initObject() {
-        genQuad(glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 1.0f));
-        setVisPos(getPhysPos());
+        getBox()->dim = glm::vec3(16.0f, 16.0f, 0.0f);
 
-        setPhysDim(glm::vec3(16.0f, 16.0f, 0.0f));
-        enableCollision();
+        getQuad()->scale.v = glm::vec3(16.0f, 16.0f, 1.0f);
+        getQuad()->pos.v = getBox()->pos;
+
         setCorrection(true);
         
         _i = 0;
-        _lifetime = 600;
+        _lifetime = 150;
+        _collided = false;
     };
 
     void _baseObject() {
-        setVisPos(getPhysPos());
+        getQuad()->pos.v = getBox()->pos;
         
         _i++;
         if (_i >= _lifetime)
@@ -48,27 +49,34 @@ class Test1 : public Object {
     };
 
     void _killObject() {
-        eraseQuad();
-        disableCollision();
-
         Entity *effect = getManager()->getEntity(getManager()->spawnEntity("Effect1"));
-        effect->setVisPos(getPhysPos());
+        effect->getQuad()->pos.v = getBox()->pos;
 
         // spawn Test2s
-        for (int i = 0; i < 4; i++) {
-            Object *test2 = getManager()->getObject(getManager()->spawnObject("Test2"));
-            // set velocity of new test2s to opposite of this object's velocity with random magnitude, rotated randomly
-            glm::vec3 newvel = getPhysVel();
-            newvel = glm::vec3(newvel.x, -1.0f * getPhysVel().y, getPhysVel().z) * (0.4f + (float(rand() % 50) / 100.0f));
-            newvel = random_angle(newvel, 35.0f);
-            test2->setPhysVel(newvel);
-            test2->setPhysPos(getPhysPos() + newvel);
+        if (_collided) {
+            for (int i = 0; i < 4; i++) {
+                Object *test2 = getManager()->getObject(getManager()->spawnObject("Test2"));
+
+                // set velocity of new test2s to opposite of this object's velocity with random magnitude, rotated randomly
+                glm::vec3 newvel = getBox()->vel;
+                newvel = glm::vec3(newvel.x, -1.0f * newvel.y, newvel.z) * (0.4f + (float(rand() % 50) / 100.0f));
+                newvel = random_angle(newvel, 35.0f);
+
+                test2->getBox()->vel = newvel;
+                test2->getBox()->pos = getBox()->pos + newvel;
+            }
         }
+
+        removeBox();
+        removeQuad();
     };
 
-    void _collisionObject(Object *obj) {
+    void _collisionObject(Box *box) {
+        /*
         if (obj->getType() == T_TEST1 || obj->getType() == T_TEST2)
             return;
+        */
+        _collided = true;
         kill();
     }
 
@@ -81,16 +89,17 @@ class Test2 : public Object {
     int _lifetime;
 
     void _initObject() {
-        genQuad(glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 1.0f));
-        setVisPos(getPhysPos());
-        setPhysDim(glm::vec3(12.0f, 12.0f, 0.0f));
-        enableCollision();
+        getBox()->dim = glm::vec3(12.0f, 12.0f, 0.0f);
+
+        getQuad()->scale.v = glm::vec3(16.0f, 16.0f, 1.0f);
+        getQuad()->pos.v = getBox()->pos;
+
         _i = 0;
         _lifetime = 600;
     };
 
     void _baseObject() {
-        setVisPos(getPhysPos());
+        getQuad()->pos.v = getBox()->pos;
 
         _i++;
         if (_i >= _lifetime)
@@ -100,16 +109,18 @@ class Test2 : public Object {
     };
 
     void _killObject() {
-        eraseQuad();
-        disableCollision();
-
         Entity *effect = getManager()->getEntity(getManager()->spawnEntity("Effect2"));
-        effect->setVisPos(getPhysPos());
+        effect->getQuad()->pos.v = getBox()->pos;
+
+        removeBox();
+        removeQuad();
     };
 
-    void _collisionObject(Object *obj) {
+    void _collisionObject(Box *box) {
+        /*
         if (obj->getType() == T_TEST1 || obj->getType() == T_TEST2)
             return;
+        */
         kill();
     }
 
@@ -121,20 +132,23 @@ class Effect1 : public Entity {
     int _i;
     int _lifetime;
     void _initEntity() {
-        setVisPos(getVisPos() + glm::vec3(0.0f, 0.0f, 1.0f));
-        genQuad(getVisPos(), glm::vec3(24.0f, 24.0f, 1.0f));
+        getQuad()->scale.v = glm::vec3(24.0f, 24.0f, 1.0f);
+        getQuad()->pos.v = getQuad()->pos.v + glm::vec3(0.0f, 0.0f, 1.0f);
         getAnimState().setAnimState(rand() % 2);
+
         _i = 0;
         _lifetime = 16;
     }
+
     void _baseEntity() {
         _i++;
         if (_i >= _lifetime)
             kill();
         enqueue();
     }
+
     void _killEntity() {
-        eraseQuad();
+        removeQuad();
     }
 public:
     Effect1() : Entity() {}
@@ -144,20 +158,23 @@ class Effect2 : public Entity {
     int _i;
     int _lifetime;
     void _initEntity() {
-        setVisPos(getVisPos() + glm::vec3(0.0f, 0.0f, 1.0f));
-        genQuad(getVisPos(), glm::vec3(20.0f, 20.0f, 1.0f));
+        getQuad()->scale.v = glm::vec3(20.0f, 20.0f, 1.0f);
+        getQuad()->pos.v = getQuad()->pos.v + glm::vec3(0.0f, 0.0f, 1.0f);
         getAnimState().setAnimState(rand() % 2);
+
         _i = 0;
         _lifetime = 16;
     }
+
     void _baseEntity() {
         _i++;
         if (_i >= _lifetime)
             kill();
         enqueue();
     }
+
     void _killEntity() {
-        eraseQuad();
+        removeQuad();
     }
 public:
     Effect2() : Entity() {}
@@ -167,20 +184,23 @@ class Effect3 : public Entity {
     int _i;
     int _lifetime;
     void _initEntity() {
-        setVisPos(getVisPos() + glm::vec3(0.0f, 0.0f, 1.0f));
-        genQuad(getVisPos(), glm::vec3(24.0f, 24.0f, 1.0f));
+        getQuad()->scale.v = glm::vec3(24.0f, 24.0f, 1.0f);
+        getQuad()->pos.v = getQuad()->pos.v + glm::vec3(0.0f, 0.0f, 1.0f);
         getAnimState().setAnimState(rand() % 2);
+
         _i = 0;
         _lifetime = 20;
     }
+
     void _baseEntity() {
         _i++;
         if (_i >= _lifetime)
             kill();
         enqueue();
     }
+
     void _killEntity() {
-        eraseQuad();
+        removeQuad();
     }
 public:
     Effect3() : Entity() {}
@@ -198,7 +218,7 @@ class Gravity : public Script {
             Object *obj;
             for (int i = 0; i < maxid; i++)
                 if ((obj = _manager->getObject(i)))
-                    obj->setPhysVel(obj->getPhysVel() + _accl);
+                    obj->getBox()->vel = obj->getBox()->vel + _accl;
         }
         enqueue();
     }
@@ -229,10 +249,10 @@ void loop(GLFWwindow *winhandle) {
     GLEnv obj_glenv{256};
 
     std::cout << "Setting up texture array" << std::endl;
-    obj_glenv.settexarray(96, 136, 2);
+    obj_glenv.setTexArray(96, 136, 2);
     std::cout << "Setting texture" << std::endl;
-    obj_glenv.settexture(Image("objects.png"), 0, 0, 0);
-    obj_glenv.settexture(Image("effects.png"), 0, 0, 1);
+    obj_glenv.setTexture(Image("objects.png"), 0, 0, 0);
+    obj_glenv.setTexture(Image("effects.png"), 0, 0, 1);
 
     int pixelwidth = 256;
     int pixelheight = 256;
@@ -242,8 +262,8 @@ void loop(GLFWwindow *winhandle) {
     float halfheight = float(pixelheight) / 2.0f;
 
     std::cout << "Setting up view and projection matrices" << std::endl;
-    obj_glenv.setview(glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
-    obj_glenv.setproj(glm::ortho(-1.0f * halfwidth, halfwidth, -1.0f * halfheight, halfheight, 0.0f, float(pixellayers)));
+    obj_glenv.setView(glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+    obj_glenv.setProj(glm::ortho(-1.0f * halfwidth, halfwidth, -1.0f * halfheight, halfheight, 0.0f, float(pixellayers)));
 
     // set up some opengl parameters
     std::cout << "Setting up some OpenGL parameters" << std::endl;
@@ -253,16 +273,16 @@ void loop(GLFWwindow *winhandle) {
     
     // initialize animation map
     std::cout << "Setting up animation map" << std::endl;
-    std::unordered_map<std::string, Animation> animations = loadAnimations(".");
+    std::unordered_map<std::string, Animation> animations = loadAnimations("./animconfig");
+
+    // initialize PhysEnv instance
+    std::cout << "Setting up physenv" << std::endl;
+    PhysEnv obj_physenv{256};
 
     // set up Executor instance
     std::cout << "Setting up executors" << std::endl;
     Executor gbl_executor{256};
     Executor obj_executor{256};
-
-    // set up Collider instance
-    std::cout << "Setting up collider" << std::endl;
-    Collider obj_collider{256};
 
     // set up manager
     std::cout << "Setting up manager" << std::endl;
@@ -270,7 +290,7 @@ void loop(GLFWwindow *winhandle) {
     obj_manager.setExecutor(&obj_executor);
     obj_manager.setGLEnv(&obj_glenv);
     obj_manager.setAnimations(&animations);
-    obj_manager.setCollider(&obj_collider);
+    obj_manager.setPhysEnv(&obj_physenv);
 
     // add objects to manager
     std::cout << "Adding entities and objects to manager" << std::endl;
@@ -289,9 +309,11 @@ void loop(GLFWwindow *winhandle) {
     gravity.enqueue();
 
     // spawn object
+    /*
     std::cout << "Spawning block" << std::endl;
     Object *block1 = obj_manager.getObject(obj_manager.spawnObject("Block1"));
-    block1->setPhysPos(glm::vec3(0.0f, -64.0f, 0.0f));
+    block1->getBox()->pos = glm::vec3(0.0f, -64.0f, 0.0f);
+    */
     
     // start loop
     std::cout << "Starting loop" << std::endl;
@@ -305,9 +327,10 @@ void loop(GLFWwindow *winhandle) {
             Entity *effect3 = obj_manager.getEntity(obj_manager.spawnEntity("Effect3"));
             Object *test1 = obj_manager.getObject(obj_manager.spawnObject("Test1"));
 
-            effect3->setVisPos(glm::vec3(0.0f, 64.0f, 0.0f));
-            test1->setPhysPos(glm::vec3(0.0f, 64.0f, 0.0f));
-            test1->setPhysVel(random_angle(glm::vec3(0.0f, 1.25f, 0.0f), 15.0f));
+            effect3->getQuad()->pos.v = glm::vec3(0.0f, 64.0f, 0.0f);
+            test1->getBox()->pos = glm::vec3(0.0f, 64.0f, 0.0f);
+            test1->getBox()->vel = random_angle(glm::vec3(0.0f, 1.25f, 0.0f), 15.0f);
+
             //test1->setPhysVel(glm::vec3(0.0f, -15.0f, 0.0f));
         }
 
@@ -316,7 +339,7 @@ void loop(GLFWwindow *winhandle) {
         gbl_executor.runKill();
 
         // run object scripts
-        obj_collider.collide();
+        //obj_physenv.detectCollision();
         obj_executor.runExec();
         obj_executor.runKill();
 
@@ -325,7 +348,7 @@ void loop(GLFWwindow *winhandle) {
 
         glfwSwapBuffers(winhandle);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(200));
         i++;
     };
     

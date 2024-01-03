@@ -1,4 +1,4 @@
-#include "glenv.hpp"
+#include "../include/glenv.hpp"
 
 // _______________________________________ Quad _______________________________________
 
@@ -70,61 +70,61 @@ GLEnv::GLEnv(unsigned maxcount) :
     _stage.program(shaders, types, 2);
     _stage.use();
     // set up attributes with instancing (model vertices, position, scale, texture position, texture size, draw flag)
-    _stage.formatattrib(0, 4, GL_FLOAT, 0, 0);
-    _stage.formatattrib(1, 3, GL_FLOAT, 0, 1);
-    _stage.formatattrib(2, 3, GL_FLOAT, 0, 1);
-    _stage.formatattrib(3, 3, GL_FLOAT, 0, 1);
-    _stage.formatattrib(4, 2, GL_FLOAT, 0, 1);
-    _stage.formatattrib(5, 1, GL_FLOAT, 0, 1);
+    _stage.formatAttrib(0, 4, GL_FLOAT, 0, 0);
+    _stage.formatAttrib(1, 3, GL_FLOAT, 0, 1);
+    _stage.formatAttrib(2, 3, GL_FLOAT, 0, 1);
+    _stage.formatAttrib(3, 3, GL_FLOAT, 0, 1);
+    _stage.formatAttrib(4, 2, GL_FLOAT, 0, 1);
+    _stage.formatAttrib(5, 1, GL_FLOAT, 0, 1);
     // bind attribute to buffer storage locations 0-4
-    _stage.bindattrib(0, 0);
-    _stage.bindattrib(1, 1);
-    _stage.bindattrib(2, 2);
-    _stage.bindattrib(3, 3);
-    _stage.bindattrib(4, 4);
-    _stage.bindattrib(5, 5);
+    _stage.bindAttrib(0, 0);
+    _stage.bindAttrib(1, 1);
+    _stage.bindAttrib(2, 2);
+    _stage.bindAttrib(3, 3);
+    _stage.bindAttrib(4, 4);
+    _stage.bindAttrib(5, 5);
 
     /* set up buffers */
 
     // write instance model data and elements to buffers, bind model buffer to storage location 0, 
     // and bind element buffer to OpenGL system
-    _glb_modelbuf.subdata(sizeof(data_model), data_model, 0 * sizeof(GLfloat));
-    _glb_elembuf.subdata(sizeof(data_elem), data_elem, 0 * sizeof(GLfloat));
-    _glb_modelbuf.bindindex(0, 0, 4 * sizeof(GLfloat));
+    _glb_modelbuf.subData(sizeof(data_model), data_model, 0 * sizeof(GLfloat));
+    _glb_elembuf.subData(sizeof(data_elem), data_elem, 0 * sizeof(GLfloat));
+    _glb_modelbuf.bindIndex(0, 0, 4 * sizeof(GLfloat));
     _stage.element(_glb_elembuf.handle());
 
     // bind position, texture position, texture size and draw flag buffers to storage locations 1-4
-    _glb_pos.bindindex(1, 0, 3 * sizeof(GLfloat));
-    _glb_scale.bindindex(2, 0, 3 * sizeof(GLfloat));
-    _glb_texpos.bindindex(3, 0, 3 * sizeof(GLfloat));
-    _glb_texsize.bindindex(4, 0, 2 * sizeof(GLfloat));
-    _glb_draw.bindindex(5, 0, 1 * sizeof(GLfloat));
+    _glb_pos.bindIndex(1, 0, 3 * sizeof(GLfloat));
+    _glb_scale.bindIndex(2, 0, 3 * sizeof(GLfloat));
+    _glb_texpos.bindIndex(3, 0, 3 * sizeof(GLfloat));
+    _glb_texsize.bindIndex(4, 0, 2 * sizeof(GLfloat));
+    _glb_draw.bindIndex(5, 0, 1 * sizeof(GLfloat));
 }
 GLEnv::~GLEnv() {}
 
-void GLEnv::settexarray(GLuint width, GLuint height, GLuint depth) {
+void GLEnv::setTexArray(GLuint width, GLuint height, GLuint depth) {
     _texarray.alloc(1, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, width, height, depth);
 }
 
-void GLEnv::settexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset) {
-    _texarray.subimage(0, xoffset, yoffset, zoffset, img.width(), img.height(), 1, img.copydata());
+void GLEnv::setTexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset) {
+    _texarray.subImage(0, xoffset, yoffset, zoffset, img.width(), img.height(), 1, img.copyData());
 }
 
-void GLEnv::setviewport(GLint x, GLint y, GLint width, GLint height) {
+void GLEnv::setViewport(GLint x, GLint y, GLint width, GLint height) {
     glViewport(x, y, width, height);
 }
 
-void GLEnv::setview(glm::mat4 view) {
+void GLEnv::setView(glm::mat4 view) {
     glUniformMatrix4fv(6, 1, GL_FALSE, glm::value_ptr(view));
 }
 
-void GLEnv::setproj(glm::mat4 proj) {
+void GLEnv::setProj(glm::mat4 proj) {
     glUniformMatrix4fv(7, 1, GL_FALSE, glm::value_ptr(proj));
 }
 
 int GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 texsize) {
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
-    if (_ids.fillsize() >= _maxcount) {
+    if (_ids.fillSize() >= _maxcount) {
         std::cerr << "WARN: limit reached in GLEnv " << this << std::endl;
         return -1;
     }
@@ -149,7 +149,7 @@ int GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 t
 
     // write 1 into draw buffer, setting the draw flag for this quad
     GLfloat draw = 1.0f;
-    _glb_draw.subdata(sizeof(GLfloat), &draw, id * (1 * sizeof(GLfloat)));
+    _glb_draw.subData(sizeof(GLfloat), &draw, id * (1 * sizeof(GLfloat)));
 
     return id;
 }
@@ -169,8 +169,8 @@ void GLEnv::update() {
             _quads[i].update();
 }
 
-int GLEnv::erase(int id) {
-    // if attempting to erase an id from empty system, return -1
+int GLEnv::remove(int id) {
+    // if attempting to remove an id from empty system, return -1
     if (id < 0) {
         std::cerr << "WARN: attempt to remove negative value from GLEnv " << this << std::endl;
         return -1;
@@ -181,11 +181,11 @@ int GLEnv::erase(int id) {
     }
 
     // call _ids to make the ID usable again
-    _ids.erase_at(id);
+    _ids.remove(id);
 
     // unset the draw flag for this specific offset, zeroing out its instance
     GLfloat draw = 0.0f;
-    _glb_draw.subdata(sizeof(GLfloat), &draw, id * (1 * sizeof(GLfloat)));
+    _glb_draw.subData(sizeof(GLfloat), &draw, id * (1 * sizeof(GLfloat)));
 
     return 0;
 }
@@ -193,9 +193,9 @@ int GLEnv::erase(int id) {
 void GLEnv::draw() {
     // draw a number of instances equal to the number of IDs in system, active or not, using the element buffer
     // (Instances with inactive IDs will be zeroed out per the draw flag)
-    _stage.renderinst(6, _ids.size());
+    _stage.renderInst(6, _ids.size());
 }
 
-std::vector<int> GLEnv::getids() {
-    return _ids.getused();
+std::vector<int> GLEnv::getIDs() {
+    return _ids.getUsed();
 }

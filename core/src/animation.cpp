@@ -1,4 +1,4 @@
-#include "animation.hpp"
+#include "../include/animation.hpp"
 
 Cycle::Cycle(bool loop) :
     _loop(loop) 

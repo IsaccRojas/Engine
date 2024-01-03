@@ -1,4 +1,4 @@
-#include "glutil.hpp"
+#include "../include/glutil.hpp"
 
 // _______________________________________ GLStage _______________________________________
 
@@ -85,13 +85,13 @@ void GLStage::use() {
     glUseProgram(_program_h);
 }
 
-void GLStage::formatattrib(GLuint index, GLint size, GLenum type, GLuint byteoffset, GLuint divisor) {
+void GLStage::formatAttrib(GLuint index, GLint size, GLenum type, GLuint byteoffset, GLuint divisor) {
     glVertexAttribFormat(index, size, type, false, byteoffset);
     glVertexAttribDivisor(index, divisor);
     glEnableVertexAttribArray(index);
 }
 
-void GLStage::bindattrib(GLuint attribindex, GLuint bindingindex) {
+void GLStage::bindAttrib(GLuint attribindex, GLuint bindingindex) {
     glVertexAttribBinding(attribindex, bindingindex);
 }
 
@@ -121,7 +121,7 @@ void GLStage::render(GLsizei count) {
         glDrawArrays(GL_TRIANGLES, 0, count);
 }
 
-void GLStage::renderinst(GLsizei count, GLuint numinst) {
+void GLStage::renderInst(GLsizei count, GLuint numinst) {
     if (_has_elements)
         glDrawElementsInstanced(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr, numinst);
 };
@@ -169,15 +169,15 @@ void GLBuffer::bind(GLenum target) {
     glBindBuffer(target, _buf_h);
 }
 
-void GLBuffer::bindindex(GLuint index, GLintptr offset, GLsizei stride) {
+void GLBuffer::bindIndex(GLuint index, GLintptr offset, GLsizei stride) {
     glBindVertexBuffer(index, _buf_h, offset, stride);
 }
 
-void GLBuffer::bindbase(GLenum target, GLuint index) {
+void GLBuffer::bindBase(GLenum target, GLuint index) {
     glBindBufferBase(target, index, _buf_h); 
 }
 
-void GLBuffer::subdata(GLsizeiptr data_size, const void *data, GLsizeiptr offset) {
+void GLBuffer::subData(GLsizeiptr data_size, const void *data, GLsizeiptr offset) {
     glNamedBufferSubData(_buf_h, offset, data_size, data);
 }
 
@@ -314,7 +314,7 @@ void GLTexture2DArray::alloc(GLint levels, GLenum storeformat, GLenum dataformat
     _allocated = true;
 }
 
-void GLTexture2DArray::subimage(GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, const void *data) {
+void GLTexture2DArray::subImage(GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, const void *data) {
     glTextureSubImage3D(_tex_h, level, xoffset, yoffset, zoffset, width, height, depth, _dataformat, _type, data);
 }
 
@@ -366,7 +366,7 @@ BVec2& BVec2::operator=(const BVec2 &other) {
 void BVec2::update() {
     _data[0] = v.x;
     _data[1] = v.y;
-    _buf->subdata(sizeof(_data), _data, _off);
+    _buf->subData(sizeof(_data), _data, _off);
 }
 
 // _______________________________________ BVec3 _______________________________________
@@ -401,5 +401,5 @@ void BVec3::update() {
     _data[0] = v.x;
     _data[1] = v.y;
     _data[2] = v.z;
-    _buf->subdata(sizeof(_data), _data, _off);
+    _buf->subData(sizeof(_data), _data, _off);
 }

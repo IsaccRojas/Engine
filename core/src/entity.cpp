@@ -1,4 +1,4 @@
-#include "entity.hpp"
+#include "../include/entity.hpp"
 
 Entity::Entity() : 
     Script(),
@@ -8,22 +8,22 @@ Entity::Entity() :
     _quad_id(-1),
     _first_step(true),
     _glenv_ready(false),
-    _visualpos(glm::vec3(0.0f)),
+    _quad_ready(false),
     _entitymanager(nullptr)
 {}
 Entity::~Entity() {
     // try erasing existing quad
-    eraseQuad();
+    removeQuad();
 }
 
 void Entity::_init() {
-    _initEntity();
+    if (_glenv_ready)
+        _initEntity();
 }
 
 void Entity::_base() {
-    _baseEntity();
-
     if (_glenv_ready) {
+        _baseEntity();
 
         if (!_first_step) {
             // step animation and retrieve current frame
@@ -36,7 +36,6 @@ void Entity::_base() {
         // only attempt to write animation data if quad is available
         if (_quad_ready) {
             // write frame data to quad and update quad
-            _quad->pos.v = _visualpos;
             _quad->texpos.v = _frame->texpos;
             _quad->texsize.v = _frame->texsize;
             _quad->update();
@@ -46,34 +45,35 @@ void Entity::_base() {
 }
 
 void Entity::_kill() {
-    _killEntity();
+    if (_glenv_ready)
+        _killEntity();
 }
 
 void Entity::_initEntity() {}
 void Entity::_baseEntity() {}
 void Entity::_killEntity() {}
 
-glm::vec3 Entity::getVisPos() { return _visualpos; }
-void Entity::setVisPos(glm::vec3 newpos) { _visualpos = newpos; }
 AnimationState &Entity::getAnimState() { return _animstate; }
 
 void Entity::entitySetup(GLEnv *glenv, Animation *animation) {
     // try erasing existing quad
-    eraseQuad();
+    removeQuad();
 
     _glenv = glenv;
+    _glenv_ready = true;
 
     _animstate.setAnimation(animation);
     _frame = _animstate.getCurrent();
 
-    _glenv_ready = true;
+    // generate new quad
+    genQuad(glm::vec3(0.0f), glm::vec3(0.0f));
 }
 
 void Entity::genQuad(glm::vec3 pos, glm::vec3 scale) {
     if (_glenv_ready) {
         // erase existing quad
         if (_quad_ready)
-            eraseQuad();
+            removeQuad();
 
         // get quad data
         _quad_id = _glenv->genQuad(pos, scale, _frame->texpos, _frame->texsize);
@@ -84,22 +84,28 @@ void Entity::genQuad(glm::vec3 pos, glm::vec3 scale) {
             _quad_ready = true;
         }
     }
+
 }
 
-void Entity::eraseQuad() {
-    if (_quad_id >= 0) {
-        _glenv->erase(_quad_id);
-        _quad_id = -1;
+int Entity::removeQuad() {
+    if (_quad_ready) {
+        if (_glenv->remove(_quad_id)) {
+            std::cerr << "WARN: attempt to remove Quad ID " << _quad_id << " from GLEnv " << &_glenv << " within Entity " << this << " failed" << std::endl;
+            return -1;
+        }
 
+        _quad_id = -1;
         _quad_ready = false;
     }
+    // no problem
+    return 0;
 }
 
 Quad *Entity::getQuad() { 
     if (_quad_ready)
         return _quad;
     else
-        return NULL;
+        return nullptr;
 }
 
 EntityManager *Entity::getManager() { return _entitymanager; }
@@ -124,7 +130,7 @@ void EntityManager::_entitySetup(Entity *entity, EntityType &entitytype, ScriptT
 void EntityManager::_entityRemoval(EntityValues &entityvalues, ScriptValues &scriptvalues) {
     _scriptRemoval(scriptvalues);
     if (entityvalues._entity_ref)
-        entityvalues._entity_ref->eraseQuad();
+        entityvalues._entity_ref->removeQuad();
 }
 
 bool EntityManager::hasEntity(const char *entityname) { return !(_entitytypes.find(entityname) == _entitytypes.end()); }
@@ -144,7 +150,7 @@ int EntityManager::spawnScript(const char *scriptname) {
 
 int EntityManager::spawnEntity(const char *entityname) {
     // fail if exceeding max size
-    if (_ids.fillsize() >= _maxcount) {
+    if (_ids.fillSize() >= _maxcount) {
         std::cerr << "WARN: limit reached in EntityManager " << this << std::endl;
         return -1;
     }
@@ -195,7 +201,7 @@ void EntityManager::remove(int id) {
         // remove from entity-related and script-related systems
         _entityRemoval(entityvalues, scriptvalues);
     
-        _ids.erase_at(id);
+        _ids.remove(id);
     }
 }
 

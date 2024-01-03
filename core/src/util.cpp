@@ -1,7 +1,7 @@
-#include "util.hpp"
+#include "../include/util.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "../include/stb_image.h"
 
 std::string readfile(const char *filename) {
     std::ifstream infile(filename);
@@ -14,7 +14,7 @@ Image::Image(const char *filename) {
     load(filename);
 }
 Image::Image(const Image &other) :
-    _data(other.copydata()),
+    _data(other.copyData()),
     _w(other._w),
     _h(other._h),
     _components(other._components),
@@ -22,7 +22,7 @@ Image::Image(const Image &other) :
 {}
 Image::Image() : _data(NULL), _w(0), _h(0), _size(0) {};
 Image& Image::operator=(const Image &other) {
-    _data = other.copydata();
+    _data = other.copyData();
     _w = other._w;
     _h = other._h;
     _components = other._components;
@@ -43,7 +43,7 @@ void Image::free() {
     _data = NULL;
 }
 
-unsigned char* Image::copydata() const {
+unsigned char* Image::copyData() const {
     if (_data == NULL)
         return NULL;
     
@@ -63,48 +63,48 @@ Partitioner::~Partitioner() {}
 //occupies an index in IDs (use last index from freeIDs if available),
 //and return ID
 int Partitioner::push() {
-    if (freeIDs.empty()) {
-        IDs.push_back(true);
-        return IDs.size() - 1;
+    if (_freeIDs.empty()) {
+        _IDs.push_back(true);
+        return _IDs.size() - 1;
     }
 
-    int i = freeIDs.back();
-    freeIDs.pop_back();
-    IDs[i] = true;
+    int i = _freeIDs.back();
+    _freeIDs.pop_back();
+    _IDs[i] = true;
     return i;
 }
 
 //sets element i to false and pushes its index to freeIDs
-void Partitioner::erase_at(int i) {
-    if (IDs[i]) {
-        IDs[i] = false;
-        freeIDs.push_back(i);
+void Partitioner::remove(int i) {
+    if (_IDs[i]) {
+        _IDs[i] = false;
+        _freeIDs.push_back(i);
     }
 }
 
 //get vector of all indices that are true
-std::vector<int> Partitioner::getused() {
+std::vector<int> Partitioner::getUsed() {
     std::vector<int> indices;
-    for (unsigned i = 0; i < IDs.size(); i++)
-        if (IDs[i])
+    for (unsigned i = 0; i < _IDs.size(); i++)
+        if (_IDs[i])
             indices.push_back(i);
     
     return indices;
 }
 
 void Partitioner::clear() {
-    IDs.clear();
-    freeIDs.clear();
+    _IDs.clear();
+    _freeIDs.clear();
 }
 
 //access element i
-bool Partitioner::at(int i) { return IDs[i]; }
-bool Partitioner::operator[](int i) { return IDs[i]; }
+bool Partitioner::at(int i) { return _IDs[i]; }
+bool Partitioner::operator[](int i) { return _IDs[i]; }
 //get whether used IDs are empty
-bool Partitioner::empty() { return (IDs.size() == 0); }
+bool Partitioner::empty() { return (_IDs.size() == 0); }
 //get size of IDs (includes free IDs)
-unsigned Partitioner::size() { return IDs.size(); }
+unsigned Partitioner::size() { return _IDs.size(); }
 //get size of free IDs
-unsigned Partitioner::freesize() { return freeIDs.size(); }
+unsigned Partitioner::freeSize() { return _freeIDs.size(); }
 //get size of used IDs
-unsigned Partitioner::fillsize() { return IDs.size() - freeIDs.size(); }
+unsigned Partitioner::fillSize() { return _IDs.size() - _freeIDs.size(); }

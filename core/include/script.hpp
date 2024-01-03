@@ -1,7 +1,5 @@
-#pragma once
-
-#ifndef EXECUTOR_HPP_
-#define EXECUTOR_HPP_
+#ifndef SCRIPT_HPP_
+#define SCRIPT_HPP_
 
 #include <iostream>
 #include <memory>
@@ -16,14 +14,15 @@
 class Executor;
 class ScriptManager;
 
-/* Class to represent a runnable script by an owning Executor instance.
+/* class Script
+   Represents a runnable script by an owning Executor instance.
    The owning Executor will call runInit(), runBase(), and runKill() as needed, and
    expects _init(), _base(), and _kill() to be implemented by children. 
 */
 class Script {
     friend ScriptManager;
 
-    // flags of whether this script has been initialized or killed, maintained by Executor
+    // flags of whether this Script has been initialized or killed, maintained by Executor
     bool _initialized;
     bool _killed;
     bool _execqueued;
@@ -45,9 +44,9 @@ class Script {
 
 protected:
     /* Functions to be overridden by children.
-       - _init() is called by _runInit(). _runInit() is called on execution, only for the first time the script is queued.
-       - _base() is called by _runBase(). _runBase() is called on execution, each time the script is queued.
-       - _kill() is called by _runKill(). _runKill() is called on erasure.
+       - _init() is called by runInit(). _runInit() is called on execution, only for the first time the Script is queued.
+       - _base() is called by runBase(). _runBase() is called on execution, each time the Script is queued.
+       - _kill() is called by runKill(). _runKill() is called on erasure.
     */
     virtual void _init();
     virtual void _base();
@@ -58,17 +57,17 @@ public:
     virtual ~Script();
 
    /* Functions wrapping the virtual versions of the same method, which are directly called by the Executor.
-       - runInit() is called on execution, only for the first time the script is queued.
-       - runBase() is called on execution, each time the script is queued.
+       - runInit() is called on execution, only for the first time the Script is queued.
+       - runBase() is called on execution, each time the Script is queued.
        - runKill() is called on erasure.
     */
     void runInit();
     void runBase();
     void runKill();
 
-    /* Sets the script up with an executor. This enables the use of 
-       the enqueue and dequeue methods. Pushes the object into the
-       executor.
+    /* Sets the Script up with an Executor. This enables the use of 
+       the enqueue and dequeue methods. Pushes the Script into the
+       Executor.
     */
     void scriptSetup(Executor *executor);
 
@@ -80,7 +79,7 @@ public:
     */
     void scriptResetExec();
 
-    /* Sets various internal flags used by executors to control state. Can be set manually to manipulate
+    /* Sets various internal flags used by Executors to control state. Can be set manually to manipulate
        execution behavior.
     */
     void setInitialized(bool initialized);
@@ -94,11 +93,11 @@ public:
     void setType(int type);
     int getType();
 
-    /* Enqueues the script for execution.
+    /* Enqueues the Script for execution.
     */
     void enqueue();
 
-    /* Kills the script.
+    /* Kills the Script.
     */
     void kill();
     
@@ -107,7 +106,8 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* Class to encapsulate execution environment for queue-able, inheritable Script instances.
+/* class Executor
+   Encapsulates an execution environment for queue-able, inheritable Script instances.
    Uses queues to control execution and erasure of Script instances.
 */
 class Executor {
@@ -126,7 +126,7 @@ class Executor {
     std::queue<int> _runkillqueue;
     
     /* environment system variables */
-    // maximum number of active scripts allowed
+    // maximum number of active Scripts allowed
     unsigned _maxcount;
 
 public:
@@ -142,11 +142,11 @@ public:
     */
     int push(Script *script);
 
-    /* Erases the provided ID from the system by making its ID available for writing. Note that it is undefined 
+    /* Removes the provided ID from the system by making its ID available for writing. Note that it is undefined 
        behavior to use the passed ID after calling this.
-       id - ID to be erased
+       id - ID to be removed
     */
-    void erase(int id);
+    void remove(int id);
     
     /* Returns a pointer to a Script instance in the environment corresponding to the provided ID. Returns nullptr if the
        ID does not exist in the environment.
@@ -178,12 +178,10 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* Class to manage and control internal instances of Scripts. 
-   Can also be given 
-   an executor and collider to automatically pass instances
-   to these mechanisms.
+/* class ScriptManager
+   Manages and controls internal instances of Scripts. Can also be given an 
+   Executor instance to automatically pass Script instances to these mechanisms.
 */
-
 class ScriptManager {
 public:
     // struct holding entity information mapped to a name
@@ -217,22 +215,45 @@ protected:
     
     unsigned _maxcount;
 
+    // internal methods called when spawning Scripts and removing them, using and setting
+    // manager lifetime and Script runtime members
     void _scriptSetup(Script *script, ScriptType &type, int id);
     void _scriptRemoval(ScriptValues &values);
    
 public:
+    /* maxcount - maximum number of Scripts to support in this instance */
     ScriptManager(unsigned maxcount);
     virtual ~ScriptManager();
 
+    /* Returns true if the provided Script name has been previously added to this manager. */
     bool hasScript(const char *scriptname);
-    virtual int spawnScript(const char *scriptname);
+    /* Returns a reference to the spawned Script corresponding to the provided ID, if it exists. */
     Script *getScript(int id);
+    /* Returns the internal name corresponding to the provided ID, if it exists. */
     std::string getName(int id);
+
+    /* Spawns a Script using a name previously added to this manager, and returns its ID. This
+       will invoke scriptSetup() if set to do so from adding it.
+    */
+    virtual int spawnScript(const char *scriptname);
+    
+    /* Adds an Script allocator with initialization information to this manager, allowing its given
+       name to be used for future spawns.
+       - allocator - function pointer referring to function that returns a heap-allocated Script
+       - name - name to associate with the allocator
+       - type - internal value tied to Script for client use
+       - force_scriptsetup - invokes Script setup when spawning this Script
+       - force_enqueue - enqueues this Script into the provided Executor when spawning it
+       - force_removeonkill - removes this Script from this manager when it is killed
+    */
     void addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill);
+    /* Removes the Script associated with the provided ID. */
     void remove(int id);
 
+    /* Sets the Executor for this manager to use. */
     void setExecutor(Executor *executor);
-
+    
+    /* Gets the maximum generated ID during this manager's lifetime. */
     int getMaxID();
 };
 

@@ -1,39 +1,30 @@
 CXXFLAGS = -ggdb -Wall -O
 
 # graphics environment libraries
-GLLIBS = -lglenv
-GLLIBS += -lglfw3dll
+GLLIBS = -lglfw3dll
 GLLIBS += -lglew32
 GLLIBS += -lopengl32
 
-# execution environment libraries
-EXECLIBS = -lexecutor
+# core library
+CORELIB = -lcore
 
-# all directories of libraries
-LIBDIRS = -L./glenv
-LIBDIRS += -L./executor
+# library directory
+LIBDIR = -L./core
 
 # source files
 SRCS = src/main.cpp
 SRCS += src/loop.cpp
 SRCS += src/glinit.cpp
-SRCS += src/entity.cpp
-SRCS += src/animation.cpp
-SRCS += src/object.cpp
 
 all: out
 
-libglenv.a:
-	mingw32-make -C glenv
+libcore.a:
+	mingw32-make -C core
 
-libexecutor.a:
-	mingw32-make -C executor
-
-out: libglenv.a libexecutor.a
-	g++ ${CXXFLAGS} ${SRCS} ${LIBDIRS} ${GLLIBS} ${EXECLIBS} -o out
+out: libcore.a
+	g++ ${CXXFLAGS} ${SRCS} ${LIBDIR} ${CORELIB} ${GLLIBS} -o out
 
 # windows syntax
 clean:
 	rd out.exe
-	mingw32-make -C glenv clean
-	mingw32-make -C executor clean
+	mingw32-make -C core clean

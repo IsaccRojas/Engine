@@ -1,4 +1,4 @@
-#include "executor.hpp"
+#include "../include/script.hpp"
 
 Script::Script() :
     _initialized(false), 
@@ -64,7 +64,7 @@ void Script::scriptResetExec() {
     // reset executor fields
     if (_executor_ready)
         if (_executor_id >= 0)
-            _executor->erase(_executor_id);
+            _executor->remove(_executor_id);
     
     _executor = nullptr;
     _executor_id = -1;
@@ -105,7 +105,7 @@ Executor::~Executor() {}
 
 int Executor::push(Script *script) {
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
-    if (_ids.fillsize() >= _maxcount) {
+    if (_ids.fillSize() >= _maxcount) {
         std::cerr << "WARN: limit reached in Executor " << this << std::endl;
         return -1;
     }
@@ -119,7 +119,7 @@ int Executor::push(Script *script) {
     return id;
 }
 
-void Executor::erase(int id) {
+void Executor::remove(int id) {
     if (id < 0) {
         std::cerr << "WARN: attempt to remove negative value from Executor " << this << std::endl;
         return;
@@ -130,7 +130,7 @@ void Executor::erase(int id) {
     }
 
     if (id >= 0 && _ids.at(id))
-        _ids.erase_at(id);
+        _ids.remove(id);
 }
 
 Script* const Executor::get(int id) {
@@ -261,7 +261,7 @@ bool ScriptManager::hasScript(const char *scriptname) { return !(_scripttypes.fi
 
 int ScriptManager::spawnScript(const char *scriptname) {
     // fail if exceeding max size
-    if (_ids.fillsize() >= _maxcount) {
+    if (_ids.fillSize() >= _maxcount) {
         std::cerr << "WARN: limit reached in ScriptManager " << this << std::endl;
         return -1;
     }
@@ -311,7 +311,7 @@ void ScriptManager::remove(int id) {
         // remove from script-related systems
         _scriptRemoval(values);    
     
-        _ids.erase_at(id);
+        _ids.remove(id);
     }
 }
 
