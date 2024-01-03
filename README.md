@@ -28,12 +28,12 @@ automatically handle Script memory for the user, as well as associate them with
 an executor.
 
 **Entities** and **EntityManagers** form the next layer. Entities are Scripts with a **Quad**,
-a graphical presence controlled by an existing GLEnv. The **GLEnv** component
+a graphical presence controlled by an existing **GLEnv**. The GLEnv component
 encapsulates the OpenGL graphical backend for the system, managing data buffers;
 this is primarily done through wrappers defined in the ``glutil.hpp`` module.
 
 **Objects** and **ObjectManagers** form the uppermost layer. Objects are Entities with a
-**Box**, a physical presence controlled by an existing PhysEnv. The **PhysEnv** component
+**Box**, a physical presence controlled by an existing **PhysEnv**. The PhysEnv component
 facilitates physics-related simulations, i.e. collision detection based on the
 current state of all contained Boxes.
 
