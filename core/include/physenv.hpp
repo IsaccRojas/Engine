@@ -4,6 +4,7 @@
 #include "util.hpp"
 #include "glm/glm.hpp"
 #include "glm\gtx\rotate_vector.hpp"
+#include "filter.hpp"
 #include <functional>
 
 /* Class to encapsulate physical Box-shaped data for use by a PhysEnv instance.
@@ -14,6 +15,7 @@
    - callback - collision callback
 */
 class Box {
+    FilterState _filterstate;
     glm::vec3 _prevpos;
     std::function<void(Box*)> _callback;
 public:
@@ -40,6 +42,15 @@ public:
 
     /* Invokes internal callback. */
     void collide(Box *box);
+    
+    /* Sets the box's collision filter. */
+    void setFilter(Filter *filter);
+
+    /* Gets the box's collision filter state. */
+    FilterState &getFilterState();
+
+    /* Gets the box's previous position. */
+    glm::vec3 &getPrevPos();
 };
 
 /* class PhysEnv

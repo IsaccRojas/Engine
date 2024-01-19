@@ -3,6 +3,7 @@
 Object::Object() : 
     Entity(),
     _physenv(nullptr),
+    _filter(nullptr),
     _box(nullptr),
     _box_id(-1),
     _collision_correction(false),
@@ -40,15 +41,17 @@ void Object::_baseObject() {}
 void Object::_killObject() {}
 void Object::_collisionObject(Box *box) {}
 
-void Object::objectSetup(PhysEnv* physenv) {
+void Object::objectSetup(PhysEnv* physenv, Filter *filter) {
     // try removing existing box
     removeBox();
 
     _physenv = physenv;
+    _filter = filter;
     _physenv_ready = true;
 
     // generate new box
     genBox(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f));
+    _box->setFilter(_filter);
 }
 
 bool Object::getCorrection() { return _collision_correction; }
@@ -93,7 +96,7 @@ ObjectManager *Object::getManager() { return _objectmanager; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-ObjectManager::ObjectManager(int maxcount) : EntityManager(maxcount), _physenv(nullptr) {
+ObjectManager::ObjectManager(int maxcount) : EntityManager(maxcount), _physenv(nullptr), _filters(nullptr) {
     for (int i = 0; i < maxcount; i++)
         _objectvalues.push_back(ObjectValues{nullptr});
 }
@@ -104,7 +107,7 @@ void ObjectManager::_objectSetup(Object *object, ObjectType &objecttype, EntityT
 
     if (objecttype._force_objectsetup)
         if (_physenv)
-            object->objectSetup(_physenv);
+            object->objectSetup(_physenv, &(*_filters)[objecttype._filter_name]);
 
     object->_objectmanager = this;
 }
@@ -162,10 +165,11 @@ int ObjectManager::spawnObject(const char *objectname) {
     return id;
 }
 
-void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, bool force_objectsetup) {
+void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, bool force_objectsetup, const char *filter_name) {
     if (!hasObject(name) && !hasEntity(name) && !hasScript(name)) {
         _objecttypes[name] = ObjectType{
             force_objectsetup,
+            filter_name,
             allocator
         };
         addEntity(allocator, name, type, force_scriptsetup, force_enqueue, force_removeonkill, force_entitysetup, animation_name);
@@ -196,3 +200,4 @@ void ObjectManager::remove(int id) {
 }
 
 void ObjectManager::setPhysEnv(PhysEnv *physenv) { if (!_physenv) _physenv = physenv; }
+void ObjectManager::setFilters(std::unordered_map<std::string, Filter> *filters) { if (!_filters) _filters = filters; }

@@ -108,3 +108,17 @@ unsigned Partitioner::size() { return _IDs.size(); }
 unsigned Partitioner::freeSize() { return _freeIDs.size(); }
 //get size of used IDs
 unsigned Partitioner::fillSize() { return _IDs.size() - _freeIDs.size(); }
+
+/* Checks if provided string ends with the provided suffix.
+*/
+bool endsWith(const std::string& str, const std::string& suffix)
+{
+    return str.size() >= suffix.size() && 0 == str.compare(str.size()-suffix.size(), suffix.size(), suffix);
+}
+
+/* Checks if provided string starts with the provided prefix
+*/
+bool startsWith(const std::string& str, const std::string& prefix)
+{
+    return str.size() >= prefix.size() && 0 == str.compare(0, prefix.size(), prefix);
+}

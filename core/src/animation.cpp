@@ -163,20 +163,6 @@ bool AnimationState::completed() {
     return _completed;
 }
 
-/* Checks if provided string ends with the provided suffix.
-*/
-bool endsWith(const std::string& str, const std::string& suffix)
-{
-    return str.size() >= suffix.size() && 0 == str.compare(str.size()-suffix.size(), suffix.size(), suffix);
-}
-
-/* Checks if provided string starts with the provided prefix
-*/
-bool startsWith(const std::string& str, const std::string& prefix)
-{
-    return str.size() >= prefix.size() && 0 == str.compare(0, prefix.size(), prefix);
-}
-
 /* Searches the provided directory for .json files, and parses them to load animation data. Returns
    an unordered map mapping .json file names (excluding the .json extension) to their defined
    Animation data.

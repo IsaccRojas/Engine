@@ -34,7 +34,7 @@ class Test1 : public Object {
         setCorrection(true);
         
         _i = 0;
-        _lifetime = 150;
+        _lifetime = 600;
         _collided = false;
     };
 
@@ -275,6 +275,10 @@ void loop(GLFWwindow *winhandle) {
     std::cout << "Setting up animation map" << std::endl;
     std::unordered_map<std::string, Animation> animations = loadAnimations("./animconfig");
 
+    // initialize filter map
+    std::cout << "Setting up filter map" << std::endl;
+    std::unordered_map<std::string, Filter> filters = loadFilters("./filterconfig");
+
     // initialize PhysEnv instance
     std::cout << "Setting up physenv" << std::endl;
     PhysEnv obj_physenv{256};
@@ -291,12 +295,13 @@ void loop(GLFWwindow *winhandle) {
     obj_manager.setGLEnv(&obj_glenv);
     obj_manager.setAnimations(&animations);
     obj_manager.setPhysEnv(&obj_physenv);
+    obj_manager.setFilters(&filters);
 
     // add objects to manager
     std::cout << "Adding entities and objects to manager" << std::endl;
-    obj_manager.addObject(block1allocator, "Block1", T_BLOCK1, true, true, true, true, "Block1", true);
-    obj_manager.addObject(test1allocator, "Test1", T_TEST1, true, true, true, true, "Test1", true);
-    obj_manager.addObject(test2allocator, "Test2", T_TEST2, true, true, true, true, "Test2", true);
+    obj_manager.addObject(block1allocator, "Block1", T_BLOCK1, true, true, true, true, "Block1", true, "Block1");
+    obj_manager.addObject(test1allocator, "Test1", T_TEST1, true, true, true, true, "Test1", true, "Test1");
+    obj_manager.addObject(test2allocator, "Test2", T_TEST2, true, true, true, true, "Test2", true, "Test2");
     obj_manager.addEntity(effect1allocator, "Effect1", T_EFFECT1, true, true, true, true, "Effect1");
     obj_manager.addEntity(effect2allocator, "Effect2", T_EFFECT2, true, true, true, true, "Effect2");  
     obj_manager.addEntity(effect3allocator, "Effect3", T_EFFECT3, true, true, true, true, "Effect3");
@@ -309,11 +314,9 @@ void loop(GLFWwindow *winhandle) {
     gravity.enqueue();
 
     // spawn object
-    /*
     std::cout << "Spawning block" << std::endl;
     Object *block1 = obj_manager.getObject(obj_manager.spawnObject("Block1"));
     block1->getBox()->pos = glm::vec3(0.0f, -64.0f, 0.0f);
-    */
     
     // start loop
     std::cout << "Starting loop" << std::endl;
@@ -339,7 +342,7 @@ void loop(GLFWwindow *winhandle) {
         gbl_executor.runKill();
 
         // run object scripts
-        //obj_physenv.detectCollision();
+        obj_physenv.detectCollision();
         obj_executor.runExec();
         obj_executor.runKill();
 

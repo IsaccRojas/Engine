@@ -75,4 +75,12 @@ public:
     unsigned fillSize();
 };
 
+/* Checks if provided string ends with the provided suffix.
+*/
+bool endsWith(const std::string& str, const std::string& suffix);
+
+/* Checks if provided string starts with the provided prefix
+*/
+bool startsWith(const std::string& str, const std::string& prefix);
+
 #endif

@@ -15,6 +15,7 @@ class Object : public Entity {
 
     // environmental references
     PhysEnv *_physenv;
+    Filter *_filter;
 
     // box object
     Box *_box;
@@ -67,7 +68,7 @@ public:
        enables the use of the genBox(), getBox(), and eraseBox()
        methods.
     */
-    void objectSetup(PhysEnv *physenv);
+    void objectSetup(PhysEnv *physenv, Filter *filter);
 
     void genBox(glm::vec3 position, glm::vec3 dimensions, glm::vec3 velocity);
     void removeBox();
@@ -88,6 +89,7 @@ public:
     // struct holding Object information mapped to a name
     struct ObjectType {
         bool _force_objectsetup;
+        std::string _filter_name;
         std::function<Object*(void)> _allocator = nullptr;
     };
 
@@ -102,6 +104,7 @@ protected:
     std::vector<ObjectValues> _objectvalues;
 
     PhysEnv *_physenv;
+    std::unordered_map<std::string, Filter> *_filters;
 
     // internal methods called when spawning Objects and removing them, using and setting
     // manager lifetime and Object runtime members
@@ -140,15 +143,18 @@ public:
        - force_enqueue - enqueues this Object into the provided Executor when spawning it
        - force_removeonkill - removes this Object from this manager when it is killed
        - force_entitysetup - invokes Entity setup when spawning this Object
-       - animation - name of animation to give to AnimationState of spawned Object, from provided Animation map
+       - animation_name - name of animation to give to AnimationState of spawned Object, from provided Animation map
        - force_objectsetup - invokes Object setup when spawning this Object
+       - filter_name - name of filter to give to FilterState of spawned Object's Box, from provided Filter map
     */
-    void addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, bool force_objectsetup);
+    void addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, bool force_objectsetup, const char *filter_name);
     /* Removes the Object, Entity or Script associated with the provided ID. */
     void remove(int id);
 
     /* Sets the PhysEnv for this manager to use. */
     void setPhysEnv(PhysEnv *physenv);
+    /* Sets the Filter map for this manager to use. */
+    void setFilters(std::unordered_map<std::string, Filter> *filters);
 };
 
 #endif

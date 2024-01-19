@@ -51,6 +51,21 @@ void Box::collide(Box *box) {
     _callback(box);
 }
 
+/* Sets the box's collision filter. */
+void Box::setFilter(Filter *filter) {
+    _filterstate.setFilter(filter);
+}
+
+/* Gets the box's collision filter state. */
+FilterState& Box::getFilterState() {
+    return _filterstate;
+}
+
+/* Gets the box's previous position. */
+glm::vec3& Box::getPrevPos() {
+    return _prevpos;
+}
+
 // _______________________________________ PhysEnv _______________________________________
 
 PhysEnv::PhysEnv(unsigned maxcount) :
@@ -119,7 +134,11 @@ void PhysEnv::detectCollision() {
                 if (_ids.at(j)) {
                     
                     // detect and handle collision
-                    collisionAABB(_boxes[i], _boxes[j]);
+                    if (
+                        _boxes[i].getFilterState().pass(_boxes[j].getFilterState().id()) &&
+                        _boxes[j].getFilterState().pass(_boxes[i].getFilterState().id())
+                    )
+                        collisionAABB(_boxes[i], _boxes[j]);
 
                 }
             }
@@ -145,6 +164,19 @@ void PhysEnv::collisionAABB(Box &box1, Box &box2) {
     bool coll_ver_cur = glm::abs(pos1.y - pos2.y) * 2 < (dim1.y + dim2.y);
 
     if (coll_hor_cur && coll_ver_cur) {
+
+        // if correction is set, get data on previous positions
+        if (false) {
+            glm::vec3 &prevpos1 = box1.getPrevPos();
+            glm::vec3 &prevpos2 = box2.getPrevPos();
+            
+            // get previous collision state and relative positions
+            bool coll_hor_prev = glm::abs(prevpos1.x - prevpos2.x) * 2 < (dim1.x + dim2.x);
+            bool coll_ver_prev = glm::abs(prevpos1.y - prevpos2.y) * 2 < (dim1.y + dim2.y);
+            bool box1_right = prevpos1.x >= prevpos2.x;
+            bool box1_below = prevpos1.y >= prevpos2.y;
+        }
+
         /*
         if (obj1_correct || obj2_correct) {
             // get past collision

@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <fstream>
 #include "json.hpp"
+#include "util.hpp"
 
 /* struct Frame
    Represents a graphical frame; the data corresponding to a single "image" in an animation.
@@ -118,14 +119,6 @@ public:
     */
     bool completed();
 };
-
-/* Checks if provided string ends with the provided suffix.
-*/
-bool endsWith(const std::string& str, const std::string& suffix);
-
-/* Checks if provided string starts with the provided prefix
-*/
-bool startsWith(const std::string& str, const std::string& prefix);
 
 /* Searches the provided directory for .json files, and parses them to load animation data. Returns
    an unordered map mapping .json file names (excluding the .json extension) to their defined
