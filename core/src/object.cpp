@@ -6,7 +6,6 @@ Object::Object() :
     _filter(nullptr),
     _box(nullptr),
     _box_id(-1),
-    _collision_correction(false),
     _collision_elastic(false),
     _physenv_ready(false),
     _box_ready(false),
@@ -22,14 +21,8 @@ void Object::_initEntity() {
         _initObject();
 }
 void Object::_baseEntity() {
-    if (_physenv_ready) {
-        if (_box_ready) {
-            // advance box in time
-            _box->step();
-        }
-
+    if (_physenv_ready)
         _baseObject();
-    }
 }
 void Object::_killEntity() {
     if (_physenv_ready)
@@ -54,8 +47,6 @@ void Object::objectSetup(PhysEnv* physenv, Filter *filter) {
     _box->setFilter(_filter);
 }
 
-bool Object::getCorrection() { return _collision_correction; }
-void Object::setCorrection(bool correction) { _collision_correction = correction; }
 bool Object::getElastic() { return _collision_elastic; }
 void Object::setElastic(bool elastic) { _collision_elastic = elastic; }
 

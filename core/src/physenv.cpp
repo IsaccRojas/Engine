@@ -5,6 +5,7 @@
 Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::function<void(Box*)> callback) :
     _prevpos(position),
     _callback(callback),
+    _collision_correction(false),
     pos(position),
     dim(dimensions),
     vel(velocity)
@@ -13,6 +14,7 @@ Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::func
 Box::Box(const Box &other) {
     _prevpos = other._prevpos;
     _callback = other._callback;
+    _collision_correction = other._collision_correction;
     pos = other.pos;
     dim = other.dim;
     vel = other.vel;
@@ -21,6 +23,7 @@ Box::Box(const Box &other) {
 Box::Box() :
     _prevpos(glm::vec3(0.0f)),
     _callback(nullptr),
+    _collision_correction(false),
     pos(glm::vec3(0.0f)),
     dim(glm::vec3(0.0f)),
     vel(glm::vec3(0.0f))
@@ -29,6 +32,7 @@ Box::Box() :
 Box& Box::operator=(const Box &other) {
     _prevpos = other._prevpos;
     _callback = other._callback;
+    _collision_correction = other._collision_correction;
     pos = other.pos;
     dim = other.dim;
     vel = other.vel;
@@ -59,6 +63,16 @@ void Box::setFilter(Filter *filter) {
 /* Gets the box's collision filter state. */
 FilterState& Box::getFilterState() {
     return _filterstate;
+}
+
+/* Sets the box's collision correction flag. */
+void Box::setCorrection(bool correction) {
+    _collision_correction = correction;
+}
+
+/* Gets the box's collision correction flag. */
+bool Box::getCorrection() {
+    return _collision_correction;
 }
 
 /* Gets the box's previous position. */
@@ -94,15 +108,15 @@ int PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<v
 Box *PhysEnv::get(int i) {
     if (i < 0)
         std::cerr << "WARN: attempt to get address with negative value from PhysEnv " << this << std::endl;
-    if (i >= 0 && _ids[i])
-        return &_boxes[i];
+    if (i >= 0 && _ids.at(i))
+        return &(_boxes[i]);
     return nullptr;
 }
 
 void PhysEnv::step() {
     for (unsigned i = 0; i < _ids.size(); i++)
         // only try calling step on index i if it is an active ID in _ids
-        if (_ids[i])
+        if (_ids.at(i))
             _boxes[i].step();
 }
 
@@ -156,63 +170,64 @@ void PhysEnv::collisionAABB(Box &box1, Box &box2) {
     glm::vec3 &dim1 = box1.dim;
     glm::vec3 &pos2 = box2.pos;
     glm::vec3 &dim2 = box2.dim;
-    //bool obj1_correct = obj1->getCorrection();
-    //bool obj2_correct = obj2->getCorrection();
 
     // get current collision
-    bool coll_hor_cur = glm::abs(pos1.x - pos2.x) * 2 < (dim1.x + dim2.x);
-    bool coll_ver_cur = glm::abs(pos1.y - pos2.y) * 2 < (dim1.y + dim2.y);
+    float coll_hor_space = glm::abs(pos1.x - pos2.x) - ((dim1.x + dim2.x) / 2.0f);
+    float coll_ver_space = glm::abs(pos1.y - pos2.y) - ((dim1.y + dim2.y) / 2.0f);
 
-    if (coll_hor_cur && coll_ver_cur) {
+    if (coll_hor_space < 0 && coll_ver_space < 0) {  
+        bool correct1 = box1.getCorrection();
+        bool correct2 = box2.getCorrection();
 
         // if correction is set, get data on previous positions
-        if (false) {
+        if (correct1 || correct2) {
+            glm::vec3 &vel1 = box1.vel;
+            glm::vec3 &vel2 = box2.vel;
             glm::vec3 &prevpos1 = box1.getPrevPos();
             glm::vec3 &prevpos2 = box2.getPrevPos();
             
             // get previous collision state and relative positions
-            bool coll_hor_prev = glm::abs(prevpos1.x - prevpos2.x) * 2 < (dim1.x + dim2.x);
-            bool coll_ver_prev = glm::abs(prevpos1.y - prevpos2.y) * 2 < (dim1.y + dim2.y);
+            bool coll_hor_prev = glm::abs(prevpos1.x - prevpos2.x) < (dim1.x + dim2.x) / 2.0f;
+            bool coll_ver_prev = glm::abs(prevpos1.y - prevpos2.y) < (dim1.y + dim2.y) / 2.0f;
             bool box1_right = prevpos1.x >= prevpos2.x;
-            bool box1_below = prevpos1.y >= prevpos2.y;
-        }
+            bool box1_above = prevpos1.y >= prevpos2.y;
 
-        /*
-        if (obj1_correct || obj2_correct) {
-            // get past collision
-            bool coll_hor_prev = glm::abs(physpos1_prev.x - physpos2_prev.x) * 2 < (physdim1.x + physdim2.x);
-            //bool coll_ver_prev = glm::abs(physpos1_prev.y - physpos2_prev.y) * 2 < (physdim1.y + physdim2.y);
-
-            if (coll_hor_prev) {
-                // if colliding horizontally before, correct objects along x coordinate based on previous position
-                bool obj1_front_obj2 = physpos1_prev.x >= physpos2_prev.x;
-                if (obj1_correct)
-                    obj1->setPhysPos(
-                        obj1->getPhysPos() +
-                        (glm::vec3(physpos2_curr.x + physdim2.x + physdim1.x, 0.0f, 0.0f) * ((obj1_front_obj2) ? 1.0f : -1.0f))
-                    );
-                if (obj2_correct)
-                    obj2->setPhysPos(
-                        obj2->getPhysPos() +
-                        (glm::vec3(physpos1_curr.x + physdim1.x + physdim2.x, 0.0f, 0.0f) * ((!obj1_front_obj2) ? 1.0f : -1.0f))
-                    );
-            // if no horizontal collision, assume vertical
+            // apply corrections
+            float vel1_ratio = 0.0f;
+            float vel2_ratio = 0.0f;
+            if (correct1 && correct2) {
+                // get ratio of corrections based on velocities
+                vel1_ratio = glm::length(vel1) / (glm::length(vel1) + glm::length(vel2));
+                vel2_ratio = glm::length(vel2) / (glm::length(vel1) + glm::length(vel2));
             } else {
-                // if colliding horizontally before, correct objects along x coordinate based on previous position
-                bool obj1_above_obj2 = physpos1_prev.y >= physpos2_prev.y;
-                if (obj1_correct)
-                    obj1->setPhysPos(
-                        obj1->getPhysPos() +
-                        (glm::vec3(0.0f, physpos2_curr.y + physdim2.y + physdim1.y, 0.0f) * ((obj1_above_obj2) ? 1.0f : -1.0f))
-                    );
-                if (obj2_correct)
-                    obj2->setPhysPos(
-                        obj2->getPhysPos() +
-                        (glm::vec3(0.0f, physpos1_curr.y + physdim1.y + physdim2.y, 0.0f) * ((!obj1_above_obj2) ? 1.0f : -1.0f))
-                    );
+                // set one box to get the full correction, and the other to get no correction
+                vel1_ratio = correct1;
+                vel2_ratio = correct2;
+            }
+
+            if (!coll_hor_prev) {
+                if (!box1_right) {
+                    // move box1 to the left and box2 to the right
+                    pos1.x -= glm::abs(coll_hor_space) * vel1_ratio;
+                    pos2.x += glm::abs(coll_hor_space) * vel2_ratio;
+                } else {
+                    // move box1 to the right and box2 to the left
+                    pos1.x += glm::abs(coll_hor_space) * vel1_ratio;
+                    pos2.x -= glm::abs(coll_hor_space) * vel2_ratio;
+                }
+            }
+            if (!coll_ver_prev) {
+                if (!box1_above) {
+                    // move box1 down and box2 up
+                    pos1.y -= glm::abs(coll_ver_space) * vel1_ratio;
+                    pos2.y += glm::abs(coll_ver_space) * vel2_ratio;
+                } else {
+                    // move box1 up and box2 down
+                    pos1.y += glm::abs(coll_ver_space) * vel1_ratio;
+                    pos2.y -= glm::abs(coll_ver_space) * vel2_ratio;
+                }
             }
         }
-        */
 
         // run collision handlers
         box1.collide(&box2);

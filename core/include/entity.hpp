@@ -60,6 +60,7 @@ public:
     void entitySetup(GLEnv *glenv, Animation *animation);
 
     AnimationState &getAnimState();
+    void stepAnim();
 
     void genQuad(glm::vec3 pos, glm::vec3 scale);
     int removeQuad();

@@ -22,7 +22,6 @@ class Object : public Entity {
 
     // box variables/flags
     int _box_id;
-    bool _collision_correction;
     bool _collision_elastic;
 
     bool _physenv_ready;
@@ -51,12 +50,6 @@ protected:
 public:
     Object();
     virtual ~Object();
-
-    /* Used to control whether position correction after collision should occur. 
-       Does nothing if collision is disabled.
-    */
-    bool getCorrection();
-    void setCorrection(bool correction);
     
     /* Used to control whether elastic velocity change after collision should occur.
        Does nothing if collision is disabled.

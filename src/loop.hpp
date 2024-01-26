@@ -14,7 +14,7 @@
 
 const float PI = 3.14159265f;
 
-/* Primary program execution loop. Uses an instance of GLEnv to handle graphics.
+/* Primary program execution loop.
 */
 void loop(GLFWwindow *winhandle);
 

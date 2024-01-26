@@ -18,6 +18,7 @@ class Box {
     FilterState _filterstate;
     glm::vec3 _prevpos;
     std::function<void(Box*)> _callback;
+    bool _collision_correction;
 public:
     // physics variables
     glm::vec3 pos;
@@ -49,8 +50,16 @@ public:
     /* Gets the box's collision filter state. */
     FilterState &getFilterState();
 
+    /* Sets the box's collision correction flag. */
+    void setCorrection(bool correction);
+
+    /* Gets the box's collision correction flag. */
+    bool getCorrection();
+
     /* Gets the box's previous position. */
     glm::vec3 &getPrevPos();
+
+
 };
 
 /* class PhysEnv

@@ -10,7 +10,13 @@ class Block1 : public Object {
         getQuad()->pos.v = getBox()->pos;
     };
 
-    void _baseObject() {};
+    void _baseObject() {
+        getBox()->vel = glm::vec3(0.0f, 0.0f, 0.0f);
+        getQuad()->pos.v = getBox()->pos;
+
+        stepAnim();
+        enqueue();
+    };
 
     void _killObject() {
         removeBox();
@@ -27,11 +33,10 @@ class Test1 : public Object {
 
     void _initObject() {
         getBox()->dim = glm::vec3(16.0f, 16.0f, 0.0f);
+        getBox()->setCorrection(true);
 
         getQuad()->scale.v = glm::vec3(16.0f, 16.0f, 1.0f);
         getQuad()->pos.v = getBox()->pos;
-
-        setCorrection(true);
         
         _i = 0;
         _lifetime = 600;
@@ -40,7 +45,9 @@ class Test1 : public Object {
 
     void _baseObject() {
         getQuad()->pos.v = getBox()->pos;
-        
+
+        stepAnim();
+
         _i++;
         if (_i >= _lifetime)
             kill();
@@ -72,11 +79,9 @@ class Test1 : public Object {
     };
 
     void _collisionObject(Box *box) {
-        /*
-        if (obj->getType() == T_TEST1 || obj->getType() == T_TEST2)
-            return;
-        */
         _collided = true;
+        
+        getQuad()->pos.v = getBox()->pos;
         kill();
     }
 
@@ -90,6 +95,7 @@ class Test2 : public Object {
 
     void _initObject() {
         getBox()->dim = glm::vec3(12.0f, 12.0f, 0.0f);
+        getBox()->setCorrection(true);
 
         getQuad()->scale.v = glm::vec3(16.0f, 16.0f, 1.0f);
         getQuad()->pos.v = getBox()->pos;
@@ -100,6 +106,8 @@ class Test2 : public Object {
 
     void _baseObject() {
         getQuad()->pos.v = getBox()->pos;
+
+        stepAnim();
 
         _i++;
         if (_i >= _lifetime)
@@ -117,10 +125,7 @@ class Test2 : public Object {
     };
 
     void _collisionObject(Box *box) {
-        /*
-        if (obj->getType() == T_TEST1 || obj->getType() == T_TEST2)
-            return;
-        */
+        getQuad()->pos.v = getBox()->pos;
         kill();
     }
 
@@ -141,6 +146,8 @@ class Effect1 : public Entity {
     }
 
     void _baseEntity() {
+        stepAnim();
+
         _i++;
         if (_i >= _lifetime)
             kill();
@@ -167,6 +174,8 @@ class Effect2 : public Entity {
     }
 
     void _baseEntity() {
+        stepAnim();
+
         _i++;
         if (_i >= _lifetime)
             kill();
@@ -193,6 +202,8 @@ class Effect3 : public Entity {
     }
 
     void _baseEntity() {
+        stepAnim();
+
         _i++;
         if (_i >= _lifetime)
             kill();
@@ -325,7 +336,6 @@ void loop(GLFWwindow *winhandle) {
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // previously 15
         if (i % 15 == 0) {
             Entity *effect3 = obj_manager.getEntity(obj_manager.spawnEntity("Effect3"));
             Object *test1 = obj_manager.getObject(obj_manager.spawnObject("Test1"));
@@ -342,11 +352,15 @@ void loop(GLFWwindow *winhandle) {
         gbl_executor.runKill();
 
         // run object scripts
-        obj_physenv.detectCollision();
         obj_executor.runExec();
         obj_executor.runKill();
 
+        // update physics environment and detect collisions
+        obj_physenv.step();
+        obj_physenv.detectCollision();
+
         // update graphic environment and draw
+        obj_glenv.update();
         obj_glenv.draw();
 
         glfwSwapBuffers(winhandle);

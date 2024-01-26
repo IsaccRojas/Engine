@@ -22,26 +22,8 @@ void Entity::_init() {
 }
 
 void Entity::_base() {
-    if (_glenv_ready) {
+    if (_glenv_ready)
         _baseEntity();
-
-        if (!_first_step) {
-            // step animation and retrieve current frame
-            _animstate.step();
-            _frame = _animstate.getCurrent();
-        } else {
-            _first_step = false;
-        }
-
-        // only attempt to write animation data if quad is available
-        if (_quad_ready) {
-            // write frame data to quad and update quad
-            _quad->texpos.v = _frame->texpos;
-            _quad->texsize.v = _frame->texsize;
-            _quad->update();
-        }
-
-    }
 }
 
 void Entity::_kill() {
@@ -54,6 +36,25 @@ void Entity::_baseEntity() {}
 void Entity::_killEntity() {}
 
 AnimationState &Entity::getAnimState() { return _animstate; }
+
+void Entity::stepAnim() {
+    if (_glenv_ready) {
+        if (!_first_step) {
+            // step animation and retrieve current frame
+            _animstate.step();
+            _frame = _animstate.getCurrent();
+        } else {
+            _first_step = false;
+        }
+
+        // only attempt to write animation data if quad is available
+        if (_quad_ready) {
+            // write frame data to quad
+            _quad->texpos.v = _frame->texpos;
+            _quad->texsize.v = _frame->texsize;
+        }
+    }
+}
 
 void Entity::entitySetup(GLEnv *glenv, Animation *animation) {
     // try erasing existing quad
