@@ -1,11 +1,11 @@
 {
-	"name" : "Block1",
+	"name" : "OrbShot",
 	"cycles" : {
 		"cycle1" : {
 			"frames" : {
 				"frame1" : {
-					"texpos" : [0.0, 32.0, 0.0],
-					"texsize" : [32.0, 32.0],
+					"texpos" : [0.0, 86.0, 0.0],
+					"texsize" : [6.0, 6.0],
 					"offset" : [0.0, 0.0, 0.0],
 					"duration" : 1
 				}

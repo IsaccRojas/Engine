@@ -1,0 +1,172 @@
+{
+	"name" : "Player",
+	"cycles" : {
+		"walk_down" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 0.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame2" : {
+					"texpos" : [16.0, 0.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame3" : {
+					"texpos" : [0.0, 0.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame4" : {
+					"texpos" : [32.0, 0.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				}
+			},
+			"loop" : true
+		},
+
+		"walk_left" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 16.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame2" : {
+					"texpos" : [16.0, 16.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame3" : {
+					"texpos" : [0.0, 16.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame4" : {
+					"texpos" : [32.0, 16.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				}
+			},
+			"loop" : true
+		},
+
+		"walk_right" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 32.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame2" : {
+					"texpos" : [16.0, 32.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame3" : {
+					"texpos" : [0.0, 32.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame4" : {
+					"texpos" : [32.0, 32.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				}
+			},
+			"loop" : true
+		},
+
+		"walk_up" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 48.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame2" : {
+					"texpos" : [16.0, 48.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame3" : {
+					"texpos" : [0.0, 48.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame4" : {
+					"texpos" : [32.0, 48.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				}
+			},
+			"loop" : true
+		},
+
+		"stand_down" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 0.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 1
+				}
+			},
+			"loop" : false
+		},
+
+		"stand_left" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 16.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 1
+				}
+			},
+			"loop" : false
+		},
+
+		"stand_right" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 32.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 1
+				}
+			},
+			"loop" : false
+		},
+
+		"stand_up" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 48.0, 2.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 1
+				}
+			},
+			"loop" : false
+		}
+	}
+}

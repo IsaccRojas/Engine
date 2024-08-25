@@ -1,6 +1,8 @@
 #include "../include/input.hpp"
 
-Input::Input(GLFWwindow *window) : _win_h(window) {}
+Input::Input(GLFWwindow *window, int pixelwidth, int pixelheight) : _win_h(window), _pixel_width(pixelwidth), _pixel_height(pixelheight) {
+    glfwGetWindowSize(_win_h, &_win_width, &_win_height);
+}
 Input::~Input() {}
 
 void Input::update() {
@@ -40,7 +42,9 @@ void Input::update() {
     else if (state == GLFW_RELEASE)
         _m2_p = false;
 
-    glfwGetCursorPos(_win_h, &_mousex, &_mousey);
+    glfwGetCursorPos(_win_h, &_win_mouse_x, &_win_mouse_y);
+    _pixel_mouse_x = (_pixel_width * (_win_mouse_x / _win_width)) - (_pixel_width / 2.0f);
+    _pixel_mouse_y = (_pixel_height - (_pixel_height * (_win_mouse_y / _win_height))) - (_pixel_height / 2.0f);
 };
 
 void Input::setsticky(bool value) {
@@ -68,5 +72,5 @@ glm::vec2 Input::inputdir() {
 }
 
 glm::vec2 Input::mousepos() {
-    return glm::vec2(_mousex, _mousey);
+    return glm::vec2(_pixel_mouse_x, _pixel_mouse_y);
 }

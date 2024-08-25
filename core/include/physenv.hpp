@@ -24,6 +24,7 @@ public:
     glm::vec3 pos;
     glm::vec3 dim;
     glm::vec3 vel;
+    float mass;
     /* position - location of box in 3D space
        dimensions - dimensions of box in 3D space
        velocity - current velocity of box in 3D space

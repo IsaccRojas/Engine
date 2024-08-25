@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef GLINIT_HPP_
 #define GLINIT_HPP_
 

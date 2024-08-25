@@ -25,7 +25,7 @@ void main() {
     
     //get final pos by shifting unit model to center, scaling it by attribute scale, and adding attribute pos
     vec4 final_pos = 
-        (
+        round(
             (
                 (v_model + vec4(-0.5f, -0.5f, 0.0f, 0.0f)) 
                 * vec4(v_scale, 1.0f)

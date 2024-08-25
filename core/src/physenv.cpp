@@ -8,7 +8,8 @@ Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::func
     _collision_correction(false),
     pos(position),
     dim(dimensions),
-    vel(velocity)
+    vel(velocity),
+    mass(1.0f)
 {}
 
 Box::Box(const Box &other) {
@@ -18,6 +19,7 @@ Box::Box(const Box &other) {
     pos = other.pos;
     dim = other.dim;
     vel = other.vel;
+    mass = other.mass;
 }
 
 Box::Box() :
@@ -26,7 +28,8 @@ Box::Box() :
     _collision_correction(false),
     pos(glm::vec3(0.0f)),
     dim(glm::vec3(0.0f)),
-    vel(glm::vec3(0.0f))
+    vel(glm::vec3(0.0f)),
+    mass(1.0f)
 {}
 
 Box& Box::operator=(const Box &other) {
@@ -36,6 +39,7 @@ Box& Box::operator=(const Box &other) {
     pos = other.pos;
     dim = other.dim;
     vel = other.vel;
+    mass = other.mass;
 
     return *this;
 }
@@ -175,12 +179,16 @@ void PhysEnv::collisionAABB(Box &box1, Box &box2) {
     float coll_hor_space = glm::abs(pos1.x - pos2.x) - ((dim1.x + dim2.x) / 2.0f);
     float coll_ver_space = glm::abs(pos1.y - pos2.y) - ((dim1.y + dim2.y) / 2.0f);
 
+    //std::cout << "coll_hor_space: " << coll_hor_space << ", coll_ver_space: " << coll_ver_space << ", coll_hor_prev: " << coll_hor_prev << ", coll_ver_prev: " << coll_ver_prev << std::endl;
+    //std::cout << "pos1: (" << pos1.x << ", " << pos1.y << "), prevpos1: (" << prevpos1.x << ", " << prevpos1.y << ")" << std::endl;
+
     if (coll_hor_space < 0 && coll_ver_space < 0) {  
-        bool correct1 = box1.getCorrection();
-        bool correct2 = box2.getCorrection();
+        bool correct1 = box1.getCorrection() && box1.getFilterState().passCorrection(box2.getFilterState().id());
+        bool correct2 = box2.getCorrection() && box2.getFilterState().passCorrection(box1.getFilterState().id());
 
         // if correction is set, get data on previous positions
         if (correct1 || correct2) {
+
             glm::vec3 &vel1 = box1.vel;
             glm::vec3 &vel2 = box2.vel;
             glm::vec3 &prevpos1 = box1.getPrevPos();

@@ -1,6 +1,0 @@
-{
-	"name" : "Test1",
-    "id" : 1,
-    "whitelist" : [],
-    "blacklist" : [1, 2]
-}

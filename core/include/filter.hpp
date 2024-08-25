@@ -16,18 +16,23 @@ class Filter {
     int _id;
     std::vector<int> _whitelist;
     std::vector<int> _blacklist;
+    std::vector<int> _correction_whitelist;
+    std::vector<int> _correction_blacklist;
 public:
     Filter(int id);
     Filter();
 
     Filter& pushWhitelist(int x);
     Filter& pushBlacklist(int x);
+    Filter& pushCorrectionWhitelist(int x);
+    Filter& pushCorrectionBlacklist(int x);
 
     void clearLists();
 
-    std::vector<int> &getWhiteList();
-
-    std::vector<int> &getBlackList();
+    std::vector<int> &getWhitelist();
+    std::vector<int> &getBlacklist();
+    std::vector<int> &getCorrectionWhitelist();
+    std::vector<int> &getCorrectionBlacklist();
 
     int &getID();
 };
@@ -41,6 +46,7 @@ public:
     void setFilter(Filter *filter);
 
     bool pass(int x);
+    bool passCorrection(int x);
 
     int id();
 
@@ -57,7 +63,9 @@ public:
         "name" : "testname",
         "id" : 0,
         "whitelist" : [1, 2, 3, 4],
-        "blacklist" : [3]
+        "blacklist" : [3],
+        "correctionWhitelist" : [1, 2],
+        "correctionBlacklist" : [2]
    }
 */
 std::unordered_map<std::string, Filter> loadFilters(std::string dir);

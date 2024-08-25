@@ -184,7 +184,7 @@ public:
 */
 class ScriptManager {
 public:
-    // struct holding entity information mapped to a name
+    // struct holding script information mapped to a name
     struct ScriptType {
         int _internal_type;
         bool _force_scriptsetup;
@@ -193,7 +193,7 @@ public:
         std::function<Script*(void)> _allocator = nullptr;
     };
 
-    // struct holding IDs and other flags belonging to the managed entity for runtime
+    // struct holding IDs and other flags belonging to the managed script during its lifetime
     struct ScriptValues {
         int _manager_id;
         const char *_manager_name;
@@ -201,7 +201,7 @@ public:
     };
 
 protected:
-    // internal variables for added scripts and existing scripts
+    // internal variables for added script information and active scripts
     std::unordered_map<std::string, ScriptType> _scripttypes;
     std::vector<ScriptValues> _scriptvalues;
     

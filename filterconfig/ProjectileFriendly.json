@@ -1,0 +1,8 @@
+{
+	"name" : "ProjectileFriendly",
+    "id" : 4,
+    "whitelist" : [],
+    "blacklist" : [4],
+    "correctionWhitelist" : [],
+    "correctionBlacklist" : []
+}

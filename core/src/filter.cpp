@@ -8,7 +8,7 @@ bool isIn(std::vector<int> &v, int x) {
 }
 
 Filter::Filter(int id) : _id(id) {}
-Filter::Filter() : _id(0) {}
+Filter::Filter() : _id(-1) {}
 
 Filter& Filter::pushWhitelist(int x) {
     _whitelist.push_back(x);
@@ -18,18 +18,33 @@ Filter& Filter::pushBlacklist(int x) {
     _blacklist.push_back(x);
     return *this;
 }
+Filter& Filter::pushCorrectionWhitelist(int x) {
+    _correction_whitelist.push_back(x);
+    return *this;
+};
+Filter& Filter::pushCorrectionBlacklist(int x) {
+    _correction_blacklist.push_back(x);
+    return *this;
+}
 
 void Filter::clearLists() {
     _whitelist.clear();
     _blacklist.clear();
+    _correction_whitelist.clear();
+    _correction_blacklist.clear();
 }
 
-std::vector<int> &Filter::getWhiteList() {
+std::vector<int> &Filter::getWhitelist() {
     return _whitelist;
 }
-
-std::vector<int> &Filter::getBlackList() {
+std::vector<int> &Filter::getBlacklist() {
     return _blacklist;
+}
+std::vector<int> &Filter::getCorrectionWhitelist() {
+    return _correction_whitelist;
+}
+std::vector<int> &Filter::getCorrectionBlacklist() {
+    return _correction_blacklist;
 }
 
 int &Filter::getID() {
@@ -45,13 +60,33 @@ void FilterState::setFilter(Filter *filter) {
 
 bool FilterState::pass(int x) {
     // check if blacklist exists; if it does, check if x is in it
-    std::vector<int> &blacklist = _filter->getBlackList();
+    std::vector<int> &blacklist = _filter->getBlacklist();
     if (blacklist.size() > 0)
         if (isIn(blacklist, x))
             return false;
     
     // check if whitelist exists; if it does, check if x is in it
-    std::vector<int> &whitelist = _filter->getWhiteList();
+    std::vector<int> &whitelist = _filter->getWhitelist();
+    if (whitelist.size() > 0) {
+        if (isIn(whitelist, x))
+            return true;
+        else
+            return false;
+    }
+    
+    // empty filter, or only blacklist exists and x is not in it
+    return true;
+}
+
+bool FilterState::passCorrection(int x) {
+    // check if blacklist exists; if it does, check if x is in it
+    std::vector<int> &blacklist = _filter->getCorrectionBlacklist();
+    if (blacklist.size() > 0)
+        if (isIn(blacklist, x))
+            return false;
+    
+    // check if whitelist exists; if it does, check if x is in it
+    std::vector<int> &whitelist = _filter->getCorrectionWhitelist();
     if (whitelist.size() > 0) {
         if (isIn(whitelist, x))
             return true;
@@ -76,7 +111,9 @@ int FilterState::id() { return _filter->getID(); }
         "name" : "testname",
         "id" : 0,
         "whitelist" : [1, 2, 3, 4],
-        "blacklist" : [3]
+        "blacklist" : [3],
+        "correctionWhitelist" : [1, 2],
+        "correctionBlacklist" : [2]
    }
 */
 std::unordered_map<std::string, Filter> loadFilters(std::string dir) {
@@ -104,6 +141,8 @@ std::unordered_map<std::string, Filter> loadFilters(std::string dir) {
             int id;
             std::vector<int> whitelist;
             std::vector<int> blacklist;
+            std::vector<int> correction_whitelist;
+            std::vector<int> correction_blacklist;
 
             // retrieve name
             if (data.contains("name") && data["name"].is_string())
@@ -159,17 +198,59 @@ std::unordered_map<std::string, Filter> loadFilters(std::string dir) {
                     goto dir_loop_end;
             }
 
+            // retrieve correction whitelist
+            if (data.contains("correctionWhitelist") && data["correctionWhitelist"].is_array()) {
+
+                // iterate on correction whitelist
+                for (unsigned i = 0; i < data["correctionWhitelist"].size(); i++) {
+
+                    // retrieve value
+                    if (data["correctionWhitelist"][i].is_number_integer())
+                        correction_whitelist.push_back(data["correctionWhitelist"][i]);
+                    else {
+                        std::cerr << "Error loading .json file '" << filename << "': field 'correctionWhitelist', element " << i << " is not an integer" << std::endl;
+                        goto dir_loop_end;
+                    }
+                }
+            } else {
+                std::cerr << "Error loading .json file '" << filename << "': field 'correctionWhitelist' is missing or is not an array" << std::endl;
+                goto dir_loop_end;
+            }
+
+            // retrieve correction blacklist
+            if (data.contains("correctionBlacklist") && data["correctionBlacklist"].is_array()) {
+
+                // iterate on correction whitelist
+                for (unsigned i = 0; i < data["correctionBlacklist"].size(); i++) {
+
+                    // retrieve value
+                    if (data["correctionBlacklist"][i].is_number_integer())
+                        correction_blacklist.push_back(data["correctionBlacklist"][i]);
+                    else {
+                        std::cerr << "Error loading .json file '" << filename << "': field 'correctionBlacklist', element " << i << " is not an integer" << std::endl;
+                        goto dir_loop_end;
+                    }
+                }
+            } else {
+                std::cerr << "Error loading .json file '" << filename << "': field 'correctionBlacklist' is missing or is not an array" << std::endl;
+                goto dir_loop_end;
+            }
+
             // push loaded filter data into map
             filters[name] = Filter(id);
             for (unsigned i = 0; i < whitelist.size(); i++)
                 filters[name].pushWhitelist(whitelist[i]);
             for (unsigned i = 0; i < blacklist.size(); i++)
                 filters[name].pushBlacklist(blacklist[i]);
+            for (unsigned i = 0; i < correction_whitelist.size(); i++)
+                filters[name].pushCorrectionWhitelist(correction_whitelist[i]);
+            for (unsigned i = 0; i < correction_blacklist.size(); i++)
+                filters[name].pushCorrectionBlacklist(correction_blacklist[i]);
         }
 
         dir_loop_end:
         continue;
     }
-
+    
     return filters;
 }
