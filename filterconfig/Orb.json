@@ -1,8 +1,0 @@
-{
-	"name" : "Orb",
-    "id" : 3,
-    "whitelist" : [-1],
-    "blacklist" : [],
-    "correctionWhitelist" : [-1],
-    "correctionBlacklist" : []
-}

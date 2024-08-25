@@ -1,8 +1,0 @@
-{
-	"name" : "Block",
-    "id" : 0,
-    "whitelist" : [],
-    "blacklist" : [0],
-    "correctionWhitelist" : [-1],
-    "correctionBlacklist" : []
-}
