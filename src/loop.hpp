@@ -1,10 +1,8 @@
 #ifndef LOOP_HPP_
 #define LOOP_HPP_
 
-#include "effect.hpp"
 #include "player.hpp"
-#include "orb.hpp"
-#include "slime.hpp"
+#include "effect.hpp"
 
 #include <iostream>
 #include <chrono>

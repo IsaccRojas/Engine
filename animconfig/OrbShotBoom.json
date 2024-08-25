@@ -1,0 +1,28 @@
+{
+	"name" : "OrbShotBoom",
+	"cycles" : {
+		"cycle1" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 54.0, 1.0],
+					"texsize" : [8.0, 8.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 6
+				},
+				"frame2" : {
+					"texpos" : [8.0, 54.0, 1.0],
+					"texsize" : [8.0, 8.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 6
+				},
+				"frame3" : {
+					"texpos" : [16.0, 54.0, 1.0],
+					"texsize" : [8.0, 8.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 6
+				}
+			},
+			"loop" : false
+		}
+	}
+}
