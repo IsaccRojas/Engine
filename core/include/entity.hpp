@@ -83,6 +83,7 @@ public:
         bool _force_entitysetup;
         std::string _animation_name;
         std::function<Entity*(void)> _allocator = nullptr;
+        std::function<void(Entity*)> _spawncallback = nullptr;
     };
 
     // struct holding IDs and other flags belonging to the managed Entity
@@ -132,8 +133,9 @@ public:
        - force_removeonkill - removes this Entity from this manager when it is killed
        - force_entitysetup - invokes Entity setup when spawning this Entity
        - animation - name of animation to give to AnimationState of spawned Entity, from provided Animation map
+       - spawn_callback - function callback to call after Entity has been spawned and setup
     */
-    void addEntity(std::function<Entity*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name);
+    void addEntity(std::function<Entity*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, std::function<void(Entity*)> spawn_callback);
     /* Removes the Entity or Script associated with the provided ID. */
     void remove(int id);
 

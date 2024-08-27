@@ -153,17 +153,22 @@ int ObjectManager::spawnObject(const char *objectname) {
     // set up object
     _objectSetup(object, objecttype, entitytype, scripttype, id);
     
+    // call callback if it exists
+    if (objecttype._spawncallback)
+        objecttype._spawncallback(object);
+    
     return id;
 }
 
-void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, bool force_objectsetup, const char *filter_name) {
+void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, bool force_objectsetup, const char *filter_name, std::function<void(Object*)> spawn_callback) {
     if (!hasObject(name) && !hasEntity(name) && !hasScript(name)) {
         _objecttypes[name] = ObjectType{
             force_objectsetup,
             filter_name,
-            allocator
+            allocator,
+            spawn_callback
         };
-        addEntity(allocator, name, type, force_scriptsetup, force_enqueue, force_removeonkill, force_entitysetup, animation_name);
+        addEntity(allocator, name, type, force_scriptsetup, force_enqueue, force_removeonkill, force_entitysetup, animation_name, nullptr);
     }
 }
 

@@ -2,7 +2,7 @@
 	"name" : "Character",
     "id" : 1,
     "whitelist" : [],
-    "blacklist" : [1],
+    "blacklist" : [],
     "correctionWhitelist" : [],
-    "correctionBlacklist" : [1, 2]
+    "correctionBlacklist" : []
 }

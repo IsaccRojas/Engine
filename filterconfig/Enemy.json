@@ -1,6 +1,6 @@
 {
-	"name" : "Player",
-    "id" : 2,
+	"name" : "Enemy",
+    "id" : 5,
     "whitelist" : [],
     "blacklist" : [5],
     "correctionWhitelist" : [],

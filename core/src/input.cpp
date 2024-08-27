@@ -64,7 +64,7 @@ bool Input::get_m2() { return _m2_p; }
 glm::vec2 Input::inputdir() {
     float vertical = float(_w_p) + (-1.0f * float(_s_p));
     float horizontal = float(_d_p) + (-1.0f * float(_a_p));
-    float angle = (horizontal != 0) ? glm::atan(glm::abs(vertical) / glm::abs(horizontal)) : (PI / 2.0f);
+    float angle = (horizontal != 0) ? glm::atan(glm::abs(vertical) / glm::abs(horizontal)) : (PI_INPUT / 2.0f);
     return glm::vec2(
         horizontal * glm::cos(angle),
         vertical * glm::sin(angle)

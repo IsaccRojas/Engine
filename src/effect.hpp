@@ -15,6 +15,7 @@ class Effect : public Entity {
     virtual void _baseEffect();
     virtual void _killEffect();
 public:
+    // if lifetime = -1, will not be killed via _baseEntity() call
     Effect(glm::vec3 scale, int lifetime);
 };
 

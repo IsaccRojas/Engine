@@ -4,8 +4,6 @@ void Effect::_initEntity() {
     _initEffect();
 
     getQuad()->scale.v = _scale;
-    getQuad()->pos.v.z = 1.0f;
-
     _i = 0;
 }
 
@@ -14,9 +12,12 @@ void Effect::_baseEntity() {
 
     stepAnim();
 
-    _i++;
-    if (_i >= _lifetime)
-        kill();
+    if (_lifetime >= 0) {
+        _i++;
+        if (_i >= _lifetime)
+            kill();
+    }
+
     enqueue();
 }
 

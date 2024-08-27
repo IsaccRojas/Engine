@@ -1,7 +1,6 @@
 #include "loop.hpp"
 
-enum Type { T_BASIC_ORBSHOT, T_EFFECT_BIGSMOKE, T_EFFECT_ORBSHOTPARTICLE, T_EFFECT_ORBSHOTBOOM };
-
+enum Type { T_BASIC_ORBSHOT, T_CHASER_SMALLBALL, T_CHASER_MEDIUMBALL, T_EFFECT_SMALLSMOKE, T_EFFECT_MEDIUMSMOKE, T_EFFECT_ORBSHOTPARTICLE, T_EFFECT_ORBSHOTBOOM, T_EFFECT_BALLPARTICLE, T_EFFECT_RING };
 
 class OrbShot : public Basic {
     int _i;
@@ -47,38 +46,30 @@ public:
     OrbShot() : Basic(glm::vec3(6.0f, 6.0f, 0.0f)) {}
 };
 
-class BigBoom : public Effect {
+class SmallSmoke : public Effect {
     void _initEffect() {
+        getQuad()->pos.v.z = 1.0f;
         getAnimState().setAnimState(rand() % 2);
     }
     void _baseEffect() {}
     void _killEffect() {}
 public:
-    BigBoom() : Effect(glm::vec3(24.0f, 24.0f, 1.0f), 16) {}
+    SmallSmoke() : Effect(glm::vec3(16.0f, 16.0f, 1.0f), 20) {}
 };
 
-class SmallBoom : public Effect {
+class MediumSmoke : public Effect {
     void _initEffect() {
+        getQuad()->pos.v.z = 1.0f;
         getAnimState().setAnimState(rand() % 2);
     }
     void _baseEffect() {}
     void _killEffect() {}
 public:
-    SmallBoom() : Effect(glm::vec3(20.0f, 20.0f, 1.0f), 16) {}
-};
-
-class BigSmoke : public Effect {
-    void _initEffect() {
-        getAnimState().setAnimState(rand() % 2);
-    }
-    void _baseEffect() {}
-    void _killEffect() {}
-public:
-    BigSmoke() : Effect(glm::vec3(24.0f, 24.0f, 1.0f), 20) {}
+    MediumSmoke() : Effect(glm::vec3(24.0f, 24.0f, 1.0f), 20) {}
 };
 
 class OrbShotParticle : public Effect {
-    void _initEffect() { getQuad()->pos.v.z = -1.0f; }
+    void _initEffect() { getQuad()->pos.v.z = 1.0f; }
     void _baseEffect() {}
     void _killEffect() {}
 public:
@@ -86,47 +77,60 @@ public:
 };
 
 class OrbShotBoom : public Effect {
-    void _initEffect() { getQuad()->pos.v.z = -1.0f; }
+    void _initEffect() { getQuad()->pos.v.z = 1.0f; }
     void _baseEffect() {}
     void _killEffect() {}
 public:
     OrbShotBoom() : Effect(glm::vec3(8.0f, 8.0f, 1.0f), 24) {}
 };
 
-class Gravity : public Script {
-    glm::vec3 _accl;
-    ObjectManager *_manager;
-    bool _ready;
+class BallParticle : public Effect {
+    glm::vec3 _dir;
 
-    void _init() {}
-    void _base() {
-        if (_ready) {
-            int maxid = _manager->getMaxID();
-            Object *obj;
-            for (int i = 0; i < maxid; i++)
-                if ((obj = _manager->getObject(i)))
-                    obj->getBox()->vel = obj->getBox()->vel + _accl;
-        }
-        enqueue();
+    void _initEffect() { getQuad()->pos.v.z = 1.0f; }
+    void _baseEffect() {
+        getQuad()->pos.v = getQuad()->pos.v + _dir;
     }
-    void _kill() {}
-
+    void _killEffect() {}
 public:
-    Gravity() : Script(), _accl(glm::vec3(0.0f)), _manager(nullptr), _ready(false) {}
+    BallParticle(glm::vec3 dir) : Effect(glm::vec3(6.0f, 6.0f, 1.0f), 18), _dir(dir) {}
+};
 
-    void gravitySetup(glm::vec3 accl, ObjectManager *manager) {
-        _accl = accl;
-        _manager = manager;
-        _ready = true;
-    }
+class Ring : public Effect {
+    void _initEffect() { getQuad()->pos.v.z = -1.0f; }
+    void _baseEffect() {}
+    void _killEffect() {}
+public:
+    Ring() : Effect(glm::vec3(64.0f, 64.0f, 1.0f), -1) {}
 };
 
 Object *OrbShot_allocator() { return new OrbShot; }
-Entity *BigBoom_allocator() { return new BigBoom; }
-Entity *SmallBoom_allocator() { return new SmallBoom; }
-Entity *BigSmoke_allocator() { return new BigSmoke; }
+Entity *SmallSmoke_allocator() { return new SmallSmoke; }
+Entity *MediumSmoke_allocator() { return new MediumSmoke; }
 Entity *OrbShotParticle_allocator() { return new OrbShotParticle; }
 Entity *OrbShotBoom_allocator() { return new OrbShotBoom; }
+Entity *BallParticle_allocator() { return new BallParticle(random_angle(glm::vec3(1.0f, 0.0f, 0.0f), 180)); }
+Entity *Ring_allocator() { return new Ring; }
+
+Object *target;
+Object *SmallBall_allocator() {
+    Chaser *chaser = new Chaser(1, "SmallSmoke");
+    chaser->chaserSetTarget(target);
+    return chaser;
+}
+Object *MediumBall_allocator() {
+    Chaser *chaser = new Chaser(2, "MediumSmoke");
+    chaser->chaserSetTarget(target);
+    return chaser;
+}
+
+void SmallBall_callback(Object *obj) {
+    obj->getBox()->dim = glm::vec3(10.0f, 10.0f, 1.0f);
+}
+
+void MediumBall_callback(Object *obj) {
+    obj->getBox()->dim = glm::vec3(14.0f, 14.0f, 1.0f);
+}
 
 void loop(GLFWwindow *winhandle) {
     srand(time(NULL));
@@ -136,7 +140,7 @@ void loop(GLFWwindow *winhandle) {
     GLEnv obj_glenv{256};
 
     std::cout << "Setting up texture array" << std::endl;
-    obj_glenv.setTexArray(96, 62, 2);
+    obj_glenv.setTexArray(96, 164, 2);
     std::cout << "Setting texture" << std::endl;
     obj_glenv.setTexture(Image("objects.png"), 0, 0, 0);
     obj_glenv.setTexture(Image("effects.png"), 0, 0, 1);
@@ -155,7 +159,7 @@ void loop(GLFWwindow *winhandle) {
     // set up some opengl parameters
     std::cout << "Setting up some OpenGL parameters" << std::endl;
     glfwSwapInterval(1);
-    glClearColor(0.2f, 0.2f, 0.2f, 0.0f);
+    glClearColor(0.35f, 0.35f, 0.35f, 0.0f);
     glEnable(GL_DEPTH_TEST);
     
     // initialize animation map
@@ -186,21 +190,26 @@ void loop(GLFWwindow *winhandle) {
 
     // add objects to manager
     std::cout << "Adding entities and objects to manager" << std::endl;
-    obj_manager.addObject(OrbShot_allocator, "OrbShot", T_BASIC_ORBSHOT, true, true, true, true, "OrbShot", true, "ProjectileFriendly");
-    obj_manager.addEntity(BigSmoke_allocator, "BigSmoke", T_EFFECT_BIGSMOKE, true, true, true, true, "BigSmoke");
-    obj_manager.addEntity(OrbShotParticle_allocator, "OrbShotParticle", T_EFFECT_ORBSHOTPARTICLE, true, true, true, true, "OrbShotParticle");
-    obj_manager.addEntity(OrbShotBoom_allocator, "OrbShotBoom", T_EFFECT_ORBSHOTBOOM, true, true, true, true, "OrbShotBoom");
+    obj_manager.addObject(OrbShot_allocator, "OrbShot", T_BASIC_ORBSHOT, true, true, true, true, "OrbShot", true, "ProjectileFriendly", nullptr);
 
-    // set up instances
-    std::cout << "Setting up gravity" << std::endl;
-    Gravity gravity;
-    gravity.gravitySetup(glm::vec3(0.0f, -0.03f, 0.0f), &obj_manager);
-    gravity.scriptSetup(&gbl_executor);
-    gravity.enqueue();
+    obj_manager.addObject(SmallBall_allocator, "SmallBall", T_CHASER_SMALLBALL, true, true, true, true, "SmallBall", true, "Enemy", SmallBall_callback);
+    obj_manager.addObject(MediumBall_allocator, "MediumBall", T_CHASER_MEDIUMBALL, true, true, true, true, "MediumBall", true, "Enemy", MediumBall_callback);
+
+    obj_manager.addEntity(SmallSmoke_allocator, "SmallSmoke", T_EFFECT_SMALLSMOKE, true, true, true, true, "SmallSmoke", nullptr);
+    obj_manager.addEntity(MediumSmoke_allocator, "MediumSmoke", T_EFFECT_MEDIUMSMOKE, true, true, true, true, "MediumSmoke", nullptr);
+    obj_manager.addEntity(OrbShotParticle_allocator, "OrbShotParticle", T_EFFECT_ORBSHOTPARTICLE, true, true, true, true, "OrbShotParticle", nullptr);
+    obj_manager.addEntity(OrbShotBoom_allocator, "OrbShotBoom", T_EFFECT_ORBSHOTBOOM, true, true, true, true, "OrbShotBoom", nullptr);
+    obj_manager.addEntity(BallParticle_allocator, "BallParticle", T_EFFECT_BALLPARTICLE, true, true, true, true, "BallParticle", nullptr);
+    obj_manager.addEntity(Ring_allocator, "Ring", T_EFFECT_RING, true, true, true, true, "Ring", nullptr);
 
     // set up input
     std::cout << "Setting up input" << std::endl;
     Input input(winhandle, pixelwidth, pixelheight);
+
+    // set up ring
+    //std::cout << "Setting up ring" << std::endl;
+    //obj_manager.spawnEntity("Ring");
+    
 
     // set up player
     std::cout << "Setting up player" << std::endl;
@@ -210,7 +219,8 @@ void loop(GLFWwindow *winhandle) {
     player.objectSetup(&obj_physenv, &filters["Player"]);
     player.playerSetup(&input, &obj_manager);
     player.enqueue();
-    
+    target = &player;
+
     // start loop
     std::cout << "Starting loop" << std::endl;
     int i = 0;
@@ -218,18 +228,23 @@ void loop(GLFWwindow *winhandle) {
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        /*
-        if (i % 15 == 0 && false) {
-            Entity *effect3 = obj_manager.getEntity(obj_manager.spawnEntity("BigSmoke"));
-            Object *test1 = obj_manager.getObject(obj_manager.spawnObject("BigBomb"));
+        if (i % 60 == 0) {
+            // get random spawn location along radius
+            float spawn_radius = sqrtf((halfwidth * halfwidth) + (halfheight + halfheight)) + 64;
+            glm::vec3 spawn_vec(spawn_radius, 0.0f, 0.0f);
+            spawn_vec = random_angle(spawn_vec, 180);
 
-            effect3->getQuad()->pos.v = glm::vec3(0.0f, 64.0f, 0.0f);
-            test1->getBox()->pos = glm::vec3(0.0f, 64.0f, 0.0f);
-            test1->getBox()->vel = random_angle(glm::vec3(0.0f, 1.25f, 0.0f), 15.0f);
+            // spawn enemy
+            // TODO: fix error when wrong name is used
+            int enemy_id;
+            if (rand() % 2 == 0)
+                enemy_id = obj_manager.spawnObject("SmallBall");
+            else
+                enemy_id = obj_manager.spawnObject("MediumBall");
 
-            //test1->setPhysVel(glm::vec3(0.0f, -15.0f, 0.0f));
+            Object *enemy = obj_manager.getObject(enemy_id);
+            enemy->getBox()->pos = spawn_vec;
         }
-        */
         
         input.update();
 

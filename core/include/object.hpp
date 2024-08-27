@@ -84,6 +84,7 @@ public:
         bool _force_objectsetup;
         std::string _filter_name;
         std::function<Object*(void)> _allocator = nullptr;
+        std::function<void(Object*)> _spawncallback = nullptr;
     };
 
     // struct holding IDs and other flags belonging to the managed Object
@@ -139,8 +140,9 @@ public:
        - animation_name - name of animation to give to AnimationState of spawned Object, from provided Animation map
        - force_objectsetup - invokes Object setup when spawning this Object
        - filter_name - name of filter to give to FilterState of spawned Object's Box, from provided Filter map
+       - spawn_callback - function callback to call after Object has been spawned and setup
     */
-    void addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, bool force_objectsetup, const char *filter_name);
+    void addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, bool force_objectsetup, const char *filter_name, std::function<void(Object*)> spawn_callback);
     /* Removes the Object, Entity or Script associated with the provided ID. */
     void remove(int id);
 

@@ -191,6 +191,7 @@ public:
         bool _force_enqueue;
         bool _force_removeonkill;
         std::function<Script*(void)> _allocator = nullptr;
+        std::function<void(Script*)> _spawncallback = nullptr;
     };
 
     // struct holding IDs and other flags belonging to the managed script during its lifetime
@@ -245,8 +246,9 @@ public:
        - force_scriptsetup - invokes Script setup when spawning this Script
        - force_enqueue - enqueues this Script into the provided Executor when spawning it
        - force_removeonkill - removes this Script from this manager when it is killed
+       - spawn_callback - function callback to call after Script has been spawned and setup
     */
-    void addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill);
+    void addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback);
     /* Removes the Script associated with the provided ID. */
     void remove(int id);
 

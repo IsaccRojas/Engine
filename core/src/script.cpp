@@ -280,6 +280,9 @@ int ScriptManager::spawnScript(const char *scriptname) {
     // set up script internals
     _scriptSetup(script, type, id);
     
+    // call callback if it exists
+    if (type._spawncallback)
+        type._spawncallback(script);
     return id;
 }
 
@@ -317,14 +320,15 @@ void ScriptManager::remove(int id) {
     }
 }
 
-void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill) {
+void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback) {
     if (!hasScript(name))
         _scripttypes[name] = ScriptType{
             type,
             force_scriptsetup,
             force_enqueue,
             force_removeonkill,
-            allocator
+            allocator,
+            spawn_callback
         };
 }
 

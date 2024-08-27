@@ -7,6 +7,8 @@
 #include <vector>
 #include <string>
 
+#define PI_UTIL 3.14159265358979323846264338327950288
+
 std::string readfile(const char *filename);
 
 class Image {

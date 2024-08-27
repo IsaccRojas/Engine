@@ -3,6 +3,7 @@
 
 #include "player.hpp"
 #include "effect.hpp"
+#include "chaser.hpp"
 
 #include <iostream>
 #include <chrono>

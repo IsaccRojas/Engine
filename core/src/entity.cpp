@@ -170,17 +170,22 @@ int EntityManager::spawnEntity(const char *entityname) {
     // set up entity
     _entitySetup(entity, entitytype, scripttype, id);
     
+    // call callback if it exists
+    if (entitytype._spawncallback)
+        entitytype._spawncallback(entity);
+    
     return id;
 }
 
-void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name) {
+void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, std::function<void(Entity*)> spawn_callback) {
     if (!hasEntity(name) && !hasScript(name)) {
         _entitytypes[name] = EntityType{
             force_entitysetup,
             animation_name,
-            allocator
+            allocator,
+            spawn_callback
         };
-        addScript(allocator, name, type, force_scriptsetup, force_enqueue, force_removeonkill);
+        addScript(allocator, name, type, force_scriptsetup, force_enqueue, force_removeonkill, nullptr);
     }
 }
 

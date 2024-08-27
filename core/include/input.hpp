@@ -7,7 +7,7 @@
 #include <glm\glm.hpp>
 #include <iostream>
 
-#define PI 3.14159265358979323846264338327950288
+#define PI_INPUT 3.14159265358979323846264338327950288
 
 class Input {
     GLFWwindow * const _win_h;
