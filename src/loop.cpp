@@ -137,14 +137,14 @@ void loop(GLFWwindow *winhandle) {
     
     // initialize GLEnv instance
     std::cout << "Setting up glenv" << std::endl;
-    GLEnv obj_glenv{256};
+    GLEnv obj_glenv{2048};
 
     std::cout << "Setting up texture array" << std::endl;
-    obj_glenv.setTexArray(96, 164, 2);
+    obj_glenv.setTexArray(152, 164, 3);
     std::cout << "Setting texture" << std::endl;
     obj_glenv.setTexture(Image("objects.png"), 0, 0, 0);
     obj_glenv.setTexture(Image("effects.png"), 0, 0, 1);
-
+    obj_glenv.setTexture(Image("characters.png"), 0, 0, 2); // each character is 7x14 pixels
     int pixelwidth = 256;
     int pixelheight = 256;
     int pixellayers = 16;
@@ -172,16 +172,16 @@ void loop(GLFWwindow *winhandle) {
 
     // initialize PhysEnv instance
     std::cout << "Setting up physenv" << std::endl;
-    PhysEnv obj_physenv{256};
+    PhysEnv obj_physenv{2048};
 
     // set up Executor instance
     std::cout << "Setting up executors" << std::endl;
-    Executor gbl_executor{256};
-    Executor obj_executor{256};
+    Executor gbl_executor{2048};
+    Executor obj_executor{2048};
 
     // set up manager
     std::cout << "Setting up manager" << std::endl;
-    ObjectManager obj_manager{256};
+    ObjectManager obj_manager{2048};
     obj_manager.setExecutor(&obj_executor);
     obj_manager.setGLEnv(&obj_glenv);
     obj_manager.setAnimations(&animations);
