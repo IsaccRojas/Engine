@@ -69,7 +69,7 @@ GLEnv::GLEnv(unsigned maxcount) :
     // generate and use program
     _stage.program(shaders, types, 2);
     _stage.use();
-    // set up attributes with instancing (model vertices, position, scale, texture position, texture size, draw flag)
+    // set up attributes with instancing (model vertices, position, scale, texture position, texture size, draw flag, texarray dimensions)
     _stage.formatAttrib(0, 4, GL_FLOAT, 0, 0);
     _stage.formatAttrib(1, 3, GL_FLOAT, 0, 1);
     _stage.formatAttrib(2, 3, GL_FLOAT, 0, 1);
@@ -104,6 +104,7 @@ GLEnv::~GLEnv() {}
 
 void GLEnv::setTexArray(GLuint width, GLuint height, GLuint depth) {
     _texarray.alloc(1, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, width, height, depth);
+    glUniform3ui(9, width, height, depth);
 }
 
 void GLEnv::setTexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset) {

@@ -2,22 +2,14 @@
 
 Text::Text(GLEnv *glenv) : 
     _glenv(glenv), 
-    _tex_x(0), 
-    _tex_y(0), 
-    _tex_z(0), 
-    _tex_rows(0), 
-    _tex_columns(0), 
-    _text_width(0), 
-    _text_height(0), 
-    _text_xoff(0), 
-    _text_yoff(0), 
-    _spacing(0),
+    _tc(TextConfig{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
+    _scale(glm::vec3(1.0f)),
     _update(false)
 {}
 Text::~Text() {
     // erase all characters from glenv
     if (_glenv)
-        for (int i = 0; i < _quadids.size(); i++)
+        for (unsigned i = 0; i < _quadids.size(); i++)
             _glenv->remove(_quadids[i]);
 }
 
@@ -35,27 +27,32 @@ Text is expected to be in the order of ASCII format, starting with the space cha
 - text_yoff - vertical spacing between characters in sheet
 - spacing - space to place between characters in final text
 */
-void Text::textConfig(int tex_x, int tex_y, int tex_z, int tex_rows, int tex_columns, int text_width, int text_height, int text_xoff, int text_yoff, int spacing) {
-    _tex_x = tex_x;
-    _tex_y = tex_y;
-    _tex_z = tex_z;
-    _tex_rows = tex_rows;
-    _tex_columns = tex_columns;
-    _text_width = text_width;
-    _text_height = text_height;
-    _text_xoff = text_xoff;
-    _text_yoff = text_yoff;
-    _spacing = spacing;
+void Text::setTextConfig(TextConfig textconfig) {
+    _tc = textconfig;
     _update = true;
 }
 
 void Text::setText(const char *str) {
+    if (_textstr == str)
+        return;
+    
     _textstr = str;
     _update = true;
 }
 
 void Text::setPos(glm::vec3 pos) {
+    if (_pos == pos)
+        return;
+    
     _pos = pos;
+    _update = true;
+}
+
+void Text::setScale(glm::vec3 scale) {
+    if (_scale == scale)
+        return;
+    
+    _scale = scale;
     _update = true;
 }
 
@@ -88,24 +85,28 @@ void Text::update() {
     } else {
         // push new IDs to vector (TODO: assign proper values on generation)
         for (int i = l_ids; i < l_str; i++)
-            _quadids.push_back(_glenv.genQuad(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), glm::vec2(0.0f)));
+            _quadids.push_back(_glenv->genQuad(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), glm::vec2(0.0f)));
     }
+
+    // set position start to be half-way leftward across complete text width, to center the text
+    Quad *quad;
+    int shift = (_tc.text_width * _scale.x) + _tc.spacing;
+    int pos_start = ((l_str * shift) * -0.5f) + (_tc.text_width * _scale.x * 0.5f);
     
     // update IDs with new character information
-    Quad *quad;
-    int shift = _text_width + _text_xoff;
     for (int i = 0; i < l_str; i++) {
         quad = _glenv->get(_quadids[i]);
+        int charpos = int(_textstr[i]) - 32;
 
         // set values according to configuration and string
-        quad->pos.v = _pos + glm::vec3(float(shift * i), 0.0f, 0.0f);
-        quad->scale.v = glm::vec3(_text_width, _text_height, 1.0f);
-        quad->texpos.v = glm::vec2(
-            _tex_x + ((_text_width + _text_xoff) * (i % _tex_columns)),
-            _tex_y + ((_text_height + _text_yoff) * (i / _tex_rows)),
-            _tex_z
+        quad->pos.v = _pos + glm::vec3(pos_start + float(shift * i), 0.0f, 0.0f);
+        quad->scale.v = glm::vec3(_tc.text_width, _tc.text_height, 0.0f) * _scale;
+        quad->texpos.v = glm::vec3(
+            _tc.tex_x + ((_tc.text_width + _tc.text_xoff) * (charpos % _tc.tex_columns)),
+            _tc.tex_y + ((_tc.text_height + _tc.text_yoff) * int(charpos / _tc.tex_columns)),
+            _tc.tex_z
         );
-        quad->texsize.v = glm::vec3(_text_width, _text_height);
+        quad->texsize.v = glm::vec2(_tc.text_width, _tc.text_height);
     }
 
     _update = false;

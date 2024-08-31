@@ -18,14 +18,14 @@ void main() {
         v_texpos 
         + 
         (
-            vec3(v_model.x, 1.0 - v_model.y, 0.0) 
-            * vec3(v_texsize - vec2(1.0f, 1.0f), 0.0)
+            vec3(v_texsize, 0.0)
+            * vec3(v_model.x, 1.0 - v_model.y, 0.0)
         )
     ;
     
     //get final pos by shifting unit model to center, scaling it by attribute scale, and adding attribute pos
     vec4 final_pos = 
-        round(
+        (
             (
                 (v_model + vec4(-0.5f, -0.5f, 0.0f, 0.0f)) 
                 * vec4(v_scale, 1.0f)

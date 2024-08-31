@@ -140,11 +140,12 @@ void loop(GLFWwindow *winhandle) {
     GLEnv obj_glenv{2048};
 
     std::cout << "Setting up texture array" << std::endl;
-    obj_glenv.setTexArray(152, 164, 3);
+    obj_glenv.setTexArray(133, 164, 4);
     std::cout << "Setting texture" << std::endl;
     obj_glenv.setTexture(Image("objects.png"), 0, 0, 0);
     obj_glenv.setTexture(Image("effects.png"), 0, 0, 1);
-    obj_glenv.setTexture(Image("characters.png"), 0, 0, 2); // each character is 7x14 pixels
+    obj_glenv.setTexture(Image("characters1.png"), 0, 0, 2); // each character is 7x24 pixels
+    obj_glenv.setTexture(Image("characters2.png"), 0, 0, 3); // each character is 5x10 pixels
     int pixelwidth = 256;
     int pixelheight = 256;
     int pixellayers = 16;
@@ -154,6 +155,7 @@ void loop(GLFWwindow *winhandle) {
 
     std::cout << "Setting up view and projection matrices" << std::endl;
     obj_glenv.setView(glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+    // negative is "further back"
     obj_glenv.setProj(glm::ortho(-1.0f * halfwidth, halfwidth, -1.0f * halfheight, halfheight, 0.0f, float(pixellayers)));
 
     // set up some opengl parameters
@@ -210,7 +212,6 @@ void loop(GLFWwindow *winhandle) {
     //std::cout << "Setting up ring" << std::endl;
     //obj_manager.spawnEntity("Ring");
     
-
     // set up player
     std::cout << "Setting up player" << std::endl;
     Player player;
@@ -220,6 +221,34 @@ void loop(GLFWwindow *winhandle) {
     player.playerSetup(&input, &obj_manager);
     player.enqueue();
     target = &player;
+
+    // text
+    std::cout << "Setting up text" << std::endl;
+    TextConfig largefont{0, 0, 2, 5, 19, 7, 24, 0, 0, 1};
+    TextConfig smallfont{0, 0, 3, 5, 19, 5, 10, 0, 0, 1};
+    
+    Text text1(&obj_glenv);
+    text1.setTextConfig(largefont);
+    text1.setText("\"Test!\" Value: 23% (#8)");
+    text1.setPos(glm::vec3(0.0f, 32.0f, 1.0f));
+
+    Text text2(&obj_glenv);
+    text2.setTextConfig(smallfont);
+    text2.setPos(glm::vec3(0.0f, 16.0f, 1.0f));
+    /*
+    Text is expected to be in the order of ASCII format, starting with the space character (decimal 32).
+
+    - tex_x - X coordinate in the texture space the character sheet is located
+    - tex_y - Y coordinate in the texture space the character sheet is located
+    - tex_z - Z coordinate in the texture space the character sheet is located
+    - tex_rows - number of rows in sheet
+    - tex_columns - number of columns in sheet
+    - text_width - width of a single character
+    - text_height - height of a single character
+    - text_xoff - horizontal spacing between characters in sheet
+    - text_yoff - vertical spacing between characters in sheet
+    - spacing - space to place between characters in final text
+    */
 
     // start loop
     std::cout << "Starting loop" << std::endl;
@@ -259,6 +288,10 @@ void loop(GLFWwindow *winhandle) {
         // update physics environment and detect collisions
         obj_physenv.step();
         obj_physenv.detectCollision();
+
+        // update text
+        text1.update();
+        text2.update();
 
         // update graphic environment and draw
         obj_glenv.update();
