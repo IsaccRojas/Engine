@@ -6,9 +6,8 @@
 
 class Player : public Character {
     Input *_input;
-    ObjectManager *_pm;
-
     bool _input_ready;
+
     float _accel;
     float _deccel;
     float _spd_max;
@@ -23,7 +22,7 @@ class Player : public Character {
 public:
     Player();
 
-    void playerSetup(Input *input, ObjectManager *projectilemanager);
+    void playerSetup(Input *input);
     void playerMotion();
     void playerAction();
 };

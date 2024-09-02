@@ -19,6 +19,7 @@ class Input {
     bool _a_p;
     bool _s_p;
     bool _d_p;
+    bool _space_p;
     bool _m1_p;
     bool _m2_p;
     double _win_mouse_x;
@@ -34,6 +35,7 @@ public:
     bool get_a();
     bool get_s();
     bool get_d();
+    bool get_space();
     bool get_m1();
     bool get_m2();
     /* Returns the input of WASD as a unit vector (up is in the positive y direction, right is in the positive x direction). */

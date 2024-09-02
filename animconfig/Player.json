@@ -4,6 +4,35 @@
 		"cycle1" : {
 			"frames" : {
 				"frame1" : {
+					"texpos" : [54.0, 0.0, 0.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 2
+				},
+				"frame2" : {
+					"texpos" : [70.0, 0.0, 0.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 2
+				},
+				"frame3" : {
+					"texpos" : [86.0, 0.0, 0.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 2
+				},
+				"frame4" : {
+					"texpos" : [102.0, 0.0, 0.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 2
+				}
+			},
+			"loop" : false
+		},
+		"cycle2" : {
+			"frames" : {
+				"frame1" : {
 					"texpos" : [0.0, 0.0, 0.0],
 					"texsize" : [16.0, 16.0],
 					"offset" : [0.0, 0.0, 0.0],

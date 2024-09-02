@@ -2,7 +2,7 @@
 	"name" : "ProjectileHostile",
     "id" : 4,
     "whitelist" : [],
-    "blacklist" : [2, 4, 5],
+    "blacklist" : [4, 5],
     "correctionWhitelist" : [],
     "correctionBlacklist" : []
 }

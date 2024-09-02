@@ -30,6 +30,12 @@ void Input::update() {
     else if (state == GLFW_RELEASE)
         _d_p = false;
 
+    state = glfwGetKey(_win_h, GLFW_KEY_SPACE);
+    if (state == GLFW_PRESS)
+        _space_p = true;
+    else if (state == GLFW_RELEASE)
+        _space_p = false;
+    
     state = glfwGetMouseButton(_win_h, GLFW_MOUSE_BUTTON_LEFT);
     if (state == GLFW_PRESS)
         _m1_p = true;
@@ -58,6 +64,7 @@ bool Input::get_w() { return _w_p; }
 bool Input::get_a() { return _a_p; }
 bool Input::get_s() { return _s_p; }
 bool Input::get_d() { return _d_p; }
+bool Input::get_space() { return _space_p; }
 bool Input::get_m1() { return _m1_p; }
 bool Input::get_m2() { return _m2_p; }
 

@@ -1,25 +1,34 @@
 #include "player.hpp"
 
 void Player::_initCharacter() {
-    getBox()->setCorrection(true);
     getBox()->dim = glm::vec3(6.0f, 13.0f, 0.0f);
     getAnimState().setAnimState(0);
 }
 
 void Player::_baseCharacter() {
+    if (getAnimState().completed())
+        getAnimState().setAnimState(1);
+
     playerMotion();
     playerAction();
 }
 
-void Player::_killCharacter() {}
+void Player::_killCharacter() {
+    int id = getManager()->spawnEntity("PlayerSmoke");
+    if (id >= 0) {
+        Entity *effect = getManager()->getEntity(id);
+        effect->getQuad()->pos.v = getBox()->pos;
+    }
+}
 
-void Player::_collisionCharacter(Box *box) {}
+void Player::_collisionCharacter(Box *box) {
+    kill();
+}
 
 Player::Player() : Character(glm::vec3(16.0f, 16.0f, 0.0f)), _input(nullptr), _input_ready(false), _accel(0.2f), _deccel(0.15f), _spd_max(0.8f), _cooldown(0.0f), _max_cooldown(15.0f) {}
 
-void Player::playerSetup(Input *input, ObjectManager *projectilemanager) {
+void Player::playerSetup(Input *input) {
     _input = input;
-    _pm = projectilemanager;
     _input_ready = true;
 };
 
@@ -64,9 +73,9 @@ void Player::playerAction() {
     if (_cooldown <= 0.0f) {
         if (_input->get_m1()) {
             // spawn projectile, set its position, and set cooldown
-            int id = _pm->spawnObject("OrbShot");
+            int id = getManager()->spawnObject("OrbShot");
             if (id >= 0) {
-                Object *shot = _pm->getObject(id);
+                Object *shot = getManager()->getObject(id);
                 shot->getBox()->pos = getBox()->pos;
                 shot->getBox()->vel = dirvec;
             }

@@ -187,7 +187,6 @@ public:
     // struct holding script information mapped to a name
     struct ScriptType {
         int _internal_type;
-        bool _force_scriptsetup;
         bool _force_enqueue;
         bool _force_removeonkill;
         std::function<Script*(void)> _allocator = nullptr;
@@ -199,6 +198,7 @@ public:
         int _manager_id;
         const char *_manager_name;
         Script *_script_ref;
+        int _type;
     };
 
 protected:
@@ -215,6 +215,7 @@ protected:
     std::vector<std::unique_ptr<Script>> _scripts;
     
     unsigned _maxcount;
+    unsigned _count;
 
     // internal methods called when spawning Scripts and removing them, using and setting
     // manager lifetime and Script runtime members
@@ -230,8 +231,12 @@ public:
     bool hasScript(const char *scriptname);
     /* Returns a reference to the spawned Script corresponding to the provided ID, if it exists. */
     Script *getScript(int id);
+    /* Returns a vector of IDs of all active Scripts with the corresponding type. */
+    std::vector<int> getAllByType(int type);
     /* Returns the internal name corresponding to the provided ID, if it exists. */
     std::string getName(int id);
+    /* Returns the number of active objects in the manager. */
+    unsigned getCount();
 
     /* Spawns a Script using a name previously added to this manager, and returns its ID. This
        will invoke scriptSetup() if set to do so from adding it.
@@ -243,12 +248,12 @@ public:
        - allocator - function pointer referring to function that returns a heap-allocated Script
        - name - name to associate with the allocator
        - type - internal value tied to Script for client use
-       - force_scriptsetup - invokes Script setup when spawning this Script
        - force_enqueue - enqueues this Script into the provided Executor when spawning it
        - force_removeonkill - removes this Script from this manager when it is killed
        - spawn_callback - function callback to call after Script has been spawned and setup
     */
-    void addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback);
+    void addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_enqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback);
+    
     /* Removes the Script associated with the provided ID. */
     void remove(int id);
 

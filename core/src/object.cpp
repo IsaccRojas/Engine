@@ -96,9 +96,8 @@ ObjectManager::~ObjectManager() {}
 void ObjectManager::_objectSetup(Object *object, ObjectType &objecttype, EntityType &entitytype, ScriptType &scripttype, int id) {
     _entitySetup(object, entitytype, scripttype, id);
 
-    if (objecttype._force_objectsetup)
-        if (_physenv)
-            object->objectSetup(_physenv, &(*_filters)[objecttype._filter_name]);
+    if (_physenv)
+        object->objectSetup(_physenv, &(*_filters)[objecttype._filter_name]);
 
     object->_objectmanager = this;
 }
@@ -148,7 +147,7 @@ int ObjectManager::spawnObject(const char *objectname) {
     _scripts[id] = std::unique_ptr<Script>(object);
     _objectvalues[id] = ObjectValues{object};
     _entityvalues[id] = EntityValues{object};
-    _scriptvalues[id] = ScriptValues{id, objectname, object};
+    _scriptvalues[id] = ScriptValues{id, objectname, object, scripttype._internal_type};
     
     // set up object
     _objectSetup(object, objecttype, entitytype, scripttype, id);
@@ -160,15 +159,14 @@ int ObjectManager::spawnObject(const char *objectname) {
     return id;
 }
 
-void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, bool force_objectsetup, const char *filter_name, std::function<void(Object*)> spawn_callback) {
+void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback) {
     if (!hasObject(name) && !hasEntity(name) && !hasScript(name)) {
         _objecttypes[name] = ObjectType{
-            force_objectsetup,
             filter_name,
             allocator,
             spawn_callback
         };
-        addEntity(allocator, name, type, force_scriptsetup, force_enqueue, force_removeonkill, force_entitysetup, animation_name, nullptr);
+        addEntity(allocator, name, type, force_enqueue, force_removeonkill, animation_name, nullptr);
     }
 }
 
@@ -190,8 +188,7 @@ void ObjectManager::remove(int id) {
 
         // remove from object-related, entity-related and script-related systems
         _objectRemoval(objectvalues, entityvalues, scriptvalues);
-    
-        _ids.remove(id);
+        _objectvalues[id] = ObjectValues{nullptr};
     }
 }
 

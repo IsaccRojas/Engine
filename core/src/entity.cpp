@@ -122,9 +122,8 @@ EntityManager::~EntityManager() {}
 void EntityManager::_entitySetup(Entity *entity, EntityType &entitytype, ScriptType &scripttype, int id) {
     _scriptSetup(entity, scripttype, id);
 
-    if (entitytype._force_entitysetup)
-        if (_glenv && _animations)
-            entity->entitySetup(_glenv, &(*_animations)[entitytype._animation_name]);
+    if (_glenv && _animations)
+        entity->entitySetup(_glenv, &(*_animations)[entitytype._animation_name]);
             
     entity->_entitymanager = this;
 }
@@ -177,15 +176,14 @@ int EntityManager::spawnEntity(const char *entityname) {
     return id;
 }
 
-void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, std::function<void(Entity*)> spawn_callback) {
+void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int type, bool force_enqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback) {
     if (!hasEntity(name) && !hasScript(name)) {
         _entitytypes[name] = EntityType{
-            force_entitysetup,
             animation_name,
             allocator,
             spawn_callback
         };
-        addScript(allocator, name, type, force_scriptsetup, force_enqueue, force_removeonkill, nullptr);
+        addScript(allocator, name, type, force_enqueue, force_removeonkill, nullptr);
     }
 }
 
@@ -206,8 +204,7 @@ void EntityManager::remove(int id) {
 
         // remove from entity-related and script-related systems
         _entityRemoval(entityvalues, scriptvalues);
-    
-        _ids.remove(id);
+        _entityvalues[id] = EntityValues{nullptr};
     }
 }
 

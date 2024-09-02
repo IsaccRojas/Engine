@@ -88,8 +88,9 @@ void Script::enqueue() {
 }
 
 void Script::kill() {
-    if (_executor_ready)
-        _executor->queueKill(_executor_id);
+    if (!_killed)
+        if (_executor_ready)
+            _executor->queueKill(_executor_id);
 }
 
 ScriptManager *Script::getManager() { return _scriptmanager; }
@@ -227,20 +228,20 @@ void Executor::runKill() {
 
 ScriptManager::ScriptManager(unsigned maxcount) :
     _executor(nullptr),
-    _maxcount(maxcount)
+    _maxcount(maxcount),
+    _count(0)
 {
     for (unsigned i = 0; i < maxcount; i++) {
         _scripts.push_back(std::unique_ptr<Script>(nullptr));
-        _scriptvalues.push_back(ScriptValues{-1, NULL, nullptr});
+        _scriptvalues.push_back(ScriptValues{-1, NULL, nullptr, -1});
     }
 }
 ScriptManager::~ScriptManager() {}
 
 void ScriptManager::_scriptSetup(Script *script, ScriptType &type, int id) {
     // set up script
-    if (type._force_scriptsetup)
-        if (_executor)
-            script->scriptSetup(_executor);
+    if (_executor)
+        script->scriptSetup(_executor);
     script->setType(type._internal_type);
 
     // set up internal fields
@@ -252,11 +253,16 @@ void ScriptManager::_scriptSetup(Script *script, ScriptType &type, int id) {
     // enqueue if set
     if (type._force_enqueue)
         script->enqueue();
+    
+    _count++;
 }
 
 void ScriptManager::_scriptRemoval(ScriptValues &values) {
     if (values._script_ref)
         values._script_ref->scriptResetExec();
+    
+    _count--;
+    _ids.remove(values._manager_id);
 }
 
 bool ScriptManager::hasScript(const char *scriptname) { return !(_scripttypes.find(scriptname) == _scripttypes.end()); }
@@ -275,7 +281,7 @@ int ScriptManager::spawnScript(const char *scriptname) {
     Script *script = type._allocator();
     int id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(script);
-    _scriptvalues[id] = ScriptValues{id, scriptname, script};
+    _scriptvalues[id] = ScriptValues{id, scriptname, script, type._internal_type};
 
     // set up script internals
     _scriptSetup(script, type, id);
@@ -283,6 +289,7 @@ int ScriptManager::spawnScript(const char *scriptname) {
     // call callback if it exists
     if (type._spawncallback)
         type._spawncallback(script);
+
     return id;
 }
 
@@ -293,10 +300,23 @@ Script *ScriptManager::getScript(int id) {
         return nullptr;
 }
 
+std::vector<int> ScriptManager::getAllByType(int type) {
+    std::vector<int> ids;
+    for (unsigned i = 0; i < _count; i++)
+        if (_scriptvalues[i]._manager_id >= 0)
+            if (_scriptvalues[i]._type == type)
+                ids.push_back(i);
+    return ids;
+}
+
 std::string ScriptManager::getName(int id) {
     if (id >= 0 && _ids.at(id))
         return _scriptvalues[id]._manager_name;
     return "";
+}
+
+unsigned ScriptManager::getCount() {
+    return _count;
 }
 
 void ScriptManager::remove(int id) {
@@ -315,16 +335,14 @@ void ScriptManager::remove(int id) {
 
         // remove from script-related systems
         _scriptRemoval(values);    
-    
-        _ids.remove(id);
+        _scriptvalues[id] = ScriptValues{-1, NULL, nullptr, -1};
     }
 }
 
-void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback) {
+void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_enqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback) {
     if (!hasScript(name))
         _scripttypes[name] = ScriptType{
             type,
-            force_scriptsetup,
             force_enqueue,
             force_removeonkill,
             allocator,

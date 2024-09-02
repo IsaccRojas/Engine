@@ -80,7 +80,6 @@ class EntityManager : public ScriptManager {
 public:
     // struct holding Entity information mapped to a name
     struct EntityType {
-        bool _force_entitysetup;
         std::string _animation_name;
         std::function<Entity*(void)> _allocator = nullptr;
         std::function<void(Entity*)> _spawncallback = nullptr;
@@ -128,14 +127,12 @@ public:
        - allocator - function pointer referring to function that returns a heap-allocated Entity
        - name - name to associate with the allocator
        - type - internal value tied to Entity for client use
-       - force_scriptsetup - invokes Script setup when spawning this Entity
        - force_enqueue - enqueues this Entity into the provided Executor when spawning it
        - force_removeonkill - removes this Entity from this manager when it is killed
-       - force_entitysetup - invokes Entity setup when spawning this Entity
        - animation - name of animation to give to AnimationState of spawned Entity, from provided Animation map
        - spawn_callback - function callback to call after Entity has been spawned and setup
     */
-    void addEntity(std::function<Entity*(void)> allocator, const char *name, int type, bool force_scriptsetup, bool force_enqueue, bool force_removeonkill, bool force_entitysetup, const char *animation_name, std::function<void(Entity*)> spawn_callback);
+    void addEntity(std::function<Entity*(void)> allocator, const char *name, int type, bool force_enqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback);
     /* Removes the Entity or Script associated with the provided ID. */
     void remove(int id);
 

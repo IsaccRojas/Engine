@@ -9,21 +9,21 @@ class Chaser : public Character {
     float _spd_max;
     float _t;
     glm::vec3 _prevdir;
-    Object *_target;
 
     float _health;
     std::string _killeffect;
+    bool *_killflag;
 
     void _initCharacter();
     void _baseCharacter();
     void _killCharacter();
     void _collisionCharacter(Box *box);
 
+    Object *_getTarget();
 public:
-    Chaser(float health, std::string killeffect);
+    Chaser(glm::vec3 scale, float health, std::string killeffect, bool *killflag);
 
     void chaserMotion();
-    void chaserSetTarget(Object *target);
 };
 
 #endif

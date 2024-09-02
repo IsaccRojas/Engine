@@ -183,6 +183,7 @@ void PhysEnv::collisionAABB(Box &box1, Box &box2) {
     //std::cout << "pos1: (" << pos1.x << ", " << pos1.y << "), prevpos1: (" << prevpos1.x << ", " << prevpos1.y << ")" << std::endl;
 
     if (coll_hor_space < 0 && coll_ver_space < 0) {  
+        /*
         bool correct1 = box1.getCorrection() && box1.getFilterState().passCorrection(box2.getFilterState().id());
         bool correct2 = box2.getCorrection() && box2.getFilterState().passCorrection(box1.getFilterState().id());
 
@@ -236,6 +237,7 @@ void PhysEnv::collisionAABB(Box &box1, Box &box2) {
                 }
             }
         }
+        */
 
         // run collision handlers
         box1.collide(&box2);
