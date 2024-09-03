@@ -96,15 +96,15 @@ public:
     /* Sets up instance to preserve state of provided animation. */
     void setAnimation(Animation *animation);
 
-    /* Sets the animation state, using the cycle corresponding to the provided state for
-       future operations. Does nothing if the state provided is the same as the current one.
+    /* Sets the animation cycle, using the cycle corresponding to the provided integer for
+       future operations. Does nothing if the cycle provided is the same as the current one.
     */
-    void setAnimState(int state);
+    void setCycleState(int cyclestate);
 
-    /* Sets the cycle state, using the frame corresponding to the provided state 
-       for future operations.
+    /* Sets the animation frame, using the frame corresponding to the provided integer for
+       future operations.
     */
-    void setCycleState(int state);
+    void setFrameState(int framestate);
 
     /* Advances the cycle one step; will go to the next frame if the current frame's duration is
        exceeded; will loop or stop if last frame's duration is exceeded.

@@ -2,12 +2,12 @@
 
 void Player::_initCharacter() {
     getBox()->dim = glm::vec3(6.0f, 13.0f, 0.0f);
-    getAnimState().setAnimState(0);
+    getAnimState().setCycleState(0);
 }
 
 void Player::_baseCharacter() {
     if (getAnimState().completed())
-        getAnimState().setAnimState(1);
+        getAnimState().setCycleState(1);
 
     playerMotion();
     playerAction();

@@ -20,7 +20,7 @@ class OrbShot : public Basic {
 
         _i = 0;
         _lifetime = 119;
-        getAnimState().setAnimState(0);
+        getAnimState().setCycleState(0);
     }
 
     void _baseBasic() {
@@ -57,7 +57,7 @@ public:
 class SmallSmoke : public Effect {
     void _initEffect() {
         getQuad()->bv_pos.v.z = 1.0f;
-        getAnimState().setAnimState(rand() % 2);
+        getAnimState().setCycleState(rand() % 2);
     }
     void _baseEffect() {}
     void _killEffect() {}
@@ -68,7 +68,7 @@ public:
 class MediumSmoke : public Effect {
     void _initEffect() {
         getQuad()->bv_pos.v.z = 1.0f;
-        getAnimState().setAnimState(rand() % 2);
+        getAnimState().setCycleState(rand() % 2);
     }
     void _baseEffect() {}
     void _killEffect() {}
@@ -79,7 +79,7 @@ public:
 class BigSmoke : public Effect {
     void _initEffect() {
         getQuad()->bv_pos.v.z = 1.0f;
-        getAnimState().setAnimState(rand() % 2);
+        getAnimState().setCycleState(rand() % 2);
     }
     void _baseEffect() {}
     void _killEffect() {}
@@ -90,7 +90,7 @@ public:
 class VeryBigSmoke : public Effect {
     void _initEffect() {
         getQuad()->bv_pos.v.z = 1.0f;
-        getAnimState().setAnimState(rand() % 2);
+        getAnimState().setCycleState(rand() % 2);
     }
     void _baseEffect() {}
     void _killEffect() {}
@@ -101,7 +101,7 @@ public:
 class PlayerSmoke : public Effect {
     void _initEffect() {
         getQuad()->bv_pos.v.z = 1.0f;
-        getAnimState().setAnimState(rand() % 2);
+        getAnimState().setCycleState(rand() % 2);
     }
     void _baseEffect() {}
     void _killEffect() {}
@@ -144,13 +144,13 @@ class Ring : public Effect {
         //std::cout << "ids size " << ids.size() << std::endl;
         Entity *player;
         
-        getAnimState().setAnimState(0);
+        getAnimState().setCycleState(0);
         for (unsigned i = 0; i < ids.size(); i++) {
             player = getManager()->getEntity(ids[i]);
             
             // quad position and box position are the same for players, so this is fine
             if (glm::length(player->getQuad()->bv_pos.v - getQuad()->bv_pos.v) < 32.0f) {
-                getAnimState().setAnimState(1);
+                getAnimState().setCycleState(1);
                 break;
             }
         }

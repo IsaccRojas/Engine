@@ -1,7 +1,7 @@
 #include "chaser.hpp"
 
 void Chaser::_initCharacter() {
-    getAnimState().setAnimState(0);
+    getAnimState().setCycleState(0);
 }
 
 void Chaser::_baseCharacter() {

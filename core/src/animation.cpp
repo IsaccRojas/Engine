@@ -99,22 +99,22 @@ void AnimationState::setAnimation(Animation *animation) {
     _completed = false;
 }
 
-/* Sets the animation state, using the cycle corresponding to the provided state 
-    for future operations.
+/* Sets the animation cycle, using the cycle corresponding to the provided integer for
+    future operations. Does nothing if the cycle provided is the same as the current one.
 */
-void AnimationState::setAnimState(int state) {
-    if (state == _cyclestate)
+void AnimationState::setCycleState(int cyclestate) {
+    if (cyclestate == _cyclestate)
         return;
-    _cyclestate = state;
+    _cyclestate = cyclestate;
     _currentcycle = &(_animation->getCycle(_cyclestate));
-    this->setCycleState(0);
+    this->setFrameState(0);
 }
 
-/* Sets the cycle state, using the frame corresponding to the provided state 
-    for future operations.
+/* Sets the animation frame, using the frame corresponding to the provided integer for
+    future operations.
 */
-void AnimationState::setCycleState(int state) {
-    _framestate = state;
+void AnimationState::setFrameState(int framestate) {
+    _framestate = framestate;
     _currentframe = &(_currentcycle->getFrame(_framestate));
     _step = 0;
     _completed = false;
@@ -137,7 +137,7 @@ void AnimationState::step() {
         if (_framestate + 1 >= _currentcycle->count()) {
             // check if we should loop
             if (_currentcycle->loops()) {
-                this->setCycleState(0);
+                this->setFrameState(0);
                 return;
             }
 
@@ -147,7 +147,7 @@ void AnimationState::step() {
         }
 
         // otherwise, go to next frame and reset time
-        this->setCycleState(_framestate + 1);
+        this->setFrameState(_framestate + 1);
     }
 }
 
