@@ -76,7 +76,7 @@ void Player::playerAction() {
         dirvec /= glm::length(dirvec);
     } else
         dirvec = glm::vec3(_prevmovedir.x, _prevmovedir.y, 0.0f);
-
+    
     // spawn projectile if not on cooldown
     if (_cooldown <= 0.0f) {
         if (_input->get_m1() || _input->get_space()) {
