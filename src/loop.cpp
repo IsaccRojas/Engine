@@ -1,6 +1,6 @@
 #include "loop.hpp"
 
-enum Type { 
+enum Group { 
     T_BASIC_ORBSHOT,
     T_CHARACTER_PLAYER,
     T_CHASER_SMALLBALL, T_CHASER_MEDIUMBALL, T_CHASER_BIGBALL, T_CHASER_VERYBIGBALL, 
@@ -140,7 +140,7 @@ public:
 class Ring : public Effect {
     void _initEffect() { getQuad()->pos.v.z = -1.0f; }
     void _baseEffect() {
-        std::vector ids = getManager()->getAllByType(T_CHARACTER_PLAYER);
+        std::vector ids = getManager()->getAllByGroup(T_CHARACTER_PLAYER);
         //std::cout << "ids size " << ids.size() << std::endl;
         Entity *player;
         

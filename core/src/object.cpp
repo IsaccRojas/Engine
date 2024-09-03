@@ -93,11 +93,11 @@ ObjectManager::ObjectManager(int maxcount) : EntityManager(maxcount), _physenv(n
 }
 ObjectManager::~ObjectManager() {}
 
-void ObjectManager::_objectSetup(Object *object, ObjectType &objecttype, EntityType &entitytype, ScriptType &scripttype, int id) {
-    _entitySetup(object, entitytype, scripttype, id);
+void ObjectManager::_objectSetup(Object *object, ObjectInfo &objectinfo, EntityInfo &entityinfo, ScriptInfo &scriptinfo, int id) {
+    _entitySetup(object, entityinfo, scriptinfo, id);
 
     if (_physenv)
-        object->objectSetup(_physenv, &(*_filters)[objecttype._filter_name]);
+        object->objectSetup(_physenv, &(*_filters)[objectinfo._filter_name]);
 
     object->_objectmanager = this;
 }
@@ -108,7 +108,7 @@ void ObjectManager::_objectRemoval(ObjectValues &objectvalues, EntityValues &ent
         objectvalues._object_ref->removeBox();
 }
 
-bool ObjectManager::hasObject(const char *objectname) { return !(_objecttypes.find(objectname) == _objecttypes.end()); }
+bool ObjectManager::hasObject(const char *objectname) { return !(_objectinfos.find(objectname) == _objectinfos.end()); }
 
 Object *ObjectManager::getObject(int id) {
     if (id >= 0 && _ids.at(id))
@@ -137,36 +137,36 @@ int ObjectManager::spawnObject(const char *objectname) {
     }
 
     // get type information
-    ScriptType &scripttype = _scripttypes[objectname];
-    EntityType &entitytype = _entitytypes[objectname];
-    ObjectType &objecttype = _objecttypes[objectname];
+    ScriptInfo &scriptinfo = _scriptinfos[objectname];
+    EntityInfo &entityinfo = _entityinfos[objectname];
+    ObjectInfo &objectinfo = _objectinfos[objectname];
 
     // push to internal storage
-    Object *object = objecttype._allocator();
+    Object *object = objectinfo._allocator();
     int id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(object);
     _objectvalues[id] = ObjectValues{object};
     _entityvalues[id] = EntityValues{object};
-    _scriptvalues[id] = ScriptValues{id, objectname, object, scripttype._internal_type};
+    _scriptvalues[id] = ScriptValues{id, objectname, object, scriptinfo._group};
     
     // set up object
-    _objectSetup(object, objecttype, entitytype, scripttype, id);
+    _objectSetup(object, objectinfo, entityinfo, scriptinfo, id);
     
     // call callback if it exists
-    if (objecttype._spawncallback)
-        objecttype._spawncallback(object);
+    if (objectinfo._spawncallback)
+        objectinfo._spawncallback(object);
     
     return id;
 }
 
-void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback) {
+void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback) {
     if (!hasObject(name) && !hasEntity(name) && !hasScript(name)) {
-        _objecttypes[name] = ObjectType{
+        _objectinfos[name] = ObjectInfo{
             filter_name,
             allocator,
             spawn_callback
         };
-        addEntity(allocator, name, type, force_enqueue, force_removeonkill, animation_name, nullptr);
+        addEntity(allocator, name, group, force_enqueue, force_removeonkill, animation_name, nullptr);
     }
 }
 

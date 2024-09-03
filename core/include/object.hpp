@@ -80,7 +80,7 @@ public:
 class ObjectManager : public EntityManager {
 public:
     // struct holding Object information mapped to a name
-    struct ObjectType {
+    struct ObjectInfo {
         std::string _filter_name;
         std::function<Object*(void)> _allocator = nullptr;
         std::function<void(Object*)> _spawncallback = nullptr;
@@ -93,7 +93,7 @@ public:
 
 protected:
     // internal variables for added Objects and existing Objects
-    std::unordered_map<std::string, ObjectType> _objecttypes;
+    std::unordered_map<std::string, ObjectInfo> _objectinfos;
     std::vector<ObjectValues> _objectvalues;
 
     PhysEnv *_physenv;
@@ -101,7 +101,7 @@ protected:
 
     // internal methods called when spawning Objects and removing them, using and setting
     // manager lifetime and Object runtime members
-    void _objectSetup(Object *object, ObjectType &objecttype, EntityType &entitytype, ScriptType &scripttype, int id);
+    void _objectSetup(Object *object, ObjectInfo &objectinfo, EntityInfo &entityinfo, ScriptInfo &scriptinfo, int id);
     void _objectRemoval(ObjectValues &objectvalues, EntityValues &entityvalues, ScriptValues &scriptvalues);
 
 public:
@@ -131,14 +131,14 @@ public:
        name to be used for future spawns.
        - allocator - function pointer referring to function that returns a heap-allocated Object
        - name - name to associate with the allocator
-       - type - internal value tied to Object for client use
+       - group - value to associate with all instances of this Object
        - force_enqueue - enqueues this Object into the provided Executor when spawning it
        - force_removeonkill - removes this Object from this manager when it is killed
        - animation_name - name of animation to give to AnimationState of spawned Object, from provided Animation map
        - filter_name - name of filter to give to FilterState of spawned Object's Box, from provided Filter map
        - spawn_callback - function callback to call after Object has been spawned and setup
     */
-    void addObject(std::function<Object*(void)> allocator, const char *name, int type, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback);
+    void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback);
     /* Removes the Object, Entity or Script associated with the provided ID. */
     void remove(int id);
 

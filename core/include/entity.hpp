@@ -79,7 +79,7 @@ public:
 class EntityManager : public ScriptManager {
 public:
     // struct holding Entity information mapped to a name
-    struct EntityType {
+    struct EntityInfo {
         std::string _animation_name;
         std::function<Entity*(void)> _allocator = nullptr;
         std::function<void(Entity*)> _spawncallback = nullptr;
@@ -92,7 +92,7 @@ public:
 
 protected:
     // internal variables for added Entities and existing Entities
-    std::unordered_map<std::string, EntityType> _entitytypes;
+    std::unordered_map<std::string, EntityInfo> _entityinfos;
     std::vector<EntityValues> _entityvalues;
 
     GLEnv *_glenv;
@@ -100,7 +100,7 @@ protected:
 
     // internal methods called when spawning Entities and removing them, using and setting
     // manager lifetime and Entity runtime members
-    void _entitySetup(Entity *entity, EntityType &entitytype, ScriptType &scripttype, int id);
+    void _entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, int id);
     void _entityRemoval(EntityValues &entityvalues, ScriptValues &scriptvalues);
 
 public:
@@ -126,13 +126,13 @@ public:
        name to be used for future spawns.
        - allocator - function pointer referring to function that returns a heap-allocated Entity
        - name - name to associate with the allocator
-       - type - internal value tied to Entity for client use
+       - group - value to associate with all instances of this Entity
        - force_enqueue - enqueues this Entity into the provided Executor when spawning it
        - force_removeonkill - removes this Entity from this manager when it is killed
        - animation - name of animation to give to AnimationState of spawned Entity, from provided Animation map
        - spawn_callback - function callback to call after Entity has been spawned and setup
     */
-    void addEntity(std::function<Entity*(void)> allocator, const char *name, int type, bool force_enqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback);
+    void addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback);
     /* Removes the Entity or Script associated with the provided ID. */
     void remove(int id);
 

@@ -40,7 +40,7 @@ class Script {
     bool _scriptmanager_removeonkill;
 
     // settable integer usable for identification
-    int _type;
+    int _group;
 
 protected:
     /* Functions to be overridden by children.
@@ -90,8 +90,8 @@ public:
     bool getExecQueued();
     void setKillQueued(bool killqueued);
     bool getKillQueued();
-    void setType(int type);
-    int getType();
+    void setGroup(int group);
+    int getGroup();
 
     /* Enqueues the Script for execution.
     */
@@ -185,8 +185,8 @@ public:
 class ScriptManager {
 public:
     // struct holding script information mapped to a name
-    struct ScriptType {
-        int _internal_type;
+    struct ScriptInfo {
+        int _group;
         bool _force_enqueue;
         bool _force_removeonkill;
         std::function<Script*(void)> _allocator = nullptr;
@@ -198,12 +198,12 @@ public:
         int _manager_id;
         const char *_manager_name;
         Script *_script_ref;
-        int _type;
+        int _group;
     };
 
 protected:
     // internal variables for added script information and active scripts
-    std::unordered_map<std::string, ScriptType> _scripttypes;
+    std::unordered_map<std::string, ScriptInfo> _scriptinfos;
     std::vector<ScriptValues> _scriptvalues;
     
     // "managed" structures
@@ -219,7 +219,7 @@ protected:
 
     // internal methods called when spawning Scripts and removing them, using and setting
     // manager lifetime and Script runtime members
-    void _scriptSetup(Script *script, ScriptType &type, int id);
+    void _scriptSetup(Script *script, ScriptInfo &info, int id);
     void _scriptRemoval(ScriptValues &values);
    
 public:
@@ -231,8 +231,8 @@ public:
     bool hasScript(const char *scriptname);
     /* Returns a reference to the spawned Script corresponding to the provided ID, if it exists. */
     Script *getScript(int id);
-    /* Returns a vector of IDs of all active Scripts with the corresponding type. */
-    std::vector<int> getAllByType(int type);
+    /* Returns a vector of IDs of all active Scripts with the corresponding group. */
+    std::vector<int> getAllByGroup(int group);
     /* Returns the internal name corresponding to the provided ID, if it exists. */
     std::string getName(int id);
     /* Returns the number of active objects in the manager. */
@@ -247,12 +247,12 @@ public:
        name to be used for future spawns.
        - allocator - function pointer referring to function that returns a heap-allocated Script
        - name - name to associate with the allocator
-       - type - internal value tied to Script for client use
+       - group - value to associate with all instances of this Script
        - force_enqueue - enqueues this Script into the provided Executor when spawning it
        - force_removeonkill - removes this Script from this manager when it is killed
        - spawn_callback - function callback to call after Script has been spawned and setup
     */
-    void addScript(std::function<Script*(void)> allocator, const char *name, int type, bool force_enqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback);
+    void addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback);
     
     /* Removes the Script associated with the provided ID. */
     void remove(int id);

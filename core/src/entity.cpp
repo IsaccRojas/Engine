@@ -119,11 +119,11 @@ EntityManager::EntityManager(int maxcount) : ScriptManager(maxcount), _glenv(nul
 }
 EntityManager::~EntityManager() {}
 
-void EntityManager::_entitySetup(Entity *entity, EntityType &entitytype, ScriptType &scripttype, int id) {
-    _scriptSetup(entity, scripttype, id);
+void EntityManager::_entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, int id) {
+    _scriptSetup(entity, scriptinfo, id);
 
     if (_glenv && _animations)
-        entity->entitySetup(_glenv, &(*_animations)[entitytype._animation_name]);
+        entity->entitySetup(_glenv, &(*_animations)[entityinfo._animation_name]);
             
     entity->_entitymanager = this;
 }
@@ -133,7 +133,7 @@ void EntityManager::_entityRemoval(EntityValues &entityvalues, ScriptValues &scr
         entityvalues._entity_ref->removeQuad();
 }
 
-bool EntityManager::hasEntity(const char *entityname) { return !(_entitytypes.find(entityname) == _entitytypes.end()); }
+bool EntityManager::hasEntity(const char *entityname) { return !(_entityinfos.find(entityname) == _entityinfos.end()); }
 
 Entity *EntityManager::getEntity(int id) {
     if (id >= 0 && _ids.at(id))
@@ -155,35 +155,35 @@ int EntityManager::spawnEntity(const char *entityname) {
         return -1;
     }
 
-    // get type information
-    ScriptType &scripttype = _scripttypes[entityname];
-    EntityType &entitytype = _entitytypes[entityname];
+    // get entity information
+    ScriptInfo &scriptinfo = _scriptinfos[entityname];
+    EntityInfo &entityinfo = _entityinfos[entityname];
 
     // push to internal storage
-    Entity *entity = entitytype._allocator();
+    Entity *entity = entityinfo._allocator();
     int id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(entity);
     _entityvalues[id] = EntityValues{entity};
     _scriptvalues[id] = ScriptValues{id, entityname, entity};
     
     // set up entity
-    _entitySetup(entity, entitytype, scripttype, id);
+    _entitySetup(entity, entityinfo, scriptinfo, id);
     
     // call callback if it exists
-    if (entitytype._spawncallback)
-        entitytype._spawncallback(entity);
+    if (entityinfo._spawncallback)
+        entityinfo._spawncallback(entity);
     
     return id;
 }
 
-void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int type, bool force_enqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback) {
+void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback) {
     if (!hasEntity(name) && !hasScript(name)) {
-        _entitytypes[name] = EntityType{
+        _entityinfos[name] = EntityInfo{
             animation_name,
             allocator,
             spawn_callback
         };
-        addScript(allocator, name, type, force_enqueue, force_removeonkill, nullptr);
+        addScript(allocator, name, group, force_enqueue, force_removeonkill, nullptr);
     }
 }
 
