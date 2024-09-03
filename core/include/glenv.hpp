@@ -15,10 +15,10 @@
 class Quad {
 public:
    /* BVecs containing references to Quad's associated OpenGL buffers */
-    BVec3 pos;
-    BVec3 scale;
-    BVec3 texpos;
-    BVec2 texsize;
+    BVec3 bv_pos;
+    BVec3 bv_scale;
+    BVec3 bv_texpos;
+    BVec2 bv_texsize;
     /* position - location of quad in 3D space
        quadscale - scaling values for x, y, and z coordinates of quad vertices
        textureposition - UV coordinates to use in texture space

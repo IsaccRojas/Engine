@@ -50,8 +50,8 @@ void Entity::stepAnim() {
         // only attempt to write animation data if quad is available
         if (_quad_ready) {
             // write frame data to quad
-            _quad->texpos.v = _frame->texpos;
-            _quad->texsize.v = _frame->texsize;
+            _quad->bv_texpos.v = _frame->texpos;
+            _quad->bv_texsize.v = _frame->texsize;
         }
     }
 }

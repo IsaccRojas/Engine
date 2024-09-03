@@ -16,7 +16,7 @@ class OrbShot : public Basic {
 
     void _initBasic() {
         getBox()->mass = 0.0f;
-        getQuad()->scale.v = glm::vec3(6.0f, 6.0f, 1.0f);
+        getQuad()->bv_scale.v = glm::vec3(6.0f, 6.0f, 1.0f);
 
         _i = 0;
         _lifetime = 119;
@@ -30,7 +30,7 @@ class OrbShot : public Basic {
             int id = getManager()->spawnEntity("OrbShotParticle");
             if (id >= 0) {
                 Entity *particle = getManager()->getEntity(id);
-                particle->getQuad()->pos.v = getBox()->pos;
+                particle->getQuad()->bv_pos.v = getBox()->pos;
             }
         }
 
@@ -42,7 +42,7 @@ class OrbShot : public Basic {
         int id = getManager()->spawnEntity("OrbShotBoom");
         if (id >= 0) {
             Entity *boom = getManager()->getEntity(id);
-            boom->getQuad()->pos.v = getBox()->pos;
+            boom->getQuad()->bv_pos.v = getBox()->pos;
         }
     }
 
@@ -56,7 +56,7 @@ public:
 
 class SmallSmoke : public Effect {
     void _initEffect() {
-        getQuad()->pos.v.z = 1.0f;
+        getQuad()->bv_pos.v.z = 1.0f;
         getAnimState().setAnimState(rand() % 2);
     }
     void _baseEffect() {}
@@ -67,7 +67,7 @@ public:
 
 class MediumSmoke : public Effect {
     void _initEffect() {
-        getQuad()->pos.v.z = 1.0f;
+        getQuad()->bv_pos.v.z = 1.0f;
         getAnimState().setAnimState(rand() % 2);
     }
     void _baseEffect() {}
@@ -78,7 +78,7 @@ public:
 
 class BigSmoke : public Effect {
     void _initEffect() {
-        getQuad()->pos.v.z = 1.0f;
+        getQuad()->bv_pos.v.z = 1.0f;
         getAnimState().setAnimState(rand() % 2);
     }
     void _baseEffect() {}
@@ -89,7 +89,7 @@ public:
 
 class VeryBigSmoke : public Effect {
     void _initEffect() {
-        getQuad()->pos.v.z = 1.0f;
+        getQuad()->bv_pos.v.z = 1.0f;
         getAnimState().setAnimState(rand() % 2);
     }
     void _baseEffect() {}
@@ -100,7 +100,7 @@ public:
 
 class PlayerSmoke : public Effect {
     void _initEffect() {
-        getQuad()->pos.v.z = 1.0f;
+        getQuad()->bv_pos.v.z = 1.0f;
         getAnimState().setAnimState(rand() % 2);
     }
     void _baseEffect() {}
@@ -110,7 +110,7 @@ public:
 };
 
 class OrbShotParticle : public Effect {
-    void _initEffect() { getQuad()->pos.v.z = 1.0f; }
+    void _initEffect() { getQuad()->bv_pos.v.z = 1.0f; }
     void _baseEffect() {}
     void _killEffect() {}
 public:
@@ -118,7 +118,7 @@ public:
 };
 
 class OrbShotBoom : public Effect {
-    void _initEffect() { getQuad()->pos.v.z = 1.0f; }
+    void _initEffect() { getQuad()->bv_pos.v.z = 1.0f; }
     void _baseEffect() {}
     void _killEffect() {}
 public:
@@ -128,9 +128,9 @@ public:
 class BallParticle : public Effect {
     glm::vec3 _dir;
 
-    void _initEffect() { getQuad()->pos.v.z = 1.0f; }
+    void _initEffect() { getQuad()->bv_pos.v.z = 1.0f; }
     void _baseEffect() {
-        getQuad()->pos.v = getQuad()->pos.v + _dir;
+        getQuad()->bv_pos.v = getQuad()->bv_pos.v + _dir;
     }
     void _killEffect() {}
 public:
@@ -138,7 +138,7 @@ public:
 };
 
 class Ring : public Effect {
-    void _initEffect() { getQuad()->pos.v.z = -1.0f; }
+    void _initEffect() { getQuad()->bv_pos.v.z = -1.0f; }
     void _baseEffect() {
         std::vector ids = getManager()->getAllByGroup(T_CHARACTER_PLAYER);
         //std::cout << "ids size " << ids.size() << std::endl;
@@ -149,7 +149,7 @@ class Ring : public Effect {
             player = getManager()->getEntity(ids[i]);
             
             // quad position and box position are the same for players, so this is fine
-            if (glm::length(player->getQuad()->pos.v - getQuad()->pos.v) < 32.0f) {
+            if (glm::length(player->getQuad()->bv_pos.v - getQuad()->bv_pos.v) < 32.0f) {
                 getAnimState().setAnimState(1);
                 break;
             }

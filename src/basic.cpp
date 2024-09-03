@@ -3,8 +3,8 @@
 void Basic::_initObject() {
     getBox()->dim = _scale;
 
-    getQuad()->scale.v = glm::vec3(_scale.x, _scale.y, 1.0f);
-    getQuad()->pos.v = getBox()->pos;
+    getQuad()->bv_scale.v = glm::vec3(_scale.x, _scale.y, 1.0f);
+    getQuad()->bv_pos.v = getBox()->pos;
 
     _initBasic();
 }
@@ -12,7 +12,7 @@ void Basic::_initObject() {
 void Basic::_baseObject() {
     _baseBasic();
 
-    getQuad()->pos.v = getBox()->pos;
+    getQuad()->bv_pos.v = getBox()->pos;
 
     stepAnim();
     enqueue();
@@ -28,7 +28,7 @@ void Basic::_killObject() {
 void Basic::_collisionObject(Box *box) {
     _collisionBasic(box);
     
-    getQuad()->pos.v = getBox()->pos;
+    getQuad()->bv_pos.v = getBox()->pos;
 }
 
 void Basic::_initBasic() {}

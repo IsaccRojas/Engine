@@ -3,7 +3,7 @@
 void Effect::_initEntity() {
     _initEffect();
 
-    getQuad()->scale.v = _scale;
+    getQuad()->bv_scale.v = _scale;
     _i = 0;
 }
 

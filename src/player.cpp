@@ -17,7 +17,7 @@ void Player::_killCharacter() {
     int id = getManager()->spawnEntity("PlayerSmoke");
     if (id >= 0) {
         Entity *effect = getManager()->getEntity(id);
-        effect->getQuad()->pos.v = getBox()->pos;
+        effect->getQuad()->bv_pos.v = getBox()->pos;
     }
 }
 

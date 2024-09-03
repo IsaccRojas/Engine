@@ -2,30 +2,30 @@
 
 // _______________________________________ Quad _______________________________________
 
-Quad::Quad(BVec3 position, BVec3 quadscale, BVec3 textureposition, BVec2 texturesize) : pos(position), scale(quadscale), texpos(textureposition), texsize(texturesize) {}
+Quad::Quad(BVec3 position, BVec3 quadscale, BVec3 textureposition, BVec2 texturesize) : bv_pos(position), bv_scale(quadscale), bv_texpos(textureposition), bv_texsize(texturesize) {}
 Quad::Quad(const Quad &other) {
-    pos = other.pos;
-    scale = other.scale;
-    texpos = other.texpos;
-    texsize = other.texsize;
+    bv_pos = other.bv_pos;
+    bv_scale = other.bv_scale;
+    bv_texpos = other.bv_texpos;
+    bv_texsize = other.bv_texsize;
 }
 Quad::Quad() {}
 Quad::~Quad() {}
 
 Quad& Quad::operator=(const Quad& other) {
-    pos = other.pos;
-    scale = other.scale;
-    texpos = other.texpos;
-    texsize = other.texsize;
+    bv_pos = other.bv_pos;
+    bv_scale = other.bv_scale;
+    bv_texpos = other.bv_texpos;
+    bv_texsize = other.bv_texsize;
     return *this;
 };
 
 
 void Quad::update() {
-    pos.update();
-    scale.update();
-    texpos.update();
-    texsize.update();
+    bv_pos.update();
+    bv_scale.update();
+    bv_texpos.update();
+    bv_texsize.update();
 }
 
 // _______________________________________ GLEnv _______________________________________
@@ -143,10 +143,10 @@ int GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 t
     );
 
     // initialize quad with parameters
-    _quads[id].pos.v = pos;
-    _quads[id].scale.v = scale;
-    _quads[id].texpos.v = texpos;
-    _quads[id].texsize.v = texsize;
+    _quads[id].bv_pos.v = pos;
+    _quads[id].bv_scale.v = scale;
+    _quads[id].bv_texpos.v = texpos;
+    _quads[id].bv_texsize.v = texsize;
 
     // write 1 into draw buffer, setting the draw flag for this quad
     GLfloat draw = 1.0f;

@@ -99,14 +99,14 @@ void Text::update() {
         int charpos = int(_textstr[i]) - 32;
 
         // set values according to configuration and string
-        quad->pos.v = _pos + glm::vec3(pos_start + float(shift * i), 0.0f, 0.0f);
-        quad->scale.v = glm::vec3(_tc.text_width, _tc.text_height, 0.0f) * _scale;
-        quad->texpos.v = glm::vec3(
+        quad->bv_pos.v = _pos + glm::vec3(pos_start + float(shift * i), 0.0f, 0.0f);
+        quad->bv_scale.v = glm::vec3(_tc.text_width, _tc.text_height, 0.0f) * _scale;
+        quad->bv_texpos.v = glm::vec3(
             _tc.tex_x + ((_tc.text_width + _tc.text_xoff) * (charpos % _tc.tex_columns)),
             _tc.tex_y + ((_tc.text_height + _tc.text_yoff) * int(charpos / _tc.tex_columns)),
             _tc.tex_z
         );
-        quad->texsize.v = glm::vec2(_tc.text_width, _tc.text_height);
+        quad->bv_texsize.v = glm::vec2(_tc.text_width, _tc.text_height);
     }
 
     _update = false;
