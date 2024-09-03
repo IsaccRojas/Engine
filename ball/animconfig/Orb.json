@@ -1,0 +1,27 @@
+{
+	"name" : "Orb",
+	"cycles" : {
+		"cycle1" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 80.0, 0.0],
+					"texsize" : [6.0, 6.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 1
+				}
+			},
+			"loop" : false
+		},
+		"cycle2" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [6.0, 80.0, 0.0],
+					"texsize" : [6.0, 6.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 1
+				}
+			},
+			"loop" : false
+		}
+	}
+}

@@ -1,0 +1,27 @@
+{
+	"name" : "Ring",
+	"cycles" : {
+		"cycle1" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 94.0, 1.0],
+					"texsize" : [64.0, 64.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 0
+				}
+			},
+			"loop" : false
+		},
+		"cycle2" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [64.0, 94.0, 1.0],
+					"texsize" : [64.0, 64.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 0
+				}
+			},
+			"loop" : false
+		}
+	}
+}

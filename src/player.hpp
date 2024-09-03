@@ -14,6 +14,8 @@ class Player : public Character {
     float _cooldown;
     float _max_cooldown;
 
+    glm::vec2 _prevmovedir;
+
     void _initCharacter();
     void _baseCharacter();
     void _killCharacter();

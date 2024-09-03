@@ -1,0 +1,63 @@
+{
+	"name" : "VeryBigSmoke",
+	"cycles" : {
+		"cycle1" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 216.0, 1.0],
+					"texsize" : [28.0, 28.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame2" : {
+					"texpos" : [28.0, 216.0, 1.0],
+					"texsize" : [28.0, 28.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 4
+				},
+				"frame3" : {
+					"texpos" : [56.0, 216.0, 1.0],
+					"texsize" : [28.0, 28.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 4
+				},
+				"frame4" : {
+					"texpos" : [84.0, 216.0, 1.0],
+					"texsize" : [28.0, 28.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 4
+				}
+			},
+			"loop" : false
+		},
+		"cycle2" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 244.0, 1.0],
+					"texsize" : [28.0, 28.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame2" : {
+					"texpos" : [28.0, 244.0, 1.0],
+					"texsize" : [28.0, 28.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 4
+				},
+				"frame3" : {
+					"texpos" : [56.0, 244.0, 1.0],
+					"texsize" : [28.0, 28.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 4
+				},
+				"frame4" : {
+					"texpos" : [84.0, 244.0, 1.0],
+					"texsize" : [28.0, 28.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 4
+				}
+			},
+			"loop" : false
+		}
+	}
+}

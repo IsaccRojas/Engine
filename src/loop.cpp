@@ -213,10 +213,10 @@ void loop(GLFWwindow *winhandle) {
     std::cout << "Setting up texture array" << std::endl;
     obj_glenv.setTexArray(133, 304, 4);
     std::cout << "Setting texture" << std::endl;
-    obj_glenv.setTexture(Image("objects.png"), 0, 0, 0);
-    obj_glenv.setTexture(Image("effects.png"), 0, 0, 1);
-    obj_glenv.setTexture(Image("characters1.png"), 0, 0, 2); // each character is 7x24 pixels
-    obj_glenv.setTexture(Image("characters2.png"), 0, 0, 3); // each character is 5x10 pixels
+    obj_glenv.setTexture(Image("gfx/objects.png"), 0, 0, 0);
+    obj_glenv.setTexture(Image("gfx/effects.png"), 0, 0, 1);
+    obj_glenv.setTexture(Image("gfx/characters1.png"), 0, 0, 2); // each character is 7x24 pixels
+    obj_glenv.setTexture(Image("gfx/characters2.png"), 0, 0, 3); // each character is 5x10 pixels
     int pixelwidth = 256;
     int pixelheight = 256;
     int pixellayers = 16;
@@ -343,8 +343,8 @@ void loop(GLFWwindow *winhandle) {
     int player_id = obj_manager.spawnObject("Player");
     Object *player = obj_manager.getObject(player_id);
 
-    bool spacecheck = false;
-    bool spacestate = false;
+    bool entercheck = false;
+    bool enterstate = false;
     bool debug = false;
     while (!glfwWindowShouldClose(winhandle)) {
         if (debug)
@@ -354,17 +354,17 @@ void loop(GLFWwindow *winhandle) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         input.update();
 
-        // force space input state to only be true for one frame until released
-        if (!spacecheck) {
-            if (input.get_space()) {
-                spacestate = true;
-                spacecheck = true;
+        // force enter input state to only be true for one frame until released
+        if (!entercheck) {
+            if (input.get_enter()) {
+                enterstate = true;
+                entercheck = true;
             } else
-                spacestate = false;
+                enterstate = false;
         } else {
-            spacestate = false;
-            if (!input.get_space()) {
-                spacecheck = false;
+            enterstate = false;
+            if (!input.get_enter()) {
+                entercheck = false;
             }
         }
 
@@ -381,7 +381,7 @@ void loop(GLFWwindow *winhandle) {
             }
 
             // check for input to start game
-            if (spacestate) {
+            if (enterstate) {
                 round = 1;
                 killflag = false;
                 number = 0.0f;
@@ -458,7 +458,7 @@ void loop(GLFWwindow *winhandle) {
 
         else if (game_state == 2) {
             // check for input to start next round
-            if (spacestate) {
+            if (enterstate) {
                 round += 1;
                 killflag = false;
                 number = 0.0f;
@@ -471,7 +471,7 @@ void loop(GLFWwindow *winhandle) {
 
         else if (game_state == 3) {
             // check for input to return to start
-            if (spacestate) {
+            if (enterstate) {
                 game_state = 0;
             }
         }
@@ -488,28 +488,28 @@ void loop(GLFWwindow *winhandle) {
             case 0: 
                 toptext.setText("Ball Game");
                 subtext.setText("");
-                bottomtext.setText("Press SPACE to start the game.");
+                bottomtext.setText("Press ENTER to start the game.");
                 break;
             case 1:
                 toptext.setText((std::string("Round ") + std::to_string(round)).c_str());
-                subtext.setText((std::string("Number: ") + stream.str() + std::string("%")).c_str());
+                subtext.setText((std::string("Goal: ") + stream.str() + std::string("%")).c_str());
                 bottomtext.setText("");
                 break;
             case 2:
                 toptext.setText((std::string("Round ") + std::to_string(round) + std::string(" complete!")).c_str());
-                subtext.setText((std::string("Number: ") + stream.str() + std::string("%")).c_str());
-                bottomtext.setText("Press SPACE to start the next round.");
+                subtext.setText((std::string("Goal: ") + stream.str() + std::string("%")).c_str());
+                bottomtext.setText("Press ENTER to start the next round.");
                 break;
             case 3:
                 toptext.setText((std::string("Round ") + std::to_string(round) + std::string(" failed.")).c_str());
-                subtext.setText((std::string("Number: ") + stream.str() + std::string("%")).c_str());
-                bottomtext.setText("Press SPACE to return to title.");
+                subtext.setText((std::string("Goal: ") + stream.str() + std::string("%")).c_str());
+                bottomtext.setText("Press ENTER to return to title.");
                 break;
             default:
                 break;
         }
 
-        counttext.setText((std::string("count: ") + std::to_string(obj_manager.getCount())).c_str());
+        //counttext.setText((std::string("count: ") + std::to_string(obj_manager.getCount())).c_str());
 
         // run object scripts
         if (debug)

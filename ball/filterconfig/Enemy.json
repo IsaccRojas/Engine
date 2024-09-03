@@ -1,0 +1,8 @@
+{
+	"name" : "Enemy",
+    "id" : 5,
+    "whitelist" : [],
+    "blacklist" : [5],
+    "correctionWhitelist" : [],
+    "correctionBlacklist" : [1, 2, 3, 4, 5]
+}
