@@ -113,7 +113,7 @@ public:
 class Executor {
     /* Script data structures */
     // IDs to distribute to Scripts
-    Partitioner _ids;
+    SlotVec _ids;
     // vector of unique_ptrs of Scripts
     std::vector<Script*> _scripts;
 
@@ -210,7 +210,7 @@ protected:
     Executor *_executor;
 
     // IDs to distribute to Scripts
-    Partitioner _ids;
+    SlotVec _ids;
     // vector of unique_ptrs of Scripts
     std::vector<std::unique_ptr<Script>> _scripts;
     

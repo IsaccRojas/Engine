@@ -76,7 +76,7 @@ class GLEnv {
 
     /* environment system variables */
     // IDs to distribute to Quads
-    Partitioner _ids;
+    SlotVec _ids;
     // quad pointers
     std::vector<Quad> _quads;
     // maximum number of active Quads allowed

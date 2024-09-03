@@ -35,18 +35,18 @@ public:
     bool empty();
 };
 
-/* class Partitioner
-   Provides and manages unique values on push and removal.
+/* class SlotVec
+   Provides and manages unique addresses on push and removal.
 */
-class Partitioner {
+class SlotVec {
     //main ID vector
     std::vector<bool> _IDs;
     //vector of free IDs
     std::vector<int> _freeIDs;
 
 public:
-    Partitioner();
-    ~Partitioner();
+    SlotVec();
+    ~SlotVec();
 
     /* Occupies an index in IDs (use last index from freeIDs if available),
 	   and returns the ID.

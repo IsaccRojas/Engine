@@ -74,7 +74,7 @@ class PhysEnv {
     /* environment system variables */
 
     // IDs to distribute to Boxes
-    Partitioner _ids;
+    SlotVec _ids;
     // internal Box storage
     std::vector<Box> _boxes;
     // maximum number of active Boxes allowed

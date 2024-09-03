@@ -57,12 +57,12 @@ int Image::components() { return _components; }
 int Image::size() { return _size; }
 bool Image::empty() { return (_data == NULL); }
 
-Partitioner::Partitioner() {}
-Partitioner::~Partitioner() {}
+SlotVec::SlotVec() {}
+SlotVec::~SlotVec() {}
 
 //occupies an index in IDs (use last index from freeIDs if available),
 //and return ID
-int Partitioner::push() {
+int SlotVec::push() {
     if (_freeIDs.empty()) {
         _IDs.push_back(true);
         return _IDs.size() - 1;
@@ -75,7 +75,7 @@ int Partitioner::push() {
 }
 
 //sets element i to false and pushes its index to freeIDs
-void Partitioner::remove(int i) {
+void SlotVec::remove(int i) {
     if (_IDs[i]) {
         _IDs[i] = false;
         _freeIDs.push_back(i);
@@ -83,7 +83,7 @@ void Partitioner::remove(int i) {
 }
 
 //get vector of all indices that are true
-std::vector<int> Partitioner::getUsed() {
+std::vector<int> SlotVec::getUsed() {
     std::vector<int> indices;
     for (unsigned i = 0; i < _IDs.size(); i++)
         if (_IDs[i])
@@ -92,22 +92,22 @@ std::vector<int> Partitioner::getUsed() {
     return indices;
 }
 
-void Partitioner::clear() {
+void SlotVec::clear() {
     _IDs.clear();
     _freeIDs.clear();
 }
 
 //access element i
-bool Partitioner::at(int i) { return _IDs[i]; }
-bool Partitioner::operator[](int i) { return _IDs[i]; }
+bool SlotVec::at(int i) { return _IDs[i]; }
+bool SlotVec::operator[](int i) { return _IDs[i]; }
 //get whether used IDs are empty
-bool Partitioner::empty() { return (_IDs.size() == 0); }
+bool SlotVec::empty() { return (_IDs.size() == 0); }
 //get size of IDs (includes free IDs)
-unsigned Partitioner::size() { return _IDs.size(); }
+unsigned SlotVec::size() { return _IDs.size(); }
 //get size of free IDs
-unsigned Partitioner::freeSize() { return _freeIDs.size(); }
+unsigned SlotVec::freeSize() { return _freeIDs.size(); }
 //get size of used IDs
-unsigned Partitioner::fillSize() { return _IDs.size() - _freeIDs.size(); }
+unsigned SlotVec::fillSize() { return _IDs.size() - _freeIDs.size(); }
 
 /* Checks if provided string ends with the provided suffix.
 */
