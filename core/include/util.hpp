@@ -19,10 +19,17 @@ class Image {
     int _size;
 public:
     Image(const char *filename);
+    
     Image(const Image &other);
+    Image(Image &&other) = delete;
+    
     Image();
+
     Image& operator=(const Image &other);
+    Image& operator=(Image &&other) = delete;
+
     ~Image();
+
 
     void load(const char *filename);
     void free();
@@ -40,13 +47,15 @@ public:
 */
 class SlotVec {
     //main ID vector
-    std::vector<bool> _IDs;
+    std::vector<bool> _ids;
     //vector of free IDs
-    std::vector<int> _freeIDs;
+    std::vector<int> _free_ids;
 
 public:
     SlotVec();
     ~SlotVec();
+
+    // default copy assignment/construction are fine
 
     /* Occupies an index in IDs (use last index from freeIDs if available),
 	   and returns the ID.

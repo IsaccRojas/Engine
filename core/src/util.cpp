@@ -35,17 +35,30 @@ Image::~Image() {
 
 void Image::load(const char *filename) {
     _data = stbi_load(filename, &_w, &_h, &_components, 4);
+    
+    if (_data == NULL) {
+        std::cerr << "WARN: failed to load file '" << filename <<"' into Image instance " << this << std::endl;
+        return;
+    }
+
     _size = _w * _h * 4;
 }
 
 void Image::free() {
+    if (!_data) {
+        std::cerr << "WARN: attempt to free data from empty Image instance " << this << std::endl;
+        return;
+    }
+
     stbi_image_free(_data);
     _data = NULL;
 }
 
 unsigned char* Image::copyData() const {
-    if (_data == NULL)
+    if (_data == NULL) {
+        std::cerr << "WARN: attempt to copy data from empty Image instance " << this << std::endl;
         return NULL;
+    }
     
     char *copy = new char[_size];
     return (unsigned char*)memcpy((void*)copy, (void*)_data, _size * sizeof(unsigned char));
@@ -60,64 +73,53 @@ bool Image::empty() { return (_data == NULL); }
 SlotVec::SlotVec() {}
 SlotVec::~SlotVec() {}
 
-//occupies an index in IDs (use last index from freeIDs if available),
-//and return ID
 int SlotVec::push() {
-    if (_freeIDs.empty()) {
-        _IDs.push_back(true);
-        return _IDs.size() - 1;
+    if (_free_ids.empty()) {
+        _ids.push_back(true);
+        return _ids.size() - 1;
     }
 
-    int i = _freeIDs.back();
-    _freeIDs.pop_back();
-    _IDs[i] = true;
+    int i = _free_ids.back();
+    _free_ids.pop_back();
+    _ids[i] = true;
     return i;
 }
 
-//sets element i to false and pushes its index to freeIDs
 void SlotVec::remove(int i) {
-    if (_IDs[i]) {
-        _IDs[i] = false;
-        _freeIDs.push_back(i);
+    if (_ids[i]) {
+        _ids[i] = false;
+        _free_ids.push_back(i);
+    } else {
+        std::cerr << "WARN: attempt to remove inactive index from SlotVec index " << this << std::endl;
     }
 }
 
-//get vector of all indices that are true
 std::vector<int> SlotVec::getUsed() {
     std::vector<int> indices;
-    for (unsigned i = 0; i < _IDs.size(); i++)
-        if (_IDs[i])
+    for (unsigned i = 0; i < _ids.size(); i++)
+        if (_ids[i])
             indices.push_back(i);
     
     return indices;
 }
 
 void SlotVec::clear() {
-    _IDs.clear();
-    _freeIDs.clear();
+    _ids.clear();
+    _free_ids.clear();
 }
 
-//access element i
-bool SlotVec::at(int i) { return _IDs[i]; }
-bool SlotVec::operator[](int i) { return _IDs[i]; }
-//get whether used IDs are empty
-bool SlotVec::empty() { return (_IDs.size() == 0); }
-//get size of IDs (includes free IDs)
-unsigned SlotVec::size() { return _IDs.size(); }
-//get size of free IDs
-unsigned SlotVec::freeSize() { return _freeIDs.size(); }
-//get size of used IDs
-unsigned SlotVec::fillSize() { return _IDs.size() - _freeIDs.size(); }
+bool SlotVec::at(int i) { return _ids[i]; }
+bool SlotVec::operator[](int i) { return _ids[i]; }
+bool SlotVec::empty() { return (_ids.size() == 0); }
+unsigned SlotVec::size() { return _ids.size(); }
+unsigned SlotVec::freeSize() { return _free_ids.size(); }
+unsigned SlotVec::fillSize() { return _ids.size() - _free_ids.size(); }
 
-/* Checks if provided string ends with the provided suffix.
-*/
 bool endsWith(const std::string& str, const std::string& suffix)
 {
     return str.size() >= suffix.size() && 0 == str.compare(str.size()-suffix.size(), suffix.size(), suffix);
 }
 
-/* Checks if provided string starts with the provided prefix
-*/
 bool startsWith(const std::string& str, const std::string& prefix)
 {
     return str.size() >= prefix.size() && 0 == str.compare(0, prefix.size(), prefix);

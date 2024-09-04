@@ -9,6 +9,7 @@ bool isIn(std::vector<int> &v, int x) {
 
 Filter::Filter(int id) : _id(id) {}
 Filter::Filter() : _id(-1) {}
+Filter::~Filter() {}
 
 Filter& Filter::pushWhitelist(int x) {
     _whitelist.push_back(x);
@@ -53,12 +54,18 @@ int &Filter::getID() {
 
 FilterState::FilterState(Filter *filter) : _filter(filter) {}
 FilterState::FilterState() : _filter(nullptr) {}
+FilterState::~FilterState() {}
 
-void FilterState::setFilter(Filter *filter) { 
+void FilterState::setFilter(Filter *filter) {
     _filter = filter;
 }
 
 bool FilterState::pass(int x) {
+    if (!_filter) {
+        std::cerr << "WARN: attempt to pass value in FilterState instance " << this << " without a Filter reference" << std::endl;
+        return false;
+    }
+
     // check if blacklist exists; if it does, check if x is in it
     std::vector<int> &blacklist = _filter->getBlacklist();
     if (blacklist.size() > 0)
@@ -74,11 +81,16 @@ bool FilterState::pass(int x) {
             return false;
     }
     
-    // empty filter, or only blacklist exists and x is not in it
+    // only blacklist exists and x is not in it
     return true;
 }
 
 bool FilterState::passCorrection(int x) {
+    if (!_filter) {
+        std::cerr << "WARN: attempt to pass correction value in FilterState instance " << this << " without a Filter reference" << std::endl;
+        return false;
+    }
+    
     // check if blacklist exists; if it does, check if x is in it
     std::vector<int> &blacklist = _filter->getCorrectionBlacklist();
     if (blacklist.size() > 0)
@@ -93,29 +105,13 @@ bool FilterState::passCorrection(int x) {
         else
             return false;
     }
-    
-    // empty filter, or only blacklist exists and x is not in it
+
+    // only blacklist exists and x is not in it
     return true;
 }
 
 int FilterState::id() { return _filter->getID(); }
 
-/* Searches the provided directory for .json files, and parses them to load filter data. Returns
-   an unordered map mapping .json file names (excluding the .json extension) to their defined
-   Filter data.
-
-   All .json files parsed are expected to have the following format:
-
-   e.g.
-   {
-        "name" : "testname",
-        "id" : 0,
-        "whitelist" : [1, 2, 3, 4],
-        "blacklist" : [3],
-        "correctionWhitelist" : [1, 2],
-        "correctionBlacklist" : [2]
-   }
-*/
 std::unordered_map<std::string, Filter> loadFilters(std::string dir) {
     std::unordered_map<std::string, Filter> filters;
     

@@ -1,12 +1,9 @@
 #include "../include/animation.hpp"
 
-Cycle::Cycle(bool loop) :
-    _loop(loop) 
-{}
-Cycle::Cycle(const Cycle &other) : 
-    _frames(other._frames), 
-    _loop(other._loop)
-{}
+Cycle::Cycle(bool loop) {
+    setLoop(loop);
+}
+Cycle::Cycle() : _loop(false) {}
 Cycle::~Cycle() {}
 
 Cycle& Cycle::addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 offset, int duration) {
@@ -35,14 +32,8 @@ bool Cycle::loops() const {
 }
 
 Animation::Animation() {}
-Animation::Animation(const Animation &other) : 
-    _cycles(other._cycles)
-{}
 Animation::~Animation() {}
 
-/* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
-corresponding to the desired order of the frames.
-*/
 Animation& Animation::addCycle(Cycle &cycle) {
     _cycles.push_back(cycle);
     return *this;
@@ -56,87 +47,83 @@ int Animation::count() {
     return _cycles.size();
 }
 
-AnimationState::AnimationState(Animation *animation) :
-    _animation(animation),
-    _currentcycle(nullptr),
-    _currentframe(nullptr),
-    _step(0), 
-    _framestate(0), 
-    _cyclestate(0), 
-    _completed(false)
-{
-    _currentcycle = &(_animation->getCycle(_cyclestate));
-    _currentframe = &(_currentcycle->getFrame(_framestate));
+AnimationState::AnimationState(Animation *animation) {
+    setAnimation(animation);
 }
 AnimationState::AnimationState() :
     _animation(nullptr),
-    _currentcycle(nullptr),
-    _currentframe(nullptr),
-    _step(0),
-    _framestate(0),
-    _cyclestate(0),
+    _current_cycle(nullptr),
+    _current_frame(nullptr),
+    _step(0), 
+    _frame_state(0), 
+    _cycle_state(0), 
     _completed(false)
 {}
-AnimationState::AnimationState(const AnimationState &other) : 
-    _animation(other._animation),
-    _currentcycle(other._currentcycle),
-    _currentframe(other._currentframe),
-    _step(other._step), 
-    _framestate(other._framestate), 
-    _cyclestate(other._cyclestate), 
-    _completed(other._completed)
-{}
+
 AnimationState::~AnimationState() {}
 
 void AnimationState::setAnimation(Animation *animation) {
     _animation = animation;
-    _currentcycle = &(_animation->getCycle(_cyclestate));
-    _currentframe = &(_currentcycle->getFrame(_framestate));
-    
+
+    if (_animation) {
+        _current_cycle = &(_animation->getCycle(_cycle_state));
+        _current_frame = &(_current_cycle->getFrame(_frame_state));
+    } else {
+        _current_cycle = nullptr;
+        _current_frame = nullptr;
+    }
+
     _step = 0;
-    _framestate = 0;
-    _cyclestate = 0;
+    _frame_state = 0;
+    _cycle_state = 0;
     _completed = false;
 }
 
-/* Sets the animation cycle, using the cycle corresponding to the provided integer for
-    future operations. Does nothing if the cycle provided is the same as the current one.
-*/
 void AnimationState::setCycleState(int cyclestate) {
-    if (cyclestate == _cyclestate)
+    if (!_animation) {
+        std::cerr << "WARN: attempt to set cycle state with null animation reference in AnimationState instance " << this << std::endl;
         return;
-    _cyclestate = cyclestate;
-    _currentcycle = &(_animation->getCycle(_cyclestate));
+    }
+
+    if (cyclestate == _cycle_state)
+        return;
+    _cycle_state = cyclestate;
+    _current_cycle = &(_animation->getCycle(_cycle_state));
     this->setFrameState(0);
 }
 
-/* Sets the animation frame, using the frame corresponding to the provided integer for
-    future operations.
-*/
 void AnimationState::setFrameState(int framestate) {
-    _framestate = framestate;
-    _currentframe = &(_currentcycle->getFrame(_framestate));
+    if (!_animation) {
+        std::cerr << "WARN: attempt to set frame state with null animation reference in AnimationState instance " << this << std::endl;
+        return;
+    }
+
+    _frame_state = framestate;
+    _current_frame = &(_current_cycle->getFrame(_frame_state));
     _step = 0;
     _completed = false;
+        
 }
 
-/* Advances the cycle one step; will go to the next frame if the current frame's duration is
-    exceeded; will loop or stop if last frame's duration is exceeded.
-*/
 void AnimationState::step() {
+    if (!_animation) {
+        std::cerr << "WARN: attempt to step animation with null animation reference in AnimationState instance " << this << std::endl;
+        return;
+    }
+
     // check if completed or if no frames exist
-    if (_completed || _currentcycle->count() == 0)
+    if (_completed || _current_cycle->count() == 0)
         return;
     
     // advance one step in time
     _step++;
 
     // check if duration of current framestate is over
-    if (_step >= _currentframe->duration) {
+    if (_step >= _current_frame->duration) {
         // check if on last framestate
-        if (_framestate + 1 >= _currentcycle->count()) {
+        if (_frame_state + 1 >= _current_cycle->count()) {
             // check if we should loop
-            if (_currentcycle->loops()) {
+            if (_current_cycle->loops()) {
                 this->setFrameState(0);
                 return;
             }
@@ -147,67 +134,23 @@ void AnimationState::step() {
         }
 
         // otherwise, go to next frame and reset time
-        this->setFrameState(_framestate + 1);
+        this->setFrameState(_frame_state + 1);
     }
 }
 
-/* Gets the current frame of the cycle. Causes an error if no frames exist.
-*/
 Frame *AnimationState::getCurrent() {
-    return _currentframe;
+    if (!_animation) {
+        std::cerr << "WARN: attempt to get current frame with null animation reference in AnimationState instance " << this << std::endl;
+        return nullptr;
+    }
+    
+    return _current_frame;
 }
 
-/* Returns whether the cycle has completed or not (always false if looping is set to true).
-*/
 bool AnimationState::completed() {
     return _completed;
 }
 
-/* Searches the provided directory for .json files, and parses them to load animation data. Returns
-   an unordered map mapping .json file names (excluding the .json extension) to their defined
-   Animation data.
-
-   All .json files parsed are expected to have the following format:
-
-   e.g.
-   {
-        "name" : "example",
-        "cycles" : {
-            "cyclename1" : {
-                "frames" : {
-                    "framename1" : {
-                        "texpos" : [0.0, 1.0],
-                        "texsize" : [2.0, 3.0],
-                        "offset" : [4.0, 5.0, 6.0],
-                        "duration" : 4
-                    },
-                    "framename2" : {
-                        "texpos" : [7.0, 8.0],
-                        "texsize" : [9.0, 10.0],
-                        "offset" : [11.0, 12.0, 13.0],
-                        "duration" : 8
-                    }
-                    // ...
-                },
-                loop : true
-            },
-            "cyclename2" : {
-                "frames" : {
-                    "framename3" : {
-                        // ...
-                    }
-                    // ...
-                },
-                loop : false
-            }
-            // ...
-        }
-   }
-
-   An arbitrary number of objects corresponding to cycles can be defined in the "cycles" field. An
-   arbitrary number of objects corresponding to frames can be defined in the "frames" field of a "cycle"
-   object.
-*/
 std::unordered_map<std::string, Animation> loadAnimations(std::string dir) {
     std::unordered_map<std::string, Animation> animations;
     

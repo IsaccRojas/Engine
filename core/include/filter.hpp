@@ -21,6 +21,9 @@ class Filter {
 public:
     Filter(int id);
     Filter();
+    ~Filter();
+
+    // default copy assignment/construction are fine
 
     Filter& pushWhitelist(int x);
     Filter& pushBlacklist(int x);
@@ -42,6 +45,9 @@ class FilterState {
 public:
     FilterState(Filter *filter);
     FilterState();
+    ~FilterState();
+
+    // default copy assignment/construction are (reference is read only)
 
     void setFilter(Filter *filter);
 

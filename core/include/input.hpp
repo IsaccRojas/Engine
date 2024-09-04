@@ -10,7 +10,7 @@
 #define PI_INPUT 3.14159265358979323846264338327950288
 
 class Input {
-    GLFWwindow * const _win_h;
+    GLFWwindow *_win_h;
     int _win_width;
     int _win_height;
     int _pixel_width;
@@ -34,7 +34,13 @@ class Input {
     double _pixel_mouse_y;
 public:
     Input(GLFWwindow *window, int pixelwidth, int pixelheight);
+    Input();
     ~Input();
+
+    void setWindow(GLFWwindow *window, int pixelwidth, int pixelheight);
+
+    // default copy assignment/construction are fine (reference is read only)
+
     void update();
     void setsticky(bool value);
     bool get_w();
@@ -50,8 +56,10 @@ public:
     bool get_tab();
     bool get_m1();
     bool get_m2();
+
     /* Returns the input of WASD as a unit vector (up is in the positive y direction, right is in the positive x direction). */
     glm::vec2 inputdir();
+    
     glm::vec2 mousepos();
 };
 

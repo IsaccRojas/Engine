@@ -15,27 +15,27 @@
 class Quad {
 public:
    /* BVecs containing references to Quad's associated OpenGL buffers */
-    BVec3 bv_pos;
-    BVec3 bv_scale;
-    BVec3 bv_texpos;
-    BVec2 bv_texsize;
+    GLUtil::BVec3 bv_pos;
+    GLUtil::BVec3 bv_scale;
+    GLUtil::BVec3 bv_texpos;
+    GLUtil::BVec2 bv_texsize;
     /* position - location of quad in 3D space
        quadscale - scaling values for x, y, and z coordinates of quad vertices
        textureposition - UV coordinates to use in texture space
        texturesize - width and height of texture to use, applied to UV coordinates to get rectangle 
     */
-    Quad(BVec3 position, BVec3 quadscale, BVec3 textureposition, BVec2 texturesize);
-    Quad(const Quad& other);
+    Quad(GLUtil::BVec3 position, GLUtil::BVec3 quadscale, GLUtil::BVec3 textureposition, GLUtil::BVec2 texturesize);
     Quad();
-    Quad& operator=(const Quad& other);
     ~Quad();
+
+    // default copy assignment/construction are fine
 
     /* Calls update() on all internal BVec instances, writing their respective data into their respective buffers. */
     void update();
 };
 
 /* class GLEnv
-   Encapsulate all OpenGL environment related data and methods. 
+   Encapsulates all OpenGL environment related data and methods. 
    Currently restricted to draw Quads with a simple fragment shader and vertex shader, and parameterized
    view and projection matrices. The following parameters exist per Quad:
 
@@ -52,40 +52,51 @@ public:
 class GLEnv {
     /* environment structures */
     // shader program structure
-    GLStage _stage;
+    GLUtil::GLStage _stage;
     // texture array structure
-    GLTexture2DArray _texarray;
+    GLUtil::GLTexture2DArray _texarray;
 
     /* model data buffers */
     // model to be used per instance
-    GLBuffer _glb_modelbuf;
+    GLUtil::GLBuffer _glb_modelbuf;
     // position elements of model
-    GLBuffer _glb_elembuf;
+    GLUtil::GLBuffer _glb_elembuf;
 
     /* per instance data buffers */
     // position of instance
-    GLBuffer _glb_pos;
+    GLUtil::GLBuffer _glb_pos;
     // scale of instance
-    GLBuffer _glb_scale;
+    GLUtil::GLBuffer _glb_scale;
     // texture position of instance
-    GLBuffer _glb_texpos;
+    GLUtil::GLBuffer _glb_texpos;
     // texture size of instance
-    GLBuffer _glb_texsize;
+    GLUtil::GLBuffer _glb_texsize;
     // whether instance should be drawn or zeroed out
-    GLBuffer _glb_draw;
+    GLUtil::GLBuffer _glb_draw;
 
     /* environment system variables */
     // IDs to distribute to Quads
     SlotVec _ids;
-    // quad pointers
+    // quads
     std::vector<Quad> _quads;
     // maximum number of active Quads allowed
-    unsigned _maxcount;
+    unsigned _max_count;
 
+    // flag to prevent moved GLEnv instances from doing anything
+    bool _initialized;
 public:
     /* max_count - maximum number of Quads allowed to be active */
-    GLEnv(unsigned maxcount);
+    GLEnv(unsigned max_count);
+    GLEnv(GLEnv &&other);
+    GLEnv();
     ~GLEnv();
+
+    GLEnv& operator=(GLEnv &&other);
+
+    void init(unsigned max_count);
+
+    GLEnv(const GLEnv&) = delete;
+    GLEnv& operator=(const GLEnv&) = delete;
 
     /* Initializes texture array space with unsigned byte storage in RGBA format.
        width - width of space
@@ -96,19 +107,11 @@ public:
 
     /* Loads image into texture space using Image structure (uses complete width and height of passed image).
        img - Image structure containing RGBA unsigned byte image data
-       xoffset - x offset in image space to write image data into
-       yoffset - y offset in image space to write image data into
-       zoffset - z offset in image space to write image data into
+       x_offset - x offset in image space to write image data into
+       y_offset - y offset in image space to write image data into
+       z_offset - z offset in image space to write image data into
     */
-    void setTexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset);
-
-    /* Sets OpenGL viewport.
-       x - x coordinate of viewport
-       y - y coordinate of viewport
-       width - width of viewport
-       height - height of viewport
-    */
-    void setViewport(GLint x, GLint y, GLint width, GLint height);
+    void setTexture(Image img, GLuint x_offset, GLuint y_offset, GLuint z_offset);
 
     /* Sets view matrix for vertex shader.
        view - GLM mat4 matrix

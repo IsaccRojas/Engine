@@ -32,9 +32,11 @@ class Cycle {
     bool _loop;
     
 public:
-    Cycle(bool loop = false);
-    Cycle(const Cycle &other);
+    Cycle(bool loop);
+    Cycle();
     ~Cycle();
+
+    // default copy assignment/construction are fine
 
     /* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
     corresponding to the desired order of the frames.
@@ -58,8 +60,9 @@ class Animation {
     std::vector<Cycle> _cycles;
 public:
     Animation();
-    Animation(const Animation &other);
     ~Animation();
+
+    // default copy assignment/construction are fine
 
     /* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
     corresponding to the desired order of the frames.
@@ -78,20 +81,21 @@ public:
 */
 class AnimationState {
     Animation *_animation;
-    Cycle *_currentcycle;
-    Frame *_currentframe;
+    Cycle *_current_cycle;
+    Frame *_current_frame;
     int _step;
 
     // variables for indexing cycle and animation, respectively
-    int _framestate;
-    int _cyclestate;
+    int _frame_state;
+    int _cycle_state;
     bool _completed;
 
 public:
     AnimationState(Animation *animation);
     AnimationState();
-    AnimationState(const AnimationState &other);
     ~AnimationState();
+
+    // default copy assignment/construction are fine (references are read only)
 
     /* Sets up instance to preserve state of provided animation. */
     void setAnimation(Animation *animation);
@@ -99,12 +103,12 @@ public:
     /* Sets the animation cycle, using the cycle corresponding to the provided integer for
        future operations. Does nothing if the cycle provided is the same as the current one.
     */
-    void setCycleState(int cyclestate);
+    void setCycleState(int cycle_state);
 
     /* Sets the animation frame, using the frame corresponding to the provided integer for
        future operations.
     */
-    void setFrameState(int framestate);
+    void setFrameState(int frame_state);
 
     /* Advances the cycle one step; will go to the next frame if the current frame's duration is
        exceeded; will loop or stop if last frame's duration is exceeded.
