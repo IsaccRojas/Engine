@@ -3,7 +3,7 @@
 // _______________________________________ Box _______________________________________
 
 Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::function<void(Box*)> callback) :
-    _prevpos(position),
+    _prev_pos(position),
     _callback(callback),
     _collision_correction(false),
     pos(position),
@@ -12,18 +12,8 @@ Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::func
     mass(1.0f)
 {}
 
-Box::Box(const Box &other) {
-    _prevpos = other._prevpos;
-    _callback = other._callback;
-    _collision_correction = other._collision_correction;
-    pos = other.pos;
-    dim = other.dim;
-    vel = other.vel;
-    mass = other.mass;
-}
-
 Box::Box() :
-    _prevpos(glm::vec3(0.0f)),
+    _prev_pos(glm::vec3(0.0f)),
     _callback(nullptr),
     _collision_correction(false),
     pos(glm::vec3(0.0f)),
@@ -32,26 +22,14 @@ Box::Box() :
     mass(1.0f)
 {}
 
-Box& Box::operator=(const Box &other) {
-    _prevpos = other._prevpos;
-    _callback = other._callback;
-    _collision_correction = other._collision_correction;
-    pos = other.pos;
-    dim = other.dim;
-    vel = other.vel;
-    mass = other.mass;
-
-    return *this;
-}
-
-Box::~Box() {}
+Box::~Box() { /* automatic destruction is fine */ }
 
 void Box::setCallback(std::function<void(Box*)> callback) {
     _callback = callback;
 }
 
 void Box::step() {
-    _prevpos = pos;
+    _prev_pos = pos;
     pos = pos + vel;
 }
 
@@ -59,44 +37,66 @@ void Box::collide(Box *box) {
     _callback(box);
 }
 
-/* Sets the box's collision filter. */
 void Box::setFilter(Filter *filter) {
-    _filterstate.setFilter(filter);
+    _filter_state.setFilter(filter);
 }
 
-/* Gets the box's collision filter state. */
 FilterState& Box::getFilterState() {
-    return _filterstate;
+    return _filter_state;
 }
 
-/* Sets the box's collision correction flag. */
 void Box::setCorrection(bool correction) {
     _collision_correction = correction;
 }
 
-/* Gets the box's collision correction flag. */
 bool Box::getCorrection() {
     return _collision_correction;
 }
 
-/* Gets the box's previous position. */
 glm::vec3& Box::getPrevPos() {
-    return _prevpos;
+    return _prev_pos;
 }
 
 // _______________________________________ PhysEnv _______________________________________
 
-PhysEnv::PhysEnv(unsigned maxcount) :
-    _boxes(maxcount, Box()),
-    _maxcount(maxcount)
-{}
+PhysEnv::PhysEnv(unsigned max_count) : _initialized(false) {
+    init(max_count);
+}
+PhysEnv::PhysEnv() : _max_count(0), _count(0), _initialized(false) {}
+PhysEnv::~PhysEnv() { /* automatic destruction is fine */ }
 
-PhysEnv::~PhysEnv() {}
+void PhysEnv::init(unsigned max_count) {
+    if (_initialized) {
+        std::cerr << "WARN: PhysEnv::init: attempt to initialize already initialized PhysEnv instance " << this << std::endl;
+        return;
+    }
+    
+    _boxes = std::vector<Box>(max_count, Box());
+    _max_count = max_count;
+    _count = 0;
+    _initialized = true;
+}
+
+void PhysEnv::uninit() {
+    if (!_initialized)
+        return;
+    
+    _ids.clear();
+    _boxes.clear();
+    _max_count = 0;
+    _count = 0;
+    _initialized = false;
+}
 
 int PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback) {
+    if (!_initialized) {
+        std::cerr << "WARN: PhysEnv::genBox: attempt to generate Box in uninitialized PhysEnv instance " << this << std::endl;
+        return -1;
+    }
+
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
-    if (_ids.fillSize() >= _maxcount) {
-        std::cerr << "WARN: limit reached in PhysEnv " << this << std::endl;
+    if (_count >= _max_count) {
+        std::cerr << "WARN: PhysEnv::genBox: limit reached in PhysEnv " << this << std::endl;
         return -1;
     }
 
@@ -110,38 +110,61 @@ int PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<v
 }
 
 Box *PhysEnv::get(int i) {
-    if (i < 0)
-        std::cerr << "WARN: attempt to get address with negative value from PhysEnv " << this << std::endl;
-    if (i >= 0 && _ids.at(i))
+    if (!_initialized) {
+        std::cerr << "WARN: PhysEnv::get: attempt to get from uninitialized PhysEnv instance " << this << std::endl;
+        return nullptr;
+    }
+
+    // check bounds
+    if (i < 0 || i >= _ids.size()) {
+        std::cerr << "WARN: PhysEnv::get: attempt to get Box with out-of-range index " << i << " (max index = " << _ids.size() << ") in PhysEnv instance " << this << std::endl;
+        return nullptr;
+    }
+
+    if (_ids.at(i))
         return &(_boxes[i]);
+    else
+        std::cerr << "WARN: PhysEnv::get: attempt to get Box with inactive index " << i << " in PhysEnv instance " << this << std::endl;
+    
     return nullptr;
 }
 
 void PhysEnv::step() {
+    if (!_initialized) {
+        std::cerr << "WARN: PhysEnv::step: attempt to step in uninitialized PhysEnv instance " << this << std::endl;
+        return;
+    }
+
     for (unsigned i = 0; i < _ids.size(); i++)
         // only try calling step on index i if it is an active ID in _ids
         if (_ids.at(i))
             _boxes[i].step();
 }
 
-int PhysEnv::remove(int id) {
-    // if attempting to remove an id from empty system, return -1
-    if (id < 0) {
-        std::cerr << "WARN: attempt to remove negative value from PhysEnv " << this << std::endl;
+int PhysEnv::remove(int i) {
+    if (!_initialized) {
+        std::cerr << "WARN: PhysEnv::remove: attempt to remove from uninitialized PhysEnv instance " << this << std::endl;
         return -1;
     }
-    if (_ids.empty()) {
-        std::cerr << "WARN: attempt to remove value from empty PhysEnv " << this << std::endl;
+
+    // check bounds
+    if (i < 0 || i >= _ids.size()) {
+        std::cerr << "WARN: PhysEnv::remove: attempt to remove Box with out-of-range index " << i << " (max index = " << _ids.size() << ") in PhysEnv instance " << this << std::endl;
         return -1;
     }
 
     // call _ids to make the ID usable again
-    _ids.remove(id);
+    _ids.remove(i);
 
     return 0;
 }
 
 void PhysEnv::detectCollision() {
+    if (!_initialized) {
+        std::cerr << "WARN: PhysEnv::detectCollision: attempt to detect collision in uninitialized PhysEnv instance " << this << std::endl;
+        return;
+    }
+
     int ids_size = _ids.size();
 
     // perform pair-wise collision detection
@@ -160,11 +183,17 @@ void PhysEnv::detectCollision() {
 
                 }
             }
+
         }
     }
 }
 
 std::vector<int> PhysEnv::getids() {
+    if (!_initialized) {
+        std::cerr << "WARN: PhysEnv::getids: attempt to get IDs from uninitialized PhysEnv instance " << this << std::endl;
+        return;
+    }
+
     return _ids.getUsed();
 }
 
@@ -179,66 +208,7 @@ void PhysEnv::collisionAABB(Box &box1, Box &box2) {
     float coll_hor_space = glm::abs(pos1.x - pos2.x) - ((dim1.x + dim2.x) / 2.0f);
     float coll_ver_space = glm::abs(pos1.y - pos2.y) - ((dim1.y + dim2.y) / 2.0f);
 
-    //std::cout << "coll_hor_space: " << coll_hor_space << ", coll_ver_space: " << coll_ver_space << ", coll_hor_prev: " << coll_hor_prev << ", coll_ver_prev: " << coll_ver_prev << std::endl;
-    //std::cout << "pos1: (" << pos1.x << ", " << pos1.y << "), prevpos1: (" << prevpos1.x << ", " << prevpos1.y << ")" << std::endl;
-
-    if (coll_hor_space < 0 && coll_ver_space < 0) {  
-        /*
-        bool correct1 = box1.getCorrection() && box1.getFilterState().passCorrection(box2.getFilterState().id());
-        bool correct2 = box2.getCorrection() && box2.getFilterState().passCorrection(box1.getFilterState().id());
-
-        // if correction is set, get data on previous positions
-        if (correct1 || correct2) {
-
-            glm::vec3 &vel1 = box1.vel;
-            glm::vec3 &vel2 = box2.vel;
-            glm::vec3 &prevpos1 = box1.getPrevPos();
-            glm::vec3 &prevpos2 = box2.getPrevPos();
-            
-            // get previous collision state and relative positions
-            bool coll_hor_prev = glm::abs(prevpos1.x - prevpos2.x) < (dim1.x + dim2.x) / 2.0f;
-            bool coll_ver_prev = glm::abs(prevpos1.y - prevpos2.y) < (dim1.y + dim2.y) / 2.0f;
-            bool box1_right = prevpos1.x >= prevpos2.x;
-            bool box1_above = prevpos1.y >= prevpos2.y;
-
-            // apply corrections
-            float vel1_ratio = 0.0f;
-            float vel2_ratio = 0.0f;
-            if (correct1 && correct2) {
-                // get ratio of corrections based on velocities
-                vel1_ratio = glm::length(vel1) / (glm::length(vel1) + glm::length(vel2));
-                vel2_ratio = glm::length(vel2) / (glm::length(vel1) + glm::length(vel2));
-            } else {
-                // set one box to get the full correction, and the other to get no correction
-                vel1_ratio = correct1;
-                vel2_ratio = correct2;
-            }
-
-            if (!coll_hor_prev) {
-                if (!box1_right) {
-                    // move box1 to the left and box2 to the right
-                    pos1.x -= glm::abs(coll_hor_space) * vel1_ratio;
-                    pos2.x += glm::abs(coll_hor_space) * vel2_ratio;
-                } else {
-                    // move box1 to the right and box2 to the left
-                    pos1.x += glm::abs(coll_hor_space) * vel1_ratio;
-                    pos2.x -= glm::abs(coll_hor_space) * vel2_ratio;
-                }
-            }
-            if (!coll_ver_prev) {
-                if (!box1_above) {
-                    // move box1 down and box2 up
-                    pos1.y -= glm::abs(coll_ver_space) * vel1_ratio;
-                    pos2.y += glm::abs(coll_ver_space) * vel2_ratio;
-                } else {
-                    // move box1 up and box2 down
-                    pos1.y += glm::abs(coll_ver_space) * vel1_ratio;
-                    pos2.y -= glm::abs(coll_ver_space) * vel2_ratio;
-                }
-            }
-        }
-        */
-
+    if (coll_hor_space < 0.0f && coll_ver_space < 0.0f) {
         // run collision handlers
         box1.collide(&box2);
         box2.collide(&box1);

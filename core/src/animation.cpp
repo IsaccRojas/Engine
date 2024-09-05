@@ -4,7 +4,7 @@ Cycle::Cycle(bool loop) {
     setLoop(loop);
 }
 Cycle::Cycle() : _loop(false) {}
-Cycle::~Cycle() {}
+Cycle::~Cycle() { /* automatic destruction is fine */ }
 
 Cycle& Cycle::addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 offset, int duration) {
     _frames.push_back(Frame{texpos, texsize, offset, duration});
@@ -32,7 +32,7 @@ bool Cycle::loops() const {
 }
 
 Animation::Animation() {}
-Animation::~Animation() {}
+Animation::~Animation() { /* automatic destruction is fine */ }
 
 Animation& Animation::addCycle(Cycle &cycle) {
     _cycles.push_back(cycle);
@@ -60,7 +60,7 @@ AnimationState::AnimationState() :
     _completed(false)
 {}
 
-AnimationState::~AnimationState() {}
+AnimationState::~AnimationState() { /* automatic destruction is fine */ }
 
 void AnimationState::setAnimation(Animation *animation) {
     _animation = animation;
@@ -81,7 +81,7 @@ void AnimationState::setAnimation(Animation *animation) {
 
 void AnimationState::setCycleState(int cyclestate) {
     if (!_animation) {
-        std::cerr << "WARN: attempt to set cycle state with null animation reference in AnimationState instance " << this << std::endl;
+        std::cerr << "WARN: AnimationState::setCycleState: attempt to set cycle state with null animation reference in AnimationState instance " << this << std::endl;
         return;
     }
 
@@ -94,7 +94,7 @@ void AnimationState::setCycleState(int cyclestate) {
 
 void AnimationState::setFrameState(int framestate) {
     if (!_animation) {
-        std::cerr << "WARN: attempt to set frame state with null animation reference in AnimationState instance " << this << std::endl;
+        std::cerr << "WARN: AnimationState::setFrameState: attempt to set frame state with null animation reference in AnimationState instance " << this << std::endl;
         return;
     }
 
@@ -107,7 +107,7 @@ void AnimationState::setFrameState(int framestate) {
 
 void AnimationState::step() {
     if (!_animation) {
-        std::cerr << "WARN: attempt to step animation with null animation reference in AnimationState instance " << this << std::endl;
+        std::cerr << "WARN: AnimationState::step: attempt to step animation with null animation reference in AnimationState instance " << this << std::endl;
         return;
     }
 
@@ -140,7 +140,7 @@ void AnimationState::step() {
 
 Frame *AnimationState::getCurrent() {
     if (!_animation) {
-        std::cerr << "WARN: attempt to get current frame with null animation reference in AnimationState instance " << this << std::endl;
+        std::cerr << "WARN: AnimationState::getCurrent: attempt to get current frame with null animation reference in AnimationState instance " << this << std::endl;
         return nullptr;
     }
     

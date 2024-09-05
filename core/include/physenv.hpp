@@ -7,7 +7,8 @@
 #include "filter.hpp"
 #include <functional>
 
-/* Class to encapsulate physical Box-shaped data for use by a PhysEnv instance.
+/* class Box
+   Encapsulates physical Box-shaped data for use by a PhysEnv instance.
    - position - location of box in 3D space
    - dimensions - dimensions of box in 3D space
    - velocity - current velocity of box in 3D space
@@ -15,8 +16,8 @@
    - callback - collision callback
 */
 class Box {
-    FilterState _filterstate;
-    glm::vec3 _prevpos;
+    FilterState _filter_state;
+    glm::vec3 _prev_pos;
     std::function<void(Box*)> _callback;
     bool _collision_correction;
 public:
@@ -31,10 +32,10 @@ public:
        callback - collision callback
     */
     Box(glm::vec3 position, glm::vec3 dimensions, glm::vec3 velocity, std::function<void(Box*)> callback);
-    Box(const Box &other);
     Box();
-    Box& operator=(const Box &other);
     ~Box();
+
+    // default copy assignment/construction are fine
 
     /* Sets the box's collision callback. */
     void setCallback(std::function<void(Box*)> callback);
@@ -59,8 +60,6 @@ public:
 
     /* Gets the box's previous position. */
     glm::vec3 &getPrevPos();
-
-
 };
 
 /* class PhysEnv
@@ -71,19 +70,24 @@ public:
    new Boxes if more than the allowed amount are allocated.
 */
 class PhysEnv {
-    /* environment system variables */
-
     // IDs to distribute to Boxes
     SlotVec _ids;
     // internal Box storage
     std::vector<Box> _boxes;
     // maximum number of active Boxes allowed
-    unsigned _maxcount;
+    unsigned _max_count;
+    unsigned _count;
 
+    bool _initialized;
 public:
-    /* max_count - maximum number of boxes allowed to be active */
-    PhysEnv(unsigned maxcount);
+    PhysEnv(unsigned max_count);
+    PhysEnv();
     ~PhysEnv();
+
+    // default copy assignment/construction are fine
+
+    void init(unsigned max_count);
+    void uninit();
 
     /* Generates an active Box in system. You must call the step() method on the environment or a reference 
        to the Box itself.
@@ -114,7 +118,7 @@ public:
        id - ID of Box to remove
        Returns 0 on success, -1 on failure.
     */
-    int remove(int id);
+    int remove(int i);
 
     /* Detects collision between all Boxes within the system. This is done by iterating on all Boxes
        in a pair-wise fashion.

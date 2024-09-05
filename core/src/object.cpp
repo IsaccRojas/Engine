@@ -103,9 +103,12 @@ void ObjectManager::_objectSetup(Object *object, ObjectInfo &objectinfo, EntityI
 }
 
 void ObjectManager::_objectRemoval(ObjectValues &objectvalues, EntityValues &entityvalues, ScriptValues &scriptvalues) {
-    _entityRemoval(entityvalues, scriptvalues);
     if (objectvalues._object_ref)
         objectvalues._object_ref->removeBox();
+    
+    _entityRemoval(entityvalues, scriptvalues);
+
+    objectvalues = ObjectValues{nullptr};
 }
 
 bool ObjectManager::hasObject(const char *objectname) { return !(_objectinfos.find(objectname) == _objectinfos.end()); }
@@ -131,7 +134,7 @@ int ObjectManager::spawnEntity(const char *entityname) {
 
 int ObjectManager::spawnObject(const char *objectname) {
     // fail if exceeding max size
-    if (_ids.fillSize() >= _maxcount) {
+    if (_ids.fillSize() >= _max_count) {
         std::cerr << "WARN: limit reached in ObjectManager " << this << std::endl;
         return -1;
     }
@@ -188,7 +191,7 @@ void ObjectManager::remove(int id) {
 
         // remove from object-related, entity-related and script-related systems
         _objectRemoval(objectvalues, entityvalues, scriptvalues);
-        _objectvalues[id] = ObjectValues{nullptr};
+        _objectvalues[id]
     }
 }
 

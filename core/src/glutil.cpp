@@ -10,10 +10,7 @@ namespace GLUtil {
     GLStage::GLStage() : _program_h(-1) {}
 
     GLStage::GLStage(GLStage &&other) {
-        if (this != &other) {
-            _program_h = other._program_h;
-            other._program_h = -1;
-        }
+        operator=(std::move(other));
     }
 
     GLStage& GLStage::operator=(GLStage &&other) {
@@ -25,13 +22,12 @@ namespace GLUtil {
     }
 
     GLStage::~GLStage() {
-        if (_program_h != -1)
-            glDeleteProgram(_program_h);
+        uninit();
     };
 
     void GLStage::init(const char *shader_srcs[], GLenum shader_types[], int count) {
         if (_program_h != -1) {
-            std::cerr << "WARN: attempt to initialize already initialized program in GLStage instance " << this << std::endl;
+            std::cerr << "WARN: GLStage::init: attempt to initialize already initialized program in GLStage instance " << this << std::endl;
             return;
         }
         
@@ -85,9 +81,15 @@ namespace GLUtil {
         delete[] shaders;
     }
 
+    void GLStage::uninit() {
+        if (_program_h != -1)
+            glDeleteProgram(_program_h);
+        _program_h = -1;
+    }
+
     void GLStage::use() {
         if (_program_h < 0) {
-            std::cerr << "WARN: attempt to bind program with unset program handle in GLStage instance " << this << std::endl;
+            std::cerr << "WARN: GLStage::use: attempt to bind program with unset program handle in GLStage instance " << this << std::endl;
             return;
         }
 
@@ -102,14 +104,7 @@ namespace GLUtil {
     GLBuffer::GLBuffer() : _buf_h(-1), _usage(0), _size(0) {}
 
     GLBuffer::GLBuffer(GLBuffer &&other) {
-        if (this != &other) {
-            _buf_h = other._buf_h;
-            _usage = other._usage;
-            _size = other._size;
-            other._buf_h = -1;
-            other._usage = 0;
-            other._size = 0;
-        }
+        operator=(std::move(other));
     }
 
     GLBuffer& GLBuffer::operator=(GLBuffer &&other) {
@@ -125,12 +120,12 @@ namespace GLUtil {
     }
 
     GLBuffer::~GLBuffer() {
-        clear();
+        uninit();
     }
 
     void GLBuffer::init(GLenum buffer_usage, GLuint buffer_size) {
         if (_buf_h != -1) {
-            std::cerr << "WARN: attempt to initialize already initialized buffer in GLBuffer instance " << this << std::endl;
+            std::cerr << "WARN: GLBuffer::init: attempt to initialize already initialized buffer in GLBuffer instance " << this << std::endl;
             return;
         }
 
@@ -147,7 +142,7 @@ namespace GLUtil {
 
     void GLBuffer::bind(GLenum target) {
         if (_buf_h < 0) {
-            std::cerr << "WARN: attempt to bind buffer to target with unset buffer handle in GLBuffer instance " << this << std::endl;
+            std::cerr << "WARN: GLBuffer::bind: attempt to bind buffer to target with unset buffer handle in GLBuffer instance " << this << std::endl;
             return;
         }
 
@@ -157,7 +152,7 @@ namespace GLUtil {
 
     void GLBuffer::bindIndex(GLuint index, GLintptr offset, GLsizei stride) {
         if (_buf_h < 0) {
-            std::cerr << "WARN: attempt to bind buffer to index with unset buffer handle in GLBuffer instance " << this << std::endl;
+            std::cerr << "WARN: GLBuffer::bindIndex: attempt to bind buffer to index with unset buffer handle in GLBuffer instance " << this << std::endl;
             return;
         }
 
@@ -167,7 +162,7 @@ namespace GLUtil {
 
     void GLBuffer::bindBase(GLenum target, GLuint index) {
         if (_buf_h < 0) {
-            std::cerr << "WARN: attempt to bind buffer to base with unset buffer handle in GLBuffer instance " << this << std::endl;
+            std::cerr << "WARN: GLBuffer::bindBase: attempt to bind buffer to base with unset buffer handle in GLBuffer instance " << this << std::endl;
             return;
         }
 
@@ -177,7 +172,7 @@ namespace GLUtil {
 
     void GLBuffer::subData(GLsizeiptr data_size, const void *data, GLsizeiptr offset) {
         if (_buf_h < 0) {
-            std::cerr << "WARN: attempt to write to sub data with unset buffer handle in GLBuffer instance " << this << std::endl;
+            std::cerr << "WARN: GLBuffer::subData: attempt to write to sub data with unset buffer handle in GLBuffer instance " << this << std::endl;
             return;
         }
 
@@ -185,7 +180,7 @@ namespace GLUtil {
         glNamedBufferSubData(buf_h, offset, data_size, data);
     }
 
-    void GLBuffer::clear() {
+    void GLBuffer::uninit() {
         if (_buf_h != -1) {
             GLuint buf_h = _buf_h;
             glDeleteBuffers(1, &buf_h);
@@ -202,7 +197,7 @@ namespace GLUtil {
 
     const char *GLBuffer::copy_mem() {
         if (_buf_h < 0) {
-            std::cerr << "WARN: attempt to copy buffer memory with unset buffer handle in GLBuffer instance " << this << std::endl;
+            std::cerr << "WARN: GLBuffer::copy_mem: attempt to copy buffer memory with unset buffer handle in GLBuffer instance " << this << std::endl;
             return nullptr;
         }
 
@@ -250,28 +245,7 @@ namespace GLUtil {
     {}
     
     GLTexture2DArray::GLTexture2DArray(GLTexture2DArray &&other) {
-        if (this != &other) {
-            _tex_h = other._tex_h;
-            _size = other._size;
-            _levels = other._levels;
-            _store_format = other._store_format;
-            _data_format = other._data_format;
-            _type = other._type;
-            _width = other._width;
-            _height = other._height;
-            _depth = other._depth;
-            _allocated = other._allocated;
-            other._tex_h = -1;
-            other._size = 0;
-            other._levels = 0;
-            other._store_format = 0;
-            other._data_format = 0;
-            other._type = 0;
-            other._width = 0;
-            other._height = 0;
-            other._depth = 0;
-            other._allocated = false;
-        }
+        operator=(std::move(other));
     }
 
     GLTexture2DArray& GLTexture2DArray::operator=(GLTexture2DArray &&other) {
@@ -301,12 +275,12 @@ namespace GLUtil {
     }
 
     GLTexture2DArray::~GLTexture2DArray() {
-        clear();
+        uninit();
     }
 
     void GLTexture2DArray::init() {
         if (_tex_h != -1) {
-            std::cerr << "WARN: attempt to initialize already initialized texture in GLTexture2DArray instance " << this << std::endl;
+            std::cerr << "WARN: GLTexture2DArray::init: attempt to initialize already initialized texture in GLTexture2DArray instance " << this << std::endl;
             return;
         }
 
@@ -322,7 +296,7 @@ namespace GLUtil {
 
     void GLTexture2DArray::bind(GLenum target) {
         if (_tex_h < 0) {
-            std::cerr << "WARN: attempt to bind texture with unset texture handle in GLTexture2DArray instance " << this << std::endl;
+            std::cerr << "WARN: GLTexture2DArray::bind: attempt to bind texture with unset texture handle in GLTexture2DArray instance " << this << std::endl;
             return;
         }
 
@@ -332,7 +306,7 @@ namespace GLUtil {
 
     void GLTexture2DArray::parameteri(GLenum param, GLint value) {
         if (_tex_h < 0) {
-            std::cerr << "WARN: attempt to set parameter with unset texture handle in GLTexture2DArray instance " << this << std::endl;
+            std::cerr << "WARN: GLTexture2DArray::parameteri: attempt to set parameter with unset texture handle in GLTexture2DArray instance " << this << std::endl;
             return;
         }
 
@@ -342,12 +316,12 @@ namespace GLUtil {
 
     void GLTexture2DArray::alloc(GLint levels, GLenum store_format, GLenum data_format, GLenum type, GLsizei width, GLsizei height, GLsizei depth) {
         if (_tex_h < 0) {
-            std::cerr << "WARN: attempt to allocate memory in texture with unset texture handle in GLTexture2DArray instance " << this << std::endl;
+            std::cerr << "WARN: GLTexture2DArray::alloc: attempt to allocate memory in texture with unset texture handle in GLTexture2DArray instance " << this << std::endl;
             return;
         }
 
         if (_allocated) {
-            std::cerr << "WARN: attempt to allocate memory in texture that has already allocated memory in GLTexture2DArray instance " << this << std::endl;
+            std::cerr << "WARN: GLTexture2DArray::alloc: attempt to allocate memory in texture that has already allocated memory in GLTexture2DArray instance " << this << std::endl;
             return;
         }
         
@@ -376,7 +350,7 @@ namespace GLUtil {
 
     void GLTexture2DArray::subImage(GLint level, GLint x_offset, GLint y_offset, GLint z_offset, GLsizei width, GLsizei height, GLsizei depth, const void *data) {
         if (_tex_h < 0) {
-            std::cerr << "WARN: attempt to write sub-image data with unset texture handle in GLTexture2DArray instance " << this << std::endl;
+            std::cerr << "WARN: GLTexture2DArray::subImage: attempt to write sub-image data with unset texture handle in GLTexture2DArray instance " << this << std::endl;
             return;
         }
 
@@ -384,7 +358,7 @@ namespace GLUtil {
         glTextureSubImage3D(tex_h, level, x_offset, y_offset, z_offset, width, height, depth, _data_format, _type, data);
     }
 
-    void GLTexture2DArray::clear() {
+    void GLTexture2DArray::uninit() {
         if (_tex_h != -1) {
             GLuint tex_h = _tex_h;
             glDeleteTextures(1, &tex_h);
@@ -421,7 +395,7 @@ namespace GLUtil {
         v = other.v;
     }
     BVec2::BVec2() : _buf(nullptr), _off(0) {}
-    BVec2::~BVec2() {}
+    BVec2::~BVec2() { /* automatic destruction is fine */ }
 
     BVec2& BVec2::operator=(const BVec2 &other) {
         _buf = other._buf;
@@ -440,7 +414,7 @@ namespace GLUtil {
 
     void BVec2::update() {
         if (!_buf) {
-            std::cerr << "WARN: attempt to write sub data data with null buffer reference in BVec2 instance " << this << std::endl;
+            std::cerr << "WARN: BVec2::update: attempt to write sub data data with null buffer reference in BVec2 instance " << this << std::endl;
             return;
         }
 
@@ -465,7 +439,7 @@ namespace GLUtil {
         v = other.v;
     }
     BVec3::BVec3() : _buf(nullptr), _off(0) {}
-    BVec3::~BVec3() {}
+    BVec3::~BVec3() { /* automatic destruction is fine */ }
 
     BVec3& BVec3::operator=(const BVec3 &other) {
         _buf = other._buf;
@@ -485,7 +459,7 @@ namespace GLUtil {
 
     void BVec3::update() {
         if (!_buf) {
-            std::cerr << "WARN: attempt to write sub data data with null buffer reference in BVec3 instance " << this << std::endl;
+            std::cerr << "WARN: BVec3::update: attempt to write sub data data with null buffer reference in BVec3 instance " << this << std::endl;
             return;
         }
 

@@ -4,7 +4,7 @@ Input::Input(GLFWwindow *window, int pixel_width, int pixel_height) {
     setWindow(window, pixel_width, pixel_height);
 }
 Input::Input() : _win_h(nullptr), _pixel_width(0), _pixel_height() {}
-Input::~Input() {}
+Input::~Input() { /* automatic destruction is fine */ }
 
 void Input::setWindow(GLFWwindow *window, int pixel_width, int pixel_height) {
     _win_h = window;
@@ -14,12 +14,12 @@ void Input::setWindow(GLFWwindow *window, int pixel_width, int pixel_height) {
     if (_win_h)
         glfwGetWindowSize(_win_h, &_win_width, &_win_height);
     else
-        std::cerr << "WARN: attempt to read window dimensions from null window handle in Input instance " << this << std::endl;
+        std::cerr << "WARN: Input::setWindow: attempt to read window dimensions from null window handle in Input instance " << this << std::endl;
 }
 
 void Input::update() {
     if (!_win_h) {
-        std::cerr << "WARN: attempt to read inputs from null window handle in Input instance " << this << std::endl;
+        std::cerr << "WARN: Input::update: attempt to read inputs from null window handle in Input instance " << this << std::endl;
         return;
     }
 
@@ -108,7 +108,7 @@ void Input::update() {
 
 void Input::setsticky(bool value) {
     if (!_win_h) {
-        std::cerr << "WARN: attempt to set sticky keys with null window handle in Input instance " << this << std::endl;
+        std::cerr << "WARN: Input::setsticky: attempt to set sticky keys with null window handle in Input instance " << this << std::endl;
         return;
     }
     

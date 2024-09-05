@@ -33,6 +33,9 @@ namespace GLUtil {
         */
         void init(const char *shader_srcs[], GLenum shader_types[], int count);
 
+        /* Frees handle referenced. */
+        void uninit();
+
         /* Binds this program to the main program binding point.
         */
         void use();
@@ -78,7 +81,7 @@ namespace GLUtil {
         */
         void subData(GLsizeiptr data_size, const void *data, GLsizeiptr offset);
 
-        void clear();
+        void uninit();
 
         GLuint size();
         GLenum usage();
@@ -134,7 +137,7 @@ namespace GLUtil {
         */
         void subImage(GLint level, GLint x_offset, GLint y_offset, GLint z_offset, GLsizei width, GLsizei height, GLsizei depth, const void *data);
 
-        void clear();
+        void uninit();
 
         GLuint size();
         GLuint width();
@@ -219,7 +222,7 @@ namespace GLUtil {
 
     /* Renders provided number of elements.
     */
-    void render(GLsizei count);
+    void render(GLsizei count, bool with_elements);
 
     /* Renders provided number of elements, as numinst instances.
     */

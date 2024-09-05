@@ -10,7 +10,7 @@
 
 #include "util.hpp"
 
-// prototype
+// prototypes
 class Executor;
 class ScriptManager;
 
@@ -25,8 +25,8 @@ class Script {
     // flags of whether this Script has been initialized or killed, maintained by Executor
     bool _initialized;
     bool _killed;
-    bool _execqueued;
-    bool _killqueued;
+    bool _exec_queued;
+    bool _kill_queued;
 
     // environmental references
     Executor *_executor;   
@@ -53,8 +53,14 @@ protected:
     virtual void _kill();
 
 public:
+    Script(Script &&other);
     Script();
     virtual ~Script();
+
+    Script& operator=(Script &&other);
+
+    Script(const Script&) = delete;
+    Script& operator=(const Script&) = delete;
 
    /* Functions wrapping the virtual versions of the same method, which are directly called by the Executor.
        - runInit() is called on execution, only for the first time the Script is queued.
@@ -119,21 +125,33 @@ class Executor {
 
     /* Execution data structures */
     // queues of IDs to be executed; swapped on execution
-    std::queue<int> _pushexecqueue;
-    std::queue<int> _runexecqueue;
+    std::queue<int> _push_execqueue;
+    std::queue<int> _run_execqueue;
     // queue of IDS to be erased
-    std::queue<int> _pushkillqueue;
-    std::queue<int> _runkillqueue;
+    std::queue<int> _push_killqueue;
+    std::queue<int> _run_killqueue;
     
     /* environment system variables */
     // maximum number of active Scripts allowed
-    unsigned _maxcount;
+    unsigned _max_count;
+    unsigned _count;
 
+    bool _initialized;
 public:
-    Executor(unsigned maxcount);
+    Executor(unsigned max_count);
+    Executor(Executor &&other);
+    Executor();
+
     ~Executor();
+
     Executor(const Executor &other) = delete;
-    Executor operator=(const Executor &other) = delete;
+    
+    Executor &operator=(Executor &&other);
+    
+    Executor &operator=(const Executor &other) = delete;
+
+    void init(unsigned max_count);
+    void uninit();
     
     /* Pushes a Script instance to the environment. This will generate an ID that will be used by the environment for
        checks and execution. This ID will be valid for the lifetime of the Script instance within the system. 
@@ -211,11 +229,15 @@ protected:
 
     // IDs to distribute to Scripts
     SlotVec _ids;
-    // vector of unique_ptrs of Scripts
+
+    // vector of unique_ptrs of Scripts; allocated references are stored here so that they are
+    // guaranteed to be deleted at some point, even if this vector remains unused
     std::vector<std::unique_ptr<Script>> _scripts;
     
-    unsigned _maxcount;
+    unsigned _max_count;
     unsigned _count;
+
+    bool _initialized;
 
     // internal methods called when spawning Scripts and removing them, using and setting
     // manager lifetime and Script runtime members
@@ -223,12 +245,20 @@ protected:
     void _scriptRemoval(ScriptValues &values);
    
 public:
-    /* maxcount - maximum number of Scripts to support in this instance */
-    ScriptManager(unsigned maxcount);
+    ScriptManager(unsigned max_count, Executor *executor);
+    ScriptManager(ScriptManager &&other);
+    ScriptManager(const ScriptManager &other) = delete;
+    ScriptManager();
     virtual ~ScriptManager();
 
+    ScriptManager &operator=(ScriptManager &&other);
+    ScriptManager &operator=(const ScriptManager &other) = delete;
+
+    void init(unsigned max_count, Executor *executor);
+    void uninit();
+
     /* Returns true if the provided Script name has been previously added to this manager. */
-    bool hasScript(const char *scriptname);
+    bool hasScript(const char *script_name);
     /* Returns a reference to the spawned Script corresponding to the provided ID, if it exists. */
     Script *getScript(int id);
     /* Returns a vector of IDs of all active Scripts with the corresponding group. */
@@ -241,7 +271,7 @@ public:
     /* Spawns a Script using a name previously added to this manager, and returns its ID. This
        will invoke scriptSetup() if set to do so from adding it.
     */
-    virtual int spawnScript(const char *scriptname);
+    virtual int spawnScript(const char *script_name);
     
     /* Adds an Script allocator with initialization information to this manager, allowing its given
        name to be used for future spawns.
@@ -256,9 +286,6 @@ public:
     
     /* Removes the Script associated with the provided ID. */
     void remove(int id);
-
-    /* Sets the Executor for this manager to use. */
-    void setExecutor(Executor *executor);
     
     /* Gets the maximum generated ID during this manager's lifetime. */
     int getMaxID();

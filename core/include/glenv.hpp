@@ -4,7 +4,8 @@
 #include "util.hpp"
 #include "glutil.hpp"
 
-/* Class to encapsulate Quad-like data for OpenGL environments.
+/* class Quad
+   Encapsulates Quad-like data for OpenGL environments.
    Uses BVec instances to store basic parameters of quads:
 
    - position - location of quad in 3D space
@@ -93,7 +94,11 @@ public:
 
     GLEnv& operator=(GLEnv &&other);
 
+    /* Initializes GLBuffers, GLStage, and GLTexture2DArray, allowing the provided maximum amount of Quads. */
     void init(unsigned max_count);
+
+    /* Uninitializes all members. */
+    void uninit();
 
     GLEnv(const GLEnv&) = delete;
     GLEnv& operator=(const GLEnv&) = delete;

@@ -4,7 +4,7 @@
 
 Quad::Quad(GLUtil::BVec3 position, GLUtil::BVec3 quadscale, GLUtil::BVec3 textureposition, GLUtil::BVec2 texturesize) : bv_pos(position), bv_scale(quadscale), bv_texpos(textureposition), bv_texsize(texturesize) {}
 Quad::Quad() {}
-Quad::~Quad() {}
+Quad::~Quad() { /* automatic destruction is fine */ }
 
 void Quad::update() {
     bv_pos.update();
@@ -20,41 +20,25 @@ GLEnv::GLEnv(unsigned maxcount) : _initialized(false) {
 }
 
 GLEnv::GLEnv(GLEnv &&other) {
-    if (this != &other) {
-        _stage = (GLUtil::GLStage &&)(other._stage);
-        _texarray = (GLUtil::GLTexture2DArray &&)(other._texarray);
-        _glb_modelbuf = (GLUtil::GLBuffer &&)(other._glb_modelbuf);
-        _glb_elembuf = (GLUtil::GLBuffer &&)(other._glb_elembuf);
-        _glb_pos = (GLUtil::GLBuffer &&)(other._glb_pos);
-        _glb_scale = (GLUtil::GLBuffer &&)(other._glb_scale);
-        _glb_texpos = (GLUtil::GLBuffer &&)(other._glb_texpos);
-        _glb_texsize = (GLUtil::GLBuffer &&)(other._glb_texsize);
-        _glb_draw = (GLUtil::GLBuffer &&)(other._glb_draw);
-        _ids = other._ids;
-        _quads = other._quads;
-        _max_count = other._max_count;
-        _initialized = other._initialized;
-        other._ids.clear();
-        other._quads.clear();
-        other._max_count = 0;
-        other._initialized = false;
-    }
+    operator=(std::move(other));
 }
 
 GLEnv::GLEnv() : _max_count(0), _initialized(false) {}
-GLEnv::~GLEnv() {}
+GLEnv::~GLEnv() {
+    uninit();
+}
 
 GLEnv& GLEnv::operator=(GLEnv &&other) {
     if (this != &other) {
-        _stage = (GLUtil::GLStage &&)(other._stage);
-        _texarray = (GLUtil::GLTexture2DArray &&)(other._texarray);
-        _glb_modelbuf = (GLUtil::GLBuffer &&)(other._glb_modelbuf);
-        _glb_elembuf = (GLUtil::GLBuffer &&)(other._glb_elembuf);
-        _glb_pos = (GLUtil::GLBuffer &&)(other._glb_pos);
-        _glb_scale = (GLUtil::GLBuffer &&)(other._glb_scale);
-        _glb_texpos = (GLUtil::GLBuffer &&)(other._glb_texpos);
-        _glb_texsize = (GLUtil::GLBuffer &&)(other._glb_texsize);
-        _glb_draw = (GLUtil::GLBuffer &&)(other._glb_draw);
+        _stage = std::move(other._stage);
+        _texarray = std::move(other._texarray);
+        _glb_modelbuf = std::move(other._glb_modelbuf);
+        _glb_elembuf = std::move(other._glb_elembuf);
+        _glb_pos = std::move(other._glb_pos);
+        _glb_scale = std::move(other._glb_scale);
+        _glb_texpos = std::move(other._glb_texpos);
+        _glb_texsize = std::move(other._glb_texsize);
+        _glb_draw = std::move(other._glb_draw);
         _ids = other._ids;
         _quads = other._quads;
         _max_count = other._max_count;
@@ -153,6 +137,25 @@ void GLEnv::init(unsigned max_count) {
     _initialized = true;
 }
 
+void GLEnv::uninit() {
+    if (!_initialized)
+        return;
+    
+    _stage.uninit();
+    _texarray.uninit();
+    _glb_modelbuf.uninit();
+    _glb_elembuf.uninit();
+    _glb_pos.uninit();
+    _glb_scale.uninit();
+    _glb_texpos.uninit();
+    _glb_texsize.uninit();
+    _glb_draw.uninit();
+    _ids.clear();
+    _quads.clear();
+    _max_count = 0;
+    _initialized = false;
+}
+
 void GLEnv::setTexArray(GLuint width, GLuint height, GLuint depth) {
     if (!_initialized) {
         std::cerr << "WARN: attempt to call setTexArray on uninitialized GLEnv instance " << this << std::endl;
@@ -233,10 +236,14 @@ Quad *GLEnv::get(int i) {
         return nullptr;
     }
 
-    if (i < 0)
-        std::cerr << "WARN: attempt to get address with negative value from GLEnv " << this << std::endl;
-    if (i >= 0 && _ids[i])
-        return &_quads[i];
+    if (i >= 0) {
+        if (_ids.at(i))
+            return &_quads[i];
+        else
+            std::cerr << "WARN: attempt to get address with value " << i << " that is inactive in GLEnv instance " << this << std::endl;
+    } else
+        std::cerr << "WARN: attempt to get address with negative value from GLEnv instance " << this << std::endl;
+
     return nullptr;
 }
 

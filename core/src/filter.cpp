@@ -9,7 +9,7 @@ bool isIn(std::vector<int> &v, int x) {
 
 Filter::Filter(int id) : _id(id) {}
 Filter::Filter() : _id(-1) {}
-Filter::~Filter() {}
+Filter::~Filter() { /* automatic destruction is fine */ }
 
 Filter& Filter::pushWhitelist(int x) {
     _whitelist.push_back(x);
@@ -54,7 +54,7 @@ int &Filter::getID() {
 
 FilterState::FilterState(Filter *filter) : _filter(filter) {}
 FilterState::FilterState() : _filter(nullptr) {}
-FilterState::~FilterState() {}
+FilterState::~FilterState() { /* automatic destruction is fine */ }
 
 void FilterState::setFilter(Filter *filter) {
     _filter = filter;
@@ -62,7 +62,7 @@ void FilterState::setFilter(Filter *filter) {
 
 bool FilterState::pass(int x) {
     if (!_filter) {
-        std::cerr << "WARN: attempt to pass value in FilterState instance " << this << " without a Filter reference" << std::endl;
+        std::cerr << "WARN: FilterState::pass: attempt to pass value in FilterState instance " << this << " without a Filter reference" << std::endl;
         return false;
     }
 
@@ -87,7 +87,7 @@ bool FilterState::pass(int x) {
 
 bool FilterState::passCorrection(int x) {
     if (!_filter) {
-        std::cerr << "WARN: attempt to pass correction value in FilterState instance " << this << " without a Filter reference" << std::endl;
+        std::cerr << "WARN: FilterState::passCorrection: attempt to pass correction value in FilterState instance " << this << " without a Filter reference" << std::endl;
         return false;
     }
     

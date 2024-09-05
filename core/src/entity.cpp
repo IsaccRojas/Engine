@@ -128,9 +128,12 @@ void EntityManager::_entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptI
     entity->_entitymanager = this;
 }
 void EntityManager::_entityRemoval(EntityValues &entityvalues, ScriptValues &scriptvalues) {
-    _scriptRemoval(scriptvalues);
     if (entityvalues._entity_ref)
         entityvalues._entity_ref->removeQuad();
+    
+    _scriptRemoval(scriptvalues);
+
+    entityvalues = EntityValues{nullptr};
 }
 
 bool EntityManager::hasEntity(const char *entityname) { return !(_entityinfos.find(entityname) == _entityinfos.end()); }
@@ -204,7 +207,6 @@ void EntityManager::remove(int id) {
 
         // remove from entity-related and script-related systems
         _entityRemoval(entityvalues, scriptvalues);
-        _entityvalues[id] = EntityValues{nullptr};
     }
 }
 

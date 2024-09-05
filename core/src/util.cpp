@@ -37,7 +37,7 @@ void Image::load(const char *filename) {
     _data = stbi_load(filename, &_w, &_h, &_components, 4);
     
     if (_data == NULL) {
-        std::cerr << "WARN: failed to load file '" << filename <<"' into Image instance " << this << std::endl;
+        std::cerr << "WARN: Image::load: failed to load file '" << filename <<"' into Image instance " << this << std::endl;
         return;
     }
 
@@ -46,7 +46,7 @@ void Image::load(const char *filename) {
 
 void Image::free() {
     if (!_data) {
-        std::cerr << "WARN: attempt to free data from empty Image instance " << this << std::endl;
+        std::cerr << "WARN: Image::free: attempt to free data from empty Image instance " << this << std::endl;
         return;
     }
 
@@ -56,7 +56,7 @@ void Image::free() {
 
 unsigned char* Image::copyData() const {
     if (_data == NULL) {
-        std::cerr << "WARN: attempt to copy data from empty Image instance " << this << std::endl;
+        std::cerr << "WARN: Image::copyData: attempt to copy data from empty Image instance " << this << std::endl;
         return NULL;
     }
     
@@ -71,7 +71,7 @@ int Image::size() { return _size; }
 bool Image::empty() { return (_data == NULL); }
 
 SlotVec::SlotVec() {}
-SlotVec::~SlotVec() {}
+SlotVec::~SlotVec() { /* automatic destruction is fine */ }
 
 int SlotVec::push() {
     if (_free_ids.empty()) {
@@ -90,7 +90,7 @@ void SlotVec::remove(int i) {
         _ids[i] = false;
         _free_ids.push_back(i);
     } else {
-        std::cerr << "WARN: attempt to remove inactive index from SlotVec index " << this << std::endl;
+        std::cerr << "WARN: SlotVec::remove: attempt to remove inactive index from SlotVec index " << this << std::endl;
     }
 }
 
