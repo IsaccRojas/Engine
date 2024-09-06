@@ -273,3 +273,5 @@ std::vector<int> GLEnv::getIDs() {
 
     return _ids.getUsed();
 }
+
+bool GLEnv::getInitialized() { return _initialized; }

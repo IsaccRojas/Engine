@@ -166,6 +166,9 @@ public:
 
     /* Returns all active IDs in system. (note that this allocates a vector and will take O(n) time) */
     std::vector<int> getIDs();
+
+    /* Returns whether this instance has been initialized or not. */
+    bool getInitialized();
 };
 
 #endif

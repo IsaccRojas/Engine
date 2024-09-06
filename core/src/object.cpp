@@ -103,10 +103,10 @@ void ObjectManager::_objectSetup(Object *object, ObjectInfo &objectinfo, EntityI
 }
 
 void ObjectManager::_objectRemoval(ObjectValues &objectvalues, EntityValues &entityvalues, ScriptValues &scriptvalues) {
+    _entityRemoval(entityvalues, scriptvalues);
+
     if (objectvalues._object_ref)
         objectvalues._object_ref->removeBox();
-    
-    _entityRemoval(entityvalues, scriptvalues);
 
     objectvalues = ObjectValues{nullptr};
 }

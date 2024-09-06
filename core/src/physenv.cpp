@@ -177,6 +177,8 @@ std::vector<int> PhysEnv::getids() {
     return _ids.getUsed();
 }
 
+bool PhysEnv::getInitialized() { return _initialized; }
+
 // only detects 2D collision for now
 void PhysEnv::collisionAABB(Box &box1, Box &box2) {
     glm::vec3 &pos1 = box1.pos;

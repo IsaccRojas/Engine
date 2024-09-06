@@ -32,12 +32,10 @@ class Script {
     // environmental references
     Executor *_executor;   
     int _executor_id;
-    bool _executor_ready;
 
     // Manager instance that owns this Script, ID, and removeonkill flag; maintained by Manager
     ScriptManager *_scriptmanager;
     int _scriptmanager_id;
-    bool _scriptmanager_ready;
     bool _scriptmanager_removeonkill;
 
     // settable integer usable for identification
@@ -82,9 +80,9 @@ public:
     */
     void scriptResetFlags();
     
-    /* Resets executor information.
+    /* Removes self from stored executor reference.
     */
-    void scriptResetExec();
+    void scriptClear();
 
     /* Sets various internal flags used by Executors to control state. Can be set manually to manipulate
        execution behavior.
@@ -209,7 +207,7 @@ public:
         bool _force_enqueue;
         bool _force_removeonkill;
         std::function<Script*(void)> _allocator = nullptr;
-        std::function<void(Script*)> _spawncallback = nullptr;
+        std::function<void(Script*)> _spawn_callback = nullptr;
     };
 
     // struct holding IDs and other flags belonging to the managed script during its lifetime
@@ -290,6 +288,9 @@ public:
     
     /* Gets the maximum generated ID during this manager's lifetime. */
     int getMaxID();
+
+    /* Returns whether this instance has been initialized or not. */
+    bool getInitialized();
 };
 
 #endif

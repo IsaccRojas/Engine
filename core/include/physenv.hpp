@@ -130,6 +130,9 @@ public:
 
     /* Detects and handles AABB collision between two provided Boxes. */
     static void collisionAABB(Box &box1, Box &box2);
+
+    /* Returns whether this instance has been initialized or not. */
+    bool getInitialized();
 };
 
 /* Rotates the vector with respect to the Z axis, within a range of [-deg, deg]. */

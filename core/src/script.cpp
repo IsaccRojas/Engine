@@ -22,29 +22,25 @@ Script::Script() :
     _kill_queued(false), 
     _executor(nullptr),
     _executor_id(-1),
-    _executor_ready(false),
     _scriptmanager(nullptr),
     _scriptmanager_id(-1),
-    _scriptmanager_ready(false),
     _scriptmanager_removeonkill(false)
 {}
 Script::~Script() {
     // try removing from existing executor
-    scriptResetExec();
+    scriptClear();
 }
 
 Script &Script::operator=(Script &&other) {
-    if (&other != this) {
+    if (this != &other) {
         _initialized = other._initialized;
         _killed = other._killed;
         _exec_queued = other._exec_queued;
         _kill_queued = other._exec_queued;
         _executor = other._executor;
         _executor_id = other._executor_id;
-        _executor_ready = other._executor_ready;
         _scriptmanager = other._scriptmanager;
         _scriptmanager_id = other._scriptmanager_id;
-        _scriptmanager_ready = other._scriptmanager_ready;
         _scriptmanager_removeonkill = other._scriptmanager_removeonkill;
         other._initialized = false; 
         other._killed = false;
@@ -52,10 +48,8 @@ Script &Script::operator=(Script &&other) {
         other._kill_queued = false;
         other._executor = nullptr;
         other._executor_id = -1;
-        other._executor_ready = false;
         other._scriptmanager = nullptr;
         other._scriptmanager_id = -1;
-        other._scriptmanager_ready = false;
         other._scriptmanager_removeonkill = false;
     }
 }
@@ -75,10 +69,9 @@ void Script::runBase() {
 void Script::runKill() {
     _kill();
     if (_scriptmanager_removeonkill)
-        if (_scriptmanager_ready)
-            if (_scriptmanager)
-                if (_scriptmanager_id >= 0)
-                    getManager()->remove(_scriptmanager_id);
+        if (_scriptmanager)
+            if (_scriptmanager_id >= 0)
+                getManager()->remove(_scriptmanager_id);
 
 }
 
@@ -87,12 +80,10 @@ void Script::scriptSetup(Executor *executor) {
         throw std::runtime_error("Attempt to setup Script with null Executor reference");
 
     // try removing from existing executor
-    scriptResetExec();
+    scriptClear();
     
     _executor = executor;
     _executor_id = _executor->push(this);
-
-    _executor_ready = true;
 
     scriptResetFlags();
 }
@@ -105,15 +96,16 @@ void Script::scriptResetFlags() {
     _kill_queued = false;
 }
 
-void Script::scriptResetExec() {
-    // reset executor fields
-    if (_executor_ready)
+void Script::scriptClear() {
+    // reset executor members
+    if (_executor)
         if (_executor_id >= 0)
             _executor->remove(_executor_id);
     
     _executor = nullptr;
     _executor_id = -1;
-    _executor_ready = false;
+
+    scriptResetFlags();
 }
 
 void Script::setInitialized(bool initialized) { _initialized = initialized; }
@@ -128,18 +120,18 @@ void Script::setGroup(int group) { _group = group; }
 int Script::getGroup() { return _group; }
 
 void Script::enqueue() {
-    if (_executor_ready)
+    if (_executor)
         _executor->queueExec(_executor_id);
-
-    throw std::runtime_error("Attempt to setup Script without ready Executor reference");
+    else
+        throw std::runtime_error("Attempt to enqueue Script with null Executor reference");
 }
 
 void Script::kill() {
     if (!_killed) {
-        if (_executor_ready)
+        if (_executor)
             _executor->queueKill(_executor_id);
-
-        throw std::runtime_error("Attempt to kill Script without ready Executor reference");
+        else
+            throw std::runtime_error("Attempt to kill Script without null Executor reference");
     }
 }
 
@@ -383,9 +375,7 @@ ScriptManager::ScriptManager() :
     _count(0),
     _initialized(false)
 {}
-ScriptManager::~ScriptManager() {
-    uninit();
-}
+ScriptManager::~ScriptManager() { /* automatic destruction is fine */ }
 
 ScriptManager &ScriptManager::operator=(ScriptManager &&other) {
     if (this != &other) {
@@ -406,15 +396,13 @@ void ScriptManager::_scriptSetup(Script *script, ScriptInfo &info, int id) {
     _checkUninitialized(_initialized);
 
     // set up script
-    if (_executor)
-        script->scriptSetup(_executor);
+    script->scriptSetup(_executor);
     script->setGroup(info._group);
 
     // set up internal fields
     script->_scriptmanager = this;
     script->_scriptmanager_id = id;
     script->_scriptmanager_removeonkill = info._force_removeonkill;
-    script->_scriptmanager_ready = true;
 
     // enqueue if set
     if (info._force_enqueue)
@@ -426,7 +414,7 @@ void ScriptManager::_scriptSetup(Script *script, ScriptInfo &info, int id) {
 void ScriptManager::_scriptRemoval(ScriptValues &values) {
     _checkUninitialized(_initialized);
 
-    values._script_ref->scriptResetExec();
+    values._script_ref->scriptClear();
     _ids.remove(values._manager_id);
 
     _count--;
@@ -442,7 +430,7 @@ void ScriptManager::init(unsigned max_count, Executor *executor) {
     _max_count = max_count;
     for (unsigned i = 0; i < max_count; i++) {
         _scripts.push_back(std::unique_ptr<Script>(nullptr));
-        _scriptvalues.push_back(ScriptValues{-1, NULL, nullptr, -1});
+        _scriptvalues.push_back(ScriptValues{-1, nullptr, nullptr, -1});
     }
 
     _executor = executor;
@@ -486,8 +474,8 @@ int ScriptManager::spawnScript(const char *scriptname) {
     _scriptSetup(script, info, id);
     
     // call callback if it exists
-    if (info._spawncallback)
-        info._spawncallback(script);
+    if (info._spawn_callback)
+        info._spawn_callback(script);
 
     _count++;
     return id;
@@ -497,6 +485,7 @@ Script *ScriptManager::getScript(int id) {
     _checkUninitialized(_initialized);
 
     // check bounds
+    if (id < 0 || id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
     if (_ids.at(id))
@@ -550,8 +539,7 @@ void ScriptManager::remove(int id) {
     ScriptValues &values = _scriptvalues[id];
 
     // remove from script-related systems
-    _scriptRemoval(values);    
-    _scriptvalues[id] = ScriptValues{-1, NULL, nullptr, -1};
+    _scriptRemoval(values);
     _count--;
 }
 
@@ -566,6 +554,9 @@ void ScriptManager::addScript(std::function<Script*(void)> allocator, const char
             allocator,
             spawn_callback
         };
+
+    else
+        throw std::runtime_error("Attempt to add already added Script name");
 }
 
 int ScriptManager::getMaxID() { 
@@ -573,3 +564,5 @@ int ScriptManager::getMaxID() {
 
     return _ids.size();
 }
+
+bool ScriptManager::getInitialized() { return _initialized; }

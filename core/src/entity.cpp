@@ -1,5 +1,20 @@
 #include "../include/entity.hpp"
 
+// throws if initialized is true
+void _checkInitialized(bool initialized) {
+    if (initialized)
+        throw InitializedException();
+}
+
+// throws if initialized is false
+void _checkUninitialized(bool initialized) {
+    if (!initialized)
+        throw UninitializedException();
+}
+
+Entity::Entity(Entity &&other) {
+    operator=(std::move(other));
+}
 Entity::Entity() : 
     Script(),
     _glenv(nullptr),
@@ -7,8 +22,6 @@ Entity::Entity() :
     _frame(nullptr),
     _quad_id(-1),
     _first_step(true),
-    _glenv_ready(false),
-    _quad_ready(false),
     _entitymanager(nullptr)
 {}
 Entity::~Entity() {
@@ -16,18 +29,36 @@ Entity::~Entity() {
     removeQuad();
 }
 
+Entity &Entity::operator=(Entity &&other) {
+    if (this != &other) {
+        Script::operator=(std::move(other));
+        _glenv = other._glenv;
+        _quad = other._quad;
+        _frame = other._frame;
+        _quad_id = other._quad_id;
+        _first_step = other._first_step;
+        _entitymanager = other._entitymanager;
+        other._glenv = nullptr;
+        other._quad = nullptr;
+        other._frame = nullptr;
+        other._quad_id = -1;
+        other._first_step = true;
+        other._entitymanager = nullptr;
+    }
+}
+
 void Entity::_init() {
-    if (_glenv_ready)
+    if (_glenv)
         _initEntity();
 }
 
 void Entity::_base() {
-    if (_glenv_ready)
+    if (_glenv)
         _baseEntity();
 }
 
 void Entity::_kill() {
-    if (_glenv_ready)
+    if (_glenv)
         _killEntity();
 }
 
@@ -35,180 +66,221 @@ void Entity::_initEntity() {}
 void Entity::_baseEntity() {}
 void Entity::_killEntity() {}
 
-AnimationState &Entity::getAnimState() { return _animstate; }
+AnimationState &Entity::getAnimState() { return _animationstate; }
 
 void Entity::stepAnim() {
-    if (_glenv_ready) {
+    if (_glenv) {
         if (!_first_step) {
             // step animation and retrieve current frame
-            _animstate.step();
-            _frame = _animstate.getCurrent();
+            _animationstate.step();
+            _frame = _animationstate.getCurrent();
         } else {
             _first_step = false;
         }
 
         // only attempt to write animation data if quad is available
-        if (_quad_ready) {
+        if (_quad) {
             // write frame data to quad
             _quad->bv_texpos.v = _frame->texpos;
             _quad->bv_texsize.v = _frame->texsize;
         }
-    }
+    } else
+        throw std::runtime_error("Attempt to step Animation with null GLEnv reference");
 }
 
 void Entity::entitySetup(GLEnv *glenv, Animation *animation) {
-    // try erasing existing quad
-    removeQuad();
+    if (!glenv)
+        throw std::runtime_error("Attempt to setup Entity with null GLEnv reference");
+    if (!animation)
+        throw std::runtime_error("Attempt to setup Entity with null Animation reference");
+
+    // try removing existing GLEnv and Animation information
+    entityClear();
 
     _glenv = glenv;
-    _glenv_ready = true;
+    _animationstate.setAnimation(animation);
 
-    _animstate.setAnimation(animation);
-    _frame = _animstate.getCurrent();
+    _frame = _animationstate.getCurrent();
+}
 
-    // generate new quad
-    genQuad(glm::vec3(0.0f), glm::vec3(0.0f));
+void Entity::entityClear() {
+    // try erasing existing quad
+    removeQuad();
+    _glenv = nullptr;
 }
 
 void Entity::genQuad(glm::vec3 pos, glm::vec3 scale) {
-    if (_glenv_ready) {
+    if (_glenv) {
         // erase existing quad
-        if (_quad_ready)
+        if (_quad)
             removeQuad();
 
         // get quad data
         _quad_id = _glenv->genQuad(pos, scale, _frame->texpos, _frame->texsize);
-        
-        // if successful, retrieve quad
-        if (_quad_id >= 0) {
-            _quad = _glenv->get(_quad_id);
-            _quad_ready = true;
-        }
-    }
-
+        _quad = _glenv->get(_quad_id);
+    } else
+        throw std::runtime_error("Attempt to generate Quad with null GLEnv reference");
 }
 
 int Entity::removeQuad() {
-    if (_quad_ready) {
-        if (_glenv->remove(_quad_id)) {
-            std::cerr << "WARN: attempt to remove Quad ID " << _quad_id << " from GLEnv " << &_glenv << " within Entity " << this << " failed" << std::endl;
-            return -1;
-        }
+    if (_glenv && _quad) {
+        _glenv->remove(_quad_id);
 
+        _quad = nullptr;
         _quad_id = -1;
-        _quad_ready = false;
     }
+
     // no problem
     return 0;
 }
 
 Quad *Entity::getQuad() { 
-    if (_quad_ready)
-        return _quad;
-    else
-        return nullptr;
+    return _quad;
 }
 
 EntityManager *Entity::getManager() { return _entitymanager; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-EntityManager::EntityManager(int maxcount) : ScriptManager(maxcount), _glenv(nullptr), _animations(nullptr) {
-    for (int i = 0; i < maxcount; i++)
+//TODO: only signature is complete at the moment
+EntityManager::EntityManager(unsigned max_count, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor) : ScriptManager() {
+    init(max_count, glenv, animations, executor);
+}
+EntityManager::EntityManager(EntityManager &&other) {
+    operator=(std::move(other));
+}
+EntityManager::EntityManager() : ScriptManager(), _glenv(nullptr), _animations(nullptr) {}
+EntityManager::~EntityManager() { /* automatic destruction is fine */ }
+
+EntityManager &EntityManager::operator=(EntityManager &&other) {
+    if (this != &other) {
+        ScriptManager::operator=(std::move(other));
+        _entityinfos = other._entityinfos;
+        _entityvalues = other._entityvalues;
+        _glenv = other._glenv;
+        _animations = other._animations;
+        other._entityManagerUninit();
+    }
+}
+
+void EntityManager::_entityManagerInit(unsigned max_count, GLEnv *glenv, unordered_map_string_Animation_t *animations) {
+    _glenv = glenv;
+    _animations = animations;
+    for (unsigned i = 0; i < _max_count; i++)
         _entityvalues.push_back(EntityValues{nullptr});
 }
-EntityManager::~EntityManager() {}
+
+void EntityManager::_entityManagerUninit() {
+    _entityinfos.clear();
+    _entityvalues.clear();
+    _glenv = nullptr;
+    _animations = nullptr;
+}
 
 void EntityManager::_entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, int id) {
     _scriptSetup(entity, scriptinfo, id);
 
-    if (_glenv && _animations)
-        entity->entitySetup(_glenv, &(*_animations)[entityinfo._animation_name]);
+    entity->entitySetup(_glenv, &(*_animations)[entityinfo._animation_name]);
+    entity->genQuad(glm::vec3(0.0f), glm::vec3(0.0f));
             
     entity->_entitymanager = this;
 }
-void EntityManager::_entityRemoval(EntityValues &entityvalues, ScriptValues &scriptvalues) {
-    if (entityvalues._entity_ref)
-        entityvalues._entity_ref->removeQuad();
-    
+void EntityManager::_entityRemoval(EntityValues &entityvalues, ScriptValues &scriptvalues) {    
     _scriptRemoval(scriptvalues);
+    
+    // accessing ref after script-level removal is fine because deletion doesn't actually take place
+    entityvalues._entity_ref->removeQuad();
 
     entityvalues = EntityValues{nullptr};
 }
 
-bool EntityManager::hasEntity(const char *entityname) { return !(_entityinfos.find(entityname) == _entityinfos.end()); }
-
-Entity *EntityManager::getEntity(int id) {
-    if (id >= 0 && _ids.at(id))
-        return _entityvalues[id]._entity_ref;
-    else
-        return nullptr;
+void EntityManager::init(unsigned max_count, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor) {
+    ScriptManager::init(max_count, executor);
+    _entityManagerInit(max_count, glenv, animations);
 }
 
-int EntityManager::spawnScript(const char *scriptname) {
-    int id = ScriptManager::spawnScript(scriptname);
+void EntityManager::uninit() {
+    ScriptManager::uninit();
+    _entityManagerUninit();
+}
+
+bool EntityManager::hasEntity(const char *entity_name) { return !(_entityinfos.find(entity_name) == _entityinfos.end()); }
+
+Entity *EntityManager::getEntity(int id) {
+    _checkUninitialized(_initialized);
+
+    if (id < 0 || id >= _ids.size())
+        throw std::out_of_range("Index out of range");
+    
+    if (_ids.at(id))
+        return _entityvalues[id]._entity_ref;
+
+    throw InactiveIDException();
+}
+
+int EntityManager::spawnScript(const char *script_name) {
+    int id = ScriptManager::spawnScript(script_name);
     _entityvalues[id] = EntityValues{nullptr};
     return id;
 }
 
-int EntityManager::spawnEntity(const char *entityname) {
+int EntityManager::spawnEntity(const char *entity_name) {
+    _checkUninitialized(_initialized);
+
     // fail if exceeding max size
-    if (_ids.fillSize() >= _maxcount) {
-        std::cerr << "WARN: limit reached in EntityManager " << this << std::endl;
-        return -1;
-    }
+    if (_count >= _max_count)
+        throw CountLimitException();
 
     // get entity information
-    ScriptInfo &scriptinfo = _scriptinfos[entityname];
-    EntityInfo &entityinfo = _entityinfos[entityname];
+    ScriptInfo &scriptinfo = _scriptinfos[entity_name];
+    EntityInfo &entityinfo = _entityinfos[entity_name];
 
     // push to internal storage
     Entity *entity = entityinfo._allocator();
     int id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(entity);
     _entityvalues[id] = EntityValues{entity};
-    _scriptvalues[id] = ScriptValues{id, entityname, entity};
+    _scriptvalues[id] = ScriptValues{id, entity_name, entity};
     
     // set up entity
     _entitySetup(entity, entityinfo, scriptinfo, id);
     
     // call callback if it exists
-    if (entityinfo._spawncallback)
-        entityinfo._spawncallback(entity);
+    if (entityinfo._spawn_callback)
+        entityinfo._spawn_callback(entity);
     
     return id;
 }
 
 void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback) {
-    if (!hasEntity(name) && !hasScript(name)) {
+    _checkUninitialized(_initialized);
+    
+    if (!hasEntity(name)) {
+        addScript(allocator, name, group, force_enqueue, force_removeonkill, nullptr);
         _entityinfos[name] = EntityInfo{
             animation_name,
             allocator,
             spawn_callback
         };
-        addScript(allocator, name, group, force_enqueue, force_removeonkill, nullptr);
-    }
+
+    } else
+        throw std::runtime_error("Attempt to add already added Entity name");
 }
 
 void EntityManager::remove(int id) {
-    if (id < 0) {
-        std::cerr << "WARN: attempt to remove negative value from Manager " << this << std::endl;
-        return;
-    }
-    if (_ids.empty()) {
-        std::cerr << "WARN: attempt to remove value from empty Manager " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
-    if (_ids.at(id)) {
-        // get info
-        ScriptValues &scriptvalues = _scriptvalues[id];
-        EntityValues &entityvalues = _entityvalues[id];
+    // check bounds
+    if (id < 0 || id >= _ids.size())
+        throw std::out_of_range("Index out of range");
 
-        // remove from entity-related and script-related systems
-        _entityRemoval(entityvalues, scriptvalues);
-    }
+    if (!_ids.at(id))
+        throw InactiveIDException();
+
+    // get info
+    ScriptValues &scriptvalues = _scriptvalues[id];
+    EntityValues &entityvalues = _entityvalues[id];
+
+    // remove from entity-related and script-related systems
+    _entityRemoval(entityvalues, scriptvalues);    
 }
-
-void EntityManager::setGLEnv(GLEnv *glenv) { if (!_glenv) _glenv = glenv; }
-void EntityManager::setAnimations(std::unordered_map<std::string, Animation> *animations) { if (!_animations) _animations = animations; }
