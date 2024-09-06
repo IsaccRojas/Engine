@@ -255,12 +255,7 @@ void loop(GLFWwindow *winhandle) {
 
     // set up manager
     std::cout << "Setting up manager" << std::endl;
-    ObjectManager obj_manager{2048};
-    obj_manager.setExecutor(&obj_executor);
-    obj_manager.setGLEnv(&obj_glenv);
-    obj_manager.setAnimations(&animations);
-    obj_manager.setPhysEnv(&obj_physenv);
-    obj_manager.setFilters(&filters);
+    ObjectManager obj_manager{2048, &obj_physenv, &filters, &obj_glenv, &animations, &obj_executor};
 
     // set up input
     std::cout << "Setting up input" << std::endl;

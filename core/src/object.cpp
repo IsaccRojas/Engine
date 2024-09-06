@@ -1,17 +1,5 @@
 #include "../include/object.hpp"
 
-// throws if initialized is true
-void _checkInitialized(bool initialized) {
-    if (initialized)
-        throw InitializedException();
-}
-
-// throws if initialized is false
-void _checkUninitialized(bool initialized) {
-    if (!initialized)
-        throw UninitializedException();
-}
-
 Object::Object(Object &&other) {
     operator=(std::move(other));
 }
@@ -178,7 +166,7 @@ void ObjectManager::uninit() {
 bool ObjectManager::hasObject(const char *object_name) { return !(_objectinfos.find(object_name) == _objectinfos.end()); }
 
 Object *ObjectManager::getObject(unsigned id) {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
 
     if (id < 0 || id >= _ids.size())
         throw std::out_of_range("Index out of range");
@@ -201,7 +189,7 @@ unsigned ObjectManager::spawnEntity(const char *entity_name) {
 }
 
 unsigned ObjectManager::spawnObject(const char *object_name) {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
 
     // fail if exceeding max size
     if (_count >= _max_count)
@@ -231,7 +219,7 @@ unsigned ObjectManager::spawnObject(const char *object_name) {
 }
 
 void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback) {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
     
     if (!hasObject(name)) {
         addEntity(allocator, name, group, force_enqueue, force_removeonkill, animation_name, nullptr);
@@ -246,7 +234,7 @@ void ObjectManager::addObject(std::function<Object*(void)> allocator, const char
 }
 
 void ObjectManager::remove(unsigned id) {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
     
     // check bounds
     if (id >= _ids.size())

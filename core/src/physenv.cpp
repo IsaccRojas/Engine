@@ -1,17 +1,5 @@
 #include "../include/physenv.hpp"
 
-// throws if initialized is true
-void _checkInitialized(bool initialized) {
-    if (initialized)
-        throw InitializedException();
-}
-
-// throws if initialized is false
-void _checkUninitialized(bool initialized) {
-    if (!initialized)
-        throw UninitializedException();
-}
-
 // _______________________________________ Box _______________________________________
 
 Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::function<void(Box*)> callback) :
@@ -68,7 +56,7 @@ PhysEnv::PhysEnv() : _max_count(0), _count(0), _initialized(false) {}
 PhysEnv::~PhysEnv() { /* automatic destruction is fine */ }
 
 void PhysEnv::init(unsigned max_count) {
-    _checkInitialized(_initialized);
+    checkInitialized(_initialized);
     
     _boxes = std::vector<Box>(max_count, Box());
     _max_count = max_count;
@@ -88,7 +76,7 @@ void PhysEnv::uninit() {
 }
 
 unsigned PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback) {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
 
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
     if (_count >= _max_count)
@@ -105,7 +93,7 @@ unsigned PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::funct
 }
 
 Box *PhysEnv::get(unsigned id) {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
     if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
@@ -116,7 +104,7 @@ Box *PhysEnv::get(unsigned id) {
 }
 
 void PhysEnv::step() {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
 
     for (unsigned i = 0; i < _ids.size(); i++)
         // only try calling step on index i if it is an active ID in _ids
@@ -125,7 +113,7 @@ void PhysEnv::step() {
 }
 
 void PhysEnv::remove(unsigned id) {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
     if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
@@ -136,7 +124,7 @@ void PhysEnv::remove(unsigned id) {
 }
 
 void PhysEnv::detectCollision() {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
 
     unsigned ids_size = _ids.size();
 
@@ -171,7 +159,7 @@ void PhysEnv::detectCollision() {
 }
 
 std::vector<unsigned> PhysEnv::getIDs() {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
 
     return _ids.getUsed();
 }

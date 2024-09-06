@@ -1,17 +1,5 @@
 #include "../include/entity.hpp"
 
-// throws if initialized is true
-void _checkInitialized(bool initialized) {
-    if (initialized)
-        throw InitializedException();
-}
-
-// throws if initialized is false
-void _checkUninitialized(bool initialized) {
-    if (!initialized)
-        throw UninitializedException();
-}
-
 Entity::Entity(Entity &&other) {
     operator=(std::move(other));
 }
@@ -207,7 +195,7 @@ void EntityManager::uninit() {
 bool EntityManager::hasEntity(const char *entity_name) { return !(_entityinfos.find(entity_name) == _entityinfos.end()); }
 
 Entity *EntityManager::getEntity(unsigned id) {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
 
     if (id < 0 || id >= _ids.size())
         throw std::out_of_range("Index out of range");
@@ -225,7 +213,7 @@ unsigned EntityManager::spawnScript(const char *script_name) {
 }
 
 unsigned EntityManager::spawnEntity(const char *entity_name) {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
 
     // fail if exceeding max size
     if (_count >= _max_count)
@@ -253,7 +241,7 @@ unsigned EntityManager::spawnEntity(const char *entity_name) {
 }
 
 void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback) {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
     
     if (!hasEntity(name)) {
         addScript(allocator, name, group, force_enqueue, force_removeonkill, nullptr);
@@ -268,7 +256,7 @@ void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char
 }
 
 void EntityManager::remove(unsigned id) {
-    _checkUninitialized(_initialized);
+    checkUninitialized(_initialized);
 
     // check bounds
     if (id < 0 || id >= _ids.size())

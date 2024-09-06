@@ -38,7 +38,7 @@ void Chaser::_collisionCharacter(Box *box) {
 
 Object *Chaser::_getTarget() {
     // return first ID found
-    std::vector<int> ids = getManager()->getAllByGroup(1);
+    std::vector<unsigned> ids = getManager()->getAllByGroup(1);
     if (ids.size() > 0)
         return getManager()->getObject(ids[0]);
     else
