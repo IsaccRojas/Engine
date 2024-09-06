@@ -100,7 +100,7 @@ protected:
 
     // internal methods called when spawning Objects and removing them, using and setting
     // manager lifetime and Object runtime members
-    void _objectSetup(Object *object, ObjectInfo &objectinfo, EntityInfo &entityinfo, ScriptInfo &scriptinfo, int id);
+    void _objectSetup(Object *object, ObjectInfo &objectinfo, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id);
     void _objectRemoval(ObjectValues &objectvalues, EntityValues &entityvalues, ScriptValues &scriptvalues);
 
     // initialize/uninitialize only ObjectManager members
@@ -122,20 +122,20 @@ public:
     /* Returns true if the provided Object name has been previously added to this manager. */
     bool hasObject(const char *object_name);
     /* Returns a reference to the spawned Object corresponding to the provided ID, if it exists. */
-    Object *getObject(int id);
+    Object *getObject(unsigned id);
 
     /* Spawns a Script using a name previously added to this manager, and returns its ID. This
        will invoke scriptSetup() if set to do so from adding it.
     */
-    int spawnScript(const char *script_name) override;
+    unsigned spawnScript(const char *script_name) override;
     /* Spawns an Entity using a name previously added to this manager, and returns its ID. This
        will invoke entitySetup() and scriptSetup() if set to do so from adding it.
     */
-    int spawnEntity(const char *entity_name) override;
+    unsigned spawnEntity(const char *entity_name) override;
     /* Spawns an Ontity using a name previously added to this manager, and returns its ID. This
        will invoke objectSetup(), entitySetup() and scriptSetup() if set to do so from adding it.
     */
-    int spawnObject(const char *object_name);
+    unsigned spawnObject(const char *object_name);
 
     /* Adds an Object allocator with initialization information to this manager, allowing its given
        name to be used for future spawns.
@@ -150,7 +150,7 @@ public:
     */
     void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback);
     /* Removes the Object, Entity or Script associated with the provided ID. */
-    void remove(int id);
+    void remove(unsigned id);
 };
 
 #endif

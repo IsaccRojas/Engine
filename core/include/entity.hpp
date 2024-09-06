@@ -106,7 +106,7 @@ protected:
 
     // internal methods called when spawning Entities and removing them, using and setting
     // manager lifetime and Entity runtime members
-    void _entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, int id);
+    void _entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id);
     void _entityRemoval(EntityValues &entityvalues, ScriptValues &scriptvalues);
 
     // initialize/uninitialize only EntityManager members
@@ -128,16 +128,16 @@ public:
     /* Returns true if the provided Entity name has been previously added to this manager. */
     bool hasEntity(const char *entity_name);
     /* Returns a reference to the spawned Entity corresponding to the provided ID, if it exists. */
-    Entity *getEntity(int id);
+    Entity *getEntity(unsigned id);
 
     /* Spawns a Script using a name previously added to this manager, and returns its ID. This
        will invoke scriptSetup() if set to do so from adding it.
     */
-    virtual int spawnScript(const char *script_name) override;
+    virtual unsigned spawnScript(const char *script_name) override;
     /* Spawns an Entity using a name previously added to this manager, and returns its ID. This
        will invoke entitySetup() and scriptSetup() if set to do so from adding it.
     */
-    virtual int spawnEntity(const char *entity_name);
+    virtual unsigned spawnEntity(const char *entity_name);
 
     /* Adds an Entity allocator with initialization information to this manager, allowing its given
        name to be used for future spawns.
@@ -151,7 +151,7 @@ public:
     */
     void addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback);
     /* Removes the Entity or Script associated with the provided ID. */
-    void remove(int id);
+    void remove(unsigned id);
 };
 
 #endif

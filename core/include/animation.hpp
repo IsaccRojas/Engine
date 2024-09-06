@@ -21,7 +21,7 @@ struct Frame {
     glm::vec3 texpos;
     glm::vec2 texsize;
     glm::vec3 offset;
-    int duration;
+    unsigned duration;
 };
 
 /* class Cycle
@@ -41,14 +41,14 @@ public:
     /* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
     corresponding to the desired order of the frames.
     */
-    Cycle& addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 offset, int duration);
+    Cycle& addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 offset, unsigned duration);
     Cycle& addFrame(const Frame &frame);
 
     void setLoop(bool loop);
 
-    Frame& getFrame(int i);
+    Frame& getFrame(unsigned i);
 
-    int count() const;
+    unsigned count() const;
 
     bool loops() const;
 };
@@ -69,9 +69,9 @@ public:
     */
     Animation& addCycle(Cycle &cycle);
 
-    Cycle& getCycle(int i);
+    Cycle& getCycle(unsigned i);
 
-    int count();
+    unsigned count();
 };
 
 /* class AnimationState
@@ -83,11 +83,11 @@ class AnimationState {
     Animation *_animation;
     Cycle *_current_cycle;
     Frame *_current_frame;
-    int _step;
+    unsigned _step;
 
     // variables for indexing cycle and animation, respectively
-    int _frame_state;
-    int _cycle_state;
+    unsigned _frame_state;
+    unsigned _cycle_state;
     bool _completed;
 
 public:
@@ -103,12 +103,12 @@ public:
     /* Sets the animation cycle, using the cycle corresponding to the provided integer for
        future operations. Does nothing if the cycle provided is the same as the current one.
     */
-    void setCycleState(int cycle_state);
+    void setCycleState(unsigned cycle_state);
 
     /* Sets the animation frame, using the frame corresponding to the provided integer for
        future operations.
     */
-    void setFrameState(int frame_state);
+    void setFrameState(unsigned frame_state);
 
     /* Advances the cycle one step; will go to the next frame if the current frame's duration is
        exceeded; will loop or stop if last frame's duration is exceeded.

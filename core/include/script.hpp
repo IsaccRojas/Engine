@@ -123,11 +123,11 @@ class Executor {
 
     /* Execution data structures */
     // queues of IDs to be executed; swapped on execution
-    std::queue<int> _push_execqueue;
-    std::queue<int> _run_execqueue;
+    std::queue<unsigned> _push_execqueue;
+    std::queue<unsigned> _run_execqueue;
     // queue of IDS to be erased
-    std::queue<int> _push_killqueue;
-    std::queue<int> _run_killqueue;
+    std::queue<unsigned> _push_killqueue;
+    std::queue<unsigned> _run_killqueue;
     
     /* environment system variables */
     // maximum number of active Scripts allowed
@@ -159,28 +159,28 @@ public:
        behavior to use the passed ID after calling this.
        id - ID to be removed
     */
-    void remove(int id);
+    void remove(unsigned id);
     
     /* Returns a pointer to a Script instance in the environment corresponding to the provided ID. Returns nullptr if the
        ID does not exist in the environment.
        id - ID of Script to get pointer of
     */
-    Script* const get(int id);
+    Script* const get(unsigned id);
 
     /* Returns true if the provided ID is valid; false otherwise.
        id - ID of Script to check validity of
     */
-    bool has(int id);
+    bool has(unsigned id);
 
     /* Queues a Script instance corresponding to the ID provided to be executed when exec() is called.
        id - ID of Script to queue
     */
-    void queueExec(int id);
+    void queueExec(unsigned id);
 
     /* Pushes a Script instance into the kill queue of the executor.
        id - ID of Script to be erased 
     */
-    void queueKill(int id);
+    void queueKill(unsigned id);
 
     /* Executes all currently queued Scripts, and dequeues them. This will call the (init() method if it has not yet been
        called, and the) base() method on every active Script. */
@@ -208,7 +208,7 @@ public:
 
     // struct holding IDs and other flags belonging to the managed script during its lifetime
     struct ScriptValues {
-        int _manager_id;
+        unsigned _manager_id;
         const char *_manager_name;
         Script *_script_ref;
         int _group;
@@ -236,7 +236,7 @@ protected:
 
     // internal methods called when spawning Scripts and removing them, using and setting
     // manager lifetime and Script runtime members
-    void _scriptSetup(Script *script, ScriptInfo &info, int id);
+    void _scriptSetup(Script *script, ScriptInfo &info, unsigned id);
     void _scriptRemoval(ScriptValues &values);
    
 public:
@@ -255,18 +255,18 @@ public:
     /* Returns true if the provided Script name has been previously added to this manager. */
     bool hasScript(const char *script_name);
     /* Returns a reference to the spawned Script corresponding to the provided ID, if it exists. */
-    Script *getScript(int id);
+    Script *getScript(unsigned id);
     /* Returns a vector of IDs of all active Scripts with the corresponding group. */
-    std::vector<int> getAllByGroup(int group);
+    std::vector<unsigned> getAllByGroup(int group);
     /* Returns the internal name corresponding to the provided ID, if it exists. */
-    std::string getName(int id);
+    std::string getName(unsigned id);
     /* Returns the number of active objects in the manager. */
     unsigned getCount();
 
     /* Spawns a Script using a name previously added to this manager, and returns its ID. This
        will invoke scriptSetup() if set to do so from adding it.
     */
-    virtual int spawnScript(const char *script_name);
+    virtual unsigned spawnScript(const char *script_name);
     
     /* Adds an Script allocator with initialization information to this manager, allowing its given
        name to be used for future spawns.
@@ -280,7 +280,7 @@ public:
     void addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback);
     
     /* Removes the Script associated with the provided ID. */
-    void remove(int id);
+    void remove(unsigned id);
     
     /* Gets the maximum generated ID during this manager's lifetime. */
     int getMaxID();

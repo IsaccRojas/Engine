@@ -52,6 +52,7 @@ Script &Script::operator=(Script &&other) {
         other._scriptmanager_id = -1;
         other._scriptmanager_removeonkill = false;
     }
+    return *this;
 }
 
 void Script::_init() {}
@@ -164,6 +165,7 @@ Executor &Executor::operator=(Executor &&other) {
         // safe as there are no deallocations
         other.uninit();
     }
+    return *this;
 }
 
 void Executor::init(unsigned max_count) {
@@ -180,10 +182,10 @@ void Executor::uninit() {
         return;
     
     // queues to be deallocated when they go out of context
-    std::queue<int> empty1;
-    std::queue<int> empty2;
-    std::queue<int> empty3;
-    std::queue<int> empty4;
+    std::queue<unsigned> empty1;
+    std::queue<unsigned> empty2;
+    std::queue<unsigned> empty3;
+    std::queue<unsigned> empty4;
 
     _ids.clear();
     _scripts.clear();
@@ -213,11 +215,11 @@ int Executor::push(Script *script) {
     return id;
 }
 
-void Executor::remove(int id) {
+void Executor::remove(unsigned id) {
     _checkUninitialized(_initialized);
 
     // check bounds
-    if (id < 0 || id >= _ids.size())
+    if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
     _ids.remove(id);
@@ -225,11 +227,11 @@ void Executor::remove(int id) {
     _count--;
 }
 
-Script* const Executor::get(int id) {
+Script* const Executor::get(unsigned id) {
     _checkUninitialized(_initialized);
 
     // check bounds
-    if (id < 0 || id >= _ids.size())
+    if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
     if (_ids.at(id))
@@ -241,7 +243,7 @@ Script* const Executor::get(int id) {
     return nullptr;
 }
 
-bool Executor::has(int id) {
+bool Executor::has(unsigned id) {
     _checkUninitialized(_initialized);
 
     // check bounds
@@ -251,7 +253,7 @@ bool Executor::has(int id) {
     return _ids.at(id);
 }
 
-void Executor::queueExec(int id) {
+void Executor::queueExec(unsigned id) {
     _checkUninitialized(_initialized);
 
     // check bounds
@@ -268,7 +270,7 @@ void Executor::queueExec(int id) {
         throw InactiveIDException();
 }
 
-void Executor::queueKill(int id) {
+void Executor::queueKill(unsigned id) {
     _checkUninitialized(_initialized);
 
     // check bounds
@@ -383,16 +385,17 @@ ScriptManager &ScriptManager::operator=(ScriptManager &&other) {
         _scriptvalues = other._scriptvalues;
         _executor = other._executor;
         _ids = other._ids;
-        _scripts = other._scripts;
+        _scripts = std::move(other._scripts);
         _max_count = other._max_count;
         _count = other._count;
         _initialized = other._initialized;
         // safe as the only allocated memory (_scripts elements) should be moved already
         other.uninit();
     }
+    return *this;
 }
 
-void ScriptManager::_scriptSetup(Script *script, ScriptInfo &info, int id) {
+void ScriptManager::_scriptSetup(Script *script, ScriptInfo &info, unsigned id) {
     _checkUninitialized(_initialized);
 
     // set up script
@@ -418,7 +421,7 @@ void ScriptManager::_scriptRemoval(ScriptValues &values) {
     _ids.remove(values._manager_id);
 
     _count--;
-    values = ScriptValues{-1, nullptr, nullptr, -1};
+    values = ScriptValues{0, nullptr, nullptr, -1};
 }
 
 void ScriptManager::init(unsigned max_count, Executor *executor) {
@@ -430,7 +433,7 @@ void ScriptManager::init(unsigned max_count, Executor *executor) {
     _max_count = max_count;
     for (unsigned i = 0; i < max_count; i++) {
         _scripts.push_back(std::unique_ptr<Script>(nullptr));
-        _scriptvalues.push_back(ScriptValues{-1, nullptr, nullptr, -1});
+        _scriptvalues.push_back(ScriptValues{0, nullptr, nullptr, -1});
     }
 
     _executor = executor;
@@ -453,7 +456,7 @@ void ScriptManager::uninit() {
 
 bool ScriptManager::hasScript(const char *scriptname) { return !(_scriptinfos.find(scriptname) == _scriptinfos.end()); }
 
-int ScriptManager::spawnScript(const char *scriptname) {
+unsigned ScriptManager::spawnScript(const char *scriptname) {
     _checkUninitialized(_initialized);
 
     // fail if exceeding max size
@@ -466,7 +469,7 @@ int ScriptManager::spawnScript(const char *scriptname) {
 
     // push to internal storage
     Script *script = info._allocator();
-    int id = _ids.push();
+    unsigned id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(script);
     _scriptvalues[id] = ScriptValues{id, scriptname, script, info._group};
 
@@ -476,11 +479,11 @@ int ScriptManager::spawnScript(const char *scriptname) {
     // call callback if it exists
     if (info._spawn_callback)
         info._spawn_callback(script);
-    
+
     return id;
 }
 
-Script *ScriptManager::getScript(int id) {
+Script *ScriptManager::getScript(unsigned id) {
     _checkUninitialized(_initialized);
 
     // check bounds
@@ -494,10 +497,10 @@ Script *ScriptManager::getScript(int id) {
     throw InactiveIDException();
 }
 
-std::vector<int> ScriptManager::getAllByGroup(int group) {
+std::vector<unsigned> ScriptManager::getAllByGroup(int group) {
     _checkUninitialized(_initialized);
 
-    std::vector<int> ids;
+    std::vector<unsigned> ids;
     for (unsigned i = 0; i < _count; i++)
         if (_scriptvalues[i]._manager_id >= 0)
             if (_scriptvalues[i]._group == group)
@@ -505,11 +508,11 @@ std::vector<int> ScriptManager::getAllByGroup(int group) {
     return ids;
 }
 
-std::string ScriptManager::getName(int id) {
+std::string ScriptManager::getName(unsigned id) {
     _checkUninitialized(_initialized);
 
     // check bounds
-    if (id < 0 || id >= _ids.size())
+    if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
     if (_ids.at(id))
@@ -524,11 +527,11 @@ unsigned ScriptManager::getCount() {
     return _count;
 }
 
-void ScriptManager::remove(int id) {
+void ScriptManager::remove(unsigned id) {
     _checkUninitialized(_initialized);
 
     // check bounds
-    if (id < 0 || id >= _ids.size())
+    if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
     if (!_ids.at(id))

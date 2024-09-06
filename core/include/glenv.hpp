@@ -139,12 +139,12 @@ public:
        of the Quad (see the erase() method). If the maximum number of active Quads allowed is exceeded, -1 is
        returned instead.
     */
-    int genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 texsize);
+    unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 texsize);
 
     /* Returns a raw Quad pointer to the Quad with the specified ID. 
-       i - ID of Quad to get reference of
+       id - ID of Quad to get reference of
     */
-    Quad *get(int i);
+    Quad *get(unsigned id);
 
     /* Writes data of all quads in system to their respective buffers. */
     void update();
@@ -156,7 +156,7 @@ public:
        behavior.
        id - ID of Quad to remove
     */
-    void remove(int i);
+    void remove(unsigned id);
 
     /* Draws Quads in memory using internal shader program. This is done by drawing a number of unit Quad
        instances corresponding to the number of IDs generated, and using the specific Quad parameters and
@@ -164,7 +164,7 @@ public:
     void draw();
 
     /* Returns all active IDs in system. (note that this allocates a vector and will take O(n) time) */
-    std::vector<int> getIDs();
+    std::vector<unsigned> getIDs();
 
     /* Returns whether this instance has been initialized or not. */
     bool getInitialized();

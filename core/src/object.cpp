@@ -42,6 +42,7 @@ Object &Object::operator=(Object &&other) {
         other._box_id = -1;
         other._objectmanager = nullptr;
     }
+    return *this;
 }
 
 void Object::_initEntity() {
@@ -129,12 +130,13 @@ ObjectManager& ObjectManager::operator=(ObjectManager &&other) {
         _filters = other._filters;
         other._objectManagerUninit();
     }
+    return *this;
 }
 
 void ObjectManager::_objectManagerInit(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters) {
     _physenv = physenv;
     _filters = filters;
-    for (int i = 0; i < max_count; i++)
+    for (unsigned i = 0; i < max_count; i++)
         _objectvalues.push_back(ObjectValues{nullptr});
 }
 
@@ -145,7 +147,7 @@ void ObjectManager::_objectManagerUninit() {
     _filters = nullptr;
 }
 
-void ObjectManager::_objectSetup(Object *object, ObjectInfo &objectinfo, EntityInfo &entityinfo, ScriptInfo &scriptinfo, int id) {
+void ObjectManager::_objectSetup(Object *object, ObjectInfo &objectinfo, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id) {
     _entitySetup(object, entityinfo, scriptinfo, id);
 
     object->objectSetup(_physenv, &(*_filters)[objectinfo._filter_name]);
@@ -175,7 +177,7 @@ void ObjectManager::uninit() {
 
 bool ObjectManager::hasObject(const char *object_name) { return !(_objectinfos.find(object_name) == _objectinfos.end()); }
 
-Object *ObjectManager::getObject(int id) {
+Object *ObjectManager::getObject(unsigned id) {
     _checkUninitialized(_initialized);
 
     if (id < 0 || id >= _ids.size())
@@ -186,19 +188,19 @@ Object *ObjectManager::getObject(int id) {
     throw InactiveIDException();
 }
 
-int ObjectManager::spawnScript(const char *script_name) {
-    int id = EntityManager::spawnScript(script_name);
+unsigned ObjectManager::spawnScript(const char *script_name) {
+    unsigned id = EntityManager::spawnScript(script_name);
     _objectvalues[id] = ObjectValues{nullptr};
     return id;
 }
 
-int ObjectManager::spawnEntity(const char *entity_name) {
-    int id = EntityManager::spawnEntity(entity_name);
+unsigned ObjectManager::spawnEntity(const char *entity_name) {
+    unsigned id = EntityManager::spawnEntity(entity_name);
     _objectvalues[id] = ObjectValues{nullptr};
     return id;
 }
 
-int ObjectManager::spawnObject(const char *object_name) {
+unsigned ObjectManager::spawnObject(const char *object_name) {
     _checkUninitialized(_initialized);
 
     // fail if exceeding max size
@@ -212,7 +214,7 @@ int ObjectManager::spawnObject(const char *object_name) {
 
     // push to internal storage
     Object *object = objectinfo._allocator();
-    int id = _ids.push();
+    unsigned id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(object);
     _objectvalues[id] = ObjectValues{object};
     _entityvalues[id] = EntityValues{object};
@@ -243,11 +245,11 @@ void ObjectManager::addObject(std::function<Object*(void)> allocator, const char
         throw std::runtime_error("Attempt to add already added Object name");
 }
 
-void ObjectManager::remove(int id) {
+void ObjectManager::remove(unsigned id) {
     _checkUninitialized(_initialized);
     
     // check bounds
-    if (id < 0 || id >= _ids.size())
+    if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
     if (!_ids.at(id))

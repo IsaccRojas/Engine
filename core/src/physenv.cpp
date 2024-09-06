@@ -87,7 +87,7 @@ void PhysEnv::uninit() {
     _initialized = false;
 }
 
-int PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback) {
+unsigned PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback) {
     _checkUninitialized(_initialized);
 
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
@@ -95,7 +95,7 @@ int PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<v
         throw CountLimitException();
 
     // get a new unique ID
-    int id = _ids.push();
+    unsigned id = _ids.push();
     
     // generate box by providing parameters and use id to specify an offset into them
     _boxes[id] = Box{pos, dim, vel, callback};
@@ -104,13 +104,13 @@ int PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<v
     return id;
 }
 
-Box *PhysEnv::get(int i) {
+Box *PhysEnv::get(unsigned id) {
     _checkUninitialized(_initialized);
-    if (i < 0 || i >= _ids.size())
+    if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
-    if (_ids.at(i))
-        return &(_boxes[i]);
+    if (_ids.at(id))
+        return &(_boxes[id]);
     
     throw InactiveIDException();
 }
@@ -124,13 +124,13 @@ void PhysEnv::step() {
             _boxes[i].step();
 }
 
-void PhysEnv::remove(int i) {
+void PhysEnv::remove(unsigned id) {
     _checkUninitialized(_initialized);
-    if (i < 0 || i >= _ids.size())
+    if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
     // call _ids to make the ID usable again
-    _ids.remove(i);
+    _ids.remove(id);
 
     _count--;
 }
@@ -138,13 +138,13 @@ void PhysEnv::remove(int i) {
 void PhysEnv::detectCollision() {
     _checkUninitialized(_initialized);
 
-    int ids_size = _ids.size();
+    unsigned ids_size = _ids.size();
 
     // perform pair-wise collision detection
-    for (int i = 0; i < ids_size; i++) {
+    for (unsigned i = 0; i < ids_size; i++) {
         if (_ids.at(i)) {
 
-            for (int j = i + 1; j < ids_size; j++) {
+            for (unsigned j = i + 1; j < ids_size; j++) {
                 if (_ids.at(j)) {
                     // test filters against each other's IDs
                     bool f1 = _boxes[i].getFilterState().hasFilter();
@@ -170,7 +170,7 @@ void PhysEnv::detectCollision() {
     }
 }
 
-std::vector<int> PhysEnv::getids() {
+std::vector<unsigned> PhysEnv::getIDs() {
     _checkUninitialized(_initialized);
 
     return _ids.getUsed();

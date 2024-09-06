@@ -53,7 +53,7 @@ class SlotVec {
     //main ID vector
     std::vector<bool> _ids;
     //vector of free IDs
-    std::vector<int> _free_ids;
+    std::vector<unsigned> _free_ids;
 
 public:
     SlotVec();
@@ -64,20 +64,20 @@ public:
     /* Occupies an index in IDs (use last index from freeIDs if available),
 	   and returns the ID.
     */
-    int push();
+    unsigned push();
 
     /* Sets element i to false and pushes its index to freeIDs. */
-    void remove(int i);
+    void remove(unsigned i);
 
     /* Returns a vector of all indices that are true. */
-    std::vector<int> getUsed();
+    std::vector<unsigned> getUsed();
 
     /* Empties IDs and freeIDs. */
     void clear();
 
     /* Returns whether ID i is active or not. */
-    bool at(int i);
-    bool operator[](int i);
+    bool at(unsigned i);
+    bool operator[](unsigned i);
 
     /* Returns true if active IDs are empty. */
     bool empty();

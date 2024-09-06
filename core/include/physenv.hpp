@@ -94,12 +94,12 @@ public:
        of the Box (see the erase() method). If the maximum number of active Boxes allowed is exceeded, -1 is
        returned instead.
     */
-    int genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback);
+    unsigned genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback);
 
     /* Returns a raw Box pointer to the Box with the specified ID. 
-       i - ID of Box to get reference of
+       id - ID of Box to get reference of
     */
-    Box *get(int i);
+    Box *get(unsigned id);
 
     /* Advances every internal Box one step in time. */
     void step();
@@ -111,7 +111,7 @@ public:
        behavior.
        id - ID of Box to remove
     */
-    void remove(int i);
+    void remove(unsigned id);
 
     /* Detects collision between all Boxes within the system. This is done by iterating on all Boxes
        in a pair-wise fashion.
@@ -119,7 +119,7 @@ public:
     void detectCollision();
 
     /* Returns all active IDs in system. (note that this instantiates a vector and will take O(n) time) */
-    std::vector<int> getids();
+    std::vector<unsigned> getIDs();
 
     /* Detects and handles AABB collision between two provided Boxes. */
     static void collisionAABB(Box &box1, Box &box2);

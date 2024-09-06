@@ -45,6 +45,7 @@ Entity &Entity::operator=(Entity &&other) {
         other._first_step = true;
         other._entitymanager = nullptr;
     }
+    return *this;
 }
 
 void Entity::_init() {
@@ -159,6 +160,7 @@ EntityManager &EntityManager::operator=(EntityManager &&other) {
         _animations = other._animations;
         other._entityManagerUninit();
     }
+    return *this;
 }
 
 void EntityManager::_entityManagerInit(unsigned max_count, GLEnv *glenv, unordered_map_string_Animation_t *animations) {
@@ -175,7 +177,7 @@ void EntityManager::_entityManagerUninit() {
     _animations = nullptr;
 }
 
-void EntityManager::_entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, int id) {
+void EntityManager::_entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id) {
     _scriptSetup(entity, scriptinfo, id);
 
     entity->entitySetup(_glenv, &(*_animations)[entityinfo._animation_name]);
@@ -204,7 +206,7 @@ void EntityManager::uninit() {
 
 bool EntityManager::hasEntity(const char *entity_name) { return !(_entityinfos.find(entity_name) == _entityinfos.end()); }
 
-Entity *EntityManager::getEntity(int id) {
+Entity *EntityManager::getEntity(unsigned id) {
     _checkUninitialized(_initialized);
 
     if (id < 0 || id >= _ids.size())
@@ -216,13 +218,13 @@ Entity *EntityManager::getEntity(int id) {
     throw InactiveIDException();
 }
 
-int EntityManager::spawnScript(const char *script_name) {
-    int id = ScriptManager::spawnScript(script_name);
+unsigned EntityManager::spawnScript(const char *script_name) {
+    unsigned id = ScriptManager::spawnScript(script_name);
     _entityvalues[id] = EntityValues{nullptr};
     return id;
 }
 
-int EntityManager::spawnEntity(const char *entity_name) {
+unsigned EntityManager::spawnEntity(const char *entity_name) {
     _checkUninitialized(_initialized);
 
     // fail if exceeding max size
@@ -235,7 +237,7 @@ int EntityManager::spawnEntity(const char *entity_name) {
 
     // push to internal storage
     Entity *entity = entityinfo._allocator();
-    int id = _ids.push();
+    unsigned id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(entity);
     _entityvalues[id] = EntityValues{entity};
     _scriptvalues[id] = ScriptValues{id, entity_name, entity};
@@ -265,7 +267,7 @@ void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char
         throw std::runtime_error("Attempt to add already added Entity name");
 }
 
-void EntityManager::remove(int id) {
+void EntityManager::remove(unsigned id) {
     _checkUninitialized(_initialized);
 
     // check bounds

@@ -6,7 +6,7 @@ Cycle::Cycle(bool loop) {
 Cycle::Cycle() : _loop(false) {}
 Cycle::~Cycle() { /* automatic destruction is fine */ }
 
-Cycle& Cycle::addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 offset, int duration) {
+Cycle& Cycle::addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 offset, unsigned duration) {
     _frames.push_back(Frame{texpos, texsize, offset, duration});
     return *this;
 }
@@ -19,11 +19,11 @@ void Cycle::setLoop(bool loop) {
     _loop = loop;
 }
 
-Frame& Cycle::getFrame(int i) {
+Frame& Cycle::getFrame(unsigned i) {
     return _frames[i];
 }
 
-int Cycle::count() const {
+unsigned Cycle::count() const {
     return _frames.size();
 }
 
@@ -39,11 +39,11 @@ Animation& Animation::addCycle(Cycle &cycle) {
     return *this;
 }
 
-Cycle& Animation::getCycle(int i) {
+Cycle& Animation::getCycle(unsigned i) {
     return _cycles[i];
 }
 
-int Animation::count() {
+unsigned Animation::count() {
     return _cycles.size();
 }
 
@@ -79,7 +79,7 @@ void AnimationState::setAnimation(Animation *animation) {
     _completed = false;
 }
 
-void AnimationState::setCycleState(int cyclestate) {
+void AnimationState::setCycleState(unsigned cyclestate) {
     if (!_animation)
         throw std::runtime_error("Attempt to set cycle state with null Animation reference");
 
@@ -90,7 +90,7 @@ void AnimationState::setCycleState(int cyclestate) {
     this->setFrameState(0);
 }
 
-void AnimationState::setFrameState(int framestate) {
+void AnimationState::setFrameState(unsigned framestate) {
     if (!_animation)
         throw std::runtime_error("Attempt to set frame state with null Animation reference");
 

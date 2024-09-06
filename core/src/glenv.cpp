@@ -192,7 +192,7 @@ void GLEnv::setProj(glm::mat4 proj) {
     glUniformMatrix4fv(7, 1, GL_FALSE, glm::value_ptr(proj));
 }
 
-int GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 texsize) {
+unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 texsize) {
     _checkUninitialized(_initialized);
 
     // if number of active IDs is greater than or equal to maximum allowed count, throw
@@ -200,7 +200,7 @@ int GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 t
         throw CountLimitException();
 
     // get a new unique ID
-    int id = _ids.push();
+    unsigned id = _ids.push();
     
     // generate quad by providing the position, texture position, and texture size buffers, and
     // use id to specify an offset into them
@@ -225,13 +225,13 @@ int GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 t
     return id;
 }
 
-Quad *GLEnv::get(int i) {
+Quad *GLEnv::get(unsigned id) {
     _checkUninitialized(_initialized);
-    if (i < 0 || i >= _ids.size())
+    if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
-    if (_ids.at(i))
-        return &_quads[i];
+    if (_ids.at(id))
+        return &_quads[id];
     
     throw InactiveIDException();
 }
@@ -245,17 +245,17 @@ void GLEnv::update() {
             _quads[i].update();
 }
 
-void GLEnv::remove(int i) {
+void GLEnv::remove(unsigned id) {
     _checkUninitialized(_initialized);
-    if (i < 0 || i >= _ids.size())
+    if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
     // call _ids to make the ID usable again
-    _ids.remove(i);
+    _ids.remove(id);
 
     // unset the draw flag for this specific offset, zeroing out its instance
     GLfloat draw = 0.0f;
-    _glb_draw.subData(sizeof(GLfloat), &draw, i * (1 * sizeof(GLfloat)));
+    _glb_draw.subData(sizeof(GLfloat), &draw, id * (1 * sizeof(GLfloat)));
 
     _count--;
 }
@@ -268,7 +268,7 @@ void GLEnv::draw() {
     GLUtil::renderInst(6, _ids.size());
 }
 
-std::vector<int> GLEnv::getIDs() {
+std::vector<unsigned> GLEnv::getIDs() {
     _checkUninitialized(_initialized);
 
     return _ids.getUsed();
