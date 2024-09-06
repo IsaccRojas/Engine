@@ -1,5 +1,17 @@
 #include "../include/physenv.hpp"
 
+// throws if initialized is true
+void _checkInitialized(bool initialized) {
+    if (initialized)
+        throw InitializedException();
+}
+
+// throws if initialized is false
+void _checkUninitialized(bool initialized) {
+    if (!initialized)
+        throw UninitializedException();
+}
+
 // _______________________________________ Box _______________________________________
 
 Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::function<void(Box*)> callback) :
@@ -66,10 +78,7 @@ PhysEnv::PhysEnv() : _max_count(0), _count(0), _initialized(false) {}
 PhysEnv::~PhysEnv() { /* automatic destruction is fine */ }
 
 void PhysEnv::init(unsigned max_count) {
-    if (_initialized) {
-        std::cerr << "WARN: PhysEnv::init: attempt to initialize already initialized PhysEnv instance " << this << std::endl;
-        return;
-    }
+    _checkInitialized(_initialized);
     
     _boxes = std::vector<Box>(max_count, Box());
     _max_count = max_count;
@@ -89,16 +98,11 @@ void PhysEnv::uninit() {
 }
 
 int PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback) {
-    if (!_initialized) {
-        std::cerr << "WARN: PhysEnv::genBox: attempt to generate Box in uninitialized PhysEnv instance " << this << std::endl;
-        return -1;
-    }
+    _checkUninitialized(_initialized);
 
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
-    if (_count >= _max_count) {
-        std::cerr << "WARN: PhysEnv::genBox: limit reached in PhysEnv " << this << std::endl;
-        return -1;
-    }
+    if (_count >= _max_count)
+        throw CountLimitException();
 
     // get a new unique ID
     int id = _ids.push();
@@ -106,34 +110,23 @@ int PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<v
     // generate box by providing parameters and use id to specify an offset into them
     _boxes[id] = Box{pos, dim, vel, callback};
 
+    _count++;
     return id;
 }
 
 Box *PhysEnv::get(int i) {
-    if (!_initialized) {
-        std::cerr << "WARN: PhysEnv::get: attempt to get from uninitialized PhysEnv instance " << this << std::endl;
-        return nullptr;
-    }
-
-    // check bounds
-    if (i < 0 || i >= _ids.size()) {
-        std::cerr << "WARN: PhysEnv::get: attempt to get Box with out-of-range index " << i << " (max index = " << _ids.size() << ") in PhysEnv instance " << this << std::endl;
-        return nullptr;
-    }
+    _checkUninitialized(_initialized);
+    if (i < 0 || i >= _ids.size())
+        throw std::out_of_range("Index out of range");
 
     if (_ids.at(i))
         return &(_boxes[i]);
-    else
-        std::cerr << "WARN: PhysEnv::get: attempt to get Box with inactive index " << i << " in PhysEnv instance " << this << std::endl;
     
-    return nullptr;
+    throw InactiveIDException();
 }
 
 void PhysEnv::step() {
-    if (!_initialized) {
-        std::cerr << "WARN: PhysEnv::step: attempt to step in uninitialized PhysEnv instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     for (unsigned i = 0; i < _ids.size(); i++)
         // only try calling step on index i if it is an active ID in _ids
@@ -141,29 +134,19 @@ void PhysEnv::step() {
             _boxes[i].step();
 }
 
-int PhysEnv::remove(int i) {
-    if (!_initialized) {
-        std::cerr << "WARN: PhysEnv::remove: attempt to remove from uninitialized PhysEnv instance " << this << std::endl;
-        return -1;
-    }
-
-    // check bounds
-    if (i < 0 || i >= _ids.size()) {
-        std::cerr << "WARN: PhysEnv::remove: attempt to remove Box with out-of-range index " << i << " (max index = " << _ids.size() << ") in PhysEnv instance " << this << std::endl;
-        return -1;
-    }
+void PhysEnv::remove(int i) {
+    _checkUninitialized(_initialized);
+    if (i < 0 || i >= _ids.size())
+        throw std::out_of_range("Index out of range");
 
     // call _ids to make the ID usable again
     _ids.remove(i);
 
-    return 0;
+    _count--;
 }
 
 void PhysEnv::detectCollision() {
-    if (!_initialized) {
-        std::cerr << "WARN: PhysEnv::detectCollision: attempt to detect collision in uninitialized PhysEnv instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     int ids_size = _ids.size();
 
@@ -189,10 +172,7 @@ void PhysEnv::detectCollision() {
 }
 
 std::vector<int> PhysEnv::getids() {
-    if (!_initialized) {
-        std::cerr << "WARN: PhysEnv::getids: attempt to get IDs from uninitialized PhysEnv instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     return _ids.getUsed();
 }

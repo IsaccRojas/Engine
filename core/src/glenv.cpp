@@ -1,5 +1,17 @@
 #include "../include/glenv.hpp"
 
+// throws if initialized is true
+void _checkInitialized(bool initialized) {
+    if (initialized)
+        throw InitializedException();
+}
+
+// throws if initialized is false
+void _checkUninitialized(bool initialized) {
+    if (!initialized)
+        throw UninitializedException();
+}
+
 // _______________________________________ Quad _______________________________________
 
 Quad::Quad(GLUtil::BVec3 position, GLUtil::BVec3 quadscale, GLUtil::BVec3 textureposition, GLUtil::BVec2 texturesize) : bv_pos(position), bv_scale(quadscale), bv_texpos(textureposition), bv_texsize(texturesize) {}
@@ -42,6 +54,7 @@ GLEnv& GLEnv::operator=(GLEnv &&other) {
         _ids = other._ids;
         _quads = other._quads;
         _max_count = other._max_count;
+        _count = other._count;
         _initialized = other._initialized;
         other._ids.clear();
         other._quads.clear();
@@ -53,10 +66,7 @@ GLEnv& GLEnv::operator=(GLEnv &&other) {
 
 
 void GLEnv::init(unsigned max_count) {
-    if (_initialized) {
-        std::cerr << "WARN: attempt to initialize already initialized GLEnv instance " << this << std::endl;
-        return;
-    }
+    _checkInitialized(_initialized);
 
     /* initialize members */
     _glb_modelbuf = GLUtil::GLBuffer(GL_STATIC_DRAW, 16 * sizeof(GLfloat));
@@ -68,6 +78,7 @@ void GLEnv::init(unsigned max_count) {
     _glb_draw = GLUtil::GLBuffer(GL_DYNAMIC_DRAW, (max_count * 1) * sizeof(GLfloat));
     _quads = std::vector<Quad>(max_count, Quad());
     _max_count = max_count;
+    _count = 0;
 
     /* setup variables */
 
@@ -157,53 +168,36 @@ void GLEnv::uninit() {
 }
 
 void GLEnv::setTexArray(GLuint width, GLuint height, GLuint depth) {
-    if (!_initialized) {
-        std::cerr << "WARN: attempt to call setTexArray on uninitialized GLEnv instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     _texarray.alloc(1, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, width, height, depth);
     glUniform3ui(9, width, height, depth);
 }
 
 void GLEnv::setTexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset) {
-    if (!_initialized) {
-        std::cerr << "WARN: attempt to call setTexture on uninitialized GLEnv instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     _texarray.subImage(0, xoffset, yoffset, zoffset, img.width(), img.height(), 1, img.copyData());
 }
 
 void GLEnv::setView(glm::mat4 view) {
-    if (!_initialized) {
-        std::cerr << "WARN: attempt to call setView on uninitialized GLEnv instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     glUniformMatrix4fv(6, 1, GL_FALSE, glm::value_ptr(view));
 }
 
 void GLEnv::setProj(glm::mat4 proj) {
-    if (!_initialized) {
-        std::cerr << "WARN: attempt to call setProj on uninitialized GLEnv instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     glUniformMatrix4fv(7, 1, GL_FALSE, glm::value_ptr(proj));
 }
 
 int GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 texsize) {
-    if (!_initialized) {
-        std::cerr << "WARN: attempt to call genQuad on uninitialized GLEnv instance " << this << std::endl;
-        return -1;
-    }
+    _checkUninitialized(_initialized);
 
-    // if number of active IDs is greater than or equal to maximum allowed count, return -1
-    if (_ids.fillSize() >= _max_count) {
-        std::cerr << "WARN: limit of " << _max_count << " reached in GLEnv " << this << std::endl;
-        return -1;
-    }
+    // if number of active IDs is greater than or equal to maximum allowed count, throw
+    if (_count >= _max_count)
+        throw CountLimitException();
 
     // get a new unique ID
     int id = _ids.push();
@@ -227,31 +221,23 @@ int GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 t
     GLfloat draw = 1.0f;
     _glb_draw.subData(sizeof(GLfloat), &draw, id * (1 * sizeof(GLfloat)));
 
+    _count++;
     return id;
 }
 
 Quad *GLEnv::get(int i) {
-    if (!_initialized) {
-        std::cerr << "WARN: attempt to call get on uninitialized GLEnv instance " << this << std::endl;
-        return nullptr;
-    }
+    _checkUninitialized(_initialized);
+    if (i < 0 || i >= _ids.size())
+        throw std::out_of_range("Index out of range");
 
-    if (i >= 0) {
-        if (_ids.at(i))
-            return &_quads[i];
-        else
-            std::cerr << "WARN: attempt to get address with value " << i << " that is inactive in GLEnv instance " << this << std::endl;
-    } else
-        std::cerr << "WARN: attempt to get address with negative value from GLEnv instance " << this << std::endl;
-
-    return nullptr;
+    if (_ids.at(i))
+        return &_quads[i];
+    
+    throw InactiveIDException();
 }
 
 void GLEnv::update() {
-    if (!_initialized) {
-        std::cerr << "WARN: attempt to call update on uninitialized GLEnv instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     for (unsigned i = 0; i < _ids.size(); i++)
         // only try calling update on index i if it is an active ID in _ids
@@ -259,38 +245,23 @@ void GLEnv::update() {
             _quads[i].update();
 }
 
-int GLEnv::remove(int id) {
-    if (!_initialized) {
-        std::cerr << "WARN: attempt to call remove on uninitialized GLEnv instance " << this << std::endl;
-        return -1;
-    }
-
-    // if attempting to remove an id from empty system, return -1
-    if (id < 0) {
-        std::cerr << "WARN: attempt to remove negative value from GLEnv " << this << std::endl;
-        return -1;
-    }
-
-    if (_ids.empty()) {
-        std::cerr << "WARN: attempt to remove value from empty GLEnv " << this << std::endl;
-        return -1;
-    }
+void GLEnv::remove(int i) {
+    _checkUninitialized(_initialized);
+    if (i < 0 || i >= _ids.size())
+        throw std::out_of_range("Index out of range");
 
     // call _ids to make the ID usable again
-    _ids.remove(id);
+    _ids.remove(i);
 
     // unset the draw flag for this specific offset, zeroing out its instance
     GLfloat draw = 0.0f;
-    _glb_draw.subData(sizeof(GLfloat), &draw, id * (1 * sizeof(GLfloat)));
+    _glb_draw.subData(sizeof(GLfloat), &draw, i * (1 * sizeof(GLfloat)));
 
-    return 0;
+    _count--;
 }
 
 void GLEnv::draw() {
-    if (!_initialized) {
-        std::cerr << "WARN: attempt to call draw on uninitialized GLEnv instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     // draw a number of instances equal to the number of IDs in system, active or not, using the element buffer
     // (Instances with inactive IDs will be zeroed out per the draw flag)
@@ -298,10 +269,7 @@ void GLEnv::draw() {
 }
 
 std::vector<int> GLEnv::getIDs() {
-    if (!_initialized) {
-        std::cerr << "WARN: attempt to call getIDs on uninitialized GLEnv instance " << this << std::endl;
-        return std::vector<int>();
-    }
+    _checkUninitialized(_initialized);
 
     return _ids.getUsed();
 }

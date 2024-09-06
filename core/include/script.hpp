@@ -9,6 +9,7 @@
 #include <glm\glm.hpp>
 
 #include "util.hpp"
+#include "commonexcept.hpp"
 
 // prototypes
 class Executor;

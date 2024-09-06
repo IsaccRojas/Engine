@@ -14,14 +14,12 @@ void Input::setWindow(GLFWwindow *window, int pixel_width, int pixel_height) {
     if (_win_h)
         glfwGetWindowSize(_win_h, &_win_width, &_win_height);
     else
-        std::cerr << "WARN: Input::setWindow: attempt to read window dimensions from null window handle in Input instance " << this << std::endl;
+        throw std::runtime_error("Attempt to get window size with invalid GLFWwindow reference");
 }
 
 void Input::update() {
-    if (!_win_h) {
-        std::cerr << "WARN: Input::update: attempt to read inputs from null window handle in Input instance " << this << std::endl;
-        return;
-    }
+    if (!_win_h)
+        throw std::runtime_error("Attempt to call on Input instance with invalid GLFWwindow reference");
 
     int state = glfwGetKey(_win_h, GLFW_KEY_W);
     if (state == GLFW_PRESS)
@@ -107,10 +105,8 @@ void Input::update() {
 };
 
 void Input::setsticky(bool value) {
-    if (!_win_h) {
-        std::cerr << "WARN: Input::setsticky: attempt to set sticky keys with null window handle in Input instance " << this << std::endl;
-        return;
-    }
+    if (!_win_h)
+        throw std::runtime_error("Attempt to call on Input instance with invalid GLFWwindow reference");
     
     if (value)
         glfwSetInputMode(_win_h, GLFW_STICKY_KEYS, GLFW_TRUE);

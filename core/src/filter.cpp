@@ -61,10 +61,8 @@ void FilterState::setFilter(Filter *filter) {
 }
 
 bool FilterState::pass(int x) {
-    if (!_filter) {
-        std::cerr << "WARN: FilterState::pass: attempt to pass value in FilterState instance " << this << " without a Filter reference" << std::endl;
-        return false;
-    }
+    if (!_filter)
+        throw std::runtime_error("Attempt to pass value with null Filter reference");
 
     // check if blacklist exists; if it does, check if x is in it
     std::vector<int> &blacklist = _filter->getBlacklist();
@@ -86,10 +84,8 @@ bool FilterState::pass(int x) {
 }
 
 bool FilterState::passCorrection(int x) {
-    if (!_filter) {
-        std::cerr << "WARN: FilterState::passCorrection: attempt to pass correction value in FilterState instance " << this << " without a Filter reference" << std::endl;
-        return false;
-    }
+    if (!_filter)
+        throw std::runtime_error("Attempt to pass correction value with null Filter reference");
     
     // check if blacklist exists; if it does, check if x is in it
     std::vector<int> &blacklist = _filter->getCorrectionBlacklist();

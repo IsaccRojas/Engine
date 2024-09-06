@@ -1,5 +1,17 @@
 #include "../include/script.hpp"
 
+// throws if initialized is true
+void _checkInitialized(bool initialized) {
+    if (initialized)
+        throw InitializedException();
+}
+
+// throws if initialized is false
+void _checkUninitialized(bool initialized) {
+    if (!initialized)
+        throw UninitializedException();
+}
+
 Script::Script(Script &&other) {
     operator=(std::move(other));
 }
@@ -71,10 +83,8 @@ void Script::runKill() {
 }
 
 void Script::scriptSetup(Executor *executor) {
-    if (!executor) {
-        std::cerr << "WARN: Script::scriptSetup: attempt to setup with null executor reference in Script instance " << this << std::endl;
-        return;
-    }
+    if (!executor)
+        throw std::runtime_error("Attempt to setup Script with null Executor reference");
 
     // try removing from existing executor
     scriptResetExec();
@@ -120,16 +130,16 @@ int Script::getGroup() { return _group; }
 void Script::enqueue() {
     if (_executor_ready)
         _executor->queueExec(_executor_id);
-    else
-        std::cerr << "WARN: Script::enqueue: attempt to queue self without executor ready in Script instance " << this << std::endl;
+
+    throw std::runtime_error("Attempt to setup Script without ready Executor reference");
 }
 
 void Script::kill() {
     if (!_killed) {
         if (_executor_ready)
             _executor->queueKill(_executor_id);
-        else
-            std::cerr << "WARN: Script::kill: attempt to kill self without executor ready in Script instance " << this << std::endl;
+
+        throw std::runtime_error("Attempt to kill Script without ready Executor reference");
     }
 }
 
@@ -165,10 +175,7 @@ Executor &Executor::operator=(Executor &&other) {
 }
 
 void Executor::init(unsigned max_count) {
-    if (_initialized) {
-        std::cerr << "WARN: Executor::init: attempt to initialize already initialized Executor instance " << this << std::endl;
-        return;
-    }
+    _checkInitialized(_initialized);
 
     _scripts = std::vector<Script*>(max_count, nullptr);
     _max_count = max_count;
@@ -198,16 +205,11 @@ void Executor::uninit() {
 }
 
 int Executor::push(Script *script) {
-    if (!_initialized) {
-        std::cerr << "WARN: Executor::push: attempt to push to uninitialized Executor instance " << this << std::endl;
-        return -1;
-    }
+    _checkUninitialized(_initialized);
 
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
-    if (_count >= _max_count) {
-        std::cerr << "WARN: Executor::push: max count reached in Executor instance " << this << std::endl;
-        return -1;
-    }
+    if (_count >= _max_count)
+        throw CountLimitException();
     
     // get a new unique ID
     int id = _ids.push();
@@ -220,71 +222,49 @@ int Executor::push(Script *script) {
 }
 
 void Executor::remove(int id) {
-    if (!_initialized) {
-        std::cerr << "WARN: Executor::remove: attempt to remove from uninitialized Executor instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     // check bounds
-    if (id < 0 || id >= _ids.size()) {
-        std::cerr << "WARN: Executor::remove: attempt to remove out-of-range ID " << id << " (max ID = " << _ids.size() << ") from Executor instance " << this << std::endl;
-        return;
-    }
+    if (id < 0 || id >= _ids.size())
+        throw std::out_of_range("Index out of range");
 
-    if (_ids.at(id)) {
-        _ids.remove(id);
-        _count--;
-    } else
-        std::cerr << "WARN: Executor::remove: attempt to remove inactive ID " << id << " in Executor instance " << this << std::endl;
+    _ids.remove(id);
+
+    _count--;
 }
 
 Script* const Executor::get(int id) {
-    if (!_initialized) {
-        std::cerr << "WARN: Executor::get: attempt to get from uninitialized Executor instance " << this << std::endl;
-        return nullptr;
-    }
+    _checkUninitialized(_initialized);
 
     // check bounds
-    if (id < 0 || id >= _ids.size()) {
-        std::cerr << "WARN: Executor::get: attempt to get reference with out-of-range ID " << id << " (max ID = " << _ids.size() << ") from Executor instance " << this << std::endl;
-        return nullptr;
-    }
+    if (id < 0 || id >= _ids.size())
+        throw std::out_of_range("Index out of range");
 
     if (_ids.at(id))
         // return "view" of stored Script
         return _scripts[id];
     else
-        std::cerr << "WARN: Executor::get: attempt to reference with inactive ID " << id << " in Executor instance " << this << std::endl;
+        throw InactiveIDException();
     
     return nullptr;
 }
 
 bool Executor::has(int id) {
-    if (!_initialized) {
-        std::cerr << "WARN: Executor::has: attempt to call has() on uninitialized Executor instance " << this << std::endl;
-        return false;
-    }
+    _checkUninitialized(_initialized);
 
     // check bounds
-    if (id < 0 || id >= _ids.size()) {
-        std::cerr << "WARN: Executor::has: attempt to call has() with out-of-range ID " << id << " (max ID = " << _ids.size() << ") in Executor instance " << this << std::endl;
-        return false;
-    }
+    if (id < 0 || id >= _ids.size())
+        throw std::out_of_range("Index out of range");
 
     return _ids.at(id);
 }
 
 void Executor::queueExec(int id) {
-    if (!_initialized) {
-        std::cerr << "WARN: Executor::queueExec: attempt to queue for execution in uninitialized Executor instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     // check bounds
-    if (id < 0 || id >= _ids.size()) {
-        std::cerr << "WARN: Executor::queueExec: attempt to queue for execution with out-of-range ID " << id << " (max ID = " << _ids.size() << ") in Executor instance " << this << std::endl;
-        return;
-    }
+    if (id < 0 || id >= _ids.size())
+        throw std::out_of_range("Index out of range");
 
     if (_ids.at(id)) {
         Script *script = _scripts[id];
@@ -293,20 +273,15 @@ void Executor::queueExec(int id) {
             script->setExecQueued(true);
         }
     } else
-        std::cerr << "WARN: Executor::queueExec: attempt to queue inactive ID " << id << " for execution in Executor instance " << this << std::endl;
+        throw InactiveIDException();
 }
 
 void Executor::queueKill(int id) {
-    if (!_initialized) {
-        std::cerr << "WARN: Executor::queueKill: attempt to queue for killing in uninitialized Executor instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     // check bounds
-    if (id < 0 || id >= _ids.size()) {
-        std::cerr << "WARN: Executor::queueKill: attempt to queue for kill with out-of-range ID " << id << " (max ID = " << _ids.size() << ") in Executor instance " << this << std::endl;
-        return;
-    }
+    if (id < 0 || id >= _ids.size())
+        throw std::out_of_range("Index out of range");
 
     if (_ids.at(id)) {
         Script *script = _scripts[id];
@@ -315,15 +290,12 @@ void Executor::queueKill(int id) {
             script->setKillQueued(true);
         }
     } else
-        std::cerr << "WARN: Executor::queueKill: attempt to queue inactive ID " << id << " for kill in Executor instance " << this << std::endl;
+        throw InactiveIDException();
 
 }
 
 void Executor::runExec() {
-    if (!_initialized) {
-        std::cerr << "WARN: Executor::runExec: attempt to run execution queue in uninitialized Executor instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     // swap queues
     _run_execqueue.swap(_push_execqueue);
@@ -334,10 +306,8 @@ void Executor::runExec() {
         id = _run_execqueue.front();
 
         // check bounds
-        if (id < 0 || id >= _ids.size()) {
-            std::cerr << "WARN: Executor::runExec: attempt to run execution with out-of-range ID " << id << " (max ID = " << _ids.size() << ") in Executor instance " << this << std::endl;
-            return;
-        }
+        if (id < 0 || id >= _ids.size())
+            throw std::out_of_range("Index out of range");
 
         // check if ID is active
         if (_ids.at(id)) {
@@ -356,17 +326,14 @@ void Executor::runExec() {
                 script->runBase();
 
         } else
-            std::cerr << "WARN: Executor::runExec: attempt to execute inactive ID " << id << " in Executor instance " << this << std::endl;
+            throw InactiveIDException();
         
         _run_execqueue.pop();
     }
 }
 
 void Executor::runKill() {
-    if (!_initialized) {
-        std::cerr << "WARN: Executor::runKill: attempt to run kill queue in uninitialized Executor instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     // swap queues
     _run_killqueue.swap(_push_killqueue);
@@ -377,10 +344,8 @@ void Executor::runKill() {
         id = _run_killqueue.front();
 
         // check bounds
-        if (id < 0 || id >= _ids.size()) {
-            std::cerr << "WARN: Executor::runKill: attempt to queue for kill with out-of-range ID " << id << " (max ID = " << _ids.size() << ") in Executor instance " << this << std::endl;
-            return;
-        }
+        if (id < 0 || id >= _ids.size())
+            throw std::out_of_range("Index out of range");
         
         // check if ID is active
         if (_ids.at(id)) {
@@ -395,7 +360,7 @@ void Executor::runKill() {
             }
 
         } else
-            std::cerr << "WARN: Executor::runKill: attempt to kill inactive ID " << id << " in Executor instance " << this << std::endl;
+            throw InactiveIDException();
         
         _run_killqueue.pop();
     }
@@ -438,10 +403,7 @@ ScriptManager &ScriptManager::operator=(ScriptManager &&other) {
 }
 
 void ScriptManager::_scriptSetup(Script *script, ScriptInfo &info, int id) {
-    if (!_initialized) {
-        std::cerr << "WARN: attempt to setup script in uninitialized ScriptManager instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     // set up script
     if (_executor)
@@ -462,33 +424,20 @@ void ScriptManager::_scriptSetup(Script *script, ScriptInfo &info, int id) {
 }
 
 void ScriptManager::_scriptRemoval(ScriptValues &values) {
-    if (!_initialized) {
-        std::cerr << "WARN: ScriptManager::_scriptRemoval: attempt to remove script in uninitialized ScriptManager instance " << this << std::endl;
-        return;
-    }
-
-    if (!values._script_ref) {
-        std::cerr << "WARN: ScriptManager::_scriptRemoval: attempt to remove null script in ScriptManager instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     values._script_ref->scriptResetExec();
     _ids.remove(values._manager_id);
-    _count--;
 
+    _count--;
     values = ScriptValues{-1, nullptr, nullptr, -1};
 }
 
 void ScriptManager::init(unsigned max_count, Executor *executor) {
-    if (_initialized) {
-        std::cerr << "WARN: ScriptManager::init: attempt to initialize already initialized ScriptManager instance " << this << std::endl;
-        return;
-    }
+    _checkInitialized(_initialized);
     
-    if (!_executor) {
-        std::cerr << "WARN: ScriptManager::init: attempt to initialize with null executor reference in ScriptManager instance " << this << std::endl;
-        return;
-    }
+    if (!_executor)
+        throw std::runtime_error("Attempt to initialize with null Executor reference");
 
     _max_count = max_count;
     for (unsigned i = 0; i < max_count; i++) {
@@ -517,25 +466,15 @@ void ScriptManager::uninit() {
 bool ScriptManager::hasScript(const char *scriptname) { return !(_scriptinfos.find(scriptname) == _scriptinfos.end()); }
 
 int ScriptManager::spawnScript(const char *scriptname) {
-    if (!_initialized) {
-        std::cerr << "WARN: ScriptManager::spawnScript: attempt to spawn Script in uninitialized ScriptManager instance " << this << std::endl;
-        return -1;
-    }
+    _checkUninitialized(_initialized);
 
     // fail if exceeding max size
-    if (_count >= _max_count) {
-        std::cerr << "WARN: ScriptManager::spawnScript: max count of " << _max_count << " reached in ScriptManager instance " << this << std::endl;
-        return -1;
-    }
+    if (_count >= _max_count)
+        throw CountLimitException();
 
     // get type information
     ScriptInfo info;
-    try {
-        info = _scriptinfos[scriptname];
-    } catch (const std::out_of_range& e) {
-        std::cerr << "WARN: ScriptManager::spawnScript: ScriptInfo name '" << scriptname << "' does not exist in ScriptManager instance " << this << std::endl;
-        return -1;
-    }
+    info = _scriptinfos[scriptname];
 
     // push to internal storage
     Script *script = info._allocator();
@@ -555,31 +494,20 @@ int ScriptManager::spawnScript(const char *scriptname) {
 }
 
 Script *ScriptManager::getScript(int id) {
-    if (!_initialized) {
-        std::cerr << "WARN: ScriptManager::getScript: attempt to get Script from uninitialized ScriptManager instance " << this << std::endl;
-        return nullptr;
-    }
+    _checkUninitialized(_initialized);
 
     // check bounds
-    if (id < 0 || id >= _ids.size()) {
-        std::cerr << "WARN: ScriptManager::getScript: attempt to get Script with out-of-range ID " << id << " (max ID = " << _ids.size() << ") in ScriptManager instance " << this << std::endl;
-        return nullptr;
-    }
+        throw std::out_of_range("Index out of range");
 
     if (_ids.at(id))
         // return "view" of stored Script
         return _scriptvalues[id]._script_ref;
-    else
-        std::cerr << "WARN: ScriptManager::getScript: attempt to get Script with inactive ID " << id << " in ScriptManager instance " << this << std::endl;
 
-    return nullptr;
+    throw InactiveIDException();
 }
 
 std::vector<int> ScriptManager::getAllByGroup(int group) {
-    if (!_initialized) {
-        std::cerr << "WARN: ScriptManager::getAllByGroup: attempt to get scripts by group from uninitialized ScriptManager instance " << this << std::endl;
-        return std::vector<int>();
-    }
+    _checkUninitialized(_initialized);
 
     std::vector<int> ids;
     for (unsigned i = 0; i < _count; i++)
@@ -590,50 +518,33 @@ std::vector<int> ScriptManager::getAllByGroup(int group) {
 }
 
 std::string ScriptManager::getName(int id) {
-    if (!_initialized) {
-        std::cerr << "WARN: ScriptManager::getName: attempt to get name of ID from uninitialized ScriptManager instance " << this << std::endl;
-        return "";
-    }
+    _checkUninitialized(_initialized);
 
     // check bounds
-    if (id < 0 || id >= _ids.size()) {
-        std::cerr << "WARN: ScriptManager::getName: attempt to get Script name with out-of-range ID " << id << " (max ID = " << _ids.size() << ") in ScriptManager instance " << this << std::endl;
-        return "";
-    }
+    if (id < 0 || id >= _ids.size())
+        throw std::out_of_range("Index out of range");
 
     if (_ids.at(id))
         return _scriptvalues[id]._manager_name;
-    else
-        std::cerr << "WARN: ScriptManager::getName: attempt to get name of inactive ID " << id << " in ScriptManager instance " << this << std::endl;
-        
-    return "";
+
+    throw InactiveIDException();
 }
 
 unsigned ScriptManager::getCount() {
-    if (!_initialized) {
-        std::cerr << "WARN: ScriptManager::getCount: attempt to get count of uninitialized ScriptManager instance " << this << std::endl;
-        return 0;
-    }
+    _checkUninitialized(_initialized);
 
     return _count;
 }
 
 void ScriptManager::remove(int id) {
-    if (!_initialized) {
-        std::cerr << "WARN: ScriptManager::remove: attempt to remove from uninitialized ScriptManager instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     // check bounds
-    if (id < 0 || id >= _ids.size()) {
-        std::cerr << "WARN: ScriptManager::remove: attempt to remove Script with out-of-range ID " << id << " (max ID = " << _ids.size() << ") in ScriptManager instance " << this << std::endl;
-        return;
-    }
+    if (id < 0 || id >= _ids.size())
+        throw std::out_of_range("Index out of range");
 
-    if (!_ids.at(id)) {
-        std::cerr << "WARN: ScriptManager::remove: attempt to remove inactive ID " << id << " from ScriptManager instance " << this << std::endl;
-        return;
-    }
+    if (!_ids.at(id))
+        throw InactiveIDException();
 
     // get info
     ScriptValues &values = _scriptvalues[id];
@@ -645,10 +556,7 @@ void ScriptManager::remove(int id) {
 }
 
 void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback) {
-    if (!_initialized) {
-        std::cerr << "WARN: ScriptManager::addScript: attempt to add script info to uninitialized ScriptManager instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
     
     if (!hasScript(name))
         _scriptinfos[name] = ScriptInfo{
@@ -661,10 +569,7 @@ void ScriptManager::addScript(std::function<Script*(void)> allocator, const char
 }
 
 int ScriptManager::getMaxID() { 
-    if (!_initialized) {
-        std::cerr << "WARN: ScriptManager::getMaxID: attempt to get max ID from uninitialized ScriptManager instance " << this << std::endl;
-        return;
-    }
+    _checkUninitialized(_initialized);
 
     return _ids.size();
 }

@@ -11,6 +11,14 @@
 
 std::string readfile(const char *filename);
 
+/* class InactiveIDException
+   This exception is thrown when an inactive ID is accessed in a SlotVec instance.
+*/
+class InactiveIDException : public std::logic_error {
+public:
+    InactiveIDException();
+};
+
 class Image {
     unsigned char *_data;
     int _w;

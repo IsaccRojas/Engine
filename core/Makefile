@@ -4,6 +4,9 @@ SRCDIR = src
 
 all: libcore.a
 
+commonexcept.o: ${SRCDIR}/commonexcept.cpp
+	g++ ${CXXFLAGS} -c ${SRCDIR}/commonexcept.cpp -o commonexcept.o
+
 util.o: ${SRCDIR}/util.cpp
 	g++ ${CXXFLAGS} -c ${SRCDIR}/util.cpp -o util.o
 
@@ -34,7 +37,7 @@ object.o: ${SRCDIR}/object.cpp
 input.o: ${SRCDIR}/input.cpp
 	g++ ${CXXFLAGS} -c ${SRCDIR}/input.cpp -o input.o
 
-libcore.a: util.o script.o glutil.o glenv.o animation.o entity.o filter.o physenv.o object.o input.o
+libcore.a: commonexcept.o util.o script.o glutil.o glenv.o animation.o entity.o filter.o physenv.o object.o input.o
 	ar rcs libcore.a *.o
 
 # windows syntax

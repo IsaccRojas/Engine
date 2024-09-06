@@ -82,6 +82,7 @@ class GLEnv {
     std::vector<Quad> _quads;
     // maximum number of active Quads allowed
     unsigned _max_count;
+    unsigned _count;
 
     // flag to prevent moved GLEnv instances from doing anything
     bool _initialized;
@@ -155,9 +156,8 @@ public:
        the same ID after erasing it and before receiving it again by genQuad() will result in undefined 
        behavior.
        id - ID of Quad to remove
-       Returns 0 on success, -1 on failure.
     */
-    int remove(int id);
+    void remove(int i);
 
     /* Draws Quads in memory using internal shader program. This is done by drawing a number of unit Quad
        instances corresponding to the number of IDs generated, and using the specific Quad parameters and

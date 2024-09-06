@@ -3,6 +3,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../include/stb_image.h"
 
+InactiveIDException::InactiveIDException() : std::logic_error("Inactive ID accessed") {}
+
 std::string readfile(const char *filename) {
     std::ifstream infile(filename);
     std::stringstream buf;
@@ -36,29 +38,23 @@ Image::~Image() {
 void Image::load(const char *filename) {
     _data = stbi_load(filename, &_w, &_h, &_components, 4);
     
-    if (_data == NULL) {
-        std::cerr << "WARN: Image::load: failed to load file '" << filename <<"' into Image instance " << this << std::endl;
-        return;
-    }
+    if (!_data)
+        throw std::bad_alloc();
 
     _size = _w * _h * 4;
 }
 
 void Image::free() {
-    if (!_data) {
-        std::cerr << "WARN: Image::free: attempt to free data from empty Image instance " << this << std::endl;
-        return;
-    }
+    if (!_data)
+        throw std::runtime_error("Attempt to free Image with null data");
 
     stbi_image_free(_data);
     _data = NULL;
 }
 
 unsigned char* Image::copyData() const {
-    if (_data == NULL) {
-        std::cerr << "WARN: Image::copyData: attempt to copy data from empty Image instance " << this << std::endl;
-        return NULL;
-    }
+    if (!_data)
+        throw std::runtime_error("Attempt to copy Image with null data");
     
     char *copy = new char[_size];
     return (unsigned char*)memcpy((void*)copy, (void*)_data, _size * sizeof(unsigned char));
@@ -89,9 +85,8 @@ void SlotVec::remove(int i) {
     if (_ids[i]) {
         _ids[i] = false;
         _free_ids.push_back(i);
-    } else {
-        std::cerr << "WARN: SlotVec::remove: attempt to remove inactive index from SlotVec index " << this << std::endl;
-    }
+    } else
+        throw InactiveIDException();
 }
 
 std::vector<int> SlotVec::getUsed() {

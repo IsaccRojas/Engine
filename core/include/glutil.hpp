@@ -10,7 +10,25 @@
 #include <memory>
 #include <iostream>
 
+#include "commonexcept.hpp"
+
 namespace GLUtil {
+
+    /* class BadHandleException
+       This exception is thrown when an OpenGL handle wrapper attempts to use a bad handle.
+    */
+    class BadHandleException : public std::runtime_error {
+    public:
+        BadHandleException();
+    };
+
+    /* class BadGLProgramException
+       This exception is thrown when initialization of a GLStage instance fails due to a malformed program.
+    */
+    class BadGLProgramException : public std::runtime_error {
+    public:
+        BadGLProgramException();
+    };
 
     /* class GLStage
        Represents an execution stage of OpenGL; stores a program handle.

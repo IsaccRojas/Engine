@@ -80,10 +80,8 @@ void AnimationState::setAnimation(Animation *animation) {
 }
 
 void AnimationState::setCycleState(int cyclestate) {
-    if (!_animation) {
-        std::cerr << "WARN: AnimationState::setCycleState: attempt to set cycle state with null animation reference in AnimationState instance " << this << std::endl;
-        return;
-    }
+    if (!_animation)
+        throw std::runtime_error("Attempt to set cycle state with null Animation reference");
 
     if (cyclestate == _cycle_state)
         return;
@@ -93,10 +91,8 @@ void AnimationState::setCycleState(int cyclestate) {
 }
 
 void AnimationState::setFrameState(int framestate) {
-    if (!_animation) {
-        std::cerr << "WARN: AnimationState::setFrameState: attempt to set frame state with null animation reference in AnimationState instance " << this << std::endl;
-        return;
-    }
+    if (!_animation)
+        throw std::runtime_error("Attempt to set frame state with null Animation reference");
 
     _frame_state = framestate;
     _current_frame = &(_current_cycle->getFrame(_frame_state));
@@ -106,10 +102,8 @@ void AnimationState::setFrameState(int framestate) {
 }
 
 void AnimationState::step() {
-    if (!_animation) {
-        std::cerr << "WARN: AnimationState::step: attempt to step animation with null animation reference in AnimationState instance " << this << std::endl;
-        return;
-    }
+    if (!_animation)
+        throw std::runtime_error("Attempt to step with null Animation reference");
 
     // check if completed or if no frames exist
     if (_completed || _current_cycle->count() == 0)
@@ -139,10 +133,8 @@ void AnimationState::step() {
 }
 
 Frame *AnimationState::getCurrent() {
-    if (!_animation) {
-        std::cerr << "WARN: AnimationState::getCurrent: attempt to get current frame with null animation reference in AnimationState instance " << this << std::endl;
-        return nullptr;
-    }
+    if (!_animation)
+        throw std::runtime_error("Attempt to get current frame with null Animation reference");
     
     return _current_frame;
 }

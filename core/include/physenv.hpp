@@ -5,6 +5,7 @@
 #include "glm/glm.hpp"
 #include "glm\gtx\rotate_vector.hpp"
 #include "filter.hpp"
+#include "commonexcept.hpp"
 #include <functional>
 
 /* class Box
@@ -116,9 +117,8 @@ public:
        the same ID after erasing it and before receiving it again by genBox() will result in undefined 
        behavior.
        id - ID of Box to remove
-       Returns 0 on success, -1 on failure.
     */
-    int remove(int i);
+    void remove(int i);
 
     /* Detects collision between all Boxes within the system. This is done by iterating on all Boxes
        in a pair-wise fashion.
