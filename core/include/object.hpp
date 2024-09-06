@@ -4,6 +4,8 @@
 #include "entity.hpp"
 #include "physenv.hpp"
 
+typedef std::unordered_map<std::string, Filter> unordered_map_string_Filter_t;
+
 class ObjectManager;
 
 /* class Object
@@ -22,17 +24,13 @@ class Object : public Entity {
 
     // box variables/flags
     int _box_id;
-    bool _collision_elastic;
-
-    bool _physenv_ready;
-    bool _box_ready;
 
     // Manager instance that owns this Object; maintained by Manager
     ObjectManager *_objectmanager;
 
-    void _initEntity();
-    void _baseEntity();
-    void _killEntity();
+    void _initEntity() override;
+    void _baseEntity() override;
+    void _killEntity() override;
 
 protected:
     /* Functions to be overridden by children.
@@ -48,20 +46,21 @@ protected:
     virtual void _collisionObject(Box *box);
 
 public:
+    Object(Object &&other);
     Object();
+    Object(const Object &other) = delete;
     virtual ~Object();
-    
-    /* Used to control whether elastic velocity change after collision should occur.
-       Does nothing if collision is disabled.
-    */
-    bool getElastic();
-    void setElastic(bool elastic);
+
+    Object &operator=(Object &&other);
+    Object &operator=(const Object &other) = delete;
 
     /* Sets the entity up with physics resources. This
        enables the use of the genBox(), getBox(), and eraseBox()
        methods.
     */
     void objectSetup(PhysEnv *physenv, Filter *filter);
+    /* Removes PhysEnv information stored. */
+    void objectClear();
 
     void genBox(glm::vec3 position, glm::vec3 dimensions, glm::vec3 velocity);
     void removeBox();
@@ -83,7 +82,7 @@ public:
     struct ObjectInfo {
         std::string _filter_name;
         std::function<Object*(void)> _allocator = nullptr;
-        std::function<void(Object*)> _spawncallback = nullptr;
+        std::function<void(Object*)> _spawn_callback = nullptr;
     };
 
     // struct holding IDs and other flags belonging to the managed Object
@@ -104,28 +103,39 @@ protected:
     void _objectSetup(Object *object, ObjectInfo &objectinfo, EntityInfo &entityinfo, ScriptInfo &scriptinfo, int id);
     void _objectRemoval(ObjectValues &objectvalues, EntityValues &entityvalues, ScriptValues &scriptvalues);
 
+    // initialize/uninitialize only ObjectManager members
+    void _objectManagerInit(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters);
+    void _objectManagerUninit();
 public:
-    /* maxcount - maximum number of Objects/Entities/Scripts to support in this instance */
-    ObjectManager(int maxcount);
-    ~ObjectManager();
+    ObjectManager(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor);
+    ObjectManager(ObjectManager &&other);
+    ObjectManager();
+    ObjectManager(const ObjectManager &other) = delete;
+    virtual ~ObjectManager();
+
+    ObjectManager &operator=(ObjectManager &&other);
+    ObjectManager &operator=(const ObjectManager &other) = delete;
+
+    void init(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor);
+    void uninit();
 
     /* Returns true if the provided Object name has been previously added to this manager. */
-    bool hasObject(const char *objectname);
+    bool hasObject(const char *object_name);
     /* Returns a reference to the spawned Object corresponding to the provided ID, if it exists. */
     Object *getObject(int id);
 
     /* Spawns a Script using a name previously added to this manager, and returns its ID. This
        will invoke scriptSetup() if set to do so from adding it.
     */
-    int spawnScript(const char *scriptname);
+    int spawnScript(const char *script_name) override;
     /* Spawns an Entity using a name previously added to this manager, and returns its ID. This
        will invoke entitySetup() and scriptSetup() if set to do so from adding it.
     */
-    int spawnEntity(const char *entityname);
+    int spawnEntity(const char *entity_name) override;
     /* Spawns an Ontity using a name previously added to this manager, and returns its ID. This
        will invoke objectSetup(), entitySetup() and scriptSetup() if set to do so from adding it.
     */
-    int spawnObject(const char *objectname);
+    int spawnObject(const char *object_name);
 
     /* Adds an Object allocator with initialization information to this manager, allowing its given
        name to be used for future spawns.
@@ -141,11 +151,6 @@ public:
     void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback);
     /* Removes the Object, Entity or Script associated with the provided ID. */
     void remove(int id);
-
-    /* Sets the PhysEnv for this manager to use. */
-    void setPhysEnv(PhysEnv *physenv);
-    /* Sets the Filter map for this manager to use. */
-    void setFilters(std::unordered_map<std::string, Filter> *filters);
 };
 
 #endif

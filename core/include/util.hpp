@@ -27,17 +27,13 @@ class Image {
     int _size;
 public:
     Image(const char *filename);
-    
     Image(const Image &other);
-    Image(Image &&other) = delete;
-    
     Image();
+    Image(Image &&other) = delete;
+    ~Image();
 
     Image& operator=(const Image &other);
     Image& operator=(Image &&other) = delete;
-
-    ~Image();
-
 
     void load(const char *filename);
     void free();

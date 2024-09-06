@@ -362,11 +362,7 @@ namespace GLUtil {
         _off(offset)
     {}
     BVec2::BVec2(const BVec2 &other) {
-        _buf = other._buf;
-        _off = other._off;
-        _data[0] = other._data[0];
-        _data[1] = other._data[1];
-        v = other.v;
+        operator=(other);
     }
     BVec2::BVec2() : _buf(nullptr), _off(0) {}
     BVec2::~BVec2() { /* automatic destruction is fine */ }
@@ -403,12 +399,7 @@ namespace GLUtil {
         _off(offset)
     {}
     BVec3::BVec3(const BVec3 &other) {
-        _buf = other._buf;
-        _off = other._off;
-        _data[0] = other._data[0];
-        _data[1] = other._data[1];
-        _data[2] = other._data[2];
-        v = other.v;
+        operator=(other);
     }
     BVec3::BVec3() : _buf(nullptr), _off(0) {}
     BVec3::~BVec3() { /* automatic destruction is fine */ }

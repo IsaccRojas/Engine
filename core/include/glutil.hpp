@@ -39,13 +39,11 @@ namespace GLUtil {
         GLStage(const char *shader_srcs[], GLenum shader_types[], int count);
         GLStage(GLStage &&other);
         GLStage();
-        
         GLStage(const GLStage&) = delete;
-        GLStage& operator=(const GLStage&) = delete;
-        
-        GLStage& operator=(GLStage &&other);
-
         ~GLStage();
+
+        GLStage& operator=(GLStage &&other);
+        GLStage& operator=(const GLStage&) = delete;
 
         /* Creates a program with the provided shader sources.
         */
@@ -69,15 +67,13 @@ namespace GLUtil {
 
     public:
         GLBuffer(GLenum buffer_usage, GLuint buffer_size);
-        GLBuffer();
-        
-        GLBuffer(const GLBuffer&) = delete;
-        GLBuffer& operator=(const GLBuffer&) = delete;
-        
         GLBuffer(GLBuffer &&other);
-        GLBuffer& operator=(GLBuffer &&other);
-
+        GLBuffer();
+        GLBuffer(const GLBuffer&) = delete;
         ~GLBuffer();
+
+        GLBuffer& operator=(GLBuffer &&other);
+        GLBuffer& operator=(const GLBuffer&) = delete;
 
         /* Creates buffer with provided size.
         */
@@ -127,15 +123,13 @@ namespace GLUtil {
         bool _allocated;
     public:
         GLTexture2DArray(bool initialize);
-        GLTexture2DArray();
-
-        GLTexture2DArray(const GLTexture2DArray&) = delete;
-        GLTexture2DArray& operator=(const GLTexture2DArray&) = delete;
-
         GLTexture2DArray(GLTexture2DArray &&other);
-        GLTexture2DArray& operator=(GLTexture2DArray &&other);
-
+        GLTexture2DArray();
+        GLTexture2DArray(const GLTexture2DArray&) = delete;
         ~GLTexture2DArray();
+        
+        GLTexture2DArray& operator=(GLTexture2DArray &&other);
+        GLTexture2DArray& operator=(const GLTexture2DArray&) = delete;
 
         /* Initializes GLTexture2DArray.
         */
@@ -176,11 +170,9 @@ namespace GLUtil {
         BVec2(GLBuffer *buffer, GLuint offset);
         BVec2(const BVec2 &other);
         BVec2();
-        BVec2& operator=(const BVec2 &other);
         ~BVec2();
 
-        BVec2(BVec2 &&other) = delete;
-        BVec2& operator=(BVec2 &&other) = delete;
+        BVec2& operator=(const BVec2 &other);
 
         void setBuffer(GLBuffer *buffer, GLuint offset);
 
@@ -200,11 +192,9 @@ namespace GLUtil {
         BVec3(GLBuffer *buffer, GLuint offset);
         BVec3(const BVec3 &other);
         BVec3();
-        BVec3& operator=(const BVec3 &other);
         ~BVec3();
 
-        BVec3(BVec3 &&other) = delete;
-        BVec3& operator=(BVec3 &&other) = delete;
+        BVec3& operator=(const BVec3 &other);
 
         void setBuffer(GLBuffer *buffer, GLuint offset);
 

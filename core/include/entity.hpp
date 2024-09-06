@@ -51,6 +51,7 @@ protected:
 public:
     Entity(Entity &&other);
     Entity();
+    Entity(const Entity &other) = delete;
     virtual ~Entity();
 
     Entity& operator=(Entity &&other);
@@ -61,15 +62,14 @@ public:
        methods.
     */
     void entitySetup(GLEnv *glenv, Animation *animation);
-    /* Removes GLEnv and Animation information stored.
-    */
+    /* Removes GLEnv and Animation information stored. */
     void entityClear();
 
     AnimationState &getAnimState();
     void stepAnim();
 
     void genQuad(glm::vec3 pos, glm::vec3 scale);
-    int removeQuad();
+    void removeQuad();
     Quad *getQuad();
 
     EntityManager *getManager();

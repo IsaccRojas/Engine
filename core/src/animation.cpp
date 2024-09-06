@@ -139,9 +139,9 @@ Frame *AnimationState::getCurrent() {
     return _current_frame;
 }
 
-bool AnimationState::completed() {
-    return _completed;
-}
+bool AnimationState::hasAnimation() { return _animation != nullptr; }
+
+bool AnimationState::completed() { return _completed; }
 
 std::unordered_map<std::string, Animation> loadAnimations(std::string dir) {
     std::unordered_map<std::string, Animation> animations;

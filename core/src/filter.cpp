@@ -106,7 +106,14 @@ bool FilterState::passCorrection(int x) {
     return true;
 }
 
-int FilterState::id() { return _filter->getID(); }
+bool FilterState::hasFilter() { return _filter != nullptr; }
+
+int FilterState::id() {
+    if (!_filter)
+        throw std::runtime_error("Attempt to get Filter ID with null Filter reference");
+    
+    return _filter->getID();
+}
 
 std::unordered_map<std::string, Filter> loadFilters(std::string dir) {
     std::unordered_map<std::string, Filter> filters;

@@ -119,6 +119,8 @@ public:
     */
     Frame *getCurrent();
 
+    bool hasAnimation();
+
     /* Returns whether the cycle has completed or not (always false if looping is set to true).
     */
     bool completed();

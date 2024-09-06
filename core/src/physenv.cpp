@@ -17,7 +17,6 @@ void _checkUninitialized(bool initialized) {
 Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::function<void(Box*)> callback) :
     _prev_pos(position),
     _callback(callback),
-    _collision_correction(false),
     pos(position),
     dim(dimensions),
     vel(velocity),
@@ -27,7 +26,6 @@ Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::func
 Box::Box() :
     _prev_pos(glm::vec3(0.0f)),
     _callback(nullptr),
-    _collision_correction(false),
     pos(glm::vec3(0.0f)),
     dim(glm::vec3(0.0f)),
     vel(glm::vec3(0.0f)),
@@ -55,14 +53,6 @@ void Box::setFilter(Filter *filter) {
 
 FilterState& Box::getFilterState() {
     return _filter_state;
-}
-
-void Box::setCorrection(bool correction) {
-    _collision_correction = correction;
-}
-
-bool Box::getCorrection() {
-    return _collision_correction;
 }
 
 glm::vec3& Box::getPrevPos() {
@@ -156,12 +146,21 @@ void PhysEnv::detectCollision() {
 
             for (int j = i + 1; j < ids_size; j++) {
                 if (_ids.at(j)) {
+                    // test filters against each other's IDs
+                    bool f1 = _boxes[i].getFilterState().hasFilter();
+                    bool f2 = _boxes[i].getFilterState().hasFilter();
                     
-                    // detect and handle collision
+                    // if both have a filter, collide if both pass
+                    // if neither have a filter, collide
+                    // if only one has a filter, skip
+                    if (f1 != f2)
+                        continue;
                     if (
-                        _boxes[i].getFilterState().pass(_boxes[j].getFilterState().id()) &&
-                        _boxes[j].getFilterState().pass(_boxes[i].getFilterState().id())
+                        (!f1 && !f2) ||
+                            (_boxes[i].getFilterState().pass(_boxes[j].getFilterState().id()) &&
+                            _boxes[j].getFilterState().pass(_boxes[i].getFilterState().id()))
                     )
+                        // detect and handle collision
                         collisionAABB(_boxes[i], _boxes[j]);
 
                 }

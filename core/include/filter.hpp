@@ -54,6 +54,8 @@ public:
     bool pass(int x);
     bool passCorrection(int x);
 
+    bool hasFilter();
+
     int id();
 
 };

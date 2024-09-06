@@ -476,8 +476,7 @@ int ScriptManager::spawnScript(const char *scriptname) {
     // call callback if it exists
     if (info._spawn_callback)
         info._spawn_callback(script);
-
-    _count++;
+    
     return id;
 }
 

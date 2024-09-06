@@ -54,11 +54,10 @@ protected:
 public:
     Script(Script &&other);
     Script();
+    Script(const Script&) = delete;
     virtual ~Script();
 
     Script& operator=(Script &&other);
-
-    Script(const Script&) = delete;
     Script& operator=(const Script&) = delete;
 
    /* Functions wrapping the virtual versions of the same method, which are directly called by the Executor.
@@ -140,13 +139,10 @@ public:
     Executor(unsigned max_count);
     Executor(Executor &&other);
     Executor();
-
+    Executor(const Executor &other) = delete;
     ~Executor();
 
-    Executor(const Executor &other) = delete;
-    
     Executor &operator=(Executor &&other);
-    
     Executor &operator=(const Executor &other) = delete;
 
     void init(unsigned max_count);

@@ -25,7 +25,7 @@ Entity::Entity() :
     _entitymanager(nullptr)
 {}
 Entity::~Entity() {
-    // try erasing existing quad
+    // try removing existing Quad
     removeQuad();
 }
 
@@ -104,34 +104,32 @@ void Entity::entitySetup(GLEnv *glenv, Animation *animation) {
 }
 
 void Entity::entityClear() {
-    // try erasing existing quad
+    // try removing existing Quad
     removeQuad();
     _glenv = nullptr;
+    _animationstate.setAnimation(nullptr);
 }
 
 void Entity::genQuad(glm::vec3 pos, glm::vec3 scale) {
     if (_glenv) {
-        // erase existing quad
+        // erase existing Quad
         if (_quad)
             removeQuad();
 
-        // get quad data
+        // get Quad data
         _quad_id = _glenv->genQuad(pos, scale, _frame->texpos, _frame->texsize);
         _quad = _glenv->get(_quad_id);
     } else
         throw std::runtime_error("Attempt to generate Quad with null GLEnv reference");
 }
 
-int Entity::removeQuad() {
+void Entity::removeQuad() {
     if (_glenv && _quad) {
         _glenv->remove(_quad_id);
 
         _quad = nullptr;
         _quad_id = -1;
     }
-
-    // no problem
-    return 0;
 }
 
 Quad *Entity::getQuad() { 

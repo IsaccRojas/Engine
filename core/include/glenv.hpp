@@ -91,18 +91,17 @@ public:
     GLEnv(unsigned max_count);
     GLEnv(GLEnv &&other);
     GLEnv();
+    GLEnv(const GLEnv &Other) = delete;
     ~GLEnv();
 
     GLEnv& operator=(GLEnv &&other);
+    GLEnv& operator=(const GLEnv&) = delete;
 
     /* Initializes GLBuffers, GLStage, and GLTexture2DArray, allowing the provided maximum amount of Quads. */
     void init(unsigned max_count);
 
     /* Uninitializes all members. */
     void uninit();
-
-    GLEnv(const GLEnv&) = delete;
-    GLEnv& operator=(const GLEnv&) = delete;
 
     /* Initializes texture array space with unsigned byte storage in RGBA format.
        width - width of space
