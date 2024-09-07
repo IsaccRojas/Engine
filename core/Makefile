@@ -1,4 +1,4 @@
-CXXFLAGS = -ggdb -Wall -O
+CXXFLAGS = -ggdb -Wall -O0
 
 SRCDIR = src
 

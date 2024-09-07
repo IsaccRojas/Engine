@@ -77,7 +77,7 @@ void Object::genBox(glm::vec3 position, glm::vec3 dimensions, glm::vec3 velocity
 
         // get Box data
         _box_id = _physenv->genBox(position, dimensions, velocity, std::bind(&(Object::_collisionObject), this, std::placeholders::_1));
-        _box = _physenv->get(_box_id);
+        _box = _physenv->getBox(_box_id);
         _box->setFilter(_filter);
     } else
         throw std::runtime_error("Attempt to generate Quad with null PhysEnv reference");
@@ -163,19 +163,6 @@ void ObjectManager::uninit() {
     _objectManagerUninit();
 }
 
-bool ObjectManager::hasObject(const char *object_name) { return !(_objectinfos.find(object_name) == _objectinfos.end()); }
-
-Object *ObjectManager::getObject(unsigned id) {
-    checkUninitialized(_initialized);
-
-    if (id < 0 || id >= _ids.size())
-        throw std::out_of_range("Index out of range");
-
-    return _objectvalues[id]._object_ref;
-
-    throw InactiveIDException();
-}
-
 unsigned ObjectManager::spawnScript(const char *script_name) {
     unsigned id = EntityManager::spawnScript(script_name);
     _objectvalues[id] = ObjectValues{nullptr};
@@ -189,8 +176,6 @@ unsigned ObjectManager::spawnEntity(const char *entity_name) {
 }
 
 unsigned ObjectManager::spawnObject(const char *object_name) {
-    checkUninitialized(_initialized);
-
     // fail if exceeding max size
     if (_count >= _max_count)
         throw CountLimitException();
@@ -218,24 +203,7 @@ unsigned ObjectManager::spawnObject(const char *object_name) {
     return id;
 }
 
-void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback) {
-    checkUninitialized(_initialized);
-    
-    if (!hasObject(name)) {
-        addEntity(allocator, name, group, force_enqueue, force_removeonkill, animation_name, nullptr);
-        _objectinfos[name] = ObjectInfo{
-            filter_name,
-            allocator,
-            spawn_callback
-        };
-
-    } else
-        throw std::runtime_error("Attempt to add already added Object name");
-}
-
 void ObjectManager::remove(unsigned id) {
-    checkUninitialized(_initialized);
-    
     // check bounds
     if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
@@ -251,3 +219,29 @@ void ObjectManager::remove(unsigned id) {
     // remove from object-related, entity-related and script-related systems
     _objectRemoval(objectvalues, entityvalues, scriptvalues);
 }
+
+void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback) {
+    if (!hasAddedObject(name)) {
+        addEntity(allocator, name, group, force_enqueue, force_removeonkill, animation_name, nullptr);
+        _objectinfos[name] = ObjectInfo{
+            filter_name,
+            allocator,
+            spawn_callback
+        };
+
+    } else
+        throw std::runtime_error("Attempt to add already added Object name");
+}
+
+bool ObjectManager::hasAddedObject(const char *object_name) { return !(_objectinfos.find(object_name) == _objectinfos.end()); }
+
+Object *ObjectManager::getObject(unsigned id) {
+    if (id < 0 || id >= _ids.size())
+        throw std::out_of_range("Index out of range");
+    
+    if (_ids.at(id))
+        return _objectvalues[id]._object_ref;
+
+    throw InactiveIDException();
+}
+

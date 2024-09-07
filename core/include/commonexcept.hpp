@@ -37,10 +37,4 @@ public:
     CountLimitException();
 };
 
-/* Throws if initialized is true. */
-void checkInitialized(bool initialized);
-
-/* Throws if initialized is false. */
-void checkUninitialized(bool initialized);
-
 #endif

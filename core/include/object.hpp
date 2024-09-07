@@ -75,6 +75,9 @@ public:
    Manages and controls internal instances of Objects. Can also be given
    Executor, GLEnv and PhysEnv instance to automatically pass Object instances 
    to these mechanisms.
+
+   It is undefined behavior to make method calls (except for uninit()) on instances 
+   of this class without calling init() first.
 */
 class ObjectManager : public EntityManager {
 public:
@@ -107,6 +110,7 @@ protected:
     void _objectManagerInit(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters);
     void _objectManagerUninit();
 public:
+    /* Calls init() with the provided arguments. */
     ObjectManager(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor);
     ObjectManager(ObjectManager &&other);
     ObjectManager();
@@ -118,11 +122,6 @@ public:
 
     void init(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor);
     void uninit();
-
-    /* Returns true if the provided Object name has been previously added to this manager. */
-    bool hasObject(const char *object_name);
-    /* Returns a reference to the spawned Object corresponding to the provided ID, if it exists. */
-    Object *getObject(unsigned id);
 
     /* Spawns a Script using a name previously added to this manager, and returns its ID. This
        will invoke scriptSetup() if set to do so from adding it.
@@ -136,21 +135,26 @@ public:
        will invoke objectSetup(), entitySetup() and scriptSetup() if set to do so from adding it.
     */
     unsigned spawnObject(const char *object_name);
-
-    /* Adds an Object allocator with initialization information to this manager, allowing its given
-       name to be used for future spawns.
-       - allocator - function pointer referring to function that returns a heap-allocated Object
-       - name - name to associate with the allocator
-       - group - value to associate with all instances of this Object
-       - force_enqueue - enqueues this Object into the provided Executor when spawning it
-       - force_removeonkill - removes this Object from this manager when it is killed
-       - animation_name - name of animation to give to AnimationState of spawned Object, from provided Animation map
-       - filter_name - name of filter to give to FilterState of spawned Object's Box, from provided Filter map
-       - spawn_callback - function callback to call after Object has been spawned and setup
-    */
-    void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback);
     /* Removes the Object, Entity or Script associated with the provided ID. */
     void remove(unsigned id);
+
+    /* Adds an Object allocator with initialization information to this manager, allowing its given
+    name to be used for future spawns.
+    - allocator - function pointer referring to function that returns a heap-allocated Object
+    - name - name to associate with the allocator
+    - group - value to associate with all instances of this Object
+    - force_enqueue - enqueues this Object into the provided Executor when spawning it
+    - force_removeonkill - removes this Object from this manager when it is killed
+    - animation_name - name of animation to give to AnimationState of spawned Object, from provided Animation map
+    - filter_name - name of filter to give to FilterState of spawned Object's Box, from provided Filter map
+    - spawn_callback - function callback to call after Object has been spawned and setup
+    */
+    void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback);
+
+    /* Returns true if the provided Object name has been previously added to this manager. */
+    bool hasAddedObject(const char *object_name);
+    /* Returns a reference to the spawned Object corresponding to the provided ID, if it exists. */
+    Object *getObject(unsigned id);
 };
 
 #endif

@@ -13,15 +13,6 @@
 #include "commonexcept.hpp"
 
 namespace GLUtil {
-
-    /* class BadHandleException
-       This exception is thrown when an OpenGL handle wrapper attempts to use a bad handle.
-    */
-    class BadHandleException : public std::runtime_error {
-    public:
-        BadHandleException();
-    };
-
     /* class BadGLProgramException
        This exception is thrown when initialization of a GLStage instance fails due to a malformed program.
     */
@@ -32,10 +23,14 @@ namespace GLUtil {
 
     /* class GLStage
        Represents an execution stage of OpenGL; stores a program handle.
+
+       It is undefined behavior to make method calls (except for uninit()) on instances 
+       of this class without calling init() first.
     */
     class GLStage {
         GLint _program_h;
     public:
+        /* Calls init() with the provided arguments. */
         GLStage(const char *shader_srcs[], GLenum shader_types[], int count);
         GLStage(GLStage &&other);
         GLStage();
@@ -48,8 +43,6 @@ namespace GLUtil {
         /* Creates a program with the provided shader sources.
         */
         void init(const char *shader_srcs[], GLenum shader_types[], int count);
-
-        /* Frees handle referenced. */
         void uninit();
 
         /* Binds this program to the main program binding point.
@@ -59,6 +52,9 @@ namespace GLUtil {
 
     /* class GLBuffer
        Preserves the state of a single OpenGL buffer with a fixed usage and byte size.
+    
+       It is undefined behavior to make method calls (except for uninit()) on instances 
+       of this class without calling init() first.
     */
     class GLBuffer {
         GLint _buf_h;
@@ -66,6 +62,7 @@ namespace GLUtil {
         GLuint _size;
 
     public:
+        /* Calls init() with the provided arguments. */
         GLBuffer(GLenum buffer_usage, GLuint buffer_size);
         GLBuffer(GLBuffer &&other);
         GLBuffer();
@@ -78,6 +75,7 @@ namespace GLUtil {
         /* Creates buffer with provided size.
         */
         void init(GLenum buffer_usage, GLuint buffer_size);
+        void uninit();
 
         /* Binds buffer handle of GLBuffer to target.
         */
@@ -95,8 +93,6 @@ namespace GLUtil {
         */
         void subData(GLsizeiptr data_size, const void *data, GLsizeiptr offset);
 
-        void uninit();
-
         GLuint size();
         GLenum usage();
         GLuint handle();
@@ -106,6 +102,9 @@ namespace GLUtil {
 
     /* class GLTexture2DArray
        Preserves the state of a single mutable OpenGL 2D texture array.
+
+       It is undefined behavior to make method calls (except for uninit()) on instances 
+       of this class without calling init() first.
     */
     class GLTexture2DArray {
         GLint _tex_h;
@@ -122,6 +121,7 @@ namespace GLUtil {
 
         bool _allocated;
     public:
+        /* Calls init() with the provided arguments. */
         GLTexture2DArray(bool initialize);
         GLTexture2DArray(GLTexture2DArray &&other);
         GLTexture2DArray();
@@ -134,6 +134,7 @@ namespace GLUtil {
         /* Initializes GLTexture2DArray.
         */
         void init();
+        void uninit();
 
         /* Binds texture handle of GLTexture2D to target.
         */
@@ -148,8 +149,6 @@ namespace GLUtil {
         /* Write sub image data into level of allocated storage.
         */
         void subImage(GLint level, GLint x_offset, GLint y_offset, GLint z_offset, GLsizei width, GLsizei height, GLsizei depth, const void *data);
-
-        void uninit();
 
         GLuint size();
         GLuint width();

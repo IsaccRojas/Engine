@@ -18,7 +18,9 @@ void Effect::_baseEntity() {
             kill();
     }
 
-    enqueue();
+    // only queue if not set to be killed
+    if (!getKillQueued())
+        enqueue();
 }
 
 void Effect::_killEntity() {

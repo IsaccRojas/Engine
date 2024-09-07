@@ -56,7 +56,8 @@ PhysEnv::PhysEnv() : _max_count(0), _count(0), _initialized(false) {}
 PhysEnv::~PhysEnv() { /* automatic destruction is fine */ }
 
 void PhysEnv::init(unsigned max_count) {
-    checkInitialized(_initialized);
+    if (_initialized)
+        throw InitializedException();
     
     _boxes = std::vector<Box>(max_count, Box());
     _max_count = max_count;
@@ -76,8 +77,6 @@ void PhysEnv::uninit() {
 }
 
 unsigned PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback) {
-    checkUninitialized(_initialized);
-
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
     if (_count >= _max_count)
         throw CountLimitException();
@@ -92,28 +91,7 @@ unsigned PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::funct
     return id;
 }
 
-Box *PhysEnv::get(unsigned id) {
-    checkUninitialized(_initialized);
-    if (id >= _ids.size())
-        throw std::out_of_range("Index out of range");
-
-    if (_ids.at(id))
-        return &(_boxes[id]);
-    
-    throw InactiveIDException();
-}
-
-void PhysEnv::step() {
-    checkUninitialized(_initialized);
-
-    for (unsigned i = 0; i < _ids.size(); i++)
-        // only try calling step on index i if it is an active ID in _ids
-        if (_ids.at(i))
-            _boxes[i].step();
-}
-
 void PhysEnv::remove(unsigned id) {
-    checkUninitialized(_initialized);
     if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
@@ -124,8 +102,6 @@ void PhysEnv::remove(unsigned id) {
 }
 
 void PhysEnv::detectCollision() {
-    checkUninitialized(_initialized);
-
     unsigned ids_size = _ids.size();
 
     // perform pair-wise collision detection
@@ -158,11 +134,26 @@ void PhysEnv::detectCollision() {
     }
 }
 
-std::vector<unsigned> PhysEnv::getIDs() {
-    checkUninitialized(_initialized);
-
-    return _ids.getUsed();
+void PhysEnv::step() {
+    for (unsigned i = 0; i < _ids.size(); i++)
+        // only try calling step on index i if it is an active ID in _ids
+        if (_ids.at(i))
+            _boxes[i].step();
 }
+
+Box *PhysEnv::getBox(unsigned id) {
+    if (id >= _ids.size())
+        throw std::out_of_range("Index out of range");
+
+    if (_ids.at(id))
+        return &(_boxes[id]);
+    
+    throw InactiveIDException();
+}
+
+std::vector<unsigned> PhysEnv::getIDs() { return _ids.getUsed(); }
+
+bool PhysEnv::hasID(unsigned id) { return _ids.at(id); }
 
 bool PhysEnv::getInitialized() { return _initialized; }
 

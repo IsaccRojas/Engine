@@ -49,6 +49,9 @@ public:
    The maximum amount of Quads allowed by the system can be specified. This also
    guarantees that no more than max_count IDs will be generated and tracked. The environment will
    throw an exception if more than the allowed amount is generated.
+
+   It is undefined behavior to make method calls (except for uninit()) on instances 
+   of this class without calling init() first.
 */
 class GLEnv {
     /* environment structures */
@@ -87,7 +90,7 @@ class GLEnv {
     // flag to prevent moved GLEnv instances from doing anything
     bool _initialized;
 public:
-    /* max_count - maximum number of Quads allowed to be active */
+    /* Calls init() with the provided arguments. */
     GLEnv(unsigned max_count);
     GLEnv(GLEnv &&other);
     GLEnv();
@@ -99,34 +102,7 @@ public:
 
     /* Initializes GLBuffers, GLStage, and GLTexture2DArray, allowing the provided maximum amount of Quads. */
     void init(unsigned max_count);
-
-    /* Uninitializes all members. */
     void uninit();
-
-    /* Initializes texture array space with unsigned byte storage in RGBA format.
-       width - width of space
-       height - height of space
-       depth - depth of space
-    */
-    void setTexArray(GLuint width, GLuint height, GLuint depth);
-
-    /* Loads image into texture space using Image structure (uses complete width and height of passed image).
-       img - Image structure containing RGBA unsigned byte image data
-       x_offset - x offset in image space to write image data into
-       y_offset - y offset in image space to write image data into
-       z_offset - z offset in image space to write image data into
-    */
-    void setTexture(Image img, GLuint x_offset, GLuint y_offset, GLuint z_offset);
-
-    /* Sets view matrix for vertex shader.
-       view - GLM mat4 matrix
-    */
-    void setView(glm::mat4 view);
-
-    /* Sets projection matrix for vertex shader.
-       proj - GLM mat4 matrix
-    */
-    void setProj(glm::mat4 proj);
 
     /* Generates an active Quad in system. This call does not write the new Quad into graphic memory. You 
        must call the update() method on the environment or a reference to the Quad itself.
@@ -140,15 +116,6 @@ public:
        returned instead.
     */
     unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 texsize);
-
-    /* Returns a raw Quad pointer to the Quad with the specified ID. 
-       id - ID of Quad to get reference of
-    */
-    Quad *get(unsigned id);
-
-    /* Writes data of all quads in system to their respective buffers. */
-    void update();
-
     /* Removes the Quad with the provided ID from the system. This will cause the provided ID to be 
        invalid until returned again by the genQuad() method. Note that this method does not actually
        free any GPU memory; it simply makes the specific ID usable again by the system. Attempting to use
@@ -158,14 +125,42 @@ public:
     */
     void remove(unsigned id);
 
+    /* Initializes texture array space with unsigned byte storage in RGBA format.
+       width - width of space
+       height - height of space
+       depth - depth of space
+    */
+    void setTexArray(GLuint width, GLuint height, GLuint depth);
+    /* Loads image into texture space using Image structure (uses complete width and height of passed image).
+       img - Image structure containing RGBA unsigned byte image data
+       x_offset - x offset in image space to write image data into
+       y_offset - y offset in image space to write image data into
+       z_offset - z offset in image space to write image data into
+    */
+    void setTexture(Image img, GLuint x_offset, GLuint y_offset, GLuint z_offset);
+    /* Sets view matrix for vertex shader.
+       view - GLM mat4 matrix
+    */
+    void setView(glm::mat4 view);
+    /* Sets projection matrix for vertex shader.
+       proj - GLM mat4 matrix
+    */
+    void setProj(glm::mat4 proj);
+    /* Writes data of all quads in system to their respective buffers. */
+    void update();
     /* Draws Quads in memory using internal shader program. This is done by drawing a number of unit Quad
        instances corresponding to the number of IDs generated, and using the specific Quad parameters and
        shader matrices to transform them. */
     void draw();
 
+    /* Returns a raw Quad pointer to the Quad with the specified ID. 
+       id - ID of Quad to get reference of
+    */
+    Quad *getQuad(unsigned id);
     /* Returns all active IDs in system. (note that this allocates a vector and will take O(n) time) */
     std::vector<unsigned> getIDs();
-
+    /* Returns true if the provided ID is active. */
+    bool hasID(unsigned id);
     /* Returns whether this instance has been initialized or not. */
     bool getInitialized();
 };

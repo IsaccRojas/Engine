@@ -62,18 +62,24 @@ public:
    The maximum amount of Boxes allowed by the system can be specified. This also guarantees that 
    no more than max_count IDs will be generated and tracked. The environment will fail to generate
    new Boxes if more than the allowed amount are allocated.
+
+   It is undefined behavior to make method calls (except for uninit()) on instances 
+   of this class without calling init() first.
 */
 class PhysEnv {
     // IDs to distribute to Boxes
     SlotVec _ids;
+
     // internal Box storage
     std::vector<Box> _boxes;
+    
     // maximum number of active Boxes allowed
     unsigned _max_count;
     unsigned _count;
 
     bool _initialized;
 public:
+    /* Calls init() with the provided arguments. */
     PhysEnv(unsigned max_count);
     PhysEnv();
     ~PhysEnv();
@@ -95,15 +101,6 @@ public:
        returned instead.
     */
     unsigned genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback);
-
-    /* Returns a raw Box pointer to the Box with the specified ID. 
-       id - ID of Box to get reference of
-    */
-    Box *get(unsigned id);
-
-    /* Advances every internal Box one step in time. */
-    void step();
-
     /* Removes the Box with the provided ID from the system. This will cause the provided ID to be 
        invalid until returned again by the genBox() method. Note that this method does not actually
        free any memory; it simply makes the specific ID usable again by the system. Attempting to use
@@ -117,15 +114,22 @@ public:
        in a pair-wise fashion.
     */
     void detectCollision();
+    /* Advances every internal Box one step in time. */
+    void step();
 
+    /* Returns true if the provided ID is active. */
+    bool hasID(unsigned id);
+    /* Returns a raw Box pointer to the Box with the specified ID. 
+       id - ID of Box to get reference of
+    */
+    Box *getBox(unsigned id);
     /* Returns all active IDs in system. (note that this instantiates a vector and will take O(n) time) */
     std::vector<unsigned> getIDs();
+    /* Returns whether this instance has been initialized or not. */
+    bool getInitialized();
 
     /* Detects and handles AABB collision between two provided Boxes. */
     static void collisionAABB(Box &box1, Box &box2);
-
-    /* Returns whether this instance has been initialized or not. */
-    bool getInitialized();
 };
 
 /* Rotates the vector with respect to the Z axis, within a range of [-deg, deg]. */

@@ -157,7 +157,8 @@ Executor &Executor::operator=(Executor &&other) {
 }
 
 void Executor::init(unsigned max_count) {
-    checkInitialized(_initialized);
+    if (_initialized)
+        throw InitializedException();
 
     _scripts = std::vector<Script*>(max_count, nullptr);
     _max_count = max_count;
@@ -187,8 +188,6 @@ void Executor::uninit() {
 }
 
 int Executor::push(Script *script) {
-    checkUninitialized(_initialized);
-
     // if number of active IDs is greater than or equal to maximum allowed count, return -1
     if (_count >= _max_count)
         throw CountLimitException();
@@ -204,8 +203,6 @@ int Executor::push(Script *script) {
 }
 
 void Executor::remove(unsigned id) {
-    checkUninitialized(_initialized);
-
     // check bounds
     if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
@@ -216,8 +213,6 @@ void Executor::remove(unsigned id) {
 }
 
 Script* const Executor::get(unsigned id) {
-    checkUninitialized(_initialized);
-
     // check bounds
     if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
@@ -231,9 +226,7 @@ Script* const Executor::get(unsigned id) {
     return nullptr;
 }
 
-bool Executor::has(unsigned id) {
-    checkUninitialized(_initialized);
-
+bool Executor::hasID(unsigned id) {
     // check bounds
     if (id < 0 || id >= _ids.size())
         throw std::out_of_range("Index out of range");
@@ -242,8 +235,6 @@ bool Executor::has(unsigned id) {
 }
 
 void Executor::queueExec(unsigned id) {
-    checkUninitialized(_initialized);
-
     // check bounds
     if (id < 0 || id >= _ids.size())
         throw std::out_of_range("Index out of range");
@@ -259,8 +250,6 @@ void Executor::queueExec(unsigned id) {
 }
 
 void Executor::queueKill(unsigned id) {
-    checkUninitialized(_initialized);
-
     // check bounds
     if (id < 0 || id >= _ids.size())
         throw std::out_of_range("Index out of range");
@@ -277,8 +266,6 @@ void Executor::queueKill(unsigned id) {
 }
 
 void Executor::runExec() {
-    checkUninitialized(_initialized);
-
     // swap queues
     _run_execqueue.swap(_push_execqueue);
 
@@ -315,8 +302,6 @@ void Executor::runExec() {
 }
 
 void Executor::runKill() {
-    checkUninitialized(_initialized);
-
     // swap queues
     _run_killqueue.swap(_push_killqueue);
 
@@ -348,6 +333,8 @@ void Executor::runKill() {
     }
 }
 
+bool Executor::getInitialized() { return _initialized; }
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 ScriptManager::ScriptManager(unsigned max_count, Executor *executor) :
@@ -377,6 +364,7 @@ ScriptManager &ScriptManager::operator=(ScriptManager &&other) {
         _max_count = other._max_count;
         _count = other._count;
         _initialized = other._initialized;
+
         // safe as the only allocated memory (_scripts elements) should be moved already
         other.uninit();
     }
@@ -384,8 +372,6 @@ ScriptManager &ScriptManager::operator=(ScriptManager &&other) {
 }
 
 void ScriptManager::_scriptSetup(Script *script, ScriptInfo &info, unsigned id) {
-    checkUninitialized(_initialized);
-
     // set up script
     script->scriptSetup(_executor);
     script->setGroup(info._group);
@@ -403,17 +389,16 @@ void ScriptManager::_scriptSetup(Script *script, ScriptInfo &info, unsigned id) 
 }
 
 void ScriptManager::_scriptRemoval(ScriptValues &values) {
-    checkUninitialized(_initialized);
-
     values._script_ref->scriptClear();
     _ids.remove(values._manager_id);
-
     _count--;
+
     values = ScriptValues{0, nullptr, nullptr, -1};
 }
 
 void ScriptManager::init(unsigned max_count, Executor *executor) {
-    checkInitialized(_initialized);
+    if (_initialized)
+        throw InitializedException();
     
     if (!executor)
         throw std::runtime_error("Attempt to initialize with null Executor reference");
@@ -442,11 +427,7 @@ void ScriptManager::uninit() {
     _initialized = false;
 }
 
-bool ScriptManager::hasScript(const char *scriptname) { return !(_scriptinfos.find(scriptname) == _scriptinfos.end()); }
-
 unsigned ScriptManager::spawnScript(const char *scriptname) {
-    checkUninitialized(_initialized);
-
     // fail if exceeding max size
     if (_count >= _max_count)
         throw CountLimitException();
@@ -471,53 +452,7 @@ unsigned ScriptManager::spawnScript(const char *scriptname) {
     return id;
 }
 
-Script *ScriptManager::getScript(unsigned id) {
-    checkUninitialized(_initialized);
-
-    // check bounds
-    if (id < 0 || id >= _ids.size())
-        throw std::out_of_range("Index out of range");
-
-    if (_ids.at(id))
-        // return "view" of stored Script
-        return _scriptvalues[id]._script_ref;
-
-    throw InactiveIDException();
-}
-
-std::vector<unsigned> ScriptManager::getAllByGroup(int group) {
-    checkUninitialized(_initialized);
-
-    std::vector<unsigned> ids;
-    for (unsigned i = 0; i < _count; i++)
-        if (_scriptvalues[i]._manager_id >= 0)
-            if (_scriptvalues[i]._group == group)
-                ids.push_back(i);
-    return ids;
-}
-
-std::string ScriptManager::getName(unsigned id) {
-    checkUninitialized(_initialized);
-
-    // check bounds
-    if (id >= _ids.size())
-        throw std::out_of_range("Index out of range");
-
-    if (_ids.at(id))
-        return _scriptvalues[id]._manager_name;
-
-    throw InactiveIDException();
-}
-
-unsigned ScriptManager::getCount() {
-    checkUninitialized(_initialized);
-
-    return _count;
-}
-
 void ScriptManager::remove(unsigned id) {
-    checkUninitialized(_initialized);
-
     // check bounds
     if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
@@ -530,13 +465,10 @@ void ScriptManager::remove(unsigned id) {
 
     // remove from script-related systems
     _scriptRemoval(values);
-    _count--;
 }
 
-void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback) {
-    checkUninitialized(_initialized);
-    
-    if (!hasScript(name))
+void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback) {  
+    if (!hasAddedScript(name))
         _scriptinfos[name] = ScriptInfo{
             group,
             force_enqueue,
@@ -549,10 +481,44 @@ void ScriptManager::addScript(std::function<Script*(void)> allocator, const char
         throw std::runtime_error("Attempt to add already added Script name");
 }
 
-int ScriptManager::getMaxID() { 
-    checkUninitialized(_initialized);
+bool ScriptManager::hasAddedScript(const char *scriptname) { return !(_scriptinfos.find(scriptname) == _scriptinfos.end()); }
 
-    return _ids.size();
+bool ScriptManager::hasID(unsigned id) { return _ids.at(id); }
+
+Script *ScriptManager::getScript(unsigned id) {
+    // check bounds
+    if (id < 0 || id >= _ids.size())
+        throw std::out_of_range("Index out of range");
+
+    if (_ids.at(id))
+        // return "view" of stored Script
+        return _scriptvalues[id]._script_ref;
+
+    throw InactiveIDException();
 }
+
+std::vector<unsigned> ScriptManager::getAllByGroup(int group) {
+    std::vector<unsigned> ids;
+    for (unsigned i = 0; i < _count; i++)
+        if (_scriptvalues[i]._manager_id >= 0)
+            if (_scriptvalues[i]._group == group)
+                ids.push_back(i);
+    return ids;
+}
+
+std::string ScriptManager::getName(unsigned id) {
+    // check bounds
+    if (id >= _ids.size())
+        throw std::out_of_range("Index out of range");
+
+    if (_ids.at(id))
+        return _scriptvalues[id]._manager_name;
+
+    throw InactiveIDException();
+}
+
+unsigned ScriptManager::getCount() { return _count; }
+
+int ScriptManager::getMaxID() { return _ids.size(); }
 
 bool ScriptManager::getInitialized() { return _initialized; }

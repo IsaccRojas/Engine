@@ -113,6 +113,9 @@ public:
 /* class Executor
    Encapsulates an execution environment for queue-able, inheritable Script instances.
    Uses queues to control execution and erasure of Script instances.
+
+   It is undefined behavior to make method calls (except for uninit()) on instances 
+   of this class without calling init() first.
 */
 class Executor {
     /* Script data structures */
@@ -136,6 +139,7 @@ class Executor {
 
     bool _initialized;
 public:
+    /* Calls init() with the provided arguments. */
     Executor(unsigned max_count);
     Executor(Executor &&other);
     Executor();
@@ -167,11 +171,6 @@ public:
     */
     Script* const get(unsigned id);
 
-    /* Returns true if the provided ID is valid; false otherwise.
-       id - ID of Script to check validity of
-    */
-    bool has(unsigned id);
-
     /* Queues a Script instance corresponding to the ID provided to be executed when exec() is called.
        id - ID of Script to queue
     */
@@ -187,6 +186,11 @@ public:
     void runExec();
     /* Calls the kill() method on all erasure-queued Scripts if it has not been called yet. */
     void runKill();
+
+    /* Returns true if the provided ID is active. */
+    bool hasID(unsigned id);
+    /* Returns whether this instance has been initialized or not. */
+    bool getInitialized();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -194,6 +198,9 @@ public:
 /* class ScriptManager
    Manages and controls internal instances of Scripts. Can also be given an 
    Executor instance to automatically pass Script instances to these mechanisms.
+
+   It is undefined behavior to make method calls (except for uninit()) on instances 
+   of this class without calling init() first.
 */
 class ScriptManager {
 public:
@@ -240,6 +247,7 @@ protected:
     void _scriptRemoval(ScriptValues &values);
    
 public:
+    /* Calls init() with the provided arguments. */
     ScriptManager(unsigned max_count, Executor *executor);
     ScriptManager(ScriptManager &&other);
     ScriptManager(const ScriptManager &other) = delete;
@@ -248,26 +256,17 @@ public:
 
     ScriptManager &operator=(ScriptManager &&other);
     ScriptManager &operator=(const ScriptManager &other) = delete;
-
+    
     void init(unsigned max_count, Executor *executor);
     void uninit();
-
-    /* Returns true if the provided Script name has been previously added to this manager. */
-    bool hasScript(const char *script_name);
-    /* Returns a reference to the spawned Script corresponding to the provided ID, if it exists. */
-    Script *getScript(unsigned id);
-    /* Returns a vector of IDs of all active Scripts with the corresponding group. */
-    std::vector<unsigned> getAllByGroup(int group);
-    /* Returns the internal name corresponding to the provided ID, if it exists. */
-    std::string getName(unsigned id);
-    /* Returns the number of active objects in the manager. */
-    unsigned getCount();
 
     /* Spawns a Script using a name previously added to this manager, and returns its ID. This
        will invoke scriptSetup() if set to do so from adding it.
     */
     virtual unsigned spawnScript(const char *script_name);
-    
+    /* Removes the Script associated with the provided ID. */
+    void remove(unsigned id);
+
     /* Adds an Script allocator with initialization information to this manager, allowing its given
        name to be used for future spawns.
        - allocator - function pointer referring to function that returns a heap-allocated Script
@@ -278,13 +277,21 @@ public:
        - spawn_callback - function callback to call after Script has been spawned and setup
     */
     void addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback);
-    
-    /* Removes the Script associated with the provided ID. */
-    void remove(unsigned id);
-    
+
+    /* Returns true if the provided Script name has been previously added to this manager. */
+    bool hasAddedScript(const char *script_name);
+    /* Returns true if the provided ID is active. */
+    bool hasID(unsigned id);
+    /* Returns a reference to the spawned Script corresponding to the provided ID, if it exists. */
+    Script *getScript(unsigned id);
+    /* Returns a vector of IDs of all active Scripts with the corresponding group. */
+    std::vector<unsigned> getAllByGroup(int group);
+    /* Returns the internal name corresponding to the provided ID, if it exists. */
+    std::string getName(unsigned id);
+    /* Returns the number of active objects in the manager. */
+    unsigned getCount();
     /* Gets the maximum generated ID during this manager's lifetime. */
     int getMaxID();
-
     /* Returns whether this instance has been initialized or not. */
     bool getInitialized();
 };

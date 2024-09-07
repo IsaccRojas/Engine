@@ -15,7 +15,10 @@ void Basic::_baseObject() {
     getQuad()->bv_pos.v = getBox()->pos;
 
     stepAnim();
-    enqueue();
+
+    // only queue if not set to be killed
+    if (!getKillQueued())
+        enqueue();
 }
 
 void Basic::_killObject() {

@@ -1,26 +1,7 @@
 #include "../include/glutil.hpp"
 
 namespace GLUtil {
-    BadHandleException::BadHandleException() : std::runtime_error("Bad handle") {}
     BadGLProgramException::BadGLProgramException() : std::runtime_error("Bad OpenGL program") {}
-
-    // throws if handle is negative
-    void _checkHandle(int h) {
-        if (h < 0)
-            throw BadHandleException();
-    };
-
-    // throws if initialized is true
-    void _checkInitialized(bool initialized) {
-        if (initialized)
-            throw InitializedException();
-    }
-
-    // throws if initialized is false
-    void _checkUninitialized(bool initialized) {
-        if (!initialized)
-            throw UninitializedException();
-    }
 
     // _______________________________________ GLStage _______________________________________
 
@@ -46,7 +27,8 @@ namespace GLUtil {
     };
 
     void GLStage::init(const char *shader_srcs[], GLenum shader_types[], int count) {
-        _checkInitialized(_program_h != -1);
+        if (_program_h != -1)
+            throw InitializedException();
         
         GLint success = 0;
         // create shaders
@@ -107,7 +89,6 @@ namespace GLUtil {
     }
 
     void GLStage::use() {
-        _checkHandle(_program_h);
          glUseProgram(_program_h); 
     }
 
@@ -139,8 +120,9 @@ namespace GLUtil {
     }
 
     void GLBuffer::init(GLenum buffer_usage, GLuint buffer_size) {
-        _checkInitialized(_buf_h != -1);
-
+        if (_buf_h != -1)
+            throw InitializedException();
+        
         // create empty data space
         GLuint buf_h = _buf_h;
 
@@ -150,30 +132,6 @@ namespace GLUtil {
         _buf_h = buf_h;
         _usage = buffer_usage;
         _size = buffer_size;
-    }
-
-    void GLBuffer::bind(GLenum target) {
-        _checkHandle(_buf_h);
-        GLuint buf_h = _buf_h;
-        glBindBuffer(target, buf_h);
-    }
-
-    void GLBuffer::bindIndex(GLuint index, GLintptr offset, GLsizei stride) {
-        _checkHandle(_buf_h);
-        GLuint buf_h = _buf_h;
-        glBindVertexBuffer(index, buf_h, offset, stride);
-    }
-
-    void GLBuffer::bindBase(GLenum target, GLuint index) {
-        _checkHandle(_buf_h);
-        GLuint buf_h = _buf_h;
-        glBindBufferBase(target, index, buf_h); 
-    }
-
-    void GLBuffer::subData(GLsizeiptr data_size, const void *data, GLsizeiptr offset) {
-        _checkHandle(_buf_h);
-        GLuint buf_h = _buf_h;
-        glNamedBufferSubData(buf_h, offset, data_size, data);
     }
 
     void GLBuffer::uninit() {
@@ -187,13 +145,31 @@ namespace GLUtil {
         _size = 0;
     }
 
+    void GLBuffer::bind(GLenum target) {
+        GLuint buf_h = _buf_h;
+        glBindBuffer(target, buf_h);
+    }
+
+    void GLBuffer::bindIndex(GLuint index, GLintptr offset, GLsizei stride) {
+        GLuint buf_h = _buf_h;
+        glBindVertexBuffer(index, buf_h, offset, stride);
+    }
+
+    void GLBuffer::bindBase(GLenum target, GLuint index) {
+        GLuint buf_h = _buf_h;
+        glBindBufferBase(target, index, buf_h); 
+    }
+
+    void GLBuffer::subData(GLsizeiptr data_size, const void *data, GLsizeiptr offset) {
+        GLuint buf_h = _buf_h;
+        glNamedBufferSubData(buf_h, offset, data_size, data);
+    }
+
     GLuint GLBuffer::size() { return _size; }
     GLenum GLBuffer::usage() { return _usage; }
     GLuint GLBuffer::handle() { return _buf_h; }
 
     const char *GLBuffer::copy_mem() {
-        _checkHandle(_buf_h);
-
         void *buf = glMapNamedBuffer(_buf_h, GL_READ_ONLY);
         char *mem = new char[_size];
         std::memcpy(mem, buf, _size);
@@ -272,7 +248,8 @@ namespace GLUtil {
     }
 
     void GLTexture2DArray::init() {
-        _checkInitialized(_tex_h != -1);
+        if (_tex_h != -1)
+            throw InitializedException();
 
         GLuint tex_h = _tex_h;
         glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &tex_h);
@@ -284,21 +261,35 @@ namespace GLUtil {
         parameteri(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     }
 
+    void GLTexture2DArray::uninit() {
+        if (_tex_h != -1) {
+            GLuint tex_h = _tex_h;
+            glDeleteTextures(1, &tex_h);
+        }
+
+        _tex_h = -1;
+        _size = 0;
+        _levels = 0;
+        _store_format = 0;
+        _data_format = 0;
+        _type = 0;
+        _width = 0;
+        _height = 0;
+        _depth = 0;
+        _allocated = false;
+    }
+
     void GLTexture2DArray::bind(GLenum target) {
-        _checkHandle(_tex_h);
         GLuint tex_h = _tex_h;
         glBindTexture(target, tex_h);
     }
 
     void GLTexture2DArray::parameteri(GLenum param, GLint value) {
-        _checkHandle(_tex_h);
         GLuint tex_h = _tex_h;
         glTextureParameteri(tex_h, param, value);
     }
 
     void GLTexture2DArray::alloc(GLint levels, GLenum store_format, GLenum data_format, GLenum type, GLsizei width, GLsizei height, GLsizei depth) {
-        _checkHandle(_tex_h);
-
         if (_allocated)
             throw std::runtime_error("Attempt to allocate already allocated texture data");
         
@@ -326,28 +317,8 @@ namespace GLUtil {
     }
 
     void GLTexture2DArray::subImage(GLint level, GLint x_offset, GLint y_offset, GLint z_offset, GLsizei width, GLsizei height, GLsizei depth, const void *data) {
-        _checkHandle(_tex_h);
-
         GLuint tex_h = _tex_h;
         glTextureSubImage3D(tex_h, level, x_offset, y_offset, z_offset, width, height, depth, _data_format, _type, data);
-    }
-
-    void GLTexture2DArray::uninit() {
-        if (_tex_h != -1) {
-            GLuint tex_h = _tex_h;
-            glDeleteTextures(1, &tex_h);
-        }
-
-        _tex_h = -1;
-        _size = 0;
-        _levels = 0;
-        _store_format = 0;
-        _data_format = 0;
-        _type = 0;
-        _width = 0;
-        _height = 0;
-        _depth = 0;
-        _allocated = false;
     }
 
     GLuint GLTexture2DArray::size() { return _size; }

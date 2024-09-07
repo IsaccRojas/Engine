@@ -95,7 +95,7 @@ void Text::update() {
     
     // update IDs with new character information
     for (int i = 0; i < l_str; i++) {
-        quad = _glenv->get(_quadids[i]);
+        quad = _glenv->getQuad(_quadids[i]);
         int charpos = int(_textstr[i]) - 32;
 
         // set values according to configuration and string

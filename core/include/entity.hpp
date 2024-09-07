@@ -81,6 +81,9 @@ public:
    Manages and controls internal instances of Entities. Can also be given 
    Executor and GLEnv instance to automatically pass Entity instances to these 
    mechanisms.
+
+   It is undefined behavior to make method calls (except for uninit()) on instances 
+   of this class without calling init() first.
 */
 class EntityManager : public ScriptManager {
 public:
@@ -113,6 +116,7 @@ protected:
     void _entityManagerInit(unsigned max_count, GLEnv *glenv, unordered_map_string_Animation_t *animations);
     void _entityManagerUninit();
 public:
+    /* Calls init() with the provided arguments. */
     EntityManager(unsigned max_count, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor);
     EntityManager(EntityManager &&other);
     EntityManager();
@@ -125,11 +129,6 @@ public:
     void init(unsigned max_count, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor);
     void uninit();
 
-    /* Returns true if the provided Entity name has been previously added to this manager. */
-    bool hasEntity(const char *entity_name);
-    /* Returns a reference to the spawned Entity corresponding to the provided ID, if it exists. */
-    Entity *getEntity(unsigned id);
-
     /* Spawns a Script using a name previously added to this manager, and returns its ID. This
        will invoke scriptSetup() if set to do so from adding it.
     */
@@ -138,6 +137,8 @@ public:
        will invoke entitySetup() and scriptSetup() if set to do so from adding it.
     */
     virtual unsigned spawnEntity(const char *entity_name);
+    /* Removes the Entity or Script associated with the provided ID. */
+    void remove(unsigned id);
 
     /* Adds an Entity allocator with initialization information to this manager, allowing its given
        name to be used for future spawns.
@@ -150,8 +151,13 @@ public:
        - spawn_callback - function callback to call after Entity has been spawned and setup
     */
     void addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback);
-    /* Removes the Entity or Script associated with the provided ID. */
-    void remove(unsigned id);
+
+    /* Returns true if the provided Entity name has been previously added to this manager. */
+    bool hasAddedEntity(const char *entity_name);
+    /* Returns a reference to the spawned Entity corresponding to the provided ID, if it exists. */
+    Entity *getEntity(unsigned id);
+
+
 };
 
 #endif

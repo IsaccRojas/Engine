@@ -52,10 +52,10 @@ GLEnv& GLEnv::operator=(GLEnv &&other) {
     return *this;
 }
 
-
 void GLEnv::init(unsigned max_count) {
-    checkInitialized(_initialized);
-
+    if (_initialized)
+        throw InitializedException();
+    
     /* initialize members */
     _glb_modelbuf = GLUtil::GLBuffer(GL_STATIC_DRAW, 16 * sizeof(GLfloat));
     _glb_elembuf = GLUtil::GLBuffer(GL_STATIC_DRAW, 6 * sizeof(GLuint));
@@ -155,34 +155,7 @@ void GLEnv::uninit() {
     _initialized = false;
 }
 
-void GLEnv::setTexArray(GLuint width, GLuint height, GLuint depth) {
-    checkUninitialized(_initialized);
-
-    _texarray.alloc(1, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, width, height, depth);
-    glUniform3ui(9, width, height, depth);
-}
-
-void GLEnv::setTexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset) {
-    checkUninitialized(_initialized);
-
-    _texarray.subImage(0, xoffset, yoffset, zoffset, img.width(), img.height(), 1, img.copyData());
-}
-
-void GLEnv::setView(glm::mat4 view) {
-    checkUninitialized(_initialized);
-
-    glUniformMatrix4fv(6, 1, GL_FALSE, glm::value_ptr(view));
-}
-
-void GLEnv::setProj(glm::mat4 proj) {
-    checkUninitialized(_initialized);
-
-    glUniformMatrix4fv(7, 1, GL_FALSE, glm::value_ptr(proj));
-}
-
 unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 texsize) {
-    checkUninitialized(_initialized);
-
     // if number of active IDs is greater than or equal to maximum allowed count, throw
     if (_count >= _max_count)
         throw CountLimitException();
@@ -213,28 +186,7 @@ unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::v
     return id;
 }
 
-Quad *GLEnv::get(unsigned id) {
-    checkUninitialized(_initialized);
-    if (id >= _ids.size())
-        throw std::out_of_range("Index out of range");
-
-    if (_ids.at(id))
-        return &_quads[id];
-    
-    throw InactiveIDException();
-}
-
-void GLEnv::update() {
-    checkUninitialized(_initialized);
-
-    for (unsigned i = 0; i < _ids.size(); i++)
-        // only try calling update on index i if it is an active ID in _ids
-        if (_ids[i])
-            _quads[i].update();
-}
-
 void GLEnv::remove(unsigned id) {
-    checkUninitialized(_initialized);
     if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
@@ -248,18 +200,48 @@ void GLEnv::remove(unsigned id) {
     _count--;
 }
 
-void GLEnv::draw() {
-    checkUninitialized(_initialized);
+void GLEnv::setTexArray(GLuint width, GLuint height, GLuint depth) {
+    _texarray.alloc(1, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, width, height, depth);
+    glUniform3ui(9, width, height, depth);
+}
 
+void GLEnv::setTexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset) {
+    _texarray.subImage(0, xoffset, yoffset, zoffset, img.width(), img.height(), 1, img.copyData());
+}
+
+void GLEnv::setView(glm::mat4 view) {
+    glUniformMatrix4fv(6, 1, GL_FALSE, glm::value_ptr(view));
+}
+
+void GLEnv::setProj(glm::mat4 proj) {
+    glUniformMatrix4fv(7, 1, GL_FALSE, glm::value_ptr(proj));
+}
+
+void GLEnv::update() {
+    for (unsigned i = 0; i < _ids.size(); i++)
+        // only try calling update on index i if it is an active ID in _ids
+        if (_ids[i])
+            _quads[i].update();
+}
+
+void GLEnv::draw() {
     // draw a number of instances equal to the number of IDs in system, active or not, using the element buffer
     // (Instances with inactive IDs will be zeroed out per the draw flag)
     GLUtil::renderInst(6, _ids.size());
 }
 
-std::vector<unsigned> GLEnv::getIDs() {
-    checkUninitialized(_initialized);
+Quad *GLEnv::getQuad(unsigned id) {
+    if (id >= _ids.size())
+        throw std::out_of_range("Index out of range");
 
-    return _ids.getUsed();
+    if (_ids.at(id))
+        return &_quads[id];
+    
+    throw InactiveIDException();
 }
+
+std::vector<unsigned> GLEnv::getIDs() { return _ids.getUsed(); }
+
+bool GLEnv::hasID(unsigned id) { return _ids.at(id); }
 
 bool GLEnv::getInitialized() { return _initialized; }

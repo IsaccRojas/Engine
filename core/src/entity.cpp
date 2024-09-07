@@ -107,7 +107,7 @@ void Entity::genQuad(glm::vec3 pos, glm::vec3 scale) {
 
         // get Quad data
         _quad_id = _glenv->genQuad(pos, scale, _frame->texpos, _frame->texsize);
-        _quad = _glenv->get(_quad_id);
+        _quad = _glenv->getQuad(_quad_id);
     } else
         throw std::runtime_error("Attempt to generate Quad with null GLEnv reference");
 }
@@ -192,20 +192,6 @@ void EntityManager::uninit() {
     _entityManagerUninit();
 }
 
-bool EntityManager::hasEntity(const char *entity_name) { return !(_entityinfos.find(entity_name) == _entityinfos.end()); }
-
-Entity *EntityManager::getEntity(unsigned id) {
-    checkUninitialized(_initialized);
-
-    if (id < 0 || id >= _ids.size())
-        throw std::out_of_range("Index out of range");
-    
-    if (_ids.at(id))
-        return _entityvalues[id]._entity_ref;
-
-    throw InactiveIDException();
-}
-
 unsigned EntityManager::spawnScript(const char *script_name) {
     unsigned id = ScriptManager::spawnScript(script_name);
     _entityvalues[id] = EntityValues{nullptr};
@@ -213,12 +199,10 @@ unsigned EntityManager::spawnScript(const char *script_name) {
 }
 
 unsigned EntityManager::spawnEntity(const char *entity_name) {
-    checkUninitialized(_initialized);
-
     // fail if exceeding max size
     if (_count >= _max_count)
         throw CountLimitException();
-
+    
     // get entity information
     ScriptInfo &scriptinfo = _scriptinfos[entity_name];
     EntityInfo &entityinfo = _entityinfos[entity_name];
@@ -240,26 +224,9 @@ unsigned EntityManager::spawnEntity(const char *entity_name) {
     return id;
 }
 
-void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback) {
-    checkUninitialized(_initialized);
-    
-    if (!hasEntity(name)) {
-        addScript(allocator, name, group, force_enqueue, force_removeonkill, nullptr);
-        _entityinfos[name] = EntityInfo{
-            animation_name,
-            allocator,
-            spawn_callback
-        };
-
-    } else
-        throw std::runtime_error("Attempt to add already added Entity name");
-}
-
 void EntityManager::remove(unsigned id) {
-    checkUninitialized(_initialized);
-
     // check bounds
-    if (id < 0 || id >= _ids.size())
+    if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
     if (!_ids.at(id))
@@ -271,4 +238,30 @@ void EntityManager::remove(unsigned id) {
 
     // remove from entity-related and script-related systems
     _entityRemoval(entityvalues, scriptvalues);    
+}
+
+
+void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback) {
+    if (!hasAddedEntity(name)) {
+        addScript(allocator, name, group, force_enqueue, force_removeonkill, nullptr);
+        _entityinfos[name] = EntityInfo{
+            animation_name,
+            allocator,
+            spawn_callback
+        };
+
+    } else
+        throw std::runtime_error("Attempt to add already added Entity name");
+}
+
+bool EntityManager::hasAddedEntity(const char *entity_name) { return !(_entityinfos.find(entity_name) == _entityinfos.end()); }
+
+Entity *EntityManager::getEntity(unsigned id) {
+    if (id < 0 || id >= _ids.size())
+        throw std::out_of_range("Index out of range");
+    
+    if (_ids.at(id))
+        return _entityvalues[id]._entity_ref;
+
+    throw InactiveIDException();
 }

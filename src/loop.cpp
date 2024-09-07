@@ -506,17 +506,6 @@ void loop(GLFWwindow *winhandle) {
 
         //counttext.setText((std::string("count: ") + std::to_string(obj_manager.getCount())).c_str());
 
-        // run object scripts
-        if (debug)
-            std::cout << "running base scripts" << std::endl;
-        
-        obj_executor.runExec();
-        
-        if (debug)
-            std::cout << "running kill scripts" << std::endl;
-        
-        obj_executor.runKill();
-
         // update physics environment and detect collisions
         if (debug)
             std::cout << "stepping physics" << std::endl;
@@ -527,6 +516,17 @@ void loop(GLFWwindow *winhandle) {
             std::cout << "running collision handlers" << std::endl;
         
         obj_physenv.detectCollision();
+
+        // run object scripts
+        if (debug)
+            std::cout << "running base scripts" << std::endl;
+        
+        obj_executor.runExec();
+        
+        if (debug)
+            std::cout << "running kill scripts" << std::endl;
+        
+        obj_executor.runKill();
 
         // update text
         if (debug)
