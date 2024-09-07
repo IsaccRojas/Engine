@@ -93,17 +93,24 @@ public:
         Object *_object_ref;
     };
 
+    // _valid flag is used to prevent instance from being spawned as an Object
+    struct ObjectQueue {
+       bool _valid;
+       glm::vec3 _object_pos;
+    };
+
 protected:
     // internal variables for added Objects and existing Objects
     std::unordered_map<std::string, ObjectInfo> _objectinfos;
     std::vector<ObjectValues> _objectvalues;
+    std::queue<ObjectQueue> _objectqueues;
 
     PhysEnv *_physenv;
     std::unordered_map<std::string, Filter> *_filters;
 
     // internal methods called when spawning Objects and removing them, using and setting
     // manager lifetime and Object runtime members
-    void _objectSetup(Object *object, ObjectInfo &objectinfo, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id);
+    void _objectSetup(Object *object, ObjectInfo &objectinfo, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id, glm::vec3 object_pos);
     void _objectRemoval(ObjectValues &objectvalues, EntityValues &entityvalues, ScriptValues &scriptvalues);
 
     // initialize/uninitialize only ObjectManager members
@@ -130,11 +137,19 @@ public:
     /* Spawns an Entity using a name previously added to this manager, and returns its ID. This
        will invoke entitySetup() and scriptSetup() if set to do so from adding it.
     */
-    unsigned spawnEntity(const char *entity_name) override;
+    unsigned spawnEntity(const char *entity_name, glm::vec3 entity_pos) override;
     /* Spawns an Ontity using a name previously added to this manager, and returns its ID. This
        will invoke objectSetup(), entitySetup() and scriptSetup() if set to do so from adding it.
     */
-    unsigned spawnObject(const char *object_name);
+    unsigned spawnObject(const char *object_name, glm::vec3 object_pos);
+    /* Queues a Script to be spawned when calling runSpawnQueue(). */
+    void spawnScriptQueue(const char *script_name) override;
+    /* Queues a Entity to be spawned when calling runSpawnQueue(). */
+    void spawnEntityQueue(const char *script_name, glm::vec3 entity_pos) override;
+    /* Queues a Object to be spawned when calling runSpawnQueue(). */
+    void spawnObjectQueue(const char *script_name, glm::vec3 object_pos);
+    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptQueue(). */
+    std::vector<unsigned> runSpawnQueue();
     /* Removes the Object, Entity or Script associated with the provided ID. */
     void remove(unsigned id);
 

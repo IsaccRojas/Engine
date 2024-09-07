@@ -15,11 +15,7 @@ void Chaser::_baseCharacter() {
 }
 
 void Chaser::_killCharacter() {
-    int id = getManager()->spawnEntity(_killeffect.c_str());
-    if (id >= 0) {
-        Entity *effect = getManager()->getEntity(id);
-        effect->getQuad()->bv_pos.v = getBox()->pos;
-    }
+    getManager()->spawnEntityQueue(_killeffect.c_str(), getBox()->pos);
 }
 
 void Chaser::_collisionCharacter(Box *box) {

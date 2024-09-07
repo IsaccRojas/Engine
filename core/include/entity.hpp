@@ -99,17 +99,24 @@ public:
         Entity *_entity_ref;
     };
 
+    // _valid flag is used to prevent instance from being spawned as an Entity
+    struct EntityQueue {
+       bool _valid;
+       glm::vec3 _entity_pos;
+    };
+
 protected:
     // internal variables for added Entities and existing Entities
     std::unordered_map<std::string, EntityInfo> _entityinfos;
     std::vector<EntityValues> _entityvalues;
+    std::queue<EntityQueue> _entityqueues;
 
     GLEnv *_glenv;
     unordered_map_string_Animation_t *_animations;
 
     // internal methods called when spawning Entities and removing them, using and setting
     // manager lifetime and Entity runtime members
-    void _entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id);
+    void _entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id, glm::vec3 entity_pos);
     void _entityRemoval(EntityValues &entityvalues, ScriptValues &scriptvalues);
 
     // initialize/uninitialize only EntityManager members
@@ -136,7 +143,13 @@ public:
     /* Spawns an Entity using a name previously added to this manager, and returns its ID. This
        will invoke entitySetup() and scriptSetup() if set to do so from adding it.
     */
-    virtual unsigned spawnEntity(const char *entity_name);
+    virtual unsigned spawnEntity(const char *entity_name, glm::vec3 entity_pos);
+    /* Queues a Script to be spawned when calling runSpawnQueue(). */
+    virtual void spawnScriptQueue(const char *script_name) override;
+    /* Queues a Entity to be spawned when calling runSpawnQueue(). */
+    virtual void spawnEntityQueue(const char *script_name, glm::vec3 object_pos);
+    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptQueue(). */
+    virtual std::vector<unsigned> runSpawnQueue() override;
     /* Removes the Entity or Script associated with the provided ID. */
     void remove(unsigned id);
 

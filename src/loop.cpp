@@ -27,11 +27,7 @@ class OrbShot : public Basic {
         _i++;
 
         if (_i % 10 == 0) {
-            int id = getManager()->spawnEntity("OrbShotParticle");
-            if (id >= 0) {
-                Entity *particle = getManager()->getEntity(id);
-                particle->getQuad()->bv_pos.v = getBox()->pos;
-            }
+            getManager()->spawnEntityQueue("OrbShotParticle", getBox()->pos);
         }
 
         if (_i >= _lifetime)
@@ -39,11 +35,7 @@ class OrbShot : public Basic {
     }
 
     void _killBasic() {
-        int id = getManager()->spawnEntity("OrbShotBoom");
-        if (id >= 0) {
-            Entity *boom = getManager()->getEntity(id);
-            boom->getQuad()->bv_pos.v = getBox()->pos;
-        }
+        getManager()->spawnEntityQueue("OrbShotBoom", getBox()->pos);
     }
 
     void _collisionBasic(Box *box) {
@@ -290,7 +282,7 @@ void loop(GLFWwindow *winhandle) {
 
     // set up ring
     std::cout << "Setting up ring" << std::endl;
-    obj_manager.spawnEntity("Ring");
+    obj_manager.spawnEntity("Ring", glm::vec3(0.0f));
 
     // text \"Test!\" Value: 23% (#8)
     std::cout << "Setting up text" << std::endl;
@@ -309,10 +301,6 @@ void loop(GLFWwindow *winhandle) {
     bottomtext.setTextConfig(smallfont);
     bottomtext.setPos(glm::vec3(0.0f, -80.0f, 1.0f));
 
-    Text counttext(&obj_glenv);
-    counttext.setTextConfig(smallfont);
-    counttext.setPos(glm::vec3(96.0f, 96.0f, 1.0f));
-
     // start loop
     std::cout << "Starting loop" << std::endl;
     
@@ -323,7 +311,6 @@ void loop(GLFWwindow *winhandle) {
     3: round inactive (failed)
     */
     int game_state = 0;
-    
     int i = 0;
     float number = 0.0f;
     float rate = 0.0f;
@@ -332,19 +319,10 @@ void loop(GLFWwindow *winhandle) {
     float rate_increase = 0.00035f;
     float rate_decrease = -0.0007f;
     int spawn_rate = 60;
-
     int round = 0;
-    
-    int player_id = obj_manager.spawnObject("Player");
-    Object *player = obj_manager.getObject(player_id);
-
     bool entercheck = false;
     bool enterstate = false;
-    bool debug = false;
     while (!glfwWindowShouldClose(winhandle)) {
-        if (debug)
-            std::cout << " --- START OF FRAME --- " << std::endl;
-
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         input.update();
@@ -362,23 +340,18 @@ void loop(GLFWwindow *winhandle) {
                 entercheck = false;
             }
         }
-
-        if (debug)
-            std::cout << "handling game state (= " << game_state << ")" << std::endl;
         
         if (game_state == 0) {
             killflag = true;
 
-            // assume player is dead if address retrieved by ID does not match player address
-            if (player != obj_manager.getObject(player_id)) {
-                player_id = obj_manager.spawnObject("Player");
-                player = obj_manager.getObject(player_id);
-            }
-
-            // check for input to start game
-            if (enterstate) {
+            // spawn a player if none exist
+            if (obj_manager.getAllByGroup(1).size() == 0) {
+                obj_manager.spawnObjectQueue("Player", glm::vec3(0.0f));
+            } 
+            
+            // check for input to start game if at least one player is spawned
+            else if (enterstate) {
                 round = 1;
-                killflag = false;
                 number = 0.0f;
                 rate = 0.0f;
                 spawn_rate = glm::clamp(int(80.0f - (25.0f * std::log10(float(round)))), 5, 60);
@@ -387,75 +360,79 @@ void loop(GLFWwindow *winhandle) {
             }
         
         } else if (game_state == 1) {
-            if (player == obj_manager.getObject(player_id)) {
+            killflag = false;
+
+            // check if there are no players
+            std::vector<unsigned> players = obj_manager.getAllByGroup(1);
+            if (players.size() == 0) {
+                game_state = 3;
+
+            } else {
+                // use first player's position
+                glm::vec3 playerpos = obj_manager.getObject(players.at(0))->getBox()->pos;
+
                 // check distance from center and change rate
-                if (glm::length(player->getBox()->pos) < 32.0f)
+                if (glm::length(playerpos) < 32.0f)
                     rate += rate_increase;
                 else
                     rate += rate_decrease;
                 rate = glm::clamp(rate, 0.0f, max_rate);
-            } else
-                rate = 0.0f;
-            number += rate;
-            number = glm::clamp(number, 0.0f, target_number);
 
-            // spawn enemies
-            if (i % spawn_rate == 0) {
+                number += rate;
+                number = glm::clamp(number, 0.0f, target_number);
 
-                // get first random spawn vector with magnitude based on pixel space
-                float spawn_radius1 = sqrtf((halfwidth * halfwidth) + (halfheight + halfheight)) + 64;
-                glm::vec3 spawn_vec1(spawn_radius1, 0.0f, 0.0f);
-                spawn_vec1 = random_angle(spawn_vec1, 180);
+                // spawn enemies
+                if (i % spawn_rate == 0) {
 
-                // get second random spawn vector with random magnitude
-                int spawn_amount = int(float(rand() % round) / 4.0f) + 1;
-                for (int j = 0; j < spawn_amount; j++) {
-                    float spawn_radius2 = float(rand() % 32);
-                    glm::vec3 spawn_vec2(spawn_radius2, 0.0f, 0.0f);
-                    spawn_vec2 = random_angle(spawn_vec2, 180);
-                
-                    // spawn enemy (right now only spawns small balls)
-                    // TODO: fix error when wrong name is used
-                    int enemy_id;
-                    switch (int(float(rand() % round) / 5.0f)) {
-                        case 0:
-                            enemy_id = obj_manager.spawnObject("SmallBall");
-                            break;
-                        case 1:
-                            enemy_id = obj_manager.spawnObject("MediumBall");
-                            break;
-                        case 2:
-                            enemy_id = obj_manager.spawnObject("BigBall");
-                            break;
-                        case 3:
-                            enemy_id = obj_manager.spawnObject("VeryBigBall");
-                            break;
-                        default:
-                            break;
+                    // get first random spawn vector with magnitude based on pixel space
+                    float spawn_radius1 = sqrtf((halfwidth * halfwidth) + (halfheight + halfheight)) + 64;
+                    glm::vec3 spawn_vec1(spawn_radius1, 0.0f, 0.0f);
+                    spawn_vec1 = random_angle(spawn_vec1, 180);
+
+                    // get second random spawn vector with random magnitude
+                    int spawn_amount = int(float(rand() % round) / 4.0f) + 1;
+                    for (int j = 0; j < spawn_amount; j++) {
+                        float spawn_radius2 = float(rand() % 32);
+                        glm::vec3 spawn_vec2(spawn_radius2, 0.0f, 0.0f);
+                        spawn_vec2 = random_angle(spawn_vec2, 180);
+
+                        switch (int(float(rand() % round) / 5.0f)) {
+                            case 0:
+                                obj_manager.spawnObjectQueue("SmallBall", spawn_vec1 + spawn_vec2);
+                                break;
+                            case 1:
+                                obj_manager.spawnObjectQueue("MediumBall", spawn_vec1 + spawn_vec2);
+                                break;
+                            case 2:
+                                obj_manager.spawnObjectQueue("BigBall", spawn_vec1 + spawn_vec2);
+                                break;
+                            case 3:
+                                obj_manager.spawnObjectQueue("VeryBigBall", spawn_vec1 + spawn_vec2);
+                                break;
+                            default:
+                                break;
+                        }
                     }
-
-                    Object *enemy = obj_manager.getObject(enemy_id);
-                    enemy->getBox()->pos = spawn_vec1 + spawn_vec2;
                 }
-            }
 
-            // check if round completed
-            if (number == target_number) {
-                killflag = true;
-                game_state = 2;
-            }
-
-            // check if player dead
-            if (player != obj_manager.getObject(player_id)) {
-                game_state = 3;
+                // check if round completed
+                if (number == target_number) {
+                    game_state = 2;
+                }
             }
         }
 
         else if (game_state == 2) {
-            // check for input to start next round
-            if (enterstate) {
+            killflag = true;
+
+            // respawn player if somehow got here when player died
+            if (obj_manager.getAllByGroup(1).size() == 0) {
+                obj_manager.spawnObjectQueue("Player", glm::vec3(0.0f));
+            } 
+
+            // check for input to start next round if at least one player is spawned
+            else if (enterstate) {
                 round += 1;
-                killflag = false;
                 number = 0.0f;
                 rate = 0.0f;
                 spawn_rate = glm::clamp(int(80.0f - (25.0f * std::log10(float(round)))), 5, 60);
@@ -465,14 +442,13 @@ void loop(GLFWwindow *winhandle) {
         }
 
         else if (game_state == 3) {
+            killflag = false;
+
             // check for input to return to start
             if (enterstate) {
                 game_state = 0;
             }
         }
-
-        if (debug)
-            std::cout << "setting text based on game state" << std::endl;
 
         // construct strings
         float percent = 100.0f * (number / target_number);
@@ -504,56 +480,23 @@ void loop(GLFWwindow *winhandle) {
                 break;
         }
 
-        //counttext.setText((std::string("count: ") + std::to_string(obj_manager.getCount())).c_str());
+        obj_manager.runSpawnQueue();
 
-        // update physics environment and detect collisions
-        if (debug)
-            std::cout << "stepping physics" << std::endl;
-        
         obj_physenv.step();
-        
-        if (debug)
-            std::cout << "running collision handlers" << std::endl;
-        
         obj_physenv.detectCollision();
 
-        // run object scripts
-        if (debug)
-            std::cout << "running base scripts" << std::endl;
-        
         obj_executor.runExec();
-        
-        if (debug)
-            std::cout << "running kill scripts" << std::endl;
-        
         obj_executor.runKill();
 
-        // update text
-        if (debug)
-            std::cout << "updating text" << std::endl;
-        
         toptext.update();
         subtext.update();
         bottomtext.update();
-        //counttext.update();
-
-        // update graphic environment and draw
-        if (debug)
-            std::cout << "updating and drawing graphics" << std::endl;
         
         obj_glenv.update();
         obj_glenv.draw();
-
-        if (debug)
-            std::cout << "swapping buffers " << std::endl;
         
         glfwSwapBuffers(winhandle);
-
-        //std::this_thread::sleep_for(std::chrono::milliseconds(200));
         i++;
-
-        if (debug)
-            std::cout << "--- END OF FRAME ---" << std::endl;
     };
     
     // terminate GLFW

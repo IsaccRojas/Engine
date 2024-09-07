@@ -358,6 +358,7 @@ ScriptManager &ScriptManager::operator=(ScriptManager &&other) {
     if (this != &other) {
         _scriptinfos = other._scriptinfos;
         _scriptvalues = other._scriptvalues;
+        _scriptqueues = other._scriptqueues;
         _executor = other._executor;
         _ids = other._ids;
         _scripts = std::move(other._scripts);
@@ -417,8 +418,11 @@ void ScriptManager::uninit() {
     if (!_initialized)
         return;
     
+    std::queue<ScriptQueue> empty;
+
     _scriptinfos.clear();
     _scriptvalues.clear();
+    std::swap(_scriptqueues, empty);
     _executor = nullptr;
     _ids.clear();
     _scripts.clear();
@@ -450,6 +454,25 @@ unsigned ScriptManager::spawnScript(const char *scriptname) {
         info._spawn_callback(script);
 
     return id;
+}
+
+void ScriptManager::spawnScriptQueue(const char *script_name) {
+    // names are not checked here for the sake of efficiency
+    _scriptqueues.push(ScriptQueue{true, script_name});
+}
+
+std::vector<unsigned> ScriptManager::runSpawnQueue() {
+    std::vector<unsigned> ids;
+    while (!(_scriptqueues.empty())) {
+        ScriptQueue &scriptqueue = _scriptqueues.front();
+
+        if (scriptqueue._valid)
+            ids.push_back(spawnScript(scriptqueue._name.c_str()));
+        
+        _scriptqueues.pop();
+    }
+
+    return ids;
 }
 
 void ScriptManager::remove(unsigned id) {

@@ -206,26 +206,33 @@ class ScriptManager {
 public:
     // struct holding script information mapped to a name
     struct ScriptInfo {
-        int _group;
-        bool _force_enqueue;
-        bool _force_removeonkill;
-        std::function<Script*(void)> _allocator = nullptr;
-        std::function<void(Script*)> _spawn_callback = nullptr;
+       int _group;
+       bool _force_enqueue;
+       bool _force_removeonkill;
+       std::function<Script*(void)> _allocator = nullptr;
+       std::function<void(Script*)> _spawn_callback = nullptr;
     };
 
     // struct holding IDs and other flags belonging to the managed script during its lifetime
     struct ScriptValues {
-        unsigned _manager_id;
-        const char *_manager_name;
-        Script *_script_ref;
-        int _group;
+       unsigned _manager_id;
+       const char *_manager_name;
+       Script *_script_ref;
+       int _group;
+    };
+
+    // _valid flag is used to prevent instance from being spawned as a Script
+    struct ScriptQueue {
+       bool _valid;
+       std::string _name;
     };
 
 protected:
     // internal variables for added script information and active scripts
     std::unordered_map<std::string, ScriptInfo> _scriptinfos;
     std::vector<ScriptValues> _scriptvalues;
-    
+    std::queue<ScriptQueue> _scriptqueues;
+
     // "managed" structures
     Executor *_executor;
 
@@ -264,6 +271,10 @@ public:
        will invoke scriptSetup() if set to do so from adding it.
     */
     virtual unsigned spawnScript(const char *script_name);
+    /* Queues a Script to be spawned when calling runSpawnQueue(). */
+    virtual void spawnScriptQueue(const char *script_name);
+    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptQueue(). */
+    virtual std::vector<unsigned> runSpawnQueue();
     /* Removes the Script associated with the provided ID. */
     void remove(unsigned id);
 

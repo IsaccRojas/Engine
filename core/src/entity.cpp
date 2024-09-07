@@ -144,6 +144,7 @@ EntityManager &EntityManager::operator=(EntityManager &&other) {
         ScriptManager::operator=(std::move(other));
         _entityinfos = other._entityinfos;
         _entityvalues = other._entityvalues;
+        _entityqueues = other._entityqueues;
         _glenv = other._glenv;
         _animations = other._animations;
         other._entityManagerUninit();
@@ -159,20 +160,24 @@ void EntityManager::_entityManagerInit(unsigned max_count, GLEnv *glenv, unorder
 }
 
 void EntityManager::_entityManagerUninit() {
+    std::queue<EntityQueue> empty;
+
     _entityinfos.clear();
     _entityvalues.clear();
+    std::swap(_entityqueues, empty);
     _glenv = nullptr;
     _animations = nullptr;
 }
 
-void EntityManager::_entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id) {
+void EntityManager::_entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id, glm::vec3 entity_pos) {
     _scriptSetup(entity, scriptinfo, id);
 
     entity->entitySetup(_glenv, &(*_animations)[entityinfo._animation_name]);
-    entity->genQuad(glm::vec3(0.0f), glm::vec3(0.0f));
+    entity->genQuad(entity_pos, glm::vec3(0.0f));
             
     entity->_entitymanager = this;
 }
+
 void EntityManager::_entityRemoval(EntityValues &entityvalues, ScriptValues &scriptvalues) {    
     _scriptRemoval(scriptvalues);
     
@@ -198,7 +203,7 @@ unsigned EntityManager::spawnScript(const char *script_name) {
     return id;
 }
 
-unsigned EntityManager::spawnEntity(const char *entity_name) {
+unsigned EntityManager::spawnEntity(const char *entity_name, glm::vec3 entity_pos) {
     // fail if exceeding max size
     if (_count >= _max_count)
         throw CountLimitException();
@@ -215,13 +220,41 @@ unsigned EntityManager::spawnEntity(const char *entity_name) {
     _scriptvalues[id] = ScriptValues{id, entity_name, entity};
     
     // set up entity
-    _entitySetup(entity, entityinfo, scriptinfo, id);
+    _entitySetup(entity, entityinfo, scriptinfo, id, entity_pos);
     
     // call callback if it exists
     if (entityinfo._spawn_callback)
         entityinfo._spawn_callback(entity);
     
     return id;
+}
+
+void EntityManager::spawnScriptQueue(const char *script_name) {
+    ScriptManager::spawnScriptQueue(script_name);
+    _entityqueues.push(EntityQueue{false, glm::vec3(0.0f)});
+}
+
+void EntityManager::spawnEntityQueue(const char *script_name, glm::vec3 entity_pos) {
+    ScriptManager::spawnScriptQueue(script_name);
+    _entityqueues.push(EntityQueue{true, entity_pos});
+}
+
+std::vector<unsigned> EntityManager::runSpawnQueue() {
+    std::vector<unsigned> ids;
+    while (!(_scriptqueues.empty())) {
+        ScriptQueue &scriptqueue = _scriptqueues.front();
+        EntityQueue &entityqueue = _entityqueues.front();
+        
+        if (entityqueue._valid)
+            ids.push_back(spawnEntity(scriptqueue._name.c_str(), entityqueue._entity_pos));
+        else if (scriptqueue._valid)
+            ids.push_back(spawnScript(scriptqueue._name.c_str()));
+
+        _scriptqueues.pop();
+        _entityqueues.pop();
+    }
+
+    return ids;
 }
 
 void EntityManager::remove(unsigned id) {

@@ -14,11 +14,7 @@ void Player::_baseCharacter() {
 }
 
 void Player::_killCharacter() {
-    int id = getManager()->spawnEntity("PlayerSmoke");
-    if (id >= 0) {
-        Entity *effect = getManager()->getEntity(id);
-        effect->getQuad()->bv_pos.v = getBox()->pos;
-    }
+    getManager()->spawnEntityQueue("PlayerSmoke", getBox()->pos);
 }
 
 void Player::_collisionCharacter(Box *box) {
@@ -81,10 +77,9 @@ void Player::playerAction() {
     if (_cooldown <= 0.0f) {
         if (_input->get_m1() || _input->get_space()) {
             // spawn projectile, set its position, and set cooldown
-            int id = getManager()->spawnObject("OrbShot");
+            int id = getManager()->spawnObject("OrbShot", getBox()->pos);
             if (id >= 0) {
                 Object *shot = getManager()->getObject(id);
-                shot->getBox()->pos = getBox()->pos;
                 shot->getBox()->vel = dirvec;
             }
 
