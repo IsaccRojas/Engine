@@ -15,12 +15,12 @@ void Effect::_baseEntity() {
     if (_lifetime >= 0) {
         _i++;
         if (_i >= _lifetime)
-            kill();
+            enqueueKill();
     }
 
     // only queue if not set to be killed
-    if (!getKillQueued())
-        enqueue();
+    if (!getKillEnqueued())
+        enqueueExec();
 }
 
 void Effect::_killEntity() {

@@ -6,7 +6,7 @@ void Chaser::_initCharacter() {
 
 void Chaser::_baseCharacter() {
     if (*_killflag) {
-        kill();
+        enqueueKill();
         return;
     }
     
@@ -15,7 +15,7 @@ void Chaser::_baseCharacter() {
 }
 
 void Chaser::_killCharacter() {
-    getManager()->spawnEntityQueue(_killeffect.c_str(), getBox()->pos);
+    getManager()->spawnEntityEnqueue(_killeffect.c_str(), getBox()->pos);
 }
 
 void Chaser::_collisionCharacter(Box *box) {
@@ -29,7 +29,7 @@ void Chaser::_collisionCharacter(Box *box) {
     }
 
     if (_health <= 0)
-        kill();
+        enqueueKill();
 }
 
 Object *Chaser::_getTarget() {

@@ -14,11 +14,11 @@ void Player::_baseCharacter() {
 }
 
 void Player::_killCharacter() {
-    getManager()->spawnEntityQueue("PlayerSmoke", getBox()->pos);
+    getManager()->spawnEntityEnqueue("PlayerSmoke", getBox()->pos);
 }
 
 void Player::_collisionCharacter(Box *box) {
-    kill();
+    enqueueKill();
 }
 
 Player::Player() : Character(glm::vec3(16.0f, 16.0f, 0.0f)), _input(nullptr), _input_ready(false), _accel(0.2f), _deccel(0.15f), _spd_max(0.8f), _cooldown(0.0f), _max_cooldown(15.0f), _prevmovedir(0.0f) {}

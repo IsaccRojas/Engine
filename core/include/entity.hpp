@@ -100,7 +100,7 @@ public:
     };
 
     // _valid flag is used to prevent instance from being spawned as an Entity
-    struct EntityQueue {
+    struct EntityEnqueue {
        bool _valid;
        glm::vec3 _entity_pos;
     };
@@ -109,7 +109,7 @@ protected:
     // internal variables for added Entities and existing Entities
     std::unordered_map<std::string, EntityInfo> _entityinfos;
     std::vector<EntityValues> _entityvalues;
-    std::queue<EntityQueue> _entityqueues;
+    std::queue<EntityEnqueue> _entityenqueues;
 
     GLEnv *_glenv;
     unordered_map_string_Animation_t *_animations;
@@ -137,18 +137,18 @@ public:
     void uninit();
 
     /* Spawns a Script using a name previously added to this manager, and returns its ID. This
-       will invoke scriptSetup() if set to do so from adding it.
+       will invoke scriptSetup().
     */
     virtual unsigned spawnScript(const char *script_name) override;
     /* Spawns an Entity using a name previously added to this manager, and returns its ID. This
-       will invoke entitySetup() and scriptSetup() if set to do so from adding it.
+       will invoke entitySetup() and scriptSetup().
     */
     virtual unsigned spawnEntity(const char *entity_name, glm::vec3 entity_pos);
-    /* Queues a Script to be spawned when calling runSpawnQueue(). */
-    virtual void spawnScriptQueue(const char *script_name) override;
-    /* Queues a Entity to be spawned when calling runSpawnQueue(). */
-    virtual void spawnEntityQueue(const char *script_name, glm::vec3 object_pos);
-    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptQueue(). */
+    /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
+    virtual void spawnScriptEnqueue(const char *script_name) override;
+    /* Enqueues a Entity to be spawned when calling runSpawnQueue(). */
+    virtual void spawnEntityEnqueue(const char *script_name, glm::vec3 object_pos);
+    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue() or spawnEntityEnqueue(). */
     virtual std::vector<unsigned> runSpawnQueue() override;
     /* Removes the Entity or Script associated with the provided ID. */
     void remove(unsigned id);
@@ -158,12 +158,12 @@ public:
        - allocator - function pointer referring to function that returns a heap-allocated Entity
        - name - name to associate with the allocator
        - group - value to associate with all instances of this Entity
-       - force_enqueue - enqueues this Entity into the provided Executor when spawning it
+       - force_executorenqueue - enqueues this Entity into the provided Executor when spawning it
        - force_removeonkill - removes this Entity from this manager when it is killed
        - animation - name of animation to give to AnimationState of spawned Entity, from provided Animation map
        - spawn_callback - function callback to call after Entity has been spawned and setup
     */
-    void addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback);
+    void addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_executorenqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback);
 
     /* Returns true if the provided Entity name has been previously added to this manager. */
     bool hasAddedEntity(const char *entity_name);

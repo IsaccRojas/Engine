@@ -27,19 +27,19 @@ class OrbShot : public Basic {
         _i++;
 
         if (_i % 10 == 0) {
-            getManager()->spawnEntityQueue("OrbShotParticle", getBox()->pos);
+            getManager()->spawnEntityEnqueue("OrbShotParticle", getBox()->pos);
         }
 
         if (_i >= _lifetime)
-            kill();
+            enqueueKill();
     }
 
     void _killBasic() {
-        getManager()->spawnEntityQueue("OrbShotBoom", getBox()->pos);
+        getManager()->spawnEntityEnqueue("OrbShotBoom", getBox()->pos);
     }
 
     void _collisionBasic(Box *box) {
-        kill();
+        enqueueKill();
     }
 
 public:
@@ -346,7 +346,7 @@ void loop(GLFWwindow *winhandle) {
 
             // spawn a player if none exist
             if (obj_manager.getAllByGroup(1).size() == 0) {
-                obj_manager.spawnObjectQueue("Player", glm::vec3(0.0f));
+                obj_manager.spawnObjectEnqueue("Player", glm::vec3(0.0f));
             } 
             
             // check for input to start game if at least one player is spawned
@@ -398,16 +398,16 @@ void loop(GLFWwindow *winhandle) {
 
                         switch (int(float(rand() % round) / 5.0f)) {
                             case 0:
-                                obj_manager.spawnObjectQueue("SmallBall", spawn_vec1 + spawn_vec2);
+                                obj_manager.spawnObjectEnqueue("SmallBall", spawn_vec1 + spawn_vec2);
                                 break;
                             case 1:
-                                obj_manager.spawnObjectQueue("MediumBall", spawn_vec1 + spawn_vec2);
+                                obj_manager.spawnObjectEnqueue("MediumBall", spawn_vec1 + spawn_vec2);
                                 break;
                             case 2:
-                                obj_manager.spawnObjectQueue("BigBall", spawn_vec1 + spawn_vec2);
+                                obj_manager.spawnObjectEnqueue("BigBall", spawn_vec1 + spawn_vec2);
                                 break;
                             case 3:
-                                obj_manager.spawnObjectQueue("VeryBigBall", spawn_vec1 + spawn_vec2);
+                                obj_manager.spawnObjectEnqueue("VeryBigBall", spawn_vec1 + spawn_vec2);
                                 break;
                             default:
                                 break;
@@ -425,9 +425,9 @@ void loop(GLFWwindow *winhandle) {
         else if (game_state == 2) {
             killflag = true;
 
-            // respawn player if somehow got here when player died
+            // respawn player if somehow got here and there are no players
             if (obj_manager.getAllByGroup(1).size() == 0) {
-                obj_manager.spawnObjectQueue("Player", glm::vec3(0.0f));
+                obj_manager.spawnObjectEnqueue("Player", glm::vec3(0.0f));
             } 
 
             // check for input to start next round if at least one player is spawned
@@ -485,8 +485,8 @@ void loop(GLFWwindow *winhandle) {
         obj_physenv.step();
         obj_physenv.detectCollision();
 
-        obj_executor.runExec();
-        obj_executor.runKill();
+        obj_executor.runExecQueue();
+        obj_executor.runKillQueue();
 
         toptext.update();
         subtext.update();

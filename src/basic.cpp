@@ -15,8 +15,8 @@ void Basic::_baseObject() {
     stepAnim();
 
     // only queue if not set to be killed
-    if (!getKillQueued())
-        enqueue();
+    if (!getKillEnqueued())
+        enqueueExec();
 }
 
 void Basic::_killObject() {

@@ -114,7 +114,7 @@ ObjectManager& ObjectManager::operator=(ObjectManager &&other) {
         EntityManager::operator=(std::move(other));
         _objectinfos = other._objectinfos;
         _objectvalues = other._objectvalues;
-        _objectqueues = other._objectqueues;
+        _objectenqueues = other._objectenqueues;
         _physenv = other._physenv;
         _filters = other._filters;
         other._objectManagerUninit();
@@ -130,11 +130,11 @@ void ObjectManager::_objectManagerInit(unsigned max_count, PhysEnv *physenv, uno
 }
 
 void ObjectManager::_objectManagerUninit() {
-    std::queue<ObjectQueue> empty;
+    std::queue<ObjectEnqueue> empty;
 
     _objectinfos.clear();
     _objectvalues.clear();
-    std::swap(_objectqueues, empty);
+    std::swap(_objectenqueues, empty);
     _physenv = nullptr;
     _filters = nullptr;
 }
@@ -207,38 +207,39 @@ unsigned ObjectManager::spawnObject(const char *object_name, glm::vec3 object_po
     return id;
 }
 
-void ObjectManager::spawnScriptQueue(const char *script_name) {
-    EntityManager::spawnScriptQueue(script_name);
-    _objectqueues.push(ObjectQueue{false, glm::vec3(0.0f)});
+void ObjectManager::spawnScriptEnqueue(const char *script_name) {
+    EntityManager::spawnScriptEnqueue(script_name);
+    _objectenqueues.push(ObjectEnqueue{false, glm::vec3(0.0f)});
 }
 
-void ObjectManager::spawnEntityQueue(const char *script_name, glm::vec3 entity_pos) {
-    EntityManager::spawnEntityQueue(script_name, entity_pos);
-    _objectqueues.push(ObjectQueue{false, glm::vec3(0.0f)});
+void ObjectManager::spawnEntityEnqueue(const char *script_name, glm::vec3 entity_pos) {
+    EntityManager::spawnEntityEnqueue(script_name, entity_pos);
+    _objectenqueues.push(ObjectEnqueue{false, glm::vec3(0.0f)});
 }
 
-void ObjectManager::spawnObjectQueue(const char *script_name, glm::vec3 object_pos) {
-    EntityManager::spawnEntityQueue(script_name, object_pos);
-    _objectqueues.push(ObjectQueue{true, object_pos});
+void ObjectManager::spawnObjectEnqueue(const char *script_name, glm::vec3 object_pos) {
+    EntityManager::spawnEntityEnqueue(script_name, object_pos);
+    _objectenqueues.push(ObjectEnqueue{true, object_pos});
 }
 
 std::vector<unsigned> ObjectManager::runSpawnQueue() {
     std::vector<unsigned> ids;
-    while (!(_scriptqueues.empty())) {
-        ScriptQueue &scriptqueue = _scriptqueues.front();
-        EntityQueue &entityqueue = _entityqueues.front();
-        ObjectQueue &objectqueue = _objectqueues.front();
+    
+    while (!(_scriptenqueues.empty())) {
+        ScriptEnqueue &scriptenqueue = _scriptenqueues.front();
+        EntityEnqueue &entityenqueue = _entityenqueues.front();
+        ObjectEnqueue &objectenqueue = _objectenqueues.front();
         
-        if (objectqueue._valid)
-            ids.push_back(spawnObject(scriptqueue._name.c_str(), objectqueue._object_pos));
-        else if (entityqueue._valid)
-            ids.push_back(spawnEntity(scriptqueue._name.c_str(), entityqueue._entity_pos));
-        else if (scriptqueue._valid)
-            ids.push_back(spawnScript(scriptqueue._name.c_str()));
+        if (objectenqueue._valid)
+            ids.push_back(spawnObject(scriptenqueue._name.c_str(), objectenqueue._object_pos));
+        else if (entityenqueue._valid)
+            ids.push_back(spawnEntity(scriptenqueue._name.c_str(), entityenqueue._entity_pos));
+        else if (scriptenqueue._valid)
+            ids.push_back(spawnScript(scriptenqueue._name.c_str()));
         
-        _scriptqueues.pop();
-        _entityqueues.pop();
-        _objectqueues.pop();
+        _scriptenqueues.pop();
+        _entityenqueues.pop();
+        _objectenqueues.pop();
     }
 
     return ids;
@@ -261,9 +262,9 @@ void ObjectManager::remove(unsigned id) {
     _objectRemoval(objectvalues, entityvalues, scriptvalues);
 }
 
-void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback) {
+void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_executorenqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback) {
     if (!hasAddedObject(name)) {
-        addEntity(allocator, name, group, force_enqueue, force_removeonkill, animation_name, nullptr);
+        addEntity(allocator, name, group, force_executorenqueue, force_removeonkill, animation_name, nullptr);
         _objectinfos[name] = ObjectInfo{
             filter_name,
             allocator,

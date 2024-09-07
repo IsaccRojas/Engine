@@ -94,7 +94,7 @@ public:
     };
 
     // _valid flag is used to prevent instance from being spawned as an Object
-    struct ObjectQueue {
+    struct ObjectEnqueue {
        bool _valid;
        glm::vec3 _object_pos;
     };
@@ -103,7 +103,7 @@ protected:
     // internal variables for added Objects and existing Objects
     std::unordered_map<std::string, ObjectInfo> _objectinfos;
     std::vector<ObjectValues> _objectvalues;
-    std::queue<ObjectQueue> _objectqueues;
+    std::queue<ObjectEnqueue> _objectenqueues;
 
     PhysEnv *_physenv;
     std::unordered_map<std::string, Filter> *_filters;
@@ -131,24 +131,24 @@ public:
     void uninit();
 
     /* Spawns a Script using a name previously added to this manager, and returns its ID. This
-       will invoke scriptSetup() if set to do so from adding it.
+       will invoke scriptSetup().
     */
     unsigned spawnScript(const char *script_name) override;
     /* Spawns an Entity using a name previously added to this manager, and returns its ID. This
-       will invoke entitySetup() and scriptSetup() if set to do so from adding it.
+       will invoke entitySetup() and scriptSetup().
     */
     unsigned spawnEntity(const char *entity_name, glm::vec3 entity_pos) override;
     /* Spawns an Ontity using a name previously added to this manager, and returns its ID. This
-       will invoke objectSetup(), entitySetup() and scriptSetup() if set to do so from adding it.
+       will invoke objectSetup(), entitySetup() and scriptSetup().
     */
     unsigned spawnObject(const char *object_name, glm::vec3 object_pos);
     /* Queues a Script to be spawned when calling runSpawnQueue(). */
-    void spawnScriptQueue(const char *script_name) override;
+    void spawnScriptEnqueue(const char *script_name) override;
     /* Queues a Entity to be spawned when calling runSpawnQueue(). */
-    void spawnEntityQueue(const char *script_name, glm::vec3 entity_pos) override;
+    void spawnEntityEnqueue(const char *script_name, glm::vec3 entity_pos) override;
     /* Queues a Object to be spawned when calling runSpawnQueue(). */
-    void spawnObjectQueue(const char *script_name, glm::vec3 object_pos);
-    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptQueue(). */
+    void spawnObjectEnqueue(const char *script_name, glm::vec3 object_pos);
+    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(), spawnEntityEnqueue(), or spawnObjectEnqueue(). */
     std::vector<unsigned> runSpawnQueue();
     /* Removes the Object, Entity or Script associated with the provided ID. */
     void remove(unsigned id);
@@ -158,13 +158,13 @@ public:
     - allocator - function pointer referring to function that returns a heap-allocated Object
     - name - name to associate with the allocator
     - group - value to associate with all instances of this Object
-    - force_enqueue - enqueues this Object into the provided Executor when spawning it
+    - force_executorenqueue - enqueues this Object into the provided Executor when spawning it
     - force_removeonkill - removes this Object from this manager when it is killed
     - animation_name - name of animation to give to AnimationState of spawned Object, from provided Animation map
     - filter_name - name of filter to give to FilterState of spawned Object's Box, from provided Filter map
     - spawn_callback - function callback to call after Object has been spawned and setup
     */
-    void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_enqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback);
+    void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_executorenqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback);
 
     /* Returns true if the provided Object name has been previously added to this manager. */
     bool hasAddedObject(const char *object_name);
