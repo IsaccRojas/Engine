@@ -47,10 +47,10 @@ controlled by an **Executor**:
 - `init()`: will be called when the Script is queued for execution in an Executor and 
             the method `runExec()` is called, only the first time.
 - `base()`: will be called every time the Script is queued for execution in an Executor 
-            and the method `runExec()` is called.
+            and the method `runExecQueue(unsigned)` is called.
 - `kill()`: will be called every time the Script is queued for killing in an Executor 
-          and the method `runKill()` is called. `base()` will not be called after this 
-          occurs.
+          and the method `runKillQueue(unsigned)` is called. `base()` will not be called after 
+          this occurs.
 
 The Scripts contain various flags that dictate this behavior set and unset by Executors, 
 that can be manually controlled by the user as well.
@@ -70,10 +70,12 @@ overridden.
 ### Executors, GLEnvs and PhysEnvs
 
 **Executors** represent a "scripting" mechanism. Given instances of Scripts, they can then be 
-enqueued via `queueExec(int)` and `queueKill(int)`, and the Executor can subsequently perform 
-calls on the Script methods `init()`, `base()`, and `kill()` through calls to the methods 
-`runExec()` and `runKill()`. The Executors do not own any memory; they simply take references
-to existing Scripts. This allows faster book-keeping and internal data management.
+enqueued via `enqueueExec(...)` and `enqueueKill(...)`, and the Executor can subsequently 
+perform calls on the Script methods `init()`, `base()`, and `kill()` through calls to the 
+methods `runExecQueue(unsigned)` and `runKillQueue(unsigned)`. The Executors do not own any 
+memory; they simply take references to existing Scripts. This allows faster book-keeping 
+and internal data management. A single Executor instance can also support multiple execution
+queues.
 
 **GLEnvs** represent a graphical environment. They simplify an interface to OpenGL constructs,
 including data buffers, Projection, View, and Transformation matrices, and texture data.
@@ -102,20 +104,18 @@ to this function that will control what the Manager does upon invoking this meth
 The **ScriptManager** class specifies the following fields to bind to an allocator:
 
 - `const char *name`: name to associate with the allocator.
-- `int type`: internal value tied to Script for client use (***may be deprecated soon***).
-- `bool force_scriptsetup`: the Script will be set up with a stored Executor reference when spawning it.
-- `force_enqueue`: enqueues this Script into a stored Executor reference when spawning it.
+- `int group`: internal value tied to Script for client use, and with getAllByGroup(int) method.
 - `force_removeonkill`: removes this Script from this Manager when it is killed by the Executor.
 
 The **EntityManager** subclass specifies the following additional fields:
 
-- `force_entitysetup`: the Entity will be set up with a stored GLEnv reference when spawning it.
 - `animation`: name of animation to give to AnimationState of spawned Entity, from provided Animation map 
                (see below for more details).
 
 The **ObjectManager** subclass further specifies the following additional field:
 
-- `force_objectsetup`: the Object will be set up with a stored PhysEnv reference when spawning it.
+- `filter`: name of filter to give to FilterState of spawned Object, from provided Filter map 
+               (see below for more details).
 
 Note that an EntityManager can contain both Entities and Scripts. An ObjectManager can contain Objects,
 Entities and Scripts.
@@ -215,8 +215,7 @@ Note that this module is currently not in use.
 ## Additional Notes
 
 The top-level `src/` directory contains a demonstration of the core library, which
-is being used for very basic testing and rapidly changes. It features the setup of the
-engine to quickly spawn several Objects subjected to gravity.
+is being used for very basic testing and rapidly changes.
 
 This is a small personal project and was made for personal use. While it will be in
 continuous development, updates will not be consistent and the present code may not
