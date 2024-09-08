@@ -84,8 +84,9 @@ public:
     // struct holding Object information mapped to a name
     struct ObjectInfo {
         std::string _filter_name;
-        std::function<Object*(void)> _allocator = nullptr;
-        std::function<void(Object*)> _spawn_callback = nullptr;
+        std::function<Object*(void)> _allocator;
+        std::function<void(Object*)> _spawn_callback;
+        std::function<void(Object*)> _remove_callback;
     };
 
     // struct holding IDs and other flags belonging to the managed Object
@@ -149,9 +150,9 @@ public:
     /* Queues a Object to be spawned when calling runSpawnQueue(). */
     void spawnObjectEnqueue(const char *script_name, int executor_queue, glm::vec3 object_pos);
     /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(), spawnEntityEnqueue(), or spawnObjectEnqueue(). */
-    std::vector<unsigned> runSpawnQueue();
+    std::vector<unsigned> runSpawnQueue() override;
     /* Removes the Object, Entity or Script associated with the provided ID. */
-    void remove(unsigned id);
+    void remove(unsigned id) override;
 
     /* Adds an Object allocator with initialization information to this manager, allowing its given
     name to be used for future spawns.
@@ -162,8 +163,9 @@ public:
     - animation_name - name of animation to give to AnimationState of spawned Object, from provided Animation map
     - filter_name - name of filter to give to FilterState of spawned Object's Box, from provided Filter map
     - spawn_callback - function callback to call after Object has been spawned and setup
+    - remove_callback - function callback to call before Object has been removed
     */
-    void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback);
+    void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback, std::function<void(Object*)> remove_callback);
 
     /* Returns true if the provided Object name has been previously added to this manager. */
     bool hasAddedObject(const char *object_name);

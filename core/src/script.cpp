@@ -12,7 +12,7 @@ Script::Script() :
     _executor(nullptr),
     _executor_id(-1),
     _scriptmanager(nullptr),
-    _scriptmanager_id(-1),
+    _scriptmanager_id(0),
     _scriptmanager_removeonkill(false)
 {}
 Script::~Script() {
@@ -123,6 +123,8 @@ void Script::enqueueKill() {
 }
 
 ScriptManager *Script::getManager() { return _scriptmanager; }
+
+unsigned Script::getManagerID() { return _scriptmanager_id; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -487,20 +489,26 @@ void ScriptManager::remove(unsigned id) {
     if (!_ids.at(id))
         throw InactiveIDException();
 
-    // get info
-    ScriptValues &values = _scriptvalues[id];
+    // get values
+    ScriptValues &scriptvalues = _scriptvalues[id];
+
+    // try removal callback
+    ScriptInfo &scriptinfo = _scriptinfos[scriptvalues._manager_name];
+    if (scriptinfo._remove_callback)
+        scriptinfo._remove_callback(scriptvalues._script_ref);
 
     // remove from script-related systems
-    _scriptRemoval(values);
+    _scriptRemoval(scriptvalues);
 }
 
-void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_removeonkill, std::function<void(Script*)> spawn_callback) {  
+void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_removeonkill, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback) {  
     if (!hasAddedScript(name))
         _scriptinfos[name] = ScriptInfo{
             group,
             force_removeonkill,
             allocator,
-            spawn_callback
+            spawn_callback,
+            remove_callback
         };
 
     else

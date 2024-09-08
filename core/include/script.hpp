@@ -37,7 +37,7 @@ class Script {
 
     // Manager instance that owns this Script, ID, and removeonkill flag; maintained by Manager
     ScriptManager *_scriptmanager;
-    int _scriptmanager_id;
+    unsigned _scriptmanager_id;
     bool _scriptmanager_removeonkill;
 
     // settable integer usable for identification
@@ -106,6 +106,7 @@ public:
     void enqueueKill();
     
     ScriptManager *getManager();
+    unsigned getManagerID();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -219,8 +220,9 @@ public:
     struct ScriptInfo {
        int _group;
        bool _force_removeonkill;
-       std::function<Script*(void)> _allocator = nullptr;
-       std::function<void(Script*)> _spawn_callback = nullptr;
+       std::function<Script*(void)> _allocator;
+       std::function<void(Script*)> _spawn_callback;
+       std::function<void(Script*)> _remove_callback;
     };
 
     // struct holding IDs and other flags belonging to the managed script during its lifetime
@@ -287,7 +289,7 @@ public:
     /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(). */
     virtual std::vector<unsigned> runSpawnQueue();
     /* Removes the Script associated with the provided ID. */
-    void remove(unsigned id);
+    virtual void remove(unsigned id);
 
     /* Adds an Script allocator with initialization information to this manager, allowing its given
        name to be used for future spawns.
@@ -296,8 +298,9 @@ public:
        - group - value to associate with all instances of this Script
        - force_removeonkill - removes this Script from this manager when it is killed
        - spawn_callback - function callback to call after Script has been spawned and setup
+       - remove_callback - function callback to call before Script has been removed
     */
-    void addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_removeonkill, std::function<void(Script*)> spawn_callback);
+    void addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_removeonkill, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback);
 
     /* Returns true if the provided Script name has been previously added to this manager. */
     bool hasAddedScript(const char *script_name);

@@ -266,22 +266,39 @@ void EntityManager::remove(unsigned id) {
     if (!_ids.at(id))
         throw InactiveIDException();
 
-    // get info
+    // get values
     ScriptValues &scriptvalues = _scriptvalues[id];
     EntityValues &entityvalues = _entityvalues[id];
 
-    // remove from entity-related and script-related systems
-    _entityRemoval(entityvalues, scriptvalues);    
+    // check refs
+    if (entityvalues._entity_ref) {
+        // try removal callback
+        EntityInfo &entityinfo = _entityinfos[scriptvalues._manager_name];
+        if (entityinfo._remove_callback)
+            entityinfo._remove_callback(entityvalues._entity_ref);
+
+         // remove from entity-related and script-related systems
+        _entityRemoval(entityvalues, scriptvalues);     
+    } else {
+        // try removal callback
+        ScriptInfo &scriptinfo = _scriptinfos[scriptvalues._manager_name];
+        if (scriptinfo._remove_callback)
+            scriptinfo._remove_callback(scriptvalues._script_ref);
+
+        // remove from script-related systems
+        _scriptRemoval(scriptvalues);
+    }
 }
 
 
-void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback) {
+void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback, std::function<void(Entity*)> remove_callback) {
     if (!hasAddedEntity(name)) {
-        addScript(allocator, name, group, force_removeonkill, nullptr);
+        addScript(allocator, name, group, force_removeonkill, nullptr, nullptr);
         _entityinfos[name] = EntityInfo{
             animation_name,
             allocator,
-            spawn_callback
+            spawn_callback,
+            remove_callback
         };
 
     } else

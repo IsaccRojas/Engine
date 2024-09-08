@@ -25,8 +25,6 @@ void Effect::_baseEntity() {
 
 void Effect::_killEntity() {
     _killEffect();
-
-    removeQuad();
 }
 
 void Effect::_initEffect() {}

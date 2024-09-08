@@ -259,23 +259,23 @@ void loop(GLFWwindow *winhandle) {
 
     // add objects to manager
     std::cout << "Adding entities and objects to manager" << std::endl;
-    obj_manager.addObject(OrbShot_allocator, "OrbShot", T_BASIC_ORBSHOT, true, "OrbShot", "ProjectileFriendly", nullptr);
+    obj_manager.addObject(OrbShot_allocator, "OrbShot", T_BASIC_ORBSHOT, true, "OrbShot", "ProjectileFriendly", nullptr, nullptr);
 
-    obj_manager.addObject(Player_allocator, "Player", T_CHARACTER_PLAYER, true, "Player", "Player", nullptr);
-    obj_manager.addObject(SmallBall_allocator, "SmallBall", T_CHASER_SMALLBALL, true, "SmallBall", "Enemy", SmallBall_callback);
-    obj_manager.addObject(MediumBall_allocator, "MediumBall", T_CHASER_MEDIUMBALL, true, "MediumBall", "Enemy", MediumBall_callback);
-    obj_manager.addObject(BigBall_allocator, "BigBall", T_CHASER_BIGBALL, true, "BigBall", "Enemy", BigBall_callback);
-    obj_manager.addObject(VeryBigBall_allocator, "VeryBigBall", T_CHASER_VERYBIGBALL, true, "VeryBigBall", "Enemy", VeryBigBall_callback);
+    obj_manager.addObject(Player_allocator, "Player", T_CHARACTER_PLAYER, true, "Player", "Player", nullptr, nullptr);
+    obj_manager.addObject(SmallBall_allocator, "SmallBall", T_CHASER_SMALLBALL, true, "SmallBall", "Enemy", SmallBall_callback, nullptr);
+    obj_manager.addObject(MediumBall_allocator, "MediumBall", T_CHASER_MEDIUMBALL, true, "MediumBall", "Enemy", MediumBall_callback, nullptr);
+    obj_manager.addObject(BigBall_allocator, "BigBall", T_CHASER_BIGBALL, true, "BigBall", "Enemy", BigBall_callback, nullptr);
+    obj_manager.addObject(VeryBigBall_allocator, "VeryBigBall", T_CHASER_VERYBIGBALL, true, "VeryBigBall", "Enemy", VeryBigBall_callback, nullptr);
 
-    obj_manager.addEntity(SmallSmoke_allocator, "SmallSmoke", T_EFFECT_SMALLSMOKE, true, "SmallSmoke", nullptr);
-    obj_manager.addEntity(MediumSmoke_allocator, "MediumSmoke", T_EFFECT_MEDIUMSMOKE, true, "MediumSmoke", nullptr);
-    obj_manager.addEntity(BigSmoke_allocator, "BigSmoke", T_EFFECT_BIGSMOKE, true, "BigSmoke", nullptr);
-    obj_manager.addEntity(VeryBigSmoke_allocator, "VeryBigSmoke", T_EFFECT_VERYBIGSMOKE, true, "VeryBigSmoke", nullptr);
-    obj_manager.addEntity(PlayerSmoke_allocator, "PlayerSmoke", T_EFFECT_PLAYERSMOKE, true, "PlayerSmoke", nullptr);
-    obj_manager.addEntity(OrbShotParticle_allocator, "OrbShotParticle", T_EFFECT_ORBSHOTPARTICLE, true, "OrbShotParticle", nullptr);
-    obj_manager.addEntity(OrbShotBoom_allocator, "OrbShotBoom", T_EFFECT_ORBSHOTBOOM, true, "OrbShotBoom", nullptr);
-    obj_manager.addEntity(BallParticle_allocator, "BallParticle", T_EFFECT_BALLPARTICLE, true, "BallParticle", nullptr);
-    obj_manager.addEntity(Ring_allocator, "Ring", T_EFFECT_RING, true, "Ring", nullptr);
+    obj_manager.addEntity(SmallSmoke_allocator, "SmallSmoke", T_EFFECT_SMALLSMOKE, true, "SmallSmoke", nullptr, nullptr);
+    obj_manager.addEntity(MediumSmoke_allocator, "MediumSmoke", T_EFFECT_MEDIUMSMOKE, true, "MediumSmoke", nullptr, nullptr);
+    obj_manager.addEntity(BigSmoke_allocator, "BigSmoke", T_EFFECT_BIGSMOKE, true, "BigSmoke", nullptr, nullptr);
+    obj_manager.addEntity(VeryBigSmoke_allocator, "VeryBigSmoke", T_EFFECT_VERYBIGSMOKE, true, "VeryBigSmoke", nullptr, nullptr);
+    obj_manager.addEntity(PlayerSmoke_allocator, "PlayerSmoke", T_EFFECT_PLAYERSMOKE, true, "PlayerSmoke", nullptr, nullptr);
+    obj_manager.addEntity(OrbShotParticle_allocator, "OrbShotParticle", T_EFFECT_ORBSHOTPARTICLE, true, "OrbShotParticle", nullptr, nullptr);
+    obj_manager.addEntity(OrbShotBoom_allocator, "OrbShotBoom", T_EFFECT_ORBSHOTBOOM, true, "OrbShotBoom", nullptr, nullptr);
+    obj_manager.addEntity(BallParticle_allocator, "BallParticle", T_EFFECT_BALLPARTICLE, true, "BallParticle", nullptr, nullptr);
+    obj_manager.addEntity(Ring_allocator, "Ring", T_EFFECT_RING, true, "Ring", nullptr, nullptr);
 
     // set up ring
     std::cout << "Setting up ring" << std::endl;

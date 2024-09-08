@@ -253,22 +253,48 @@ void ObjectManager::remove(unsigned id) {
     if (!_ids.at(id))
         throw InactiveIDException();
 
-    // get info
+    // get values
     ScriptValues &scriptvalues = _scriptvalues[id];
     EntityValues &entityvalues = _entityvalues[id];
     ObjectValues &objectvalues = _objectvalues[id];
 
-    // remove from object-related, entity-related and script-related systems
-    _objectRemoval(objectvalues, entityvalues, scriptvalues);
+    // check refs
+    if (objectvalues._object_ref) {
+        // try removal callback
+        ObjectInfo &objectinfo = _objectinfos[scriptvalues._manager_name];
+        if (objectinfo._remove_callback)
+            objectinfo._remove_callback(objectvalues._object_ref);
+
+         // remove from object-related, entity-related and script-related systems
+        _objectRemoval(objectvalues, entityvalues, scriptvalues);  
+    }
+    else if (entityvalues._entity_ref) {
+        // try removal callback
+        EntityInfo &entityinfo = _entityinfos[scriptvalues._manager_name];
+        if (entityinfo._remove_callback)
+            entityinfo._remove_callback(entityvalues._entity_ref);
+
+         // remove from entity-related and script-related systems
+        _entityRemoval(entityvalues, scriptvalues);     
+    } else {
+        // try removal callback
+        ScriptInfo &scriptinfo = _scriptinfos[scriptvalues._manager_name];
+        if (scriptinfo._remove_callback)
+            scriptinfo._remove_callback(scriptvalues._script_ref);
+
+        // remove from script-related systems
+        _scriptRemoval(scriptvalues);
+    }
 }
 
-void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback) {
+void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback, std::function<void(Object*)> remove_callback) {
     if (!hasAddedObject(name)) {
-        addEntity(allocator, name, group, force_removeonkill, animation_name, nullptr);
+        addEntity(allocator, name, group, force_removeonkill, animation_name, nullptr, nullptr);
         _objectinfos[name] = ObjectInfo{
             filter_name,
             allocator,
-            spawn_callback
+            spawn_callback,
+            remove_callback
         };
 
     } else

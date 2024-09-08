@@ -90,8 +90,9 @@ public:
     // struct holding Entity information mapped to a name
     struct EntityInfo {
         std::string _animation_name;
-        std::function<Entity*(void)> _allocator = nullptr;
-        std::function<void(Entity*)> _spawn_callback = nullptr;
+        std::function<Entity*(void)> _allocator;
+        std::function<void(Entity*)> _spawn_callback;
+        std::function<void(Entity*)> _remove_callback;
     };
 
     // struct holding IDs and other flags belonging to the managed Entity
@@ -151,7 +152,7 @@ public:
     /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue() or spawnEntityEnqueue(). */
     virtual std::vector<unsigned> runSpawnQueue() override;
     /* Removes the Entity or Script associated with the provided ID. */
-    void remove(unsigned id);
+    virtual void remove(unsigned id) override;
 
     /* Adds an Entity allocator with initialization information to this manager, allowing its given
        name to be used for future spawns.
@@ -161,8 +162,9 @@ public:
        - force_removeonkill - removes this Entity from this manager when it is killed
        - animation - name of animation to give to AnimationState of spawned Entity, from provided Animation map
        - spawn_callback - function callback to call after Entity has been spawned and setup
+       - remove_callback - function callback to call before Entity has been removed
     */
-    void addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback);
+    void addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback, std::function<void(Entity*)> remove_callback);
 
     /* Returns true if the provided Entity name has been previously added to this manager. */
     bool hasAddedEntity(const char *entity_name);
