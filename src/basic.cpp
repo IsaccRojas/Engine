@@ -22,6 +22,9 @@ void Basic::_baseObject() {
 
 void Basic::_killObject() {
     _killBasic();
+
+    removeBox();
+    removeQuad();
 }
 
 void Basic::_collisionObject(Box *box) {
