@@ -21,7 +21,7 @@ class Chaser : public Basic {
 
     Object *_getTarget();
 public:
-    Chaser(glm::vec3 scale, float health, std::string killeffect, bool *killflag);
+    Chaser(glm::vec3 scale, glm::vec3 dimensions, float health, std::string killeffect, bool *killflag);
 
     void chaserMotion();
     void chaserCollision();

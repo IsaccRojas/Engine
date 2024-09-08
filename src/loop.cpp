@@ -15,9 +15,6 @@ class OrbShot : public Basic {
     int _lifetime;
 
     void _initBasic() {
-        getBox()->mass = 0.0f;
-        getQuad()->bv_scale.v = glm::vec3(6.0f, 6.0f, 1.0f);
-
         _i = 0;
         _lifetime = 119;
         getAnimState().setCycleState(0);
@@ -41,7 +38,7 @@ class OrbShot : public Basic {
     void _collisionBasic(Box *box) {}
 
 public:
-    OrbShot() : Basic(glm::vec3(4.0f, 4.0f, 0.0f)) {}
+    OrbShot() : Basic(glm::vec3(6.0f, 6.0f, 1.0f), glm::vec3(4.0f, 4.0f, 0.0f)) {}
 };
 
 class SmallSmoke : public Effect {
@@ -159,39 +156,7 @@ Entity *PlayerSmoke_allocator() { return new PlayerSmoke; }
 Entity *OrbShotParticle_allocator() { return new OrbShotParticle; }
 Entity *OrbShotBoom_allocator() { return new OrbShotBoom; }
 Entity *BallParticle_allocator() { return new BallParticle(random_angle(glm::vec3(1.0f, 0.0f, 0.0f), 180)); }
-
-bool killflag = false;
-Entity *Ring_allocator() { 
-    return new Ring;
-}
-Object *SmallBall_allocator() {
-    return new Chaser(glm::vec3(16.0f, 16.0f, 1.0f), 1, "SmallSmoke", &killflag);
-}
-Object *MediumBall_allocator() {
-    return new Chaser(glm::vec3(16.0f, 16.0f, 1.0f), 2, "MediumSmoke", &killflag);
-}
-Object *BigBall_allocator() {
-    return new Chaser(glm::vec3(20.0f, 20.0f, 1.0f), 3, "BigSmoke", &killflag);
-}
-Object *VeryBigBall_allocator() {
-    return new Chaser(glm::vec3(24.0f, 24.0f, 1.0f), 4, "VeryBigSmoke", &killflag);
-}
-
-void SmallBall_callback(Object *obj) {
-    obj->getBox()->dim = glm::vec3(10.0f, 10.0f, 1.0f);
-}
-
-void MediumBall_callback(Object *obj) {
-    obj->getBox()->dim = glm::vec3(14.0f, 14.0f, 1.0f);
-}
-
-void BigBall_callback(Object *obj) {
-    obj->getBox()->dim = glm::vec3(16.0f, 16.0f, 1.0f);
-}
-
-void VeryBigBall_callback(Object *obj) {
-    obj->getBox()->dim = glm::vec3(20.0f, 20.0f, 1.0f);
-}
+Entity *Ring_allocator() { return new Ring; }
 
 void loop(GLFWwindow *winhandle) {
     srand(time(NULL));
@@ -250,6 +215,9 @@ void loop(GLFWwindow *winhandle) {
     std::cout << "Setting up input" << std::endl;
     Input input(winhandle, pixelwidth, pixelheight);
 
+    std::cout << "Setting up allocator lambdas" << std::endl;
+    bool killflag = false;
+
     // set up player_allocator lambda
     auto Player_allocator = [&input]() -> Object* {
         Player *player = new Player;
@@ -257,15 +225,20 @@ void loop(GLFWwindow *winhandle) {
         return player;
     };
 
+    auto SmallBall_allocator = [&killflag]() -> Object* { return new Chaser(glm::vec3(16.0f, 16.0f, 1.0f), glm::vec3(10.0f, 10.0f, 1.0f), 1, "SmallSmoke", &killflag); };
+    auto MediumBall_allocator = [&killflag]() -> Object* { return new Chaser(glm::vec3(16.0f, 16.0f, 1.0f), glm::vec3(14.0f, 14.0f, 1.0f), 2, "MediumSmoke", &killflag); };
+    auto BigBall_allocator = [&killflag]() -> Object* { return new Chaser(glm::vec3(20.0f, 20.0f, 1.0f), glm::vec3(16.0f, 16.0f, 1.0f), 3, "BigSmoke", &killflag); };
+    auto VeryBigBall_allocator = [&killflag]() -> Object* { return new Chaser(glm::vec3(24.0f, 24.0f, 1.0f), glm::vec3(20.0f, 20.0f, 1.0f), 4, "VeryBigSmoke", &killflag); };
+
     // add objects to manager
     std::cout << "Adding entities and objects to manager" << std::endl;
     obj_manager.addObject(OrbShot_allocator, "OrbShot", T_BASIC_ORBSHOT, true, "OrbShot", "ProjectileFriendly", nullptr, nullptr);
 
     obj_manager.addObject(Player_allocator, "Player", T_CHARACTER_PLAYER, true, "Player", "Player", nullptr, nullptr);
-    obj_manager.addObject(SmallBall_allocator, "SmallBall", T_CHASER_SMALLBALL, true, "SmallBall", "Enemy", SmallBall_callback, nullptr);
-    obj_manager.addObject(MediumBall_allocator, "MediumBall", T_CHASER_MEDIUMBALL, true, "MediumBall", "Enemy", MediumBall_callback, nullptr);
-    obj_manager.addObject(BigBall_allocator, "BigBall", T_CHASER_BIGBALL, true, "BigBall", "Enemy", BigBall_callback, nullptr);
-    obj_manager.addObject(VeryBigBall_allocator, "VeryBigBall", T_CHASER_VERYBIGBALL, true, "VeryBigBall", "Enemy", VeryBigBall_callback, nullptr);
+    obj_manager.addObject(SmallBall_allocator, "SmallBall", T_CHASER_SMALLBALL, true, "SmallBall", "Enemy", nullptr, nullptr);
+    obj_manager.addObject(MediumBall_allocator, "MediumBall", T_CHASER_MEDIUMBALL, true, "MediumBall", "Enemy", nullptr, nullptr);
+    obj_manager.addObject(BigBall_allocator, "BigBall", T_CHASER_BIGBALL, true, "BigBall", "Enemy", nullptr, nullptr);
+    obj_manager.addObject(VeryBigBall_allocator, "VeryBigBall", T_CHASER_VERYBIGBALL, true, "VeryBigBall", "Enemy", nullptr, nullptr);
 
     obj_manager.addEntity(SmallSmoke_allocator, "SmallSmoke", T_EFFECT_SMALLSMOKE, true, "SmallSmoke", nullptr, nullptr);
     obj_manager.addEntity(MediumSmoke_allocator, "MediumSmoke", T_EFFECT_MEDIUMSMOKE, true, "MediumSmoke", nullptr, nullptr);

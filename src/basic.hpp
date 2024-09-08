@@ -5,6 +5,7 @@
 
 class Basic : public Object {
     glm::vec3 _scale;
+    glm::vec3 _dimensions;
 
     void _initObject();
     void _baseObject();
@@ -15,7 +16,7 @@ class Basic : public Object {
     virtual void _killBasic();
     virtual void _collisionBasic(Box *box);
 public:
-    Basic(glm::vec3 scale);
+    Basic(glm::vec3 scale, glm::vec3 dimensions);
 };
 
 #endif

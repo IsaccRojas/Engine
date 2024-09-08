@@ -85,8 +85,6 @@ public:
     struct ObjectInfo {
         std::string _filter_name;
         std::function<Object*(void)> _allocator;
-        std::function<void(Object*)> _spawn_callback;
-        std::function<void(Object*)> _remove_callback;
     };
 
     // struct holding IDs and other flags belonging to the managed Object
@@ -165,7 +163,7 @@ public:
     - spawn_callback - function callback to call after Object has been spawned and setup
     - remove_callback - function callback to call before Object has been removed
     */
-    void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback, std::function<void(Object*)> remove_callback);
+    void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback);
 
     /* Returns true if the provided Object name has been previously added to this manager. */
     bool hasAddedObject(const char *object_name);

@@ -201,8 +201,8 @@ unsigned ObjectManager::spawnObject(const char *object_name, int executor_queue,
     _objectSetup(object, objectinfo, entityinfo, scriptinfo, id, executor_queue, object_pos);
     
     // call callback if it exists
-    if (objectinfo._spawn_callback)
-        objectinfo._spawn_callback(object);
+    if (scriptinfo._spawn_callback)
+        scriptinfo._spawn_callback(id);
     
     return id;
 }
@@ -258,43 +258,26 @@ void ObjectManager::remove(unsigned id) {
     EntityValues &entityvalues = _entityvalues[id];
     ObjectValues &objectvalues = _objectvalues[id];
 
+    // get info for removal callback
+    ScriptInfo &scriptinfo = _scriptinfos[scriptvalues._manager_name];
+    if (scriptinfo._remove_callback)
+        scriptinfo._remove_callback(id);
+    
     // check refs
-    if (objectvalues._object_ref) {
-        // try removal callback
-        ObjectInfo &objectinfo = _objectinfos[scriptvalues._manager_name];
-        if (objectinfo._remove_callback)
-            objectinfo._remove_callback(objectvalues._object_ref);
-
-         // remove from object-related, entity-related and script-related systems
-        _objectRemoval(objectvalues, entityvalues, scriptvalues);  
-    }
-    else if (entityvalues._entity_ref) {
-        // try removal callback
-        EntityInfo &entityinfo = _entityinfos[scriptvalues._manager_name];
-        if (entityinfo._remove_callback)
-            entityinfo._remove_callback(entityvalues._entity_ref);
-
-         // remove from entity-related and script-related systems
-        _entityRemoval(entityvalues, scriptvalues);     
-    } else {
-        // try removal callback
-        ScriptInfo &scriptinfo = _scriptinfos[scriptvalues._manager_name];
-        if (scriptinfo._remove_callback)
-            scriptinfo._remove_callback(scriptvalues._script_ref);
-
-        // remove from script-related systems
+    if (objectvalues._object_ref) 
+        _objectRemoval(objectvalues, entityvalues, scriptvalues);
+    else if (entityvalues._entity_ref)
+        _entityRemoval(entityvalues, scriptvalues);
+    else
         _scriptRemoval(scriptvalues);
-    }
 }
 
-void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback, std::function<void(Object*)> remove_callback) {
+void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback) {
     if (!hasAddedObject(name)) {
-        addEntity(allocator, name, group, force_removeonkill, animation_name, nullptr, nullptr);
+        addEntity(allocator, name, group, force_removeonkill, animation_name, spawn_callback, remove_callback);
         _objectinfos[name] = ObjectInfo{
             filter_name,
-            allocator,
-            spawn_callback,
-            remove_callback
+            allocator
         };
 
     } else
@@ -306,9 +289,13 @@ bool ObjectManager::hasAddedObject(const char *object_name) { return !(_objectin
 Object *ObjectManager::getObject(unsigned id) {
     if (id < 0 || id >= _ids.size())
         throw std::out_of_range("Index out of range");
-    
-    if (_ids.at(id))
-        return _objectvalues[id]._object_ref;
+
+    if (_ids.at(id)) {
+        if (_objectvalues[id]._object_ref)
+            return _objectvalues[id]._object_ref;
+        else
+            throw std::runtime_error("Attempt to get non-Object reference with getObject()");
+    }
 
     throw InactiveIDException();
 }

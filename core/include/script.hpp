@@ -221,8 +221,8 @@ public:
        int _group;
        bool _force_removeonkill;
        std::function<Script*(void)> _allocator;
-       std::function<void(Script*)> _spawn_callback;
-       std::function<void(Script*)> _remove_callback;
+       std::function<void(unsigned)> _spawn_callback;
+       std::function<void(unsigned)> _remove_callback;
     };
 
     // struct holding IDs and other flags belonging to the managed script during its lifetime
@@ -300,7 +300,7 @@ public:
        - spawn_callback - function callback to call after Script has been spawned and setup
        - remove_callback - function callback to call before Script has been removed
     */
-    void addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_removeonkill, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback);
+    void addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_removeonkill, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback);
 
     /* Returns true if the provided Script name has been previously added to this manager. */
     bool hasAddedScript(const char *script_name);

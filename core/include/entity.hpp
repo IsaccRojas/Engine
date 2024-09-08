@@ -91,8 +91,6 @@ public:
     struct EntityInfo {
         std::string _animation_name;
         std::function<Entity*(void)> _allocator;
-        std::function<void(Entity*)> _spawn_callback;
-        std::function<void(Entity*)> _remove_callback;
     };
 
     // struct holding IDs and other flags belonging to the managed Entity
@@ -164,7 +162,7 @@ public:
        - spawn_callback - function callback to call after Entity has been spawned and setup
        - remove_callback - function callback to call before Entity has been removed
     */
-    void addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback, std::function<void(Entity*)> remove_callback);
+    void addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback);
 
     /* Returns true if the provided Entity name has been previously added to this manager. */
     bool hasAddedEntity(const char *entity_name);

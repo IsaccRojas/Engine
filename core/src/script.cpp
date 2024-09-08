@@ -456,7 +456,7 @@ unsigned ScriptManager::spawnScript(const char *scriptname, int executor_queue) 
     
     // call callback if it exists
     if (info._spawn_callback)
-        info._spawn_callback(script);
+        info._spawn_callback(id);
 
     return id;
 }
@@ -495,13 +495,13 @@ void ScriptManager::remove(unsigned id) {
     // try removal callback
     ScriptInfo &scriptinfo = _scriptinfos[scriptvalues._manager_name];
     if (scriptinfo._remove_callback)
-        scriptinfo._remove_callback(scriptvalues._script_ref);
+        scriptinfo._remove_callback(id);
 
     // remove from script-related systems
     _scriptRemoval(scriptvalues);
 }
 
-void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_removeonkill, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback) {  
+void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_removeonkill, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback) {  
     if (!hasAddedScript(name))
         _scriptinfos[name] = ScriptInfo{
             group,

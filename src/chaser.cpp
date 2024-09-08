@@ -31,8 +31,8 @@ Object *Chaser::_getTarget() {
         return nullptr;
 }
 
-Chaser::Chaser(glm::vec3 scale, float health, std::string killeffect, bool *killflag) : 
-    Basic(scale), 
+Chaser::Chaser(glm::vec3 scale, glm::vec3 dimensions, float health, std::string killeffect, bool *killflag) : 
+    Basic(scale, dimensions), 
     _accel(0.075f), 
     _deccel(0.05f), 
     _spd_max(0.15f), 
