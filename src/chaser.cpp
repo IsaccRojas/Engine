@@ -1,36 +1,26 @@
 #include "chaser.hpp"
 
-void Chaser::_initCharacter() {
+void Chaser::_initBasic() {
     getAnimState().setCycleState(0);
 }
 
-void Chaser::_baseCharacter() {
+void Chaser::_baseBasic() {
     if (*_killflag) {
         enqueueKill();
         return;
     }
     
+    if (getBox()->getCollided())
+        chaserCollision();
     chaserMotion();
     _t++;
 }
 
-void Chaser::_killCharacter() {
+void Chaser::_killBasic() {
     getManager()->spawnEntityEnqueue(_killeffect.c_str(), 1, getBox()->pos);
 }
 
-void Chaser::_collisionCharacter(Box *box) {
-    _health--;
-
-    // spawn 2-3 particles
-    int count = (rand() % 2) + 2;
-    for (int i = 0; i < count; i++) {
-        //Entity *effect = getManager()->getEntity(getManager()->spawnEntity("BallParticle"));
-        //effect->getQuad()->pos.v = getBox()->pos;
-    }
-
-    if (_health <= 0)
-        enqueueKill();
-}
+void Chaser::_collisionBasic(Box *box) {}
 
 Object *Chaser::_getTarget() {
     // return first ID found
@@ -42,7 +32,7 @@ Object *Chaser::_getTarget() {
 }
 
 Chaser::Chaser(glm::vec3 scale, float health, std::string killeffect, bool *killflag) : 
-    Character(scale), 
+    Basic(scale), 
     _accel(0.075f), 
     _deccel(0.05f), 
     _spd_max(0.15f), 
@@ -95,4 +85,18 @@ void Chaser::chaserMotion() {
     // reduce velocity to max if speed exceeds max
     if (glm::length(vel) > _spd_max)
         vel = glm::normalize(vel) * _spd_max;
+}
+
+void Chaser::chaserCollision() {
+        _health--;
+
+    // spawn 2-3 particles
+    int count = (rand() % 2) + 2;
+    for (int i = 0; i < count; i++) {
+        //Entity *effect = getManager()->getEntity(getManager()->spawnEntity("BallParticle"));
+        //effect->getQuad()->pos.v = getBox()->pos;
+    }
+
+    if (_health <= 0)
+        enqueueKill();
 }

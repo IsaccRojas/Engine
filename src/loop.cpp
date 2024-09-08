@@ -30,7 +30,7 @@ class OrbShot : public Basic {
             getManager()->spawnEntityEnqueue("OrbShotParticle", 0, getBox()->pos);
         }
 
-        if (_i >= _lifetime)
+        if (_i >= _lifetime || getBox()->getCollided())
             enqueueKill();
     }
 
@@ -38,9 +38,7 @@ class OrbShot : public Basic {
         getManager()->spawnEntityEnqueue("OrbShotBoom", 1, getBox()->pos);
     }
 
-    void _collisionBasic(Box *box) {
-        enqueueKill();
-    }
+    void _collisionBasic(Box *box) {}
 
 public:
     OrbShot() : Basic(glm::vec3(4.0f, 4.0f, 0.0f)) {}
@@ -479,8 +477,9 @@ void loop(GLFWwindow *winhandle) {
                 break;
         }
         
-        // collision detection
+        // unset collided flags, and perform collision detection
         obj_physenv.step();
+        obj_physenv.unsetCollidedFlags();
         obj_physenv.detectCollision();
 
         // spawn, run execution queue 0, and kill

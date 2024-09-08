@@ -1,27 +1,28 @@
 #include "player.hpp"
 
-void Player::_initCharacter() {
+void Player::_initBasic() {
     getBox()->dim = glm::vec3(6.0f, 13.0f, 0.0f);
     getAnimState().setCycleState(0);
 }
 
-void Player::_baseCharacter() {
+void Player::_baseBasic() {
     if (getAnimState().completed())
         getAnimState().setCycleState(1);
+
+    if (getBox()->getCollided())
+        enqueueKill();
 
     playerMotion();
     playerAction();
 }
 
-void Player::_killCharacter() {
+void Player::_killBasic() {
     getManager()->spawnEntityEnqueue("PlayerSmoke", 1, getBox()->pos);
 }
 
-void Player::_collisionCharacter(Box *box) {
-    enqueueKill();
-}
+void Player::_collisionBasic(Box *box) {}
 
-Player::Player() : Character(glm::vec3(16.0f, 16.0f, 0.0f)), _input(nullptr), _input_ready(false), _accel(0.2f), _deccel(0.15f), _spd_max(0.8f), _cooldown(0.0f), _max_cooldown(15.0f), _prevmovedir(0.0f) {}
+Player::Player() : Basic(glm::vec3(16.0f, 16.0f, 0.0f)), _input(nullptr), _input_ready(false), _accel(0.2f), _deccel(0.15f), _spd_max(0.8f), _cooldown(0.0f), _max_cooldown(15.0f), _prevmovedir(0.0f) {}
 
 void Player::playerSetup(Input *input) {
     _input = input;

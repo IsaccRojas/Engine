@@ -1,9 +1,9 @@
 #ifndef ENEMY_HPP_
 #define ENEMY_HPP_
 
-#include "character.hpp"
+#include "basic.hpp"
 
-class Chaser : public Character {
+class Chaser : public Basic {
     float _accel;
     float _deccel;
     float _spd_max;
@@ -14,16 +14,17 @@ class Chaser : public Character {
     std::string _killeffect;
     bool *_killflag;
 
-    void _initCharacter();
-    void _baseCharacter();
-    void _killCharacter();
-    void _collisionCharacter(Box *box);
+    void _initBasic();
+    void _baseBasic();
+    void _killBasic();
+    void _collisionBasic(Box *box);
 
     Object *_getTarget();
 public:
     Chaser(glm::vec3 scale, float health, std::string killeffect, bool *killflag);
 
     void chaserMotion();
+    void chaserCollision();
 };
 
 #endif

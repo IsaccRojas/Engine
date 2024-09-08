@@ -8,6 +8,8 @@
 #include "commonexcept.hpp"
 #include <functional>
 
+class PhysEnv;
+
 /* class Box
    Encapsulates physical Box-shaped data for use by a PhysEnv instance.
    - position - location of box in 3D space
@@ -17,6 +19,9 @@
    - callback - collision callback
 */
 class Box {
+    friend PhysEnv;
+    bool _collided;
+
     FilterState _filter_state;
     glm::vec3 _prev_pos;
     std::function<void(Box*)> _callback;
@@ -54,6 +59,9 @@ public:
 
     /* Gets the box's previous position. */
     glm::vec3 &getPrevPos();
+
+    /* Returns whether the box was collided with or not. This is only set and unset by an owning PhysEnv. */
+    bool getCollided();
 };
 
 /* class PhysEnv
@@ -110,8 +118,11 @@ public:
     */
     void remove(unsigned id);
 
+    /* Unsets all collided flags for all contained Boxes. */
+    void unsetCollidedFlags();
     /* Detects collision between all Boxes within the system. This is done by iterating on all Boxes
-       in a pair-wise fashion.
+       in a pair-wise fashion. All collided boxes have their collision callback invoked, and their
+       collided flag set.
     */
     void detectCollision();
     /* Advances every internal Box one step in time. */

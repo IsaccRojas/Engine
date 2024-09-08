@@ -17,7 +17,6 @@ SRCS += src/loop.cpp
 SRCS += src/glinit.cpp
 SRCS += src/effect.cpp
 SRCS += src/basic.cpp
-SRCS += src/character.cpp
 SRCS += src/player.cpp
 SRCS += src/chaser.cpp
 SRCS += src/text.cpp

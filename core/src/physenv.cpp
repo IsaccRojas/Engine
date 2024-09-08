@@ -3,6 +3,7 @@
 // _______________________________________ Box _______________________________________
 
 Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::function<void(Box*)> callback) :
+    _collided(false),
     _prev_pos(position),
     _callback(callback),
     pos(position),
@@ -12,6 +13,7 @@ Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::func
 {}
 
 Box::Box() :
+    _collided(false),
     _prev_pos(glm::vec3(0.0f)),
     _callback(nullptr),
     pos(glm::vec3(0.0f)),
@@ -46,6 +48,8 @@ FilterState& Box::getFilterState() {
 glm::vec3& Box::getPrevPos() {
     return _prev_pos;
 }
+
+bool Box::getCollided() { return _collided; }
 
 // _______________________________________ PhysEnv _______________________________________
 
@@ -99,6 +103,12 @@ void PhysEnv::remove(unsigned id) {
     _ids.remove(id);
 
     _count--;
+}
+
+void PhysEnv::unsetCollidedFlags() {
+    for (unsigned i = 0; i < _ids.size(); i++)
+        if (_ids.at(i))
+            _boxes[i]._collided = false;
 }
 
 void PhysEnv::detectCollision() {
@@ -169,6 +179,10 @@ void PhysEnv::collisionAABB(Box &box1, Box &box2) {
     float coll_ver_space = glm::abs(pos1.y - pos2.y) - ((dim1.y + dim2.y) / 2.0f);
 
     if (coll_hor_space < 0.0f && coll_ver_space < 0.0f) {
+        // set flags
+        box1._collided = true;
+        box2._collided = true;
+
         // run collision handlers
         box1.collide(&box2);
         box2.collide(&box1);

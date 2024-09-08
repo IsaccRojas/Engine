@@ -1,10 +1,10 @@
 #ifndef PLAYER_HPP_
 #define PLAYER_HPP_
 
-#include "character.hpp"
+#include "basic.hpp"
 #include "../core/include/input.hpp"
 
-class Player : public Character {
+class Player : public Basic {
     Input *_input;
     bool _input_ready;
 
@@ -16,10 +16,10 @@ class Player : public Character {
 
     glm::vec2 _prevmovedir;
 
-    void _initCharacter();
-    void _baseCharacter();
-    void _killCharacter();
-    void _collisionCharacter(Box *box);
+    void _initBasic();
+    void _baseBasic();
+    void _killBasic();
+    void _collisionBasic(Box *box);
 
 public:
     Player();

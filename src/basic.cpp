@@ -1,6 +1,7 @@
 #include "basic.hpp"
 
 void Basic::_initObject() {
+    // use scale to set box and quad
     getBox()->dim = _scale;
     getQuad()->bv_scale.v = glm::vec3(_scale.x, _scale.y, 1.0f);
 
@@ -10,8 +11,8 @@ void Basic::_initObject() {
 void Basic::_baseObject() {
     _baseBasic();
 
+    // update quad to match box position, and step animation
     getQuad()->bv_pos.v = getBox()->pos;
-
     stepAnim();
 
     // only queue if not set to be killed
@@ -21,9 +22,6 @@ void Basic::_baseObject() {
 
 void Basic::_killObject() {
     _killBasic();
-
-    removeBox();
-    removeQuad();
 }
 
 void Basic::_collisionObject(Box *box) {
