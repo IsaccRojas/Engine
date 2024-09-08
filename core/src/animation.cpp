@@ -64,6 +64,11 @@ AnimationState::~AnimationState() { /* automatic destruction is fine */ }
 
 void AnimationState::setAnimation(Animation *animation) {
     _animation = animation;
+    
+    _step = 0;
+    _frame_state = 0;
+    _cycle_state = 0;
+    _completed = false;
 
     if (_animation) {
         _current_cycle = &(_animation->getCycle(_cycle_state));
@@ -72,11 +77,6 @@ void AnimationState::setAnimation(Animation *animation) {
         _current_cycle = nullptr;
         _current_frame = nullptr;
     }
-
-    _step = 0;
-    _frame_state = 0;
-    _cycle_state = 0;
-    _completed = false;
 }
 
 void AnimationState::setCycleState(unsigned cyclestate) {
