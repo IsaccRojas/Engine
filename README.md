@@ -106,6 +106,8 @@ The **ScriptManager** class specifies the following fields to bind to an allocat
 - `const char *name`: name to associate with the allocator.
 - `int group`: internal value tied to Script for client use, and with getAllByGroup(int) method.
 - `force_removeonkill`: removes this Script from this Manager when it is killed by the Executor.
+- `spawn_callback` - function callback to call after Script has been spawned and setup.
+- `remove_callback` - function callback to call before Script has been removed.
 
 The **EntityManager** subclass specifies the following additional fields:
 
