@@ -59,11 +59,10 @@ void Script::runBase() {
 
 void Script::runKill() {
     _kill();
+    
+    // this flag could have only been set if an owning ScriptManager sets it, so the reference must be valid, and ID >= 0
     if (_scriptmanager_removeonkill)
-        if (_scriptmanager)
-            if (_scriptmanager_id >= 0)
-                getManager()->remove(_scriptmanager_id);
-
+            _scriptmanager->remove(_scriptmanager_id);
 }
 
 void Script::scriptSetup(Executor *executor) {
@@ -259,15 +258,6 @@ void Executor::enqueueKill(unsigned id) {
 
 }
 
-/*
-    struct QueuePair {
-      // queues of IDs to be executed; swapped on execution
-      std::queue<unsigned> _push_execqueue;
-      std::queue<unsigned> _run_execqueue;
-    };
-    std::vector<QueuePair> _queuepairs;
-*/
-
 void Executor::runExecQueue(unsigned queue) {
     // check bounds
     if (queue >= _queuepairs.size())
@@ -294,14 +284,14 @@ void Executor::runExecQueue(unsigned queue) {
             script->_last_execqueue = queue;
             script->_exec_enqueued = false;
 
-            // check if script needs to be initialized
-            if (!(script->_initialized)) {
-                script->runInit();
-                script->_initialized = true;
-            }
-
             // check if script hasn't been killed yet
             if (!(script->_killed)) {
+                // check if script needs to be initialized
+                if (!(script->_initialized)) {
+                    script->runInit();
+                    script->_initialized = true;
+                }
+
                 script->runBase();
             }
 
@@ -318,6 +308,7 @@ void Executor::runKillQueue() {
 
     unsigned id;
     Script *script;
+
     while (!(_run_killqueue.empty())) {
         id = _run_killqueue.front();
 

@@ -188,7 +188,7 @@ public:
     */
     void enqueueKill(unsigned id);
 
-    /* Executes all currently queued Scripts, and dequeues them. This will call the (init() method if it has not yet been
+    /* Executes all currently enqueued Scripts, and dequeues them. This will call the (init() method if it has not yet been
        called, and the) base() method on every active Script. 
        - queue - which internal queue to run
     */

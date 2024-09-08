@@ -478,20 +478,19 @@ void loop(GLFWwindow *winhandle) {
             default:
                 break;
         }
-
+        
         // collision detection
         obj_physenv.step();
         obj_physenv.detectCollision();
 
-        // spawns and execution queue 0
+        // spawn, run execution queue 0, and kill
         obj_manager.runSpawnQueue();
         obj_executor.runExecQueue(0);
+        obj_executor.runKillQueue();
 
-        // spawns and execution queue 1
+        // spawn, run execution queue 1, and kill
         obj_manager.runSpawnQueue();
         obj_executor.runExecQueue(1);
-
-        // kill queue
         obj_executor.runKillQueue();
 
         // text updates

@@ -77,7 +77,7 @@ void Player::playerAction() {
     if (_cooldown <= 0.0f) {
         if (_input->get_m1() || _input->get_space()) {
             // spawn projectile, set its position, and set cooldown
-            int id = getManager()->spawnObject("OrbShot", 1, getBox()->pos);
+            int id = getManager()->spawnObject("OrbShot", 0, getBox()->pos);
             if (id >= 0) {
                 Object *shot = getManager()->getObject(id);
                 shot->getBox()->vel = dirvec;
