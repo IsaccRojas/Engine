@@ -110,7 +110,7 @@ protected:
 
     // internal methods called when spawning Objects and removing them, using and setting
     // manager lifetime and Object runtime members
-    void _objectSetup(Object *object, ObjectInfo &objectinfo, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id, glm::vec3 object_pos);
+    void _objectSetup(Object *object, ObjectInfo &objectinfo, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id, int executor_queue, glm::vec3 object_pos);
     void _objectRemoval(ObjectValues &objectvalues, EntityValues &entityvalues, ScriptValues &scriptvalues);
 
     // initialize/uninitialize only ObjectManager members
@@ -133,21 +133,21 @@ public:
     /* Spawns a Script using a name previously added to this manager, and returns its ID. This
        will invoke scriptSetup().
     */
-    unsigned spawnScript(const char *script_name) override;
+    unsigned spawnScript(const char *script_name, int executor_queue) override;
     /* Spawns an Entity using a name previously added to this manager, and returns its ID. This
        will invoke entitySetup() and scriptSetup().
     */
-    unsigned spawnEntity(const char *entity_name, glm::vec3 entity_pos) override;
+    unsigned spawnEntity(const char *entity_name, int executor_queue, glm::vec3 entity_pos) override;
     /* Spawns an Ontity using a name previously added to this manager, and returns its ID. This
        will invoke objectSetup(), entitySetup() and scriptSetup().
     */
-    unsigned spawnObject(const char *object_name, glm::vec3 object_pos);
+    unsigned spawnObject(const char *object_name, int executor_queue, glm::vec3 object_pos);
     /* Queues a Script to be spawned when calling runSpawnQueue(). */
-    void spawnScriptEnqueue(const char *script_name) override;
+    void spawnScriptEnqueue(const char *script_name, int executor_queue) override;
     /* Queues a Entity to be spawned when calling runSpawnQueue(). */
-    void spawnEntityEnqueue(const char *script_name, glm::vec3 entity_pos) override;
+    void spawnEntityEnqueue(const char *script_name, int executor_queue, glm::vec3 entity_pos) override;
     /* Queues a Object to be spawned when calling runSpawnQueue(). */
-    void spawnObjectEnqueue(const char *script_name, glm::vec3 object_pos);
+    void spawnObjectEnqueue(const char *script_name, int executor_queue, glm::vec3 object_pos);
     /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(), spawnEntityEnqueue(), or spawnObjectEnqueue(). */
     std::vector<unsigned> runSpawnQueue();
     /* Removes the Object, Entity or Script associated with the provided ID. */
@@ -158,13 +158,12 @@ public:
     - allocator - function pointer referring to function that returns a heap-allocated Object
     - name - name to associate with the allocator
     - group - value to associate with all instances of this Object
-    - force_executorenqueue - enqueues this Object into the provided Executor when spawning it
     - force_removeonkill - removes this Object from this manager when it is killed
     - animation_name - name of animation to give to AnimationState of spawned Object, from provided Animation map
     - filter_name - name of filter to give to FilterState of spawned Object's Box, from provided Filter map
     - spawn_callback - function callback to call after Object has been spawned and setup
     */
-    void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_executorenqueue, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback);
+    void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(Object*)> spawn_callback);
 
     /* Returns true if the provided Object name has been previously added to this manager. */
     bool hasAddedObject(const char *object_name);

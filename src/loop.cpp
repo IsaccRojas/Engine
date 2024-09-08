@@ -27,7 +27,7 @@ class OrbShot : public Basic {
         _i++;
 
         if (_i % 10 == 0) {
-            getManager()->spawnEntityEnqueue("OrbShotParticle", getBox()->pos);
+            getManager()->spawnEntityEnqueue("OrbShotParticle", 0, getBox()->pos);
         }
 
         if (_i >= _lifetime)
@@ -35,7 +35,7 @@ class OrbShot : public Basic {
     }
 
     void _killBasic() {
-        getManager()->spawnEntityEnqueue("OrbShotBoom", getBox()->pos);
+        getManager()->spawnEntityEnqueue("OrbShotBoom", 1, getBox()->pos);
     }
 
     void _collisionBasic(Box *box) {
@@ -241,9 +241,8 @@ void loop(GLFWwindow *winhandle) {
     PhysEnv obj_physenv{2048};
 
     // set up Executor instance
-    std::cout << "Setting up executors" << std::endl;
-    Executor gbl_executor{2048};
-    Executor obj_executor{2048};
+    std::cout << "Setting up executor" << std::endl;
+    Executor obj_executor{2048, 2};
 
     // set up manager
     std::cout << "Setting up manager" << std::endl;
@@ -262,27 +261,27 @@ void loop(GLFWwindow *winhandle) {
 
     // add objects to manager
     std::cout << "Adding entities and objects to manager" << std::endl;
-    obj_manager.addObject(OrbShot_allocator, "OrbShot", T_BASIC_ORBSHOT, true, true, "OrbShot", "ProjectileFriendly", nullptr);
+    obj_manager.addObject(OrbShot_allocator, "OrbShot", T_BASIC_ORBSHOT, true, "OrbShot", "ProjectileFriendly", nullptr);
 
-    obj_manager.addObject(Player_allocator, "Player", T_CHARACTER_PLAYER, true, true, "Player", "Player", nullptr);
-    obj_manager.addObject(SmallBall_allocator, "SmallBall", T_CHASER_SMALLBALL, true, true, "SmallBall", "Enemy", SmallBall_callback);
-    obj_manager.addObject(MediumBall_allocator, "MediumBall", T_CHASER_MEDIUMBALL, true, true, "MediumBall", "Enemy", MediumBall_callback);
-    obj_manager.addObject(BigBall_allocator, "BigBall", T_CHASER_BIGBALL, true, true, "BigBall", "Enemy", BigBall_callback);
-    obj_manager.addObject(VeryBigBall_allocator, "VeryBigBall", T_CHASER_VERYBIGBALL, true, true, "VeryBigBall", "Enemy", VeryBigBall_callback);
+    obj_manager.addObject(Player_allocator, "Player", T_CHARACTER_PLAYER, true, "Player", "Player", nullptr);
+    obj_manager.addObject(SmallBall_allocator, "SmallBall", T_CHASER_SMALLBALL, true, "SmallBall", "Enemy", SmallBall_callback);
+    obj_manager.addObject(MediumBall_allocator, "MediumBall", T_CHASER_MEDIUMBALL, true, "MediumBall", "Enemy", MediumBall_callback);
+    obj_manager.addObject(BigBall_allocator, "BigBall", T_CHASER_BIGBALL, true, "BigBall", "Enemy", BigBall_callback);
+    obj_manager.addObject(VeryBigBall_allocator, "VeryBigBall", T_CHASER_VERYBIGBALL, true, "VeryBigBall", "Enemy", VeryBigBall_callback);
 
-    obj_manager.addEntity(SmallSmoke_allocator, "SmallSmoke", T_EFFECT_SMALLSMOKE, true, true, "SmallSmoke", nullptr);
-    obj_manager.addEntity(MediumSmoke_allocator, "MediumSmoke", T_EFFECT_MEDIUMSMOKE, true, true, "MediumSmoke", nullptr);
-    obj_manager.addEntity(BigSmoke_allocator, "BigSmoke", T_EFFECT_BIGSMOKE, true, true, "BigSmoke", nullptr);
-    obj_manager.addEntity(VeryBigSmoke_allocator, "VeryBigSmoke", T_EFFECT_VERYBIGSMOKE, true, true, "VeryBigSmoke", nullptr);
-    obj_manager.addEntity(PlayerSmoke_allocator, "PlayerSmoke", T_EFFECT_PLAYERSMOKE, true, true, "PlayerSmoke", nullptr);
-    obj_manager.addEntity(OrbShotParticle_allocator, "OrbShotParticle", T_EFFECT_ORBSHOTPARTICLE, true, true, "OrbShotParticle", nullptr);
-    obj_manager.addEntity(OrbShotBoom_allocator, "OrbShotBoom", T_EFFECT_ORBSHOTBOOM, true, true, "OrbShotBoom", nullptr);
-    obj_manager.addEntity(BallParticle_allocator, "BallParticle", T_EFFECT_BALLPARTICLE, true, true, "BallParticle", nullptr);
-    obj_manager.addEntity(Ring_allocator, "Ring", T_EFFECT_RING, true, true, "Ring", nullptr);
+    obj_manager.addEntity(SmallSmoke_allocator, "SmallSmoke", T_EFFECT_SMALLSMOKE, true, "SmallSmoke", nullptr);
+    obj_manager.addEntity(MediumSmoke_allocator, "MediumSmoke", T_EFFECT_MEDIUMSMOKE, true, "MediumSmoke", nullptr);
+    obj_manager.addEntity(BigSmoke_allocator, "BigSmoke", T_EFFECT_BIGSMOKE, true, "BigSmoke", nullptr);
+    obj_manager.addEntity(VeryBigSmoke_allocator, "VeryBigSmoke", T_EFFECT_VERYBIGSMOKE, true, "VeryBigSmoke", nullptr);
+    obj_manager.addEntity(PlayerSmoke_allocator, "PlayerSmoke", T_EFFECT_PLAYERSMOKE, true, "PlayerSmoke", nullptr);
+    obj_manager.addEntity(OrbShotParticle_allocator, "OrbShotParticle", T_EFFECT_ORBSHOTPARTICLE, true, "OrbShotParticle", nullptr);
+    obj_manager.addEntity(OrbShotBoom_allocator, "OrbShotBoom", T_EFFECT_ORBSHOTBOOM, true, "OrbShotBoom", nullptr);
+    obj_manager.addEntity(BallParticle_allocator, "BallParticle", T_EFFECT_BALLPARTICLE, true, "BallParticle", nullptr);
+    obj_manager.addEntity(Ring_allocator, "Ring", T_EFFECT_RING, true, "Ring", nullptr);
 
     // set up ring
     std::cout << "Setting up ring" << std::endl;
-    obj_manager.spawnEntity("Ring", glm::vec3(0.0f));
+    obj_manager.spawnEntity("Ring", 0, glm::vec3(0.0f));
 
     // text \"Test!\" Value: 23% (#8)
     std::cout << "Setting up text" << std::endl;
@@ -346,7 +345,7 @@ void loop(GLFWwindow *winhandle) {
 
             // spawn a player if none exist
             if (obj_manager.getAllByGroup(1).size() == 0) {
-                obj_manager.spawnObjectEnqueue("Player", glm::vec3(0.0f));
+                obj_manager.spawnObjectEnqueue("Player", 0, glm::vec3(0.0f));
             } 
             
             // check for input to start game if at least one player is spawned
@@ -398,16 +397,16 @@ void loop(GLFWwindow *winhandle) {
 
                         switch (int(float(rand() % round) / 5.0f)) {
                             case 0:
-                                obj_manager.spawnObjectEnqueue("SmallBall", spawn_vec1 + spawn_vec2);
+                                obj_manager.spawnObjectEnqueue("SmallBall", 0, spawn_vec1 + spawn_vec2);
                                 break;
                             case 1:
-                                obj_manager.spawnObjectEnqueue("MediumBall", spawn_vec1 + spawn_vec2);
+                                obj_manager.spawnObjectEnqueue("MediumBall", 0, spawn_vec1 + spawn_vec2);
                                 break;
                             case 2:
-                                obj_manager.spawnObjectEnqueue("BigBall", spawn_vec1 + spawn_vec2);
+                                obj_manager.spawnObjectEnqueue("BigBall", 0, spawn_vec1 + spawn_vec2);
                                 break;
                             case 3:
-                                obj_manager.spawnObjectEnqueue("VeryBigBall", spawn_vec1 + spawn_vec2);
+                                obj_manager.spawnObjectEnqueue("VeryBigBall", 0, spawn_vec1 + spawn_vec2);
                                 break;
                             default:
                                 break;
@@ -427,7 +426,7 @@ void loop(GLFWwindow *winhandle) {
 
             // respawn player if somehow got here and there are no players
             if (obj_manager.getAllByGroup(1).size() == 0) {
-                obj_manager.spawnObjectEnqueue("Player", glm::vec3(0.0f));
+                obj_manager.spawnObjectEnqueue("Player", 0, glm::vec3(0.0f));
             } 
 
             // check for input to start next round if at least one player is spawned
@@ -480,18 +479,27 @@ void loop(GLFWwindow *winhandle) {
                 break;
         }
 
-        obj_manager.runSpawnQueue();
-
+        // collision detection
         obj_physenv.step();
         obj_physenv.detectCollision();
 
-        obj_executor.runExecQueue();
+        // spawns and execution queue 0
+        obj_manager.runSpawnQueue();
+        obj_executor.runExecQueue(0);
+
+        // spawns and execution queue 1
+        obj_manager.runSpawnQueue();
+        obj_executor.runExecQueue(1);
+
+        // kill queue
         obj_executor.runKillQueue();
 
+        // text updates
         toptext.update();
         subtext.update();
         bottomtext.update();
         
+        // graphics updates and draw
         obj_glenv.update();
         obj_glenv.draw();
         

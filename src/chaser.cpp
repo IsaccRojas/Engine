@@ -15,7 +15,7 @@ void Chaser::_baseCharacter() {
 }
 
 void Chaser::_killCharacter() {
-    getManager()->spawnEntityEnqueue(_killeffect.c_str(), getBox()->pos);
+    getManager()->spawnEntityEnqueue(_killeffect.c_str(), 1, getBox()->pos);
 }
 
 void Chaser::_collisionCharacter(Box *box) {

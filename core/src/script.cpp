@@ -4,6 +4,7 @@ Script::Script(Script &&other) {
     operator=(std::move(other));
 }
 Script::Script() :
+    _last_execqueue(-1),
     _initialized(false), 
     _killed(false), 
     _exec_enqueued(false), 
@@ -21,6 +22,7 @@ Script::~Script() {
 
 Script &Script::operator=(Script &&other) {
     if (this != &other) {
+        _last_execqueue = other._last_execqueue;
         _initialized = other._initialized;
         _killed = other._killed;
         _exec_enqueued = other._exec_enqueued;
@@ -87,31 +89,26 @@ void Script::scriptResetFlags() {
 
 void Script::scriptClear() {
     // reset executor members
-    if (_executor)
-        if (_executor_id >= 0)
-            _executor->remove(_executor_id);
+    if (_executor && _executor_id >= 0)
+        _executor->remove(_executor_id);
     
     _executor = nullptr;
     _executor_id = -1;
-
+    _last_execqueue = -1;
     scriptResetFlags();
 }
 
-void Script::setInitialized(bool initialized) { _initialized = initialized; }
+int Script::getLastExecQueue() { return _last_execqueue; }
 bool Script::getInitialized() { return _initialized; }
-void Script::setKilled(bool killed) { _killed = killed; }
 bool Script::getKilled() { return _killed; }
-void Script::setExecEnqueued(bool exec_enqueued) { _exec_enqueued = exec_enqueued; }
 bool Script::getExecEnqueued() { return _exec_enqueued; }
-void Script::setKillEnqueued(bool kill_enqueued) { _kill_enqueued = kill_enqueued; }
 bool Script::getKillEnqueued() { return _kill_enqueued; }
-void Script::setGroup(int group) { _group = group; }
 int Script::getGroup() { return _group; }
 
-void Script::enqueueExec() {
+void Script::enqueueExec(unsigned queue) {
     if (!_killed) {
         if (_executor)
-            _executor->enqueueExec(_executor_id);
+            _executor->enqueueExec(_executor_id, queue);
         else
             throw std::runtime_error("Attempt to enqueue Script with null Executor reference");
     }
@@ -130,8 +127,8 @@ ScriptManager *Script::getManager() { return _scriptmanager; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-Executor::Executor(unsigned max_count) : _initialized(false) {
-    init(max_count);
+Executor::Executor(unsigned max_count, unsigned queues) : _initialized(false) {
+    init(max_count, queues);
 }
 Executor::Executor(Executor &&other) {
     operator=(std::move(other));
@@ -144,8 +141,7 @@ Executor &Executor::operator=(Executor &&other) {
     if (this != &other) {
         _ids = other._ids;
         _scripts = other._scripts;
-        _push_execqueue = other._push_execqueue;
-        _run_execqueue = other._run_execqueue;
+        _queuepairs = other._queuepairs;
         _push_killqueue = other._push_killqueue;
         _run_killqueue = other._run_killqueue;
         _max_count = other._max_count;
@@ -158,11 +154,12 @@ Executor &Executor::operator=(Executor &&other) {
     return *this;
 }
 
-void Executor::init(unsigned max_count) {
+void Executor::init(unsigned max_count, unsigned queues) {
     if (_initialized)
         throw InitializedException();
 
     _scripts = std::vector<Script*>(max_count, nullptr);
+    _queuepairs = std::vector<QueuePair>(queues, QueuePair{});
     _max_count = max_count;
     _count = 0;
     _initialized = true;
@@ -171,19 +168,10 @@ void Executor::init(unsigned max_count) {
 void Executor::uninit() {
     if (!_initialized)
         return;
-    
-    // queues to be deallocated when they go out of context
-    std::queue<unsigned> empty1;
-    std::queue<unsigned> empty2;
-    std::queue<unsigned> empty3;
-    std::queue<unsigned> empty4;
 
     _ids.clear();
     _scripts.clear();
-    std::swap(_push_execqueue, empty1);
-    std::swap(_run_execqueue, empty2);
-    std::swap(_push_killqueue, empty3);
-    std::swap(_run_killqueue, empty4);
+    _queuepairs.clear();
     _max_count = 0;
     _count = 0;
     _initialized = false;
@@ -236,16 +224,19 @@ bool Executor::hasID(unsigned id) {
     return _ids.at(id);
 }
 
-void Executor::enqueueExec(unsigned id) {
+void Executor::enqueueExec(unsigned id, unsigned queue) {
     // check bounds
-    if (id < 0 || id >= _ids.size())
-        throw std::out_of_range("Index out of range");
+    if (id >= _ids.size())
+        throw std::out_of_range("ID index out of range");
+    if (queue >= _queuepairs.size())
+        throw std::out_of_range("Execution queue index out of range");
 
     if (_ids.at(id)) {
         Script *script = _scripts[id];
-        if (!(script->getExecEnqueued())) {
-            _push_execqueue.push(id);
-            script->setExecEnqueued(true);
+        if (!(script->_exec_enqueued)) {
+            // push to specified pair
+            _queuepairs[queue]._push_execqueue.push(id);
+            script->_exec_enqueued = true;
         }
     } else
         throw InactiveIDException();
@@ -253,28 +244,45 @@ void Executor::enqueueExec(unsigned id) {
 
 void Executor::enqueueKill(unsigned id) {
     // check bounds
-    if (id < 0 || id >= _ids.size())
+    if (id >= _ids.size())
         throw std::out_of_range("Index out of range");
 
     if (_ids.at(id)) {
         Script *script = _scripts[id];
-        if (!(script->getKillEnqueued())) {
+        if (!(script->_kill_enqueued)) {
+            // push to kill queue
             _push_killqueue.push(id);
-            script->setKillEnqueued(true);
+            script->_kill_enqueued = true;
         }
     } else
         throw InactiveIDException();
 
 }
 
-void Executor::runExecQueue() {
+/*
+    struct QueuePair {
+      // queues of IDs to be executed; swapped on execution
+      std::queue<unsigned> _push_execqueue;
+      std::queue<unsigned> _run_execqueue;
+    };
+    std::vector<QueuePair> _queuepairs;
+*/
+
+void Executor::runExecQueue(unsigned queue) {
+    // check bounds
+    if (queue >= _queuepairs.size())
+        throw std::out_of_range("Execution queue index out of range");
+    
+    std::queue<unsigned> &push_execqueue = _queuepairs[queue]._push_execqueue;
+    std::queue<unsigned> &run_execqueue = _queuepairs[queue]._run_execqueue;
+    
     // swap queues
-    _run_execqueue.swap(_push_execqueue);
+    run_execqueue.swap(push_execqueue);
 
     unsigned id;
     Script *script;
-    while (!(_run_execqueue.empty())) {
-        id = _run_execqueue.front();
+    while (!(run_execqueue.empty())) {
+        id = run_execqueue.front();
 
         // check bounds
         if (id < 0 || id >= _ids.size())
@@ -282,24 +290,25 @@ void Executor::runExecQueue() {
 
         // check if ID is active
         if (_ids.at(id)) {
-
             script = _scripts[id];
-            script->setExecEnqueued(false);
+            script->_last_execqueue = queue;
+            script->_exec_enqueued = false;
 
             // check if script needs to be initialized
-            if (!(script->getInitialized())) {
+            if (!(script->_initialized)) {
                 script->runInit();
-                script->setInitialized(true);
+                script->_initialized = true;
             }
 
             // check if script hasn't been killed yet
-            if (!(script->getKilled()))
+            if (!(script->_killed)) {
                 script->runBase();
+            }
 
         } else
             throw InactiveIDException();
         
-        _run_execqueue.pop();
+        run_execqueue.pop();
     }
 }
 
@@ -318,16 +327,15 @@ void Executor::runKillQueue() {
         
         // check if ID is active
         if (_ids.at(id)) {
-
             script = _scripts[id];
-            script->setKillEnqueued(false);
 
             // check if script needs to be killed
-            if (!(script->getKilled())) {
+            if (!(script->_killed)) {
                 script->runKill();
-                script->setKilled(true);
+                script->_killed = true;
             }
-
+            
+            script->_kill_enqueued = false;
         } else
             throw InactiveIDException();
         
@@ -336,6 +344,8 @@ void Executor::runKillQueue() {
 }
 
 bool Executor::getInitialized() { return _initialized; }
+
+int Executor::getQueueCount() { return _queuepairs.size(); }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -374,19 +384,19 @@ ScriptManager &ScriptManager::operator=(ScriptManager &&other) {
     return *this;
 }
 
-void ScriptManager::_scriptSetup(Script *script, ScriptInfo &info, unsigned id) {
+void ScriptManager::_scriptSetup(Script *script, ScriptInfo &info, unsigned id, int queue) {
     // set up script
     script->scriptSetup(_executor);
-    script->setGroup(info._group);
+    script->_group = info._group;
 
     // set up internal fields
     script->_scriptmanager = this;
     script->_scriptmanager_id = id;
     script->_scriptmanager_removeonkill = info._force_removeonkill;
 
-    // enqueue if set
-    if (info._force_executorenqueue)
-        script->enqueueExec();
+    // enqueue if non-negative queue provided
+    if (queue >= 0)
+        script->enqueueExec(queue);
     
     _count++;
 }
@@ -433,7 +443,7 @@ void ScriptManager::uninit() {
     _initialized = false;
 }
 
-unsigned ScriptManager::spawnScript(const char *scriptname) {
+unsigned ScriptManager::spawnScript(const char *scriptname, int executor_queue) {
     // fail if exceeding max size
     if (_count >= _max_count)
         throw CountLimitException();
@@ -449,7 +459,7 @@ unsigned ScriptManager::spawnScript(const char *scriptname) {
     _scriptvalues[id] = ScriptValues{id, scriptname, script, info._group};
 
     // set up script internals
-    _scriptSetup(script, info, id);
+    _scriptSetup(script, info, id, executor_queue);
     
     // call callback if it exists
     if (info._spawn_callback)
@@ -458,19 +468,19 @@ unsigned ScriptManager::spawnScript(const char *scriptname) {
     return id;
 }
 
-void ScriptManager::spawnScriptEnqueue(const char *script_name) {
+void ScriptManager::spawnScriptEnqueue(const char *script_name, int executor_queue) {
     // names are not checked here for the sake of efficiency
-    _scriptenqueues.push(ScriptEnqueue{true, script_name});
+    _scriptenqueues.push(ScriptEnqueue{true, script_name, executor_queue});
 }
 
 std::vector<unsigned> ScriptManager::runSpawnQueue() {
     std::vector<unsigned> ids;
-    
+
     while (!(_scriptenqueues.empty())) {
         ScriptEnqueue &scriptenqueue = _scriptenqueues.front();
 
         if (scriptenqueue._valid)
-            ids.push_back(spawnScript(scriptenqueue._name.c_str()));
+            ids.push_back(spawnScript(scriptenqueue._name.c_str(), scriptenqueue._executor_queue));
         
         _scriptenqueues.pop();
     }
@@ -493,11 +503,10 @@ void ScriptManager::remove(unsigned id) {
     _scriptRemoval(values);
 }
 
-void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_executorenqueue, bool force_removeonkill, std::function<void(Script*)> spawn_callback) {  
+void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_removeonkill, std::function<void(Script*)> spawn_callback) {  
     if (!hasAddedScript(name))
         _scriptinfos[name] = ScriptInfo{
             group,
-            force_executorenqueue,
             force_removeonkill,
             allocator,
             spawn_callback

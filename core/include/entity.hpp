@@ -116,7 +116,7 @@ protected:
 
     // internal methods called when spawning Entities and removing them, using and setting
     // manager lifetime and Entity runtime members
-    void _entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id, glm::vec3 entity_pos);
+    void _entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id, int executor_queue, glm::vec3 entity_pos);
     void _entityRemoval(EntityValues &entityvalues, ScriptValues &scriptvalues);
 
     // initialize/uninitialize only EntityManager members
@@ -139,15 +139,15 @@ public:
     /* Spawns a Script using a name previously added to this manager, and returns its ID. This
        will invoke scriptSetup().
     */
-    virtual unsigned spawnScript(const char *script_name) override;
+    virtual unsigned spawnScript(const char *script_name, int executor_queue) override;
     /* Spawns an Entity using a name previously added to this manager, and returns its ID. This
        will invoke entitySetup() and scriptSetup().
     */
-    virtual unsigned spawnEntity(const char *entity_name, glm::vec3 entity_pos);
+    virtual unsigned spawnEntity(const char *entity_name, int executor_queue, glm::vec3 entity_pos);
     /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
-    virtual void spawnScriptEnqueue(const char *script_name) override;
+    virtual void spawnScriptEnqueue(const char *script_name, int executor_queue) override;
     /* Enqueues a Entity to be spawned when calling runSpawnQueue(). */
-    virtual void spawnEntityEnqueue(const char *script_name, glm::vec3 object_pos);
+    virtual void spawnEntityEnqueue(const char *script_name, int executor_queue, glm::vec3 object_pos);
     /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue() or spawnEntityEnqueue(). */
     virtual std::vector<unsigned> runSpawnQueue() override;
     /* Removes the Entity or Script associated with the provided ID. */
@@ -158,12 +158,11 @@ public:
        - allocator - function pointer referring to function that returns a heap-allocated Entity
        - name - name to associate with the allocator
        - group - value to associate with all instances of this Entity
-       - force_executorenqueue - enqueues this Entity into the provided Executor when spawning it
        - force_removeonkill - removes this Entity from this manager when it is killed
        - animation - name of animation to give to AnimationState of spawned Entity, from provided Animation map
        - spawn_callback - function callback to call after Entity has been spawned and setup
     */
-    void addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_executorenqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback);
+    void addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback);
 
     /* Returns true if the provided Entity name has been previously added to this manager. */
     bool hasAddedEntity(const char *entity_name);

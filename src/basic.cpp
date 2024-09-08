@@ -16,7 +16,7 @@ void Basic::_baseObject() {
 
     // only queue if not set to be killed
     if (!getKillEnqueued())
-        enqueueExec();
+        enqueueExec(getLastExecQueue());
 }
 
 void Basic::_killObject() {

@@ -20,7 +20,7 @@ void Effect::_baseEntity() {
 
     // only queue if not set to be killed
     if (!getKillEnqueued())
-        enqueueExec();
+        enqueueExec(getLastExecQueue());
 }
 
 void Effect::_killEntity() {

@@ -169,8 +169,8 @@ void EntityManager::_entityManagerUninit() {
     _animations = nullptr;
 }
 
-void EntityManager::_entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id, glm::vec3 entity_pos) {
-    _scriptSetup(entity, scriptinfo, id);
+void EntityManager::_entitySetup(Entity *entity, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id, int executor_queue, glm::vec3 entity_pos) {
+    _scriptSetup(entity, scriptinfo, id, executor_queue);
 
     entity->entitySetup(_glenv, &(*_animations)[entityinfo._animation_name]);
     entity->genQuad(entity_pos, glm::vec3(0.0f));
@@ -197,13 +197,13 @@ void EntityManager::uninit() {
     _entityManagerUninit();
 }
 
-unsigned EntityManager::spawnScript(const char *script_name) {
-    unsigned id = ScriptManager::spawnScript(script_name);
+unsigned EntityManager::spawnScript(const char *script_name, int executor_queue) {
+    unsigned id = ScriptManager::spawnScript(script_name, executor_queue);
     _entityvalues[id] = EntityValues{nullptr};
     return id;
 }
 
-unsigned EntityManager::spawnEntity(const char *entity_name, glm::vec3 entity_pos) {
+unsigned EntityManager::spawnEntity(const char *entity_name, int executor_queue, glm::vec3 entity_pos) {
     // fail if exceeding max size
     if (_count >= _max_count)
         throw CountLimitException();
@@ -220,7 +220,7 @@ unsigned EntityManager::spawnEntity(const char *entity_name, glm::vec3 entity_po
     _scriptvalues[id] = ScriptValues{id, entity_name, entity};
     
     // set up entity
-    _entitySetup(entity, entityinfo, scriptinfo, id, entity_pos);
+    _entitySetup(entity, entityinfo, scriptinfo, id, executor_queue, entity_pos);
     
     // call callback if it exists
     if (entityinfo._spawn_callback)
@@ -229,27 +229,27 @@ unsigned EntityManager::spawnEntity(const char *entity_name, glm::vec3 entity_po
     return id;
 }
 
-void EntityManager::spawnScriptEnqueue(const char *script_name) {
-    ScriptManager::spawnScriptEnqueue(script_name);
+void EntityManager::spawnScriptEnqueue(const char *script_name, int executor_queue) {
+    ScriptManager::spawnScriptEnqueue(script_name, executor_queue);
     _entityenqueues.push(EntityEnqueue{false, glm::vec3(0.0f)});
 }
 
-void EntityManager::spawnEntityEnqueue(const char *script_name, glm::vec3 entity_pos) {
-    ScriptManager::spawnScriptEnqueue(script_name);
+void EntityManager::spawnEntityEnqueue(const char *script_name, int executor_queue, glm::vec3 entity_pos) {
+    ScriptManager::spawnScriptEnqueue(script_name, executor_queue);
     _entityenqueues.push(EntityEnqueue{true, entity_pos});
 }
 
 std::vector<unsigned> EntityManager::runSpawnQueue() {
     std::vector<unsigned> ids;
-    
+
     while (!(_scriptenqueues.empty())) {
         ScriptEnqueue &scriptenqueue = _scriptenqueues.front();
         EntityEnqueue &entityenqueue = _entityenqueues.front();
         
         if (entityenqueue._valid)
-            ids.push_back(spawnEntity(scriptenqueue._name.c_str(), entityenqueue._entity_pos));
+            ids.push_back(spawnEntity(scriptenqueue._name.c_str(), scriptenqueue._executor_queue, entityenqueue._entity_pos));
         else if (scriptenqueue._valid)
-            ids.push_back(spawnScript(scriptenqueue._name.c_str()));
+            ids.push_back(spawnScript(scriptenqueue._name.c_str(), scriptenqueue._executor_queue));
 
         _scriptenqueues.pop();
         _entityenqueues.pop();
@@ -275,9 +275,9 @@ void EntityManager::remove(unsigned id) {
 }
 
 
-void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_executorenqueue, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback) {
+void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, std::function<void(Entity*)> spawn_callback) {
     if (!hasAddedEntity(name)) {
-        addScript(allocator, name, group, force_executorenqueue, force_removeonkill, nullptr);
+        addScript(allocator, name, group, force_removeonkill, nullptr);
         _entityinfos[name] = EntityInfo{
             animation_name,
             allocator,
