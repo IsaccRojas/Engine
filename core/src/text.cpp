@@ -1,4 +1,4 @@
-#include "text.hpp"
+#include "../include/text.hpp"
 
 Text::Text(GLEnv *glenv) : 
     _glenv(glenv), 

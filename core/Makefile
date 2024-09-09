@@ -19,6 +19,9 @@ glutil.o: ${SRCDIR}/glutil.cpp
 glenv.o: ${SRCDIR}/glenv.cpp
 	g++ ${CXXFLAGS} -c ${SRCDIR}/glenv.cpp -o glenv.o
 
+text.o: ${SRCDIR}/text.cpp
+	g++ ${CXXFLAGS} -c ${SRCDIR}/text.cpp -o text.o
+
 animation.o: ${SRCDIR}/animation.cpp
 	g++ ${CXXFLAGS} -c ${SRCDIR}/animation.cpp -o animation.o
 
@@ -37,7 +40,7 @@ object.o: ${SRCDIR}/object.cpp
 input.o: ${SRCDIR}/input.cpp
 	g++ ${CXXFLAGS} -c ${SRCDIR}/input.cpp -o input.o
 
-libcore.a: commonexcept.o util.o script.o glutil.o glenv.o animation.o entity.o filter.o physenv.o object.o input.o
+libcore.a: commonexcept.o util.o script.o glutil.o glenv.o text.o animation.o entity.o filter.o physenv.o object.o input.o
 	ar rcs libcore.a *.o
 
 # windows syntax

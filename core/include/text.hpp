@@ -1,7 +1,7 @@
 #ifndef TEXT_HPP_
 #define TEXT_HPP_
 
-#include "../core/include/entity.hpp"
+#include "../include/entity.hpp"
 
 /*
 Characters are expected to be in the order of ASCII format, starting with the space character (decimal 32).

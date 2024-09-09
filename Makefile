@@ -19,7 +19,6 @@ SRCS += src/effect.cpp
 SRCS += src/basic.cpp
 SRCS += src/player.cpp
 SRCS += src/chaser.cpp
-SRCS += src/text.cpp
 
 all: out
 

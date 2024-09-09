@@ -4,7 +4,7 @@
 #include "player.hpp"
 #include "effect.hpp"
 #include "chaser.hpp"
-#include "text.hpp"
+#include "../core/include/text.hpp"
 
 #include <iostream>
 #include <chrono>
