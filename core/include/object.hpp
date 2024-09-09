@@ -71,6 +71,28 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+/* abstract class ObjectAllocatorInterface
+   Is used to invoke allocate(), which must return heap-allocated memory to be owned
+   by the invoking Manager instance.
+*/
+class ObjectAllocatorInterface : public EntityAllocatorInterface {
+public:
+   /* Must return a heap-allocated instance of a covariant type of Object. */
+   virtual Object *allocate(void) override = 0;
+};
+
+/* class GenericObjectAllocator
+   A generic implementation of the ObjectAllocatorInterface, that can be used if no
+   special behavior or state is needed.
+*/
+template<class T>
+class GenericObjectAllocator : public ObjectAllocatorInterface {
+public:
+    Object *allocate() override { return new T; }
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 /* class ObjectManager
    Manages and controls internal instances of Objects. Can also be given
    Executor, GLEnv and PhysEnv instance to automatically pass Object instances 
@@ -84,7 +106,7 @@ public:
     // struct holding Object information mapped to a name
     struct ObjectInfo {
         std::string _filter_name;
-        std::function<Object*(void)> _allocator;
+        ObjectAllocatorInterface *_allocator;
     };
 
     // struct holding IDs and other flags belonging to the managed Object
@@ -154,7 +176,7 @@ public:
 
     /* Adds an Object allocator with initialization information to this manager, allowing its given
     name to be used for future spawns.
-    - allocator - function pointer referring to function that returns a heap-allocated Object
+    - allocator - Reference to instance of class implementing ObjectAllocator interface.
     - name - name to associate with the allocator
     - group - value to associate with all instances of this Object
     - force_removeonkill - removes this Object from this manager when it is killed
@@ -163,7 +185,7 @@ public:
     - spawn_callback - function callback to call after Object has been spawned and setup
     - remove_callback - function callback to call before Object has been removed
     */
-    void addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback);
+    void addObject(ObjectAllocatorInterface *allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback);
 
     /* Returns true if the provided Object name has been previously added to this manager. */
     bool hasAddedObject(const char *object_name);

@@ -213,7 +213,7 @@ unsigned EntityManager::spawnEntity(const char *entity_name, int executor_queue,
     EntityInfo &entityinfo = _entityinfos[entity_name];
 
     // push to internal storage
-    Entity *entity = entityinfo._allocator();
+    Entity *entity = entityinfo._allocator->allocate();
     unsigned id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(entity);
     _entityvalues[id] = EntityValues{entity};
@@ -283,7 +283,7 @@ void EntityManager::remove(unsigned id) {
 }
 
 
-void EntityManager::addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback) {
+void EntityManager::addEntity(EntityAllocatorInterface *allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback) {
     if (!hasAddedEntity(name)) {
         addScript(allocator, name, group, force_removeonkill, spawn_callback, remove_callback);
         _entityinfos[name] = EntityInfo{

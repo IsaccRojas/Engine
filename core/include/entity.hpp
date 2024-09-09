@@ -77,6 +77,28 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+/* abstract class EntityAllocatorInterface
+   Is used to invoke allocate(), which must return heap-allocated memory to be owned
+   by the invoking Manager instance.
+*/
+class EntityAllocatorInterface : public ScriptAllocatorInterface {
+public:
+   /* Must return a heap-allocated instance of a covariant type of Entity. */
+   virtual Entity *allocate(void) override = 0;
+};
+
+/* class GenericEntityAllocator
+   A generic implementation of the EntityAllocatorInterface, that can be used if no
+   special behavior or state is needed.
+*/
+template<class T>
+class GenericEntityAllocator : public EntityAllocatorInterface {
+public:
+    Entity *allocate() override { return new T; }
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 /* class EntityManager
    Manages and controls internal instances of Entities. Can also be given 
    Executor and GLEnv instance to automatically pass Entity instances to these 
@@ -90,7 +112,7 @@ public:
     // struct holding Entity information mapped to a name
     struct EntityInfo {
         std::string _animation_name;
-        std::function<Entity*(void)> _allocator;
+        EntityAllocatorInterface *_allocator;
     };
 
     // struct holding IDs and other flags belonging to the managed Entity
@@ -154,7 +176,7 @@ public:
 
     /* Adds an Entity allocator with initialization information to this manager, allowing its given
        name to be used for future spawns.
-       - allocator - function pointer referring to function that returns a heap-allocated Entity
+       - allocator - Reference to instance of class implementing EntityAllocator interface.
        - name - name to associate with the allocator
        - group - value to associate with all instances of this Entity
        - force_removeonkill - removes this Entity from this manager when it is killed
@@ -162,7 +184,7 @@ public:
        - spawn_callback - function callback to call after Entity has been spawned and setup
        - remove_callback - function callback to call before Entity has been removed
     */
-    void addEntity(std::function<Entity*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback);
+    void addEntity(EntityAllocatorInterface *allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback);
 
     /* Returns true if the provided Entity name has been previously added to this manager. */
     bool hasAddedEntity(const char *entity_name);

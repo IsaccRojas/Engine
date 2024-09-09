@@ -207,6 +207,28 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+/* abstract class ScriptAllocatorInterface
+   Is used to invoke allocate(), which must return heap-allocated memory to be owned
+   by the invoking Manager instance.
+*/
+class ScriptAllocatorInterface {
+public:
+   /* Must return a heap-allocated instance of a covariant type of Script. */
+   virtual Script *allocate(void) = 0;
+};
+
+/* class GenericScriptAllocator
+   A generic implementation of the ScriptAllocatorInterface, that can be used if no
+   special behavior or state is needed.
+*/
+template<class T>
+class GenericScriptAllocator : public ScriptAllocatorInterface {
+public:
+    Script *allocate() override { return new T; }
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 /* class ScriptManager
    Manages and controls internal instances of Scripts. Can also be given an 
    Executor instance to automatically pass Script instances to these mechanisms.
@@ -220,7 +242,7 @@ public:
     struct ScriptInfo {
        int _group;
        bool _force_removeonkill;
-       std::function<Script*(void)> _allocator;
+       ScriptAllocatorInterface *_allocator;
        std::function<void(unsigned)> _spawn_callback;
        std::function<void(unsigned)> _remove_callback;
     };
@@ -293,14 +315,14 @@ public:
 
     /* Adds an Script allocator with initialization information to this manager, allowing its given
        name to be used for future spawns.
-       - allocator - function pointer referring to function that returns a heap-allocated Script
+       - allocator - Reference to instance of class implementing ScriptAllocatorInterface.
        - name - name to associate with the allocator
        - group - value to associate with all instances of this Script
        - force_removeonkill - removes this Script from this manager when it is killed
        - spawn_callback - function callback to call after Script has been spawned and setup
        - remove_callback - function callback to call before Script has been removed
     */
-    void addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_removeonkill, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback);
+    void addScript(ScriptAllocatorInterface *allocator, const char *name, int group, bool force_removeonkill, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback);
 
     /* Returns true if the provided Script name has been previously added to this manager. */
     bool hasAddedScript(const char *script_name);

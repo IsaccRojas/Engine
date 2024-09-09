@@ -190,7 +190,7 @@ unsigned ObjectManager::spawnObject(const char *object_name, int executor_queue,
     ObjectInfo &objectinfo = _objectinfos[object_name];
 
     // push to internal storage
-    Object *object = objectinfo._allocator();
+    Object *object = objectinfo._allocator->allocate();
     unsigned id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(object);
     _objectvalues[id] = ObjectValues{object};
@@ -272,7 +272,7 @@ void ObjectManager::remove(unsigned id) {
         _scriptRemoval(scriptvalues);
 }
 
-void ObjectManager::addObject(std::function<Object*(void)> allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback) {
+void ObjectManager::addObject(ObjectAllocatorInterface *allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback) {
     if (!hasAddedObject(name)) {
         addEntity(allocator, name, group, force_removeonkill, animation_name, spawn_callback, remove_callback);
         _objectinfos[name] = ObjectInfo{

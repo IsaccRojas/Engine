@@ -446,7 +446,7 @@ unsigned ScriptManager::spawnScript(const char *scriptname, int executor_queue) 
     info = _scriptinfos[scriptname];
 
     // push to internal storage
-    Script *script = info._allocator();
+    Script *script = info._allocator->allocate();
     unsigned id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(script);
     _scriptvalues[id] = ScriptValues{id, scriptname, script, info._group};
@@ -501,7 +501,7 @@ void ScriptManager::remove(unsigned id) {
     _scriptRemoval(scriptvalues);
 }
 
-void ScriptManager::addScript(std::function<Script*(void)> allocator, const char *name, int group, bool force_removeonkill, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback) {  
+void ScriptManager::addScript(ScriptAllocatorInterface *allocator, const char *name, int group, bool force_removeonkill, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback) {  
     if (!hasAddedScript(name))
         _scriptinfos[name] = ScriptInfo{
             group,
