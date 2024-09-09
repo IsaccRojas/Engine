@@ -65,8 +65,6 @@ public:
     void genBox(glm::vec3 position, glm::vec3 dimensions, glm::vec3 velocity);
     void removeBox();
     Box *getBox();
-
-    ObjectManager *getManager();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

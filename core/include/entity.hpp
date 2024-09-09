@@ -71,8 +71,6 @@ public:
     void genQuad(glm::vec3 pos, glm::vec3 scale);
     void removeQuad();
     Quad *getQuad();
-
-    EntityManager *getManager();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

@@ -122,8 +122,6 @@ void Script::enqueueKill() {
     }
 }
 
-ScriptManager *Script::getManager() { return _scriptmanager; }
-
 unsigned Script::getManagerID() { return _scriptmanager_id; }
 
 // --------------------------------------------------------------------------------------------------------------------------

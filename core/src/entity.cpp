@@ -125,8 +125,6 @@ Quad *Entity::getQuad() {
     return _quad;
 }
 
-EntityManager *Entity::getManager() { return _entitymanager; }
-
 // --------------------------------------------------------------------------------------------------------------------------
 
 //TODO: only signature is complete at the moment

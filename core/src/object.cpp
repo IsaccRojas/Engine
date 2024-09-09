@@ -96,8 +96,6 @@ Box *Object::getBox() {
     return _box;
 }
 
-ObjectManager *Object::getManager() { return _objectmanager; }
-
 // --------------------------------------------------------------------------------------------------------------------------
 
 ObjectManager::ObjectManager(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor) : EntityManager() {

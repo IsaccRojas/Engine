@@ -105,7 +105,6 @@ public:
     */
     void enqueueKill();
     
-    ScriptManager *getManager();
     unsigned getManagerID();
 };
 
