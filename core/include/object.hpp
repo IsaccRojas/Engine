@@ -10,7 +10,7 @@ class ObjectManager;
 
 /* class Object
    Represents an Entity that contains a box. objectSetup() must be called for the
-   script methods _initEntity(), _baseEntity(), and _killEntity() to do anything.
+   script methods _initObject(), _baseObject(), and _killObject() to do anything.
 */
 class Object : public Entity {
     friend ObjectManager;
@@ -40,10 +40,10 @@ protected:
        - _collisionObject() is called by a PhysEnv when collision with this object's box is detected. This is supplied to the box on
          calling genBox().
     */
-    virtual void _initObject();
-    virtual void _baseObject();
-    virtual void _killObject();
-    virtual void _collisionObject(Box *box);
+    virtual void _initObject() = 0;
+    virtual void _baseObject() = 0;
+    virtual void _killObject() = 0;
+    virtual void _collisionObject(Box *box) = 0;
 
 public:
     Object(Object &&other);

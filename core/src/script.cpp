@@ -45,10 +45,6 @@ Script &Script::operator=(Script &&other) {
     return *this;
 }
 
-void Script::_init() {}
-void Script::_base() {}
-void Script::_kill() {}
-
 void Script::runInit() {
     _init();
 

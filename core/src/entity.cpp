@@ -51,10 +51,6 @@ void Entity::_kill() {
         _killEntity();
 }
 
-void Entity::_initEntity() {}
-void Entity::_baseEntity() {}
-void Entity::_killEntity() {}
-
 AnimationState &Entity::getAnimState() { return _animationstate; }
 
 void Entity::stepAnim() {

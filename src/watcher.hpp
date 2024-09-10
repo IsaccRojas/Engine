@@ -3,62 +3,6 @@
 
 #include "../core/include/object.hpp"
 
-/* abstract class ObjectWatcherInterface
-   wraps an ObjectManager, and pushes to a queue of references on spawns This creates associations between Manager 
-   enqueues and the instances that invoke them. It is undefined behavior to enqueue a Script covariant without using
-   a Watcher's wrapper enqueue methods, if that covariant is using a Watcher as an allocator.
-*/
-template<class T>
-class WatcherInterface : public ObjectAllocatorInterface {
-    friend T;
-
-    std::queue<T*> _captors;
-    ObjectManager *_manager;
-
-    T *_popCaptor() {
-        if (!_captors.empty()) {
-            T *captor = _captors.front();
-            _captors.pop();
-            return captor;
-        }
-        return nullptr;
-    }
-
-protected:
-    WatcherInterface(ObjectManager *manager) : _manager(manager) {}
-    WatcherInterface(const WatcherInterface &other) = delete;
-    WatcherInterface &operator=(const WatcherInterface &other) = delete;
-
-public:
-    void clearCaptors() {
-        std::queue<T*> empty;
-        _captors.swap(empty);
-    }
-
-    void spawnEntityEnqueue(T *captor, const char *name, int queue, glm::vec3 pos) {
-        _captors.push(captor);
-        _manager->spawnEntityEnqueue(name, queue, pos);
-    }
-    void spawnObjectEnqueue(T *captor, const char *name, int queue, glm::vec3 pos) {
-        _captors.push(captor);
-        _manager->spawnObjectEnqueue(name, queue, pos);
-    }
-
-    Object *allocate() override {
-        T *captive = allocateWatchedType();
-
-        T *captor = _popCaptor();
-        if (captor)
-            captor->_capture(captive);
-        
-        return captive;
-    }
-
-    virtual T *allocateWatchedType() = 0;
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
 /* abstract class WatcherInterface
    wraps an ObjectManager, and pushes to a queue of references on spawns This creates associations between Manager 
    enqueues and the instances that invoke them. This should be fine so long as Watcher's wrapper methods are 
@@ -68,14 +12,14 @@ public:
 
 template<class T>
 class WatcherInterface : public ObjectAllocatorInterface {
-    friend T;
+    friend CaptorInterface<T>;
 
-    std::queue<T*> _captors;
+    std::queue<CaptorInterface<T>*> _captors;
     ObjectManager *_manager;
 
-    T *_popCaptor() {
+    CaptorInterface<T> *_popCaptor() {
         if (!_captors.empty()) {
-            T *captor = _captors.front();
+            CaptorInterface<T> *captor = _captors.front();
             _captors.pop();
             return captor;
         }
@@ -89,15 +33,15 @@ protected:
 
 public:
     void clearCaptors() {
-        std::queue<T*> empty;
+        std::queue<CaptorInterface<T>*> empty;
         _captors.swap(empty);
     }
 
-    void spawnEntityEnqueue(T *captor, const char *name, int queue, glm::vec3 pos) {
+    void spawnEntityEnqueue(CaptorInterface<T> *captor, const char *name, int queue, glm::vec3 pos) {
         _captors.push(captor);
         _manager->spawnEntityEnqueue(name, queue, pos);
     }
-    void spawnObjectEnqueue(T *captor, const char *name, int queue, glm::vec3 pos) {
+    void spawnObjectEnqueue(CaptorInterface<T> *captor, const char *name, int queue, glm::vec3 pos) {
         _captors.push(captor);
         _manager->spawnObjectEnqueue(name, queue, pos);
     }
@@ -105,7 +49,7 @@ public:
     Object *allocate() override {
         T *captive = allocateWatchedType();
 
-        T *captor = _popCaptor();
+        CaptorInterface<T> *captor = _popCaptor();
         if (captor)
             captor->_capture(captive);
         
@@ -119,12 +63,8 @@ public:
 
 template<class T>
 class CaptorInterface {
-    WatcherInterface<T> *_watcher;
 protected:
     virtual void _capture(T *captive) = 0;
-
-    CaptorInterface(WatcherInterface<T> *watcher) : _watcher(watcher) {}
-    CaptorInterface *getWatcher() { return _watcher; }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -157,9 +97,7 @@ class Player : public Object, public CaptorInterface<Projectile1>, public Captor
     void _capture(Projectile2 *captive) override {}
 public:
     Player(WatcherInterface<Projectile1> *watcher1, WatcherInterface<Projectile2> *watcher2) : 
-        Object(), 
-        CaptorInterface<Projectile1>(watcher1), 
-        CaptorInterface<Projectile2>(watcher2)  
+        Object()
     {}
 };
 

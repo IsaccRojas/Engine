@@ -49,9 +49,9 @@ protected:
        - _base() is called by runBase(). _runBase() is called on execution, each time the Script is queued.
        - _kill() is called by runKill(). _runKill() is called on erasure.
     */
-    virtual void _init();
-    virtual void _base();
-    virtual void _kill();
+    virtual void _init() = 0;
+    virtual void _base() = 0;
+    virtual void _kill() = 0;
 
 public:
     Script(Script &&other);

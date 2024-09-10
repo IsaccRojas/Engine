@@ -24,7 +24,7 @@ class OrbShot : public Basic {
         _i++;
 
         if (_i % 10 == 0) {
-            getManager()->spawnEntityEnqueue("OrbShotParticle", 0, getBox()->pos);
+            getWatcher()->spawnEntityEnqueue(this, "OrbShotParticle", 0, getBox()->pos);
         }
 
         if (_i >= _lifetime || getBox()->getCollided())
@@ -32,13 +32,15 @@ class OrbShot : public Basic {
     }
 
     void _killBasic() {
-        getManager()->spawnEntityEnqueue("OrbShotBoom", 1, getBox()->pos);
+        getWatcher()->spawnEntityEnqueue(this, "OrbShotBoom", 1, getBox()->pos);
     }
 
     void _collisionBasic(Box *box) {}
 
+    void _captureBasic(Basic *captive) {}
+
 public:
-    OrbShot() : Basic(glm::vec3(6.0f, 6.0f, 1.0f), glm::vec3(4.0f, 4.0f, 0.0f)) {}
+    OrbShot(WatcherInterface *watcher) : Basic(watcher, glm::vec3(6.0f, 6.0f, 1.0f), glm::vec3(4.0f, 4.0f, 0.0f)) {}
 };
 
 class SmallSmoke : public Effect {

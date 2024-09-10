@@ -11,7 +11,7 @@ class EntityManager;
 
 /* class Entity
    Represents a Script that contains a Quad. entitySetup() must be called for the
-   script methods _init(), _base(), and _kill() to do anything.
+   script methods _initEntity(), _baseEntity(), and _killEntity() to do anything.
 */
 class Entity : public Script {
     friend EntityManager;
@@ -44,9 +44,9 @@ protected:
        - _baseEntity() is called by _base(). _base() is called on execution, each time the entity is queued.
        - _killEntity() is called by _kill(). _kill() is called on erasure.
     */
-    virtual void _initEntity();
-    virtual void _baseEntity();
-    virtual void _killEntity();
+    virtual void _initEntity() = 0;
+    virtual void _baseEntity() = 0;
+    virtual void _killEntity() = 0;
 
 public:
     Entity(Entity &&other);

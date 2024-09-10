@@ -46,11 +46,6 @@ void Object::_killEntity() {
         _killObject();
 }
 
-void Object::_initObject() {}
-void Object::_baseObject() {}
-void Object::_killObject() {}
-void Object::_collisionObject(Box *box) {}
-
 void Object::objectSetup(PhysEnv* physenv, Filter *filter) {
     if (!physenv)
         throw std::runtime_error("Attempt to setup Object with null PhysEnv reference");
