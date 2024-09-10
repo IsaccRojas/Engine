@@ -74,9 +74,10 @@ public:
    by the invoking Manager instance.
 */
 class ObjectAllocatorInterface : public EntityAllocatorInterface {
-public:
+    friend ObjectManager;
+protected:
    /* Must return a heap-allocated instance of a covariant type of Object. */
-   virtual Object *allocate(void) override = 0;
+   virtual Object *_allocate(void) override = 0;
 };
 
 /* class GenericObjectAllocator
@@ -85,8 +86,7 @@ public:
 */
 template<class T>
 class GenericObjectAllocator : public ObjectAllocatorInterface {
-public:
-    Object *allocate() override { return new T; }
+    Object *_allocate() override { return new T; }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -135,6 +135,16 @@ protected:
     // initialize/uninitialize only ObjectManager members
     void _objectManagerInit(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters);
     void _objectManagerUninit();
+
+    //spawns a Script using a name previously added to this manager, and returns its ID. This
+    //will invoke scriptSetup()
+    unsigned _spawnScript(const char *script_name, int executor_queue) override;
+    //spawns an Entity using a name previously added to this manager, and returns its ID. This
+    //will invoke scriptSetup() and entitySetup()
+    unsigned _spawnEntity(const char *entity_name, int executor_queue, glm::vec3 entity_pos) override;
+    //spawns an Object using a name previously added to this manager, and returns its ID. This
+    //will invoke scriptSetup(), entitySetup() and objectSetup()
+    unsigned _spawnObject(const char *object_name, int executor_queue, glm::vec3 object_pos);
 public:
     /* Calls init() with the provided arguments. */
     ObjectManager(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor);
@@ -149,24 +159,12 @@ public:
     void init(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor);
     void uninit();
 
-    /* Spawns a Script using a name previously added to this manager, and returns its ID. This
-       will invoke scriptSetup().
-    */
-    unsigned spawnScript(const char *script_name, int executor_queue) override;
-    /* Spawns an Entity using a name previously added to this manager, and returns its ID. This
-       will invoke entitySetup() and scriptSetup().
-    */
-    unsigned spawnEntity(const char *entity_name, int executor_queue, glm::vec3 entity_pos) override;
-    /* Spawns an Ontity using a name previously added to this manager, and returns its ID. This
-       will invoke objectSetup(), entitySetup() and scriptSetup().
-    */
-    unsigned spawnObject(const char *object_name, int executor_queue, glm::vec3 object_pos);
     /* Queues a Script to be spawned when calling runSpawnQueue(). */
-    void spawnScriptEnqueue(const char *script_name, int executor_queue) override;
+    void spawnScriptEnqueue(const char *script_name, int executor_queue, CaptorInterface *captor) override;
     /* Queues a Entity to be spawned when calling runSpawnQueue(). */
-    void spawnEntityEnqueue(const char *script_name, int executor_queue, glm::vec3 entity_pos) override;
+    void spawnEntityEnqueue(const char *script_name, int executor_queue, glm::vec3 entity_pos, CaptorInterface *captor) override;
     /* Queues a Object to be spawned when calling runSpawnQueue(). */
-    void spawnObjectEnqueue(const char *script_name, int executor_queue, glm::vec3 object_pos);
+    void spawnObjectEnqueue(const char *script_name, int executor_queue, glm::vec3 object_pos, CaptorInterface *captor);
     /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(), spawnEntityEnqueue(), or spawnObjectEnqueue(). */
     std::vector<unsigned> runSpawnQueue() override;
     /* Removes the Object, Entity or Script associated with the provided ID. */

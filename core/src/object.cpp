@@ -150,29 +150,19 @@ void ObjectManager::_objectRemoval(ObjectValues &objectvalues, EntityValues &ent
     objectvalues = ObjectValues{nullptr};
 }
 
-void ObjectManager::init(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor) {
-    EntityManager::init(max_count, glenv, animations, executor);
-    _objectManagerInit(max_count, physenv, filters);
-}
-
-void ObjectManager::uninit() {
-    EntityManager::uninit();
-    _objectManagerUninit();
-}
-
-unsigned ObjectManager::spawnScript(const char *script_name, int executor_queue) {
-    unsigned id = EntityManager::spawnScript(script_name, executor_queue);
+unsigned ObjectManager::_spawnScript(const char *script_name, int executor_queue) {
+    unsigned id = EntityManager::_spawnScript(script_name, executor_queue);
     _objectvalues[id] = ObjectValues{nullptr};
     return id;
 }
 
-unsigned ObjectManager::spawnEntity(const char *entity_name, int executor_queue, glm::vec3 entity_pos) {
-    unsigned id = EntityManager::spawnEntity(entity_name, executor_queue, entity_pos);
+unsigned ObjectManager::_spawnEntity(const char *entity_name, int executor_queue, glm::vec3 entity_pos) {
+    unsigned id = EntityManager::_spawnEntity(entity_name, executor_queue, entity_pos);
     _objectvalues[id] = ObjectValues{nullptr};
     return id;
 }
 
-unsigned ObjectManager::spawnObject(const char *object_name, int executor_queue, glm::vec3 object_pos) {
+unsigned ObjectManager::_spawnObject(const char *object_name, int executor_queue, glm::vec3 object_pos) {
     // fail if exceeding max size
     if (_count >= _max_count)
         throw CountLimitException();
@@ -183,7 +173,7 @@ unsigned ObjectManager::spawnObject(const char *object_name, int executor_queue,
     ObjectInfo &objectinfo = _objectinfos[object_name];
 
     // push to internal storage
-    Object *object = objectinfo._allocator->allocate();
+    Object *object = objectinfo._allocator->_allocate();
     unsigned id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(object);
     _objectvalues[id] = ObjectValues{object};
@@ -200,18 +190,28 @@ unsigned ObjectManager::spawnObject(const char *object_name, int executor_queue,
     return id;
 }
 
-void ObjectManager::spawnScriptEnqueue(const char *script_name, int executor_queue) {
-    EntityManager::spawnScriptEnqueue(script_name, executor_queue);
+void ObjectManager::init(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor) {
+    EntityManager::init(max_count, glenv, animations, executor);
+    _objectManagerInit(max_count, physenv, filters);
+}
+
+void ObjectManager::uninit() {
+    EntityManager::uninit();
+    _objectManagerUninit();
+}
+
+void ObjectManager::spawnScriptEnqueue(const char *script_name, int executor_queue, CaptorInterface *captor) {
+    EntityManager::spawnScriptEnqueue(script_name, executor_queue, captor);
     _objectenqueues.push(ObjectEnqueue{false, glm::vec3(0.0f)});
 }
 
-void ObjectManager::spawnEntityEnqueue(const char *script_name, int executor_queue, glm::vec3 entity_pos) {
-    EntityManager::spawnEntityEnqueue(script_name, executor_queue, entity_pos);
+void ObjectManager::spawnEntityEnqueue(const char *script_name, int executor_queue, glm::vec3 entity_pos, CaptorInterface *captor) {
+    EntityManager::spawnEntityEnqueue(script_name, executor_queue, entity_pos, captor);
     _objectenqueues.push(ObjectEnqueue{false, glm::vec3(0.0f)});
 }
 
-void ObjectManager::spawnObjectEnqueue(const char *script_name, int executor_queue, glm::vec3 object_pos) {
-    EntityManager::spawnEntityEnqueue(script_name, executor_queue, object_pos);
+void ObjectManager::spawnObjectEnqueue(const char *script_name, int executor_queue, glm::vec3 object_pos, CaptorInterface *captor) {
+    EntityManager::spawnEntityEnqueue(script_name, executor_queue, object_pos, captor);
     _objectenqueues.push(ObjectEnqueue{true, object_pos});
 }
 
@@ -224,12 +224,15 @@ std::vector<unsigned> ObjectManager::runSpawnQueue() {
         ObjectEnqueue &objectenqueue = _objectenqueues.front();
         
         if (objectenqueue._valid)
-            ids.push_back(spawnObject(scriptenqueue._name.c_str(), scriptenqueue._executor_queue, objectenqueue._object_pos));
+            ids.push_back(_spawnObject(scriptenqueue._name.c_str(), scriptenqueue._executor_queue, objectenqueue._object_pos));
         else if (entityenqueue._valid)
-            ids.push_back(spawnEntity(scriptenqueue._name.c_str(), scriptenqueue._executor_queue, entityenqueue._entity_pos));
+            ids.push_back(_spawnEntity(scriptenqueue._name.c_str(), scriptenqueue._executor_queue, entityenqueue._entity_pos));
         else if (scriptenqueue._valid)
-            ids.push_back(spawnScript(scriptenqueue._name.c_str(), scriptenqueue._executor_queue));
+            ids.push_back(_spawnScript(scriptenqueue._name.c_str(), scriptenqueue._executor_queue));
         
+        if (scriptenqueue._captor)
+            scriptenqueue._captor->_capture();
+
         _scriptenqueues.pop();
         _entityenqueues.pop();
         _objectenqueues.pop();

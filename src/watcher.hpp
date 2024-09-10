@@ -61,6 +61,7 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+/*
 template<class T>
 class CaptorInterface {
 protected:
@@ -110,5 +111,7 @@ class Projectile2Watcher : public WatcherInterface<Projectile2> {
 public:
     Projectile2 *allocateWatchedType() { return new Projectile2; }
 };
+
+*/
 
 #endif

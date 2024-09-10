@@ -211,9 +211,10 @@ public:
    by the invoking Manager instance.
 */
 class ScriptAllocatorInterface {
-public:
+   friend ScriptManager;
+protected:
    /* Must return a heap-allocated instance of a covariant type of Script. */
-   virtual Script *allocate(void) = 0;
+   virtual Script *_allocate(void) = 0;
 };
 
 /* class GenericScriptAllocator
@@ -222,8 +223,22 @@ public:
 */
 template<class T>
 class GenericScriptAllocator : public ScriptAllocatorInterface {
-public:
-    Script *allocate() override { return new T; }
+    Script *_allocate() override { return new T; }
+};
+
+class EntityManager;
+class ObjectManager;
+
+/* abstract class CaptorInterface
+   Is used to allow the user to create an association between enqueues and when it was
+   enqueued.
+*/
+class CaptorInterface {
+   friend ScriptManager;
+   friend EntityManager;
+   friend ObjectManager;
+protected:
+    virtual void _capture() = 0;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -259,6 +274,7 @@ public:
        bool _valid;
        std::string _name;
        int _executor_queue;
+       CaptorInterface *_captor;
     };
 
 protected:
@@ -286,7 +302,10 @@ protected:
     // manager lifetime and Script runtime members
     void _scriptSetup(Script *script, ScriptInfo &info, unsigned id, int executor_queue);
     void _scriptRemoval(ScriptValues &values);
-   
+
+    //spawns a Script using a name previously added to this manager, and returns its ID. This
+    //will invoke scriptSetup()
+    virtual unsigned _spawnScript(const char *script_name, int executor_queue);
 public:
     /* Calls init() with the provided arguments. */
     ScriptManager(unsigned max_count, Executor *executor);
@@ -301,12 +320,8 @@ public:
     void init(unsigned max_count, Executor *executor);
     void uninit();
 
-    /* Spawns a Script using a name previously added to this manager, and returns its ID. This
-       will invoke scriptSetup().
-    */
-    virtual unsigned spawnScript(const char *script_name, int executor_queue);
     /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
-    virtual void spawnScriptEnqueue(const char *script_name, int executor_queue);
+    virtual void spawnScriptEnqueue(const char *script_name, int executor_queue, CaptorInterface *captor);
     /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(). */
     virtual std::vector<unsigned> runSpawnQueue();
     /* Removes the Script associated with the provided ID. */

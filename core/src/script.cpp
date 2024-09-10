@@ -396,6 +396,31 @@ void ScriptManager::_scriptRemoval(ScriptValues &values) {
     values = ScriptValues{0, nullptr, nullptr, -1};
 }
 
+unsigned ScriptManager::_spawnScript(const char *scriptname, int executor_queue) {
+    // fail if exceeding max size
+    if (_count >= _max_count)
+        throw CountLimitException();
+
+    // get type information
+    ScriptInfo info;
+    info = _scriptinfos[scriptname];
+
+    // push to internal storage
+    Script *script = info._allocator->_allocate();
+    unsigned id = _ids.push();
+    _scripts[id] = std::unique_ptr<Script>(script);
+    _scriptvalues[id] = ScriptValues{id, scriptname, script, info._group};
+
+    // set up script internals
+    _scriptSetup(script, info, id, executor_queue);
+    
+    // call callback if it exists
+    if (info._spawn_callback)
+        info._spawn_callback(id);
+
+    return id;
+}
+
 void ScriptManager::init(unsigned max_count, Executor *executor) {
     if (_initialized)
         throw InitializedException();
@@ -430,34 +455,9 @@ void ScriptManager::uninit() {
     _initialized = false;
 }
 
-unsigned ScriptManager::spawnScript(const char *scriptname, int executor_queue) {
-    // fail if exceeding max size
-    if (_count >= _max_count)
-        throw CountLimitException();
-
-    // get type information
-    ScriptInfo info;
-    info = _scriptinfos[scriptname];
-
-    // push to internal storage
-    Script *script = info._allocator->allocate();
-    unsigned id = _ids.push();
-    _scripts[id] = std::unique_ptr<Script>(script);
-    _scriptvalues[id] = ScriptValues{id, scriptname, script, info._group};
-
-    // set up script internals
-    _scriptSetup(script, info, id, executor_queue);
-    
-    // call callback if it exists
-    if (info._spawn_callback)
-        info._spawn_callback(id);
-
-    return id;
-}
-
-void ScriptManager::spawnScriptEnqueue(const char *script_name, int executor_queue) {
+void ScriptManager::spawnScriptEnqueue(const char *script_name, int executor_queue, CaptorInterface *captor) {
     // names are not checked here for the sake of efficiency
-    _scriptenqueues.push(ScriptEnqueue{true, script_name, executor_queue});
+    _scriptenqueues.push(ScriptEnqueue{true, script_name, executor_queue, captor});
 }
 
 std::vector<unsigned> ScriptManager::runSpawnQueue() {
@@ -467,7 +467,10 @@ std::vector<unsigned> ScriptManager::runSpawnQueue() {
         ScriptEnqueue &scriptenqueue = _scriptenqueues.front();
 
         if (scriptenqueue._valid)
-            ids.push_back(spawnScript(scriptenqueue._name.c_str(), scriptenqueue._executor_queue));
+            ids.push_back(_spawnScript(scriptenqueue._name.c_str(), scriptenqueue._executor_queue));
+
+        if (scriptenqueue._captor)
+            scriptenqueue._captor->_capture();
         
         _scriptenqueues.pop();
     }

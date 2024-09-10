@@ -80,9 +80,10 @@ public:
    by the invoking Manager instance.
 */
 class EntityAllocatorInterface : public ScriptAllocatorInterface {
-public:
+   friend EntityManager;
+protected:
    /* Must return a heap-allocated instance of a covariant type of Entity. */
-   virtual Entity *allocate(void) override = 0;
+   virtual Entity *_allocate(void) override = 0;
 };
 
 /* class GenericEntityAllocator
@@ -91,8 +92,7 @@ public:
 */
 template<class T>
 class GenericEntityAllocator : public EntityAllocatorInterface {
-public:
-    Entity *allocate() override { return new T; }
+    Entity *_allocate() override { return new T; }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -141,6 +141,13 @@ protected:
     // initialize/uninitialize only EntityManager members
     void _entityManagerInit(unsigned max_count, GLEnv *glenv, unordered_map_string_Animation_t *animations);
     void _entityManagerUninit();
+
+    //spawns a Script using a name previously added to this manager, and returns its ID. This
+    //will invoke scriptSetup()
+    virtual unsigned _spawnScript(const char *script_name, int executor_queue) override;
+    //spawns an Entity using a name previously added to this manager, and returns its ID. This
+    //will invoke scriptSetup() and entitySetup()
+    virtual unsigned _spawnEntity(const char *entity_name, int executor_queue, glm::vec3 entity_pos);
 public:
     /* Calls init() with the provided arguments. */
     EntityManager(unsigned max_count, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor);
@@ -154,19 +161,11 @@ public:
 
     void init(unsigned max_count, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor);
     void uninit();
-
-    /* Spawns a Script using a name previously added to this manager, and returns its ID. This
-       will invoke scriptSetup().
-    */
-    virtual unsigned spawnScript(const char *script_name, int executor_queue) override;
-    /* Spawns an Entity using a name previously added to this manager, and returns its ID. This
-       will invoke entitySetup() and scriptSetup().
-    */
-    virtual unsigned spawnEntity(const char *entity_name, int executor_queue, glm::vec3 entity_pos);
+    
     /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
-    virtual void spawnScriptEnqueue(const char *script_name, int executor_queue) override;
+    virtual void spawnScriptEnqueue(const char *script_name, int executor_queue, CaptorInterface *captor) override;
     /* Enqueues a Entity to be spawned when calling runSpawnQueue(). */
-    virtual void spawnEntityEnqueue(const char *script_name, int executor_queue, glm::vec3 object_pos);
+    virtual void spawnEntityEnqueue(const char *script_name, int executor_queue, glm::vec3 object_pos, CaptorInterface *captor);
     /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue() or spawnEntityEnqueue(). */
     virtual std::vector<unsigned> runSpawnQueue() override;
     /* Removes the Entity or Script associated with the provided ID. */
