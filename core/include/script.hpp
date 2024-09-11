@@ -12,10 +12,8 @@
 #include "util.hpp"
 #include "commonexcept.hpp"
 
-// prototypes
+// prototype
 class Executor;
-template<typename T>
-class Servicer;
 
 /* class Script
    Represents a runnable script by an owning Executor instance.
@@ -107,13 +105,18 @@ protected:
 */
 template<class T>
 class GenericAllocator : public AllocatorInterface {
-    Script *_allocate() override { return new T; }
+   Script *_allocate() override { return new T; }
 };
 
 /* abstract class Receiver
 Interface that is used to allow reception of a generic specified type when
 implemented, via subscription to a Servicer of the same type.
 */
+
+// prototype
+template<typename T>
+class Servicer;
+
 template<class T>
 class Receiver {
    friend Servicer<T>;
@@ -136,27 +139,25 @@ template<class T>
 class Servicer : public AllocatorInterface {
    std::unordered_set<Receiver<T>*> _receivers;
    
-   Base * _allocate(int tag) override {
+   Script *_allocate(int tag) override {
       // interpret tag as channel
 
       T *t = _allocateInstance();
 
       // if channel is non-negative, deliver instance
       if (tag >= 0) {
-
          // if channel matches, deliver
          for (const auto& receiver: _receivers)
                if (receiver->_channel == tag)
                   receiver->_receive(t);
       }
+
       return t;
    }
 protected:
    virtual T *_allocateInstance() { return new T; }
 public:
-   void subscribe(Receiver<T> *receiver) {
-      _receivers.insert(receiver);
-   }
+   void subscribe(Receiver<T> *receiver) { _receivers.insert(receiver); }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
