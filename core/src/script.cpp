@@ -1,8 +1,6 @@
 #include "../include/script.hpp"
 
-Script::Script(Script &&other) {
-    operator=(std::move(other));
-}
+Script::Script(Script &&other) { operator=(std::move(other)); }
 Script::Script() :
     _executor(nullptr),
     _executor_id(-1),
@@ -44,21 +42,26 @@ Script &Script::operator=(Script &&other) {
 }
 
 void Script::_scriptRemove() {
-    // remove from owned executor
-    if (_executor && _executor_id >= 0)
+    // remove from owned executor (if this has a executor reference, it must have an ID so don't need to check)
+    if (_executor)
         _executor->remove(_executor_id);
+    _executor = nullptr;
+    _executor_id = -1;
 }
 
 void Script::runInit() {
-    _init();
+    if (_executor)
+        _init();
 
 }
 void Script::runBase() {
-    _base();
+    if (_executor)
+        _base();
 }
 
 void Script::runKill() {
-    _kill();
+    if (_executor)
+        _kill();
     
     // this flag could have only been set if an owning ScriptManager sets it, so the reference must be valid, and ID >= 0
     if (_remove_onkill)
@@ -91,11 +94,8 @@ void Script::enqueueKill() {
 Executor::Executor(unsigned max_count, unsigned queues) : _initialized(false) {
     init(max_count, queues);
 }
-Executor::Executor(Executor &&other) {
-    operator=(std::move(other));
-}
+Executor::Executor(Executor &&other) { operator=(std::move(other)); }
 Executor::Executor() : _max_count(0), _count(0), _initialized(false) {}
-
 Executor::~Executor() { /* automatic destruction is fine */ }
 
 Executor &Executor::operator=(Executor &&other) {

@@ -73,8 +73,7 @@ public:
     */
     void enqueueExec(unsigned queue);
 
-    /* Kills the Script.
-    */
+    /* Kills the Script. */
     void enqueueKill();
 
     /* Sets various internal flags used by Executors to control state. Can be set manually to manipulate
@@ -127,7 +126,7 @@ public:
     int getChannel() { return _channel; }
 };
 
-/* class Receiver
+/* class Servicer
    Implementation of AllocatorInterface that interprets the tag argument as a
    "channel". Subscribed Receivers will have their _receive() method invoked
    whenever instances of this class have their allocator invoked. Only Receivers
@@ -225,8 +224,7 @@ private:
 
     bool _initialized;
 
-    // spawns a Script using a name previously added to this manager, and returns its ID. This
-    // will invoke scriptSetup()
+    // spawns a Script using a name previously added to this manager, and returns its ID
     unsigned _spawnScript(const char *script_name, int execution_queue, int tag);
 public:
     /* Calls init() with the provided arguments. */
@@ -234,7 +232,7 @@ public:
     Executor(Executor &&other);
     Executor();
     Executor(const Executor &other) = delete;
-    ~Executor();
+    virtual ~Executor();
 
     Executor &operator=(Executor &&other);
     Executor &operator=(const Executor &other) = delete;
@@ -244,18 +242,16 @@ public:
 
     /* Returns a pointer to a Script instance in the environment corresponding to the provided ID. Returns nullptr if the
        ID does not exist in the environment.
-       id - ID of Script to get pointer of
     */
     Script* get(unsigned id);
     /* Removes the provided ID from the system by making its ID available for writing. Note that it is undefined 
        behavior to use the passed ID after calling this.
-       id - ID to be removed
     */
     void remove(unsigned id);
 
     /* Adds an Script allocator with initialization information to this manager, allowing its given
        name to be used for future spawns.
-       - allocator - Reference to instance of class implementing ScriptAllocatorInterface.
+       - allocator - Reference to instance of class implementing AllocatorInterface.
        - name - name to associate with the allocator
        - group - value to associate with all instances of this Script
        - force_removeonkill - removes this Script from this manager when it is killed
@@ -265,26 +261,20 @@ public:
     void add(AllocatorInterface *allocator, const char *name, int group, bool force_removeonkill, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback);
 
     /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
-    void enqueueSpawn(const char *script_name, int execution_queue, int tag);
-    /* Enqueues a Script instance corresponding to the ID provided to be executed when runExecQueue() is called.
-       id - ID of Script to enqueue
-       queue - which internal queue to push the script into
-    */
+    virtual void enqueueSpawn(const char *script_name, int execution_queue, int tag);
+    /* Enqueues a Script instance corresponding to the ID provided to be executed when runExecQueue() is called. */
     void enqueueExec(unsigned id, unsigned queue);
-    /* Enqueues a Script instance corresponding to the ID provided to be killed when runKillQueue() is called
-       id - ID of Script to be erased 
-    */
+    /* Enqueues a Script instance corresponding to the ID provided to be killed when runKillQueue() is called. */
     void enqueueKill(unsigned id);
 
-    /* Executes all currently enqueued Scripts, and dequeues them. This will call the (init() method if it has not yet been
-       called, and the) base() method on every active Script. 
-       - queue - which internal queue to run
+    /* Executes all currently enqueued Scripts in the specified queue, and dequeues them. This will call the 
+       (init() method if it has not yet been called, and the) base() method on every active Script.
     */
     void runExecQueue(unsigned queue);
     /* Calls the kill() method on all erasure-queued Scripts if it has not been called yet. */
     void runKillQueue();
     /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(). */
-    std::vector<unsigned> runSpawnQueue();
+    virtual std::vector<unsigned> runSpawnQueue();
 
     /* Returns true if the provided ID is active. */
     bool hasID(unsigned id);
