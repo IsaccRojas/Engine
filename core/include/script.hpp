@@ -29,7 +29,7 @@ class Script {
     Executor *_executor;  
     int _executor_id;
     int _last_execqueue;
-    bool _remove_onkill;
+    bool _removeonkill;
     bool _initialized;
     bool _killed;
     bool _exec_enqueued;
@@ -174,7 +174,7 @@ public:
     // struct holding Script information mapped to a name
     struct ScriptInfo {
        int _group;
-       bool _force_removeonkill;
+       bool _removeonkill;
        AllocatorInterface *_allocator;
        std::function<void(unsigned)> _spawn_callback;
        std::function<void(unsigned)> _remove_callback;
@@ -193,7 +193,7 @@ public:
        int _tag;
     };
 
-private:
+protected:
     /* Script data structures */
     // IDs to distribute to Scripts
     SlotVec _ids;
@@ -223,6 +223,9 @@ private:
     unsigned _count;
 
     bool _initialized;
+
+    // initializes Script's Executor-related fields
+    void _setupScript(Script *script, unsigned executor_id, bool removeonkill, int group);
 
     // spawns a Script using a name previously added to this manager, and returns its ID
     unsigned _spawnScript(const char *script_name, int execution_queue, int tag);
@@ -254,11 +257,11 @@ public:
        - allocator - Reference to instance of class implementing AllocatorInterface.
        - name - name to associate with the allocator
        - group - value to associate with all instances of this Script
-       - force_removeonkill - removes this Script from this manager when it is killed
+       - removeonkill - removes this Script from this manager when it is killed
        - spawn_callback - function callback to call after Script has been spawned and setup
        - remove_callback - function callback to call before Script has been removed
     */
-    void add(AllocatorInterface *allocator, const char *name, int group, bool force_removeonkill, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback);
+    void add(AllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback);
 
     /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
     virtual void enqueueSpawn(const char *script_name, int execution_queue, int tag);
@@ -286,8 +289,10 @@ public:
     std::string getName(unsigned id);
     /* Returns whether this instance has been initialized or not. */
     bool getInitialized();
-    /* Returns the number of active objects in the manager. */
+    /* Returns the number of active scripts in the manager. */
     unsigned getCount();
+    /* Returns the maximum number of active scripts allowed in the manager. */
+    unsigned getMaxCount();
     /* Gets the maximum generated ID during this manager's lifetime. */
     int getMaxID();
     /* Returns number of execution queues in this instance. */

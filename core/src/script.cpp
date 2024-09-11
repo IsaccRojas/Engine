@@ -5,7 +5,7 @@ Script::Script() :
     _executor(nullptr),
     _executor_id(-1),
     _last_execqueue(-1),
-    _remove_onkill(false),
+    _removeonkill(false),
     _initialized(false), 
     _killed(false), 
     _exec_enqueued(false), 
@@ -22,7 +22,7 @@ Script &Script::operator=(Script &&other) {
         _executor = other._executor;
         _executor_id = other._executor_id;
         _last_execqueue = other._last_execqueue;
-        _remove_onkill = other._remove_onkill;
+        _removeonkill = other._removeonkill;
         _initialized = other._initialized;
         _killed = other._killed;
         _exec_enqueued = other._exec_enqueued;
@@ -31,7 +31,7 @@ Script &Script::operator=(Script &&other) {
         other._executor = nullptr;
         other._executor_id = -1;
         other._last_execqueue = -1;
-        other._remove_onkill = false;
+        other._removeonkill = false;
         other._initialized = false;
         other._killed = false;
         other._exec_enqueued = false;
@@ -64,7 +64,7 @@ void Script::runKill() {
         _kill();
     
     // this flag could have only been set if an owning ScriptManager sets it, so the reference must be valid, and ID >= 0
-    if (_remove_onkill)
+    if (_removeonkill)
         _scriptRemove();
 }
 
@@ -115,25 +115,29 @@ Executor &Executor::operator=(Executor &&other) {
     return *this;
 }
 
-unsigned Executor::_spawnScript(const char *scriptname, int execution_queue, int tag) {
+void Executor::_setupScript(Script *script, unsigned executor_id, bool removeonkill, int group) {
+    script->_executor = this;
+    script->_executor_id = executor_id;
+    script->_removeonkill = removeonkill;
+    script->_group = group;
+}
+
+unsigned Executor::_spawnScript(const char *script_name, int execution_queue, int tag) {
     // fail if exceeding max size
     if (_count >= _max_count)
         throw CountLimitException();
 
     // get type information
-    ScriptInfo &info = _scriptinfos[scriptname];
+    ScriptInfo &info = _scriptinfos[script_name];
 
     // push to storage
     Script *script = info._allocator->_allocate(tag);
     unsigned id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(script);
-    _scriptvalues[id] = ScriptValues{scriptname, info._group};
+    _scriptvalues[id] = ScriptValues{script_name, info._group};
 
     // set up script
-    script->_executor = this;
-    script->_executor_id = id;
-    script->_remove_onkill = info._force_removeonkill;
-    script->_group = info._group;
+    _setupScript(script, id, info._removeonkill, info._group);
 
     // enqueue if non-negative queue provided
     if (execution_queue >= 0)
@@ -213,16 +217,9 @@ void Executor::remove(unsigned id) {
     _count--;
 }
 
-void Executor::add(AllocatorInterface *allocator, const char *name, int group, bool force_removeonkill, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback) {  
+void Executor::add(AllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback) {  
     if (!hasAdded(name))
-        _scriptinfos[name] = ScriptInfo{
-            group,
-            force_removeonkill,
-            allocator,
-            spawn_callback,
-            remove_callback
-        };
-
+        _scriptinfos[name] = ScriptInfo{group, removeonkill, allocator, spawn_callback, remove_callback};
     else
         throw std::runtime_error("Attempt to add already added Script name");
 }
