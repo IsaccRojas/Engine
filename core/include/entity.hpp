@@ -7,6 +7,8 @@
 
 typedef std::unordered_map<std::string, Animation> unordered_map_string_Animation_t;
 
+class EntityExecutor;
+
 /* class Entity
    Represents a Script that contains a Quad. entitySetup() must be called for the
    script methods _initEntity(), _baseEntity(), and _killEntity() to do anything.
@@ -63,7 +65,7 @@ public:
 
 /* abstract class EntityAllocatorInterface
    Is used to invoke allocate(), which must return heap-allocated memory to be owned
-   by the invoking Manager instance.
+   by the invoking EntityExecutor instance.
 */
 class EntityAllocatorInterface {
    friend EntityExecutor;
@@ -77,7 +79,7 @@ protected:
    special behavior or state is needed.
 */
 template<class T>
-class GenericEntityAllocator : public AllocatorEntityInterface {
+class GenericEntityAllocator : public EntityAllocatorInterface {
    Entity *_allocate() override { return new T; }
 };
 
@@ -133,6 +135,8 @@ public:
    void subscribe(EntityReceiver<T> *receiver) { _receivers.insert(receiver); }
 };
 
+// --------------------------------------------------------------------------------------------------------------------------
+
 class EntityExecutor : public Executor {
 public:
     // struct holding Entity information mapped to a name
@@ -145,8 +149,8 @@ public:
       glm::vec3 _pos;
     };
 
-private:
-    // internal variables for added Entityy information and enqueued Entities
+protected:
+    // internal variables for added Entity information and enqueued Entities
     std::unordered_map<std::string, EntityInfo> _entityinfos;
     std::queue<EntityEnqueue> _entityenqueues;
 
@@ -177,17 +181,17 @@ public:
        - allocator - Reference to instance of class implementing EntityAllocatorInterface.
        - name - name to associate with the allocator
        - group - value to associate with all instances of this Entity
-       - force_removeonkill - removes this Entity from this manager when it is killed
+       - removeonkill - removes this Entity from this manager when it is killed
        - animation_name - animation to associate with this name
        - spawn_callback - function callback to call after Entity has been spawned and setup
        - remove_callback - function callback to call before Entity has been removed
     */
-    void add(EntityAllocatorInterface *allocator, const char *name, int group, bool force_removeonkill, std::string animation_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback);
+    void addEntity(EntityAllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::string animation_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback);
 
     /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
     virtual void enqueueSpawn(const char *script_name, int execution_queue, int tag) override;
     /* Enqueues an Entity to be spawned when calling runSpawnQueue(). */
-    void enqueueEntitySpawn(const char *entity_name, int execution_queue, int tag, glm::vec3 pos);
+    virtual void enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos);
     /* Spawns all Entities (or sub classes) queued for spawning with enqueueSpawn(). */
     virtual std::vector<unsigned> runSpawnQueue() override;
 };

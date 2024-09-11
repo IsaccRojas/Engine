@@ -90,8 +90,9 @@ public:
 
 /* abstract class AllocatorInterface
    Is used to invoke allocate(), which must return heap-allocated memory to be owned
-   by the invoking Manager instance.
+   by the invoking Executor instance.
 */
+class Executor;
 class AllocatorInterface {
    friend Executor;
 protected:

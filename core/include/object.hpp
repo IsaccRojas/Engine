@@ -6,32 +6,27 @@
 
 typedef std::unordered_map<std::string, Filter> unordered_map_string_Filter_t;
 
-class ObjectManager;
+class ObjectExecutor;
 
 /* class Object
    Represents an Entity that contains a box. objectSetup() must be called for the
    script methods _initObject(), _baseObject(), and _killObject() to do anything.
 */
 class Object : public Entity {
-    friend ObjectManager;
+    friend ObjectExecutor;
 
     // environmental references
     PhysEnv *_physenv;
-    Filter *_filter;
 
     // box object
     Box *_box;
-
-    // box variables/flags
     int _box_id;
-
-    // Manager instance that owns this Object; maintained by Manager
-    ObjectManager *_objectmanager;
 
     void _initEntity() override;
     void _baseEntity() override;
     void _killEntity() override;
 
+    void _objectRemove();
 protected:
     /* Functions to be overridden by children.
        - _initObject() is called by _initEntity(). _initEntity() is called on execution, only for the first time the object is queued.
@@ -54,16 +49,6 @@ public:
     Object &operator=(Object &&other);
     Object &operator=(const Object &other) = delete;
 
-    /* Sets the entity up with physics resources. This
-       enables the use of the genBox(), getBox(), and eraseBox()
-       methods.
-    */
-    void objectSetup(PhysEnv *physenv, Filter *filter);
-    /* Removes PhysEnv information stored. */
-    void objectClear();
-
-    void genBox(glm::vec3 position, glm::vec3 dimensions, glm::vec3 velocity);
-    void removeBox();
     Box *getBox();
 };
 
@@ -71,13 +56,13 @@ public:
 
 /* abstract class ObjectAllocatorInterface
    Is used to invoke allocate(), which must return heap-allocated memory to be owned
-   by the invoking Manager instance.
+   by the invoking ObjectExecutor instance.
 */
-class ObjectAllocatorInterface : public EntityAllocatorInterface {
-    friend ObjectManager;
+class ObjectAllocatorInterface {
+   friend ObjectExecutor;
 protected:
    /* Must return a heap-allocated instance of a covariant type of Object. */
-   virtual Object *_allocate(void) override = 0;
+   virtual Object *_allocate(int tag) = 0;
 };
 
 /* class GenericObjectAllocator
@@ -89,104 +74,119 @@ class GenericObjectAllocator : public ObjectAllocatorInterface {
     Object *_allocate() override { return new T; }
 };
 
+/* abstract class ObjectReceiver
+   Interface that is used to allow reception of a generic specified type when
+   implemented, via subscription to an ObjectServicer of the same type.
+*/
+
+// prototype
+template<typename T>
+class ObjectServicer;
+
+template<class T>
+class ObjectReceiver {
+   friend ObjectServicer<T>;
+   int _channel;
+protected:
+   virtual void _receive(T *t) = 0;
+   ObjectReceiver() : _channel(-1) {}
+public:
+   void setChannel(int channel) { _channel = channel; }
+   int getChannel() { return _channel; }
+};
+
+/* class ObjectServicer
+Implementation of ObjectAllocatorInterface that interprets the tag argument as a
+"channel". Subscribed ObjectReceivers will have their _receive() method invoked
+whenever instances of this class have their allocator invoked. Only ObjectReceivers
+with a matching tag value will be passed the allocated instance of T.
+*/
+template<class T>
+class ObjectServicer : public ObjectAllocatorInterface {
+   std::unordered_set<ObjectReceiver<T>*> _receivers;
+   
+   Object *_allocate(int tag) override {
+      // interpret tag as channel
+
+      T *t = _allocateInstance();
+
+      // if channel is non-negative, deliver instance
+      if (tag >= 0) {
+         // if channel matches, deliver
+         for (const auto& receiver: _receivers)
+               if (receiver->_channel == tag)
+                  receiver->_receive(t);
+      }
+
+      return t;
+   }
+protected:
+   virtual T *_allocateInstance() { return new T; }
+public:
+   void subscribe(ObjectReceiver<T> *receiver) { _receivers.insert(receiver); }
+};
+
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class ObjectManager
-   Manages and controls internal instances of Objects. Can also be given
-   Executor, GLEnv and PhysEnv instance to automatically pass Object instances 
-   to these mechanisms.
-
-   It is undefined behavior to make method calls (except for uninit()) on instances 
-   of this class without calling init() first.
-*/
-class ObjectManager : public EntityManager {
+class ObjectExecutor : public EntityExecutor {
 public:
     // struct holding Object information mapped to a name
     struct ObjectInfo {
-        std::string _filter_name;
-        ObjectAllocatorInterface *_allocator;
+       ObjectAllocatorInterface *_allocator;
+       std::string _filter_name;
     };
-
-    // struct holding IDs and other flags belonging to the managed Object
-    struct ObjectValues {
-        Object *_object_ref;
-    };
-
-    // _valid flag is used to prevent instance from being spawned as an Object
     struct ObjectEnqueue {
-       bool _valid;
-       glm::vec3 _object_pos;
+      bool _is_object;
+      glm::vec3 _pos;
     };
 
-protected:
-    // internal variables for added Objects and existing Objects
+private:
+    // internal variables for added Object information and enqueued Entities
     std::unordered_map<std::string, ObjectInfo> _objectinfos;
-    std::vector<ObjectValues> _objectvalues;
     std::queue<ObjectEnqueue> _objectenqueues;
 
     PhysEnv *_physenv;
-    std::unordered_map<std::string, Filter> *_filters;
+    unordered_map_string_Filter_t *_filters;
 
-    // internal methods called when spawning Objects and removing them, using and setting
-    // manager lifetime and Object runtime members
-    void _objectSetup(Object *object, ObjectInfo &objectinfo, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id, int executor_queue, glm::vec3 object_pos);
-    void _objectRemoval(ObjectValues &objectvalues, EntityValues &entityvalues, ScriptValues &scriptvalues);
+    // initializes Object's ObjectExecutor-related fields
+    void _setupObject(Object *object, Filter *filter);
 
-    // initialize/uninitialize only ObjectManager members
-    void _objectManagerInit(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters);
-    void _objectManagerUninit();
-
-    //spawns a Script using a name previously added to this manager, and returns its ID. This
-    //will invoke scriptSetup()
-    unsigned _spawnScript(const char *script_name, int executor_queue) override;
-    //spawns an Entity using a name previously added to this manager, and returns its ID. This
-    //will invoke scriptSetup() and entitySetup()
-    unsigned _spawnEntity(const char *entity_name, int executor_queue, glm::vec3 entity_pos) override;
-    //spawns an Object using a name previously added to this manager, and returns its ID. This
-    //will invoke scriptSetup(), entitySetup() and objectSetup()
-    unsigned _spawnObject(const char *object_name, int executor_queue, glm::vec3 object_pos);
+    // spawns an Object using a name previously added to this manager, and returns its ID
+    unsigned _spawnObject(const char *object_name, int execution_queue, int tag, glm::vec3 pos);
 public:
     /* Calls init() with the provided arguments. */
-    ObjectManager(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor);
-    ObjectManager(ObjectManager &&other);
-    ObjectManager();
-    ObjectManager(const ObjectManager &other) = delete;
-    virtual ~ObjectManager();
+    ObjectExecutor(unsigned max_count, unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters);
+    ObjectExecutor(ObjectExecutor &&other);
+    ObjectExecutor();
+    ObjectExecutor(const ObjectExecutor &other) = delete;
+    ~ObjectExecutor() override;
 
-    ObjectManager &operator=(ObjectManager &&other);
-    ObjectManager &operator=(const ObjectManager &other) = delete;
+    ObjectExecutor &operator=(ObjectExecutor &&other);
+    ObjectExecutor &operator=(const ObjectExecutor &other) = delete;
 
-    void init(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor);
+    void init(unsigned max_count, unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters);
     void uninit();
 
-    /* Queues a Script to be spawned when calling runSpawnQueue(). */
-    void spawnScriptEnqueue(const char *script_name, int executor_queue, CaptorInterface *captor) override;
-    /* Queues a Entity to be spawned when calling runSpawnQueue(). */
-    void spawnEntityEnqueue(const char *script_name, int executor_queue, glm::vec3 entity_pos, CaptorInterface *captor) override;
-    /* Queues a Object to be spawned when calling runSpawnQueue(). */
-    void spawnObjectEnqueue(const char *script_name, int executor_queue, glm::vec3 object_pos, CaptorInterface *captor);
-    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(), spawnEntityEnqueue(), or spawnObjectEnqueue(). */
-    std::vector<unsigned> runSpawnQueue() override;
-    /* Removes the Object, Entity or Script associated with the provided ID. */
-    void remove(unsigned id) override;
-
-    /* Adds an Object allocator with initialization information to this manager, allowing its given
-    name to be used for future spawns.
-    - allocator - Reference to instance of class implementing ObjectAllocator interface.
-    - name - name to associate with the allocator
-    - group - value to associate with all instances of this Object
-    - force_removeonkill - removes this Object from this manager when it is killed
-    - animation_name - name of animation to give to AnimationState of spawned Object, from provided Animation map
-    - filter_name - name of filter to give to FilterState of spawned Object's Box, from provided Filter map
-    - spawn_callback - function callback to call after Object has been spawned and setup
-    - remove_callback - function callback to call before Object has been removed
+    /* Adds a Object allocator with initialization information to this manager, allowing its given
+       name to be used for future spawns.
+       - allocator - Reference to instance of class implementing ObjectAllocatorInterface.
+       - name - name to associate with the allocator
+       - group - value to associate with all instances of this Object
+       - removeonkill - removes this Object from this manager when it is killed
+       - animation_name - animation to associate with this name
+       - spawn_callback - function callback to call after Object has been spawned and setup
+       - remove_callback - function callback to call before Object has been removed
     */
-    void addObject(ObjectAllocatorInterface *allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback);
+    void addObject(ObjectAllocatorInterface *allocator, const char *name, int group, bool force_removeonkill, std::string animation_name, std::string filter_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback);
 
-    /* Returns true if the provided Object name has been previously added to this manager. */
-    bool hasAddedObject(const char *object_name);
-    /* Returns a reference to the spawned Object corresponding to the provided ID, if it exists. */
-    Object *getObject(unsigned id);
+    /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
+    void enqueueSpawn(const char *script_name, int execution_queue, int tag) override;
+    /* Enqueues an Entity to be spawned when calling runSpawnQueue(). */
+    void enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) override;
+    /* Enqueues an Object to be spawned when calling runSpawnQueue(). */
+    void enqueueSpawnObject(const char *entity_name, int execution_queue, int tag, glm::vec3 pos);
+    /* Spawns all Objects (or sub classes) queued for spawning with enqueueSpawn(). */
+    virtual std::vector<unsigned> runSpawnQueue() override;
 };
 
 #endif

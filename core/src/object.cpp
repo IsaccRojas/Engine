@@ -6,29 +6,23 @@ Object::Object(Object &&other) {
 Object::Object() : 
     Entity(),
     _physenv(nullptr),
-    _filter(nullptr),
     _box(nullptr),
-    _box_id(-1),
-    _objectmanager(nullptr)
+    _box_id(-1)
 {}
 Object::~Object() {
-    // try removing existing Box
-    removeBox();
+    // try removing existing Quad
+    _objectRemove();
 }
 
 Object &Object::operator=(Object &&other) {
     if (this != &other) {
         Entity::operator=(std::move(other));
         _physenv = other._physenv;
-        _filter = other._filter;
         _box = other._box;
         _box_id = other._box_id;
-        _objectmanager = other._objectmanager;
         other._physenv = nullptr;
-        other._filter = nullptr;
         other._box = nullptr;
         other._box_id = -1;
-        other._objectmanager = nullptr;
     }
     return *this;
 }
@@ -37,132 +31,38 @@ void Object::_initEntity() {
     if (_physenv)
         _initObject();
 }
+
 void Object::_baseEntity() {
     if (_physenv)
         _baseObject();
 }
+
 void Object::_killEntity() {
     if (_physenv)
         _killObject();
 }
 
-void Object::objectSetup(PhysEnv* physenv, Filter *filter) {
-    if (!physenv)
-        throw std::runtime_error("Attempt to setup Object with null PhysEnv reference");
-    
-    // try removing existing PhysEnv and Filter information
-    objectClear();
-
-    _physenv = physenv;
-    _filter = filter;
-}
-
-void Object::objectClear() {
-    // try removing existing Box
-    removeBox();
-    _physenv = nullptr;
-    _filter = nullptr;
-}
-
-void Object::genBox(glm::vec3 position, glm::vec3 dimensions, glm::vec3 velocity) {
-    if (_physenv) {
-        // erase existing Box
-        if (_box)
-            removeBox();
-
-        // get Box data
-        _box_id = _physenv->genBox(position, dimensions, velocity, std::bind(&(Object::_collisionObject), this, std::placeholders::_1));
-        _box = _physenv->getBox(_box_id);
-        _box->setFilter(_filter);
-    } else
-        throw std::runtime_error("Attempt to generate Quad with null PhysEnv reference");
-}
-
-void Object::removeBox() {
-    if (_physenv && _box) {
+void Object::_objectRemove() {
+    // remove Object from owning PhysEnv (if this has a PhysEnv reference, it must have a valid Box so don't need to check)
+    if (_physenv)
         _physenv->remove(_box_id);
-
-        _box = nullptr;
-        _box_id = -1;
-    }
+    
+    _physenv = nullptr;
+    _box = nullptr;
+    _box_id = -1;
 }
 
-Box *Object::getBox() { 
-    return _box;
-}
+Box *Object::getBox() { return _box; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-ObjectManager::ObjectManager(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor) : EntityManager() {
-    init(max_count, physenv, filters, glenv, animations, executor);
-}
-ObjectManager::ObjectManager(ObjectManager &&other) {
-    operator=(std::move(other));
-}
-ObjectManager::ObjectManager() : EntityManager(), _physenv(nullptr), _filters(nullptr) {}
-ObjectManager::~ObjectManager() { /* automatic destruction is fine */ }
-
-ObjectManager& ObjectManager::operator=(ObjectManager &&other) {
-    if (this != &other) {
-        EntityManager::operator=(std::move(other));
-        _objectinfos = other._objectinfos;
-        _objectvalues = other._objectvalues;
-        _objectenqueues = other._objectenqueues;
-        _physenv = other._physenv;
-        _filters = other._filters;
-        other._objectManagerUninit();
-    }
-    return *this;
+void ObjectExecutor::_setupObject(Object *object, Filter *filter) {
+    object->_physenv = _physenv;
+    object->_box_id = _physenv->genBox(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), std::bind(Object::_collisionObject, object, std::placeholders::_1));
+    object->_box = _physenv->getBox(object->_box_id);
 }
 
-void ObjectManager::_objectManagerInit(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters) {
-    _physenv = physenv;
-    _filters = filters;
-    for (unsigned i = 0; i < max_count; i++)
-        _objectvalues.push_back(ObjectValues{nullptr});
-}
-
-void ObjectManager::_objectManagerUninit() {
-    std::queue<ObjectEnqueue> empty;
-
-    _objectinfos.clear();
-    _objectvalues.clear();
-    std::swap(_objectenqueues, empty);
-    _physenv = nullptr;
-    _filters = nullptr;
-}
-
-void ObjectManager::_objectSetup(Object *object, ObjectInfo &objectinfo, EntityInfo &entityinfo, ScriptInfo &scriptinfo, unsigned id, int executor_queue, glm::vec3 object_pos) {
-    _entitySetup(object, entityinfo, scriptinfo, id, executor_queue, object_pos);
-
-    object->objectSetup(_physenv, &(*_filters)[objectinfo._filter_name]);
-    object->genBox(object_pos, glm::vec3(0.0f), glm::vec3(0.0f));
-
-    object->_objectmanager = this;
-}
-
-void ObjectManager::_objectRemoval(ObjectValues &objectvalues, EntityValues &entityvalues, ScriptValues &scriptvalues) {
-    _entityRemoval(entityvalues, scriptvalues);
-
-    // accessing ref after entity-level removal is fine because deletion doesn't actually take place
-    objectvalues._object_ref->removeBox();
-
-    objectvalues = ObjectValues{nullptr};
-}
-
-unsigned ObjectManager::_spawnScript(const char *script_name, int executor_queue) {
-    unsigned id = EntityManager::_spawnScript(script_name, executor_queue);
-    _objectvalues[id] = ObjectValues{nullptr};
-    return id;
-}
-
-unsigned ObjectManager::_spawnEntity(const char *entity_name, int executor_queue, glm::vec3 entity_pos) {
-    unsigned id = EntityManager::_spawnEntity(entity_name, executor_queue, entity_pos);
-    _objectvalues[id] = ObjectValues{nullptr};
-    return id;
-}
-
-unsigned ObjectManager::_spawnObject(const char *object_name, int executor_queue, glm::vec3 object_pos) {
+unsigned ObjectExecutor::_spawnObject(const char *object_name, int execution_queue, int tag, glm::vec3 pos) {
     // fail if exceeding max size
     if (_count >= _max_count)
         throw CountLimitException();
@@ -172,67 +72,113 @@ unsigned ObjectManager::_spawnObject(const char *object_name, int executor_queue
     EntityInfo &entityinfo = _entityinfos[object_name];
     ObjectInfo &objectinfo = _objectinfos[object_name];
 
-    // push to internal storage
-    Object *object = objectinfo._allocator->_allocate();
+    // push to storage
+    Object *object = objectinfo._allocator->_allocate(tag);
     unsigned id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(object);
-    _objectvalues[id] = ObjectValues{object};
-    _entityvalues[id] = EntityValues{object};
-    _scriptvalues[id] = ScriptValues{id, object_name, object, scriptinfo._group};
+    _scriptvalues[id] = ScriptValues{object_name, scriptinfo._group};
+
+    // set up script-level, entity-level, and object-level values
+    _setupScript(object, id, scriptinfo._removeonkill, scriptinfo._group);
+    _setupEntity(object, &(*_animations)[entityinfo._animation_name]);
+    _setupObject(object, &(*_filters)[objectinfo._filter_name]);
+
+    // enqueue if non-negative queue provided
+    if (execution_queue >= 0)
+        enqueueExec(id, execution_queue);
     
-    // set up object
-    _objectSetup(object, objectinfo, entityinfo, scriptinfo, id, executor_queue, object_pos);
+    _count++;
     
-    // call callback if it exists
+    // try spawn callback if it exists
     if (scriptinfo._spawn_callback)
         scriptinfo._spawn_callback(id);
-    
+
     return id;
 }
 
-void ObjectManager::init(unsigned max_count, PhysEnv *physenv, unordered_map_string_Filter_t *filters, GLEnv *glenv, unordered_map_string_Animation_t *animations, Executor *executor) {
-    EntityManager::init(max_count, glenv, animations, executor);
-    _objectManagerInit(max_count, physenv, filters);
+ObjectExecutor::ObjectExecutor(unsigned max_count, unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters) : EntityExecutor() {
+    init(max_count, queues, glenv, animations, physenv, filters);
+}
+ObjectExecutor::ObjectExecutor(ObjectExecutor &&other) { operator=(std::move(other)); }
+ObjectExecutor::ObjectExecutor() : EntityExecutor(), _physenv(nullptr), _filters(nullptr) {}
+ObjectExecutor::~ObjectExecutor() { /* automatic destruction is fine */ }
+
+ObjectExecutor &ObjectExecutor::operator=(ObjectExecutor &&other) {
+    if (this == &other) {
+        EntityExecutor::operator=(std::move(other));
+        _objectinfos = other._objectinfos;
+        _objectenqueues = other._objectenqueues;
+        _physenv = other._physenv;
+        _filters = other._filters;
+
+        // safe as there are no deallocations (unique_ptrs should be moved by this point)
+        other.uninit();
+    }
+    return *this;
 }
 
-void ObjectManager::uninit() {
-    EntityManager::uninit();
-    _objectManagerUninit();
+void ObjectExecutor::init(unsigned max_count, unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters) {
+    EntityExecutor::init(max_count, queues, glenv, animations);
+    _physenv = physenv;
+    _filters = filters;
 }
 
-void ObjectManager::spawnScriptEnqueue(const char *script_name, int executor_queue, CaptorInterface *captor) {
-    EntityManager::spawnScriptEnqueue(script_name, executor_queue, captor);
+void ObjectExecutor::uninit() {
+    EntityExecutor::uninit();
+    if (!_initialized)
+        return;
+
+    std::queue<ObjectEnqueue> empty;
+    _objectinfos.clear();
+    std::swap(_objectenqueues, empty);
+    _physenv = nullptr;
+    _filters = nullptr;
+}
+
+void ObjectExecutor::addObject(ObjectAllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::string animation_name, std::string filter_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback) {
+    if (!hasAdded(name)) {
+        addEntity(nullptr, name, group, removeonkill, animation_name, spawn_callback, remove_callback);
+        _objectinfos[name] = ObjectInfo{allocator, filter_name};
+    } else
+        throw std::runtime_error("Attempt to add already added name");
+}
+
+void ObjectExecutor::enqueueSpawn(const char *script_name, int execution_queue, int tag) {
+    // names are not checked here for the sake of efficiency
+    _scriptenqueues.push(ScriptEnqueue{script_name, execution_queue, tag});
+    _entityenqueues.push(EntityEnqueue{false, glm::vec3(0.0f)});
     _objectenqueues.push(ObjectEnqueue{false, glm::vec3(0.0f)});
 }
 
-void ObjectManager::spawnEntityEnqueue(const char *script_name, int executor_queue, glm::vec3 entity_pos, CaptorInterface *captor) {
-    EntityManager::spawnEntityEnqueue(script_name, executor_queue, entity_pos, captor);
+void ObjectExecutor::enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
+    // names are not checked here for the sake of efficiency
+    _scriptenqueues.push(ScriptEnqueue{entity_name, execution_queue, tag});
+    _entityenqueues.push(EntityEnqueue{true, pos});
     _objectenqueues.push(ObjectEnqueue{false, glm::vec3(0.0f)});
 }
 
-void ObjectManager::spawnObjectEnqueue(const char *script_name, int executor_queue, glm::vec3 object_pos, CaptorInterface *captor) {
-    EntityManager::spawnEntityEnqueue(script_name, executor_queue, object_pos, captor);
-    _objectenqueues.push(ObjectEnqueue{true, object_pos});
+void ObjectExecutor::enqueueSpawnObject(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
+    // names are not checked here for the sake of efficiency
+    _scriptenqueues.push(ScriptEnqueue{entity_name, execution_queue, tag});
+    _entityenqueues.push(EntityEnqueue{true, pos});
+    _objectenqueues.push(ObjectEnqueue{true, pos});
 }
 
-std::vector<unsigned> ObjectManager::runSpawnQueue() {
+std::vector<unsigned> ObjectExecutor::runSpawnQueue() {
     std::vector<unsigned> ids;
-    
+
     while (!(_scriptenqueues.empty())) {
         ScriptEnqueue &scriptenqueue = _scriptenqueues.front();
         EntityEnqueue &entityenqueue = _entityenqueues.front();
         ObjectEnqueue &objectenqueue = _objectenqueues.front();
-        
-        if (objectenqueue._valid)
-            ids.push_back(_spawnObject(scriptenqueue._name.c_str(), scriptenqueue._executor_queue, objectenqueue._object_pos));
-        else if (entityenqueue._valid)
-            ids.push_back(_spawnEntity(scriptenqueue._name.c_str(), scriptenqueue._executor_queue, entityenqueue._entity_pos));
-        else if (scriptenqueue._valid)
-            ids.push_back(_spawnScript(scriptenqueue._name.c_str(), scriptenqueue._executor_queue));
-        
-        if (scriptenqueue._captor)
-            scriptenqueue._captor->_capture();
 
+        if (objectenqueue._is_object)
+            ids.push_back(_spawnObject(scriptenqueue._name.c_str(), scriptenqueue._execution_queue, scriptenqueue._tag, objectenqueue._pos));
+        if (entityenqueue._is_entity)
+            ids.push_back(_spawnEntity(scriptenqueue._name.c_str(), scriptenqueue._execution_queue, scriptenqueue._tag, entityenqueue._pos));
+        else
+            ids.push_back(_spawnScript(scriptenqueue._name.c_str(), scriptenqueue._execution_queue, scriptenqueue._tag));
+        
         _scriptenqueues.pop();
         _entityenqueues.pop();
         _objectenqueues.pop();
@@ -240,59 +186,3 @@ std::vector<unsigned> ObjectManager::runSpawnQueue() {
 
     return ids;
 }
-
-void ObjectManager::remove(unsigned id) {
-    // check bounds
-    if (id >= _ids.size())
-        throw std::out_of_range("Index out of range");
-
-    if (!_ids.at(id))
-        throw InactiveIDException();
-
-    // get values
-    ScriptValues &scriptvalues = _scriptvalues[id];
-    EntityValues &entityvalues = _entityvalues[id];
-    ObjectValues &objectvalues = _objectvalues[id];
-
-    // get info for removal callback
-    ScriptInfo &scriptinfo = _scriptinfos[scriptvalues._manager_name];
-    if (scriptinfo._remove_callback)
-        scriptinfo._remove_callback(id);
-    
-    // check refs
-    if (objectvalues._object_ref) 
-        _objectRemoval(objectvalues, entityvalues, scriptvalues);
-    else if (entityvalues._entity_ref)
-        _entityRemoval(entityvalues, scriptvalues);
-    else
-        _scriptRemoval(scriptvalues);
-}
-
-void ObjectManager::addObject(ObjectAllocatorInterface *allocator, const char *name, int group, bool force_removeonkill, const char *animation_name, const char *filter_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)> remove_callback) {
-    if (!hasAddedObject(name)) {
-        addEntity(allocator, name, group, force_removeonkill, animation_name, spawn_callback, remove_callback);
-        _objectinfos[name] = ObjectInfo{
-            filter_name,
-            allocator
-        };
-
-    } else
-        throw std::runtime_error("Attempt to add already added Object name");
-}
-
-bool ObjectManager::hasAddedObject(const char *object_name) { return !(_objectinfos.find(object_name) == _objectinfos.end()); }
-
-Object *ObjectManager::getObject(unsigned id) {
-    if (id < 0 || id >= _ids.size())
-        throw std::out_of_range("Index out of range");
-
-    if (_ids.at(id)) {
-        if (_objectvalues[id]._object_ref)
-            return _objectvalues[id]._object_ref;
-        else
-            throw std::runtime_error("Attempt to get non-Object reference with getObject()");
-    }
-
-    throw InactiveIDException();
-}
-

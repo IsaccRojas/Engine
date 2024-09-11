@@ -74,7 +74,10 @@ void Entity::_entityRemove() {
         _glenv->remove(_quad_id);
     
     _glenv = nullptr;
+    _quad = nullptr;
+    _frame = nullptr;
     _quad_id = -1;
+    _first_step = true;
     _animationstate.setAnimation(nullptr);
 }
 
@@ -107,7 +110,7 @@ unsigned EntityExecutor::_spawnEntity(const char *entity_name, int execution_que
     _scripts[id] = std::unique_ptr<Script>(entity);
     _scriptvalues[id] = ScriptValues{entity_name, scriptinfo._group};
 
-    // set up script-level values
+    // set up script-level and entity-level values
     _setupScript(entity, id, scriptinfo._removeonkill, scriptinfo._group);
     _setupEntity(entity, &(*_animations)[entityinfo._animation_name]);
 
@@ -163,12 +166,12 @@ void EntityExecutor::uninit() {
     _animations = nullptr;
 }
 
-void EntityExecutor::add(EntityAllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::string animation_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback) {
+void EntityExecutor::addEntity(EntityAllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::string animation_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback) {
     if (!hasAdded(name)) {
         Executor::add(nullptr, name, group, removeonkill, spawn_callback, remove_callback);
         _entityinfos[name] = EntityInfo{allocator, animation_name};
     } else
-        throw std::runtime_error("Attempt to add already added Entity name");
+        throw std::runtime_error("Attempt to add already added name");
 }
 
 void EntityExecutor::enqueueSpawn(const char *script_name, int execution_queue, int tag) {
@@ -177,7 +180,7 @@ void EntityExecutor::enqueueSpawn(const char *script_name, int execution_queue, 
     _entityenqueues.push(EntityEnqueue{false, glm::vec3(0.0f)});
 }
 
-void EntityExecutor::enqueueEntitySpawn(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
+void EntityExecutor::enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
     // names are not checked here for the sake of efficiency
     _scriptenqueues.push(ScriptEnqueue{entity_name, execution_queue, tag});
     _entityenqueues.push(EntityEnqueue{true, pos});

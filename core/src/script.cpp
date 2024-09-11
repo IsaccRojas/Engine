@@ -155,8 +155,10 @@ unsigned Executor::_spawnScript(const char *script_name, int execution_queue, in
 void Executor::init(unsigned max_count, unsigned queues) {
     if (_initialized)
         throw InitializedException();
+    
+    for (unsigned i = 0; i < max_count; i++)
+        _scripts.push_back(std::unique_ptr<Script>(nullptr));
 
-    _scripts = std::vector<std::unique_ptr<Script>>(max_count, std::unique_ptr<Script>(nullptr));
     _scriptvalues = std::vector<ScriptValues>(max_count, {nullptr, -1});
     _queuepairs = std::vector<QueuePair>(queues, QueuePair{});
     _max_count = max_count;
