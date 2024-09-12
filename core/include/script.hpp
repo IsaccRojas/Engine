@@ -132,7 +132,7 @@ class Executor {
 
    // struct holding IDs and other flags belonging to the managed Script during its lifetime
    struct ScriptValues {
-      const char *_manager_name;
+      const char *_script_name;
       int _group;
    };
 

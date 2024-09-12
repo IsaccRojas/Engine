@@ -239,7 +239,7 @@ void Executor::remove(unsigned id) {
 
     // get values and info
     ScriptValues &scriptvalues = _scriptvalues[id];
-    ScriptInfo &scriptinfo = _scriptinfos[scriptvalues._manager_name];
+    ScriptInfo &scriptinfo = _scriptinfos[scriptvalues._script_name];
 
     // try removal callback if it exists
     if (scriptinfo._remove_callback)
@@ -381,7 +381,7 @@ std::vector<unsigned> Executor::getAllByGroup(int group) {
 
 std::string Executor::getName(unsigned id) {
     _checkID(id);
-    return _scriptvalues[id]._manager_name;
+    return _scriptvalues[id]._script_name;
 }
 
 bool Executor::getInitialized() { return _initialized; }
