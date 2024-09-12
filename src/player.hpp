@@ -18,7 +18,7 @@ public:
     void setDirection(glm::vec3 direction);
 };
 
-class Player : public Basic, public ObjectReceiver<OrbShot> {
+class Player : public Basic, public Receiver<OrbShot> {
     Input *_input;
 
     float _accel;

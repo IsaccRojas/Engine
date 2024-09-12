@@ -305,8 +305,10 @@ with a matching tag value will be passed the allocated instance of T.
 template<class T>
 class Provider : public AllocatorInterface {
    std::unordered_set<Receiver<T>*> _receivers;
-   
-   Script *_allocate(int tag) override {
+   Script *_allocate(int tag) override { return this->_provideType(tag); }
+
+protected:
+   T *_provideType(int tag) {
       // interpret tag as channel
 
       T *t = _allocateInstance();
@@ -322,9 +324,8 @@ class Provider : public AllocatorInterface {
 
       return t;
    }
-   
-protected:
    virtual T *_allocateInstance() { return new T; }
+
 public:
    void subscribe(Receiver<T> *receiver) {
       _receivers.insert(receiver);

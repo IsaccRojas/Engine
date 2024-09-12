@@ -160,33 +160,6 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-// prototype
-template<typename T>
-class EntityProvider;
-
-/* abstract class EntityReceiver
-Interface that is used to allow reception of a generic specified type when
-implemented, via subscription to a EntityProvider of the same type.
-*/
-template<class T>
-class EntityReceiver {
-   friend EntityProvider<T>;
-   EntityProvider<T> *_provider;
-   int _channel;
-   bool _reception;
-protected:
-   virtual void _receive(T *t) = 0;
-   EntityReceiver() : _provider(nullptr), _channel(-1), _reception(false) {}
-   virtual ~EntityReceiver() {
-      if (_provider)
-         _provider->unsubscribe(this);
-   }
-public:
-   void setChannel(int channel) { _channel = channel; }
-   void enableReception(bool state) { _reception = state; }
-   int getChannel() { return _channel; }
-};
-
 /* class EntityProvider
 Implementation of EntityAllocatorInterface that interprets the tag argument as a
 "channel". Subscribed EntityReceivers will have their _receive() method invoked
@@ -194,37 +167,10 @@ whenever instances of this class have their allocator invoked. Only EntityReceiv
 with a matching tag value will be passed the allocated instance of T.
 */
 template<class T>
-class EntityProvider : public EntityAllocatorInterface {
-   std::unordered_set<EntityReceiver<T>*> _receivers;
-   
-   Entity *_allocate(int tag) override {
-      // interpret tag as channel
-
-      T *t = _allocateInstance();
-
-      // if channel is non-negative, deliver instance
-      if (tag >= 0) {
-         // if channel matches, deliver
-         for (const auto& receiver: _receivers)
-            if (receiver->_reception)
-               if (receiver->_channel == tag)
-                     receiver->_receive(t);
-      }
-
-      return t;
-   }
-   
+class EntityProvider : public EntityAllocatorInterface, public Provider<T> {
+   Entity *_allocate(int tag) override { return this->_provideType(tag); }
 protected:
    virtual T *_allocateInstance() { return new T; }
-public:
-   void subscribe(EntityReceiver<T> *receiver) {
-      _receivers.insert(receiver);
-      receiver->_provider = this;
-   }
-   void unsubscribe(EntityReceiver<T> *receiver) {
-      _receivers.erase(receiver);
-      receiver->_provider = nullptr;
-   }
 };
 
 #endif

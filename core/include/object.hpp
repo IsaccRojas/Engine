@@ -146,71 +146,17 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-// prototype
-template<typename T>
-class ObjectProvider;
-
-/* abstract class ObjectReceiver
-Interface that is used to allow reception of a generic specified type when
-implemented, via subscription to a ObjectProvider of the same type.
-*/
-template<class T>
-class ObjectReceiver {
-   friend ObjectProvider<T>;
-   ObjectProvider<T> *_provider;
-   int _channel;
-   bool _reception;
-protected:
-   virtual void _receive(T *t) = 0;
-   ObjectReceiver() : _provider(nullptr), _channel(-1), _reception(false) {}
-   virtual ~ObjectReceiver() {
-      if (_provider)
-         _provider->unsubscribe(this);
-   }
-public:
-   void setChannel(int channel) { _channel = channel; }
-   void enableReception(bool state) { _reception = state; }
-   int getChannel() { return _channel; }
-};
-
-/* class ObjectProvider
-Implementation of ObjectAllocatorInterface that interprets the tag argument as a
-"channel". Subscribed ObjectReceivers will have their _receive() method invoked
-whenever instances of this class have their allocator invoked. Only ObjectReceivers
+/* class EntityProvider
+Implementation of EntityAllocatorInterface that interprets the tag argument as a
+"channel". Subscribed EntityReceivers will have their _receive() method invoked
+whenever instances of this class have their allocator invoked. Only EntityReceivers
 with a matching tag value will be passed the allocated instance of T.
 */
 template<class T>
-class ObjectProvider : public ObjectAllocatorInterface {
-   std::unordered_set<ObjectReceiver<T>*> _receivers;
-   
-   Object *_allocate(int tag) override {
-      // interpret tag as channel
-
-      T *t = _allocateInstance();
-
-      // if channel is non-negative, deliver instance
-      if (tag >= 0) {
-         // if channel matches, deliver
-         for (const auto& receiver: _receivers)
-            if (receiver->_reception)
-               if (receiver->_channel == tag)
-                     receiver->_receive(t);
-      }
-
-      return t;
-   }
-   
+class ObjectProvider : public ObjectAllocatorInterface, public Provider<T> {
+   Object *_allocate(int tag) override { return this->_provideType(tag); }
 protected:
    virtual T *_allocateInstance() { return new T; }
-public:
-   void subscribe(ObjectReceiver<T> *receiver) {
-      _receivers.insert(receiver);
-      receiver->_provider = this;
-   }
-   void unsubscribe(ObjectReceiver<T> *receiver) {
-      _receivers.erase(receiver);
-      receiver->_provider = nullptr;
-   }
 };
 
 #endif
