@@ -145,7 +145,7 @@ public:
     VeryBigBallAllocator(bool *killflag) : _killflag(killflag) {}
 };
 
-class OrbShotAllocator : public ObjectServicer<OrbShot> {};
+class OrbShotAllocator : public ObjectProvider<OrbShot> {};
 
 class PlayerAllocator : public ObjectAllocatorInterface {
     Input *_input;

@@ -71,7 +71,7 @@ public:
    Is used to invoke allocate(), which must return heap-allocated memory to be owned
    by the invoking EntityExecutor instance.
 */
-class EntityAllocatorInterface {
+class EntityAllocatorInterface : public AllocatorInterface {
    friend EntityExecutor;
 protected:
    /* Must return a heap-allocated instance of a covariant type of Entity. */
@@ -85,73 +85,6 @@ protected:
 template<class T>
 class GenericEntityAllocator : public EntityAllocatorInterface {
    Entity *_allocate(int tag) override { return new T; }
-};
-
-// prototype
-template<typename T>
-class EntityServicer;
-
-/* abstract class EntityReceiver
-Interface that is used to allow reception of a generic specified type when
-implemented, via subscription to a EntityServicer of the same type.
-*/
-template<class T>
-class EntityReceiver {
-   friend EntityServicer<T>;
-   EntityServicer<T> *_servicer;
-   int _channel;
-   bool _reception;
-protected:
-   virtual void _receive(T *t) = 0;
-   EntityReceiver() : _servicer(nullptr), _channel(-1), _reception(false) {}
-   ~EntityReceiver() {
-      if (_servicer)
-         _servicer->unsubscribe(this);
-   }
-public:
-   void setChannel(int channel) { _channel = channel; }
-   void enableReception(bool state) { _reception = state; }
-   int getChannel() { return _channel; }
-};
-
-/* class EntityServicer
-Implementation of EntityAllocatorInterface that interprets the tag argument as a
-"channel". Subscribed EntityReceivers will have their _receive() method invoked
-whenever instances of this class have their allocator invoked. Only EntityReceivers
-with a matching tag value will be passed the allocated instance of T.
-*/
-template<class T>
-class EntityServicer : public EntityAllocatorInterface {
-   std::unordered_set<EntityReceiver<T>*> _receivers;
-   
-   Entity *_allocate(int tag) override {
-      // interpret tag as channel
-
-      T *t = _allocateInstance();
-
-      // if channel is non-negative, deliver instance
-      if (tag >= 0) {
-         // if channel matches, deliver
-         for (const auto& receiver: _receivers)
-            if (receiver->_reception)
-               if (receiver->_channel == tag)
-                     receiver->_receive(t);
-      }
-
-      return t;
-   }
-   
-protected:
-   virtual T *_allocateInstance() { return new T; }
-public:
-   void subscribe(EntityReceiver<T> *receiver) {
-      _receivers.insert(receiver);
-      receiver->_servicer = this;
-   }
-   void unsubscribe(EntityReceiver<T> *receiver) {
-      _receivers.erase(receiver);
-      receiver->_servicer = nullptr;
-   }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -223,6 +156,75 @@ public:
     void enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos);
 
     Entity *getEntity(unsigned id);
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+// prototype
+template<typename T>
+class EntityProvider;
+
+/* abstract class EntityReceiver
+Interface that is used to allow reception of a generic specified type when
+implemented, via subscription to a EntityProvider of the same type.
+*/
+template<class T>
+class EntityReceiver {
+   friend EntityProvider<T>;
+   EntityProvider<T> *_provider;
+   int _channel;
+   bool _reception;
+protected:
+   virtual void _receive(T *t) = 0;
+   EntityReceiver() : _provider(nullptr), _channel(-1), _reception(false) {}
+   virtual ~EntityReceiver() {
+      if (_provider)
+         _provider->unsubscribe(this);
+   }
+public:
+   void setChannel(int channel) { _channel = channel; }
+   void enableReception(bool state) { _reception = state; }
+   int getChannel() { return _channel; }
+};
+
+/* class EntityProvider
+Implementation of EntityAllocatorInterface that interprets the tag argument as a
+"channel". Subscribed EntityReceivers will have their _receive() method invoked
+whenever instances of this class have their allocator invoked. Only EntityReceivers
+with a matching tag value will be passed the allocated instance of T.
+*/
+template<class T>
+class EntityProvider : public EntityAllocatorInterface {
+   std::unordered_set<EntityReceiver<T>*> _receivers;
+   
+   Entity *_allocate(int tag) override {
+      // interpret tag as channel
+
+      T *t = _allocateInstance();
+
+      // if channel is non-negative, deliver instance
+      if (tag >= 0) {
+         // if channel matches, deliver
+         for (const auto& receiver: _receivers)
+            if (receiver->_reception)
+               if (receiver->_channel == tag)
+                     receiver->_receive(t);
+      }
+
+      return t;
+   }
+   
+protected:
+   virtual T *_allocateInstance() { return new T; }
+public:
+   void subscribe(EntityReceiver<T> *receiver) {
+      _receivers.insert(receiver);
+      receiver->_provider = this;
+   }
+   void unsubscribe(EntityReceiver<T> *receiver) {
+      _receivers.erase(receiver);
+      receiver->_provider = nullptr;
+   }
 };
 
 #endif

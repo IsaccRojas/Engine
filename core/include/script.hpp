@@ -110,73 +110,6 @@ class GenericAllocator : public AllocatorInterface {
    Script *_allocate(int tag) override { return new T; }
 };
 
-// prototype
-template<typename T>
-class Servicer;
-
-/* abstract class Receiver
-Interface that is used to allow reception of a generic specified type when
-implemented, via subscription to a Servicer of the same type.
-*/
-template<class T>
-class Receiver {
-   friend Servicer<T>;
-   Servicer<T> *_servicer;
-   int _channel;
-   bool _reception;
-protected:
-   virtual void _receive(T *t) = 0;
-   Receiver() : _servicer(nullptr), _channel(-1), _reception(false) {}
-   ~Receiver() {
-      if (_servicer)
-         _servicer->unsubscribe(this);
-   }
-public:
-   void setChannel(int channel) { _channel = channel; }
-   void enableReception(bool state) { _reception = state; }
-   int getChannel() { return _channel; }
-};
-
-/* class Servicer
-Implementation of AllocatorInterface that interprets the tag argument as a
-"channel". Subscribed Receivers will have their _receive() method invoked
-whenever instances of this class have their allocator invoked. Only Receivers
-with a matching tag value will be passed the allocated instance of T.
-*/
-template<class T>
-class Servicer : public AllocatorInterface {
-   std::unordered_set<Receiver<T>*> _receivers;
-   
-   Script *_allocate(int tag) override {
-      // interpret tag as channel
-
-      T *t = _allocateInstance();
-
-      // if channel is non-negative, deliver instance
-      if (tag >= 0) {
-         // if channel matches, deliver
-         for (const auto& receiver: _receivers)
-            if (receiver->_reception)
-               if (receiver->_channel == tag)
-                     receiver->_receive(t);
-      }
-
-      return t;
-   }
-   
-protected:
-   virtual T *_allocateInstance() { return new T; }
-public:
-   void subscribe(Receiver<T> *receiver) {
-      _receivers.insert(receiver);
-      receiver->_servicer = this;
-   }
-   void unsubscribe(Receiver<T> *receiver) {
-      _receivers.erase(receiver);
-      receiver->_servicer = nullptr;
-   }
-};
-
 // --------------------------------------------------------------------------------------------------------------------------
 
 /* class Executor
@@ -332,6 +265,75 @@ public:
    int getMaxID();
    /* Returns number of execution queues in this instance. */
    int getQueueCount();
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+// prototype
+template<typename T>
+class Provider;
+
+/* abstract class Receiver
+Interface that is used to allow reception of a generic specified type when
+implemented, via subscription to a Provider of the same type.
+*/
+template<class T>
+class Receiver {
+   friend Provider<T>;
+   Provider<T> *_provider;
+   int _channel;
+   bool _reception;
+protected:
+   virtual void _receive(T *t) = 0;
+   Receiver() : _provider(nullptr), _channel(-1), _reception(false) {}
+   virtual ~Receiver() {
+      if (_provider)
+         _provider->unsubscribe(this);
+   }
+public:
+   void setChannel(int channel) { _channel = channel; }
+   void enableReception(bool state) { _reception = state; }
+   int getChannel() { return _channel; }
+};
+
+/* class Provider
+Implementation of AllocatorInterface that interprets the tag argument as a
+"channel". Subscribed Receivers will have their _receive() method invoked
+whenever instances of this class have their allocator invoked. Only Receivers
+with a matching tag value will be passed the allocated instance of T.
+*/
+template<class T>
+class Provider : public AllocatorInterface {
+   std::unordered_set<Receiver<T>*> _receivers;
+   
+   Script *_allocate(int tag) override {
+      // interpret tag as channel
+
+      T *t = _allocateInstance();
+
+      // if channel is non-negative, deliver instance
+      if (tag >= 0) {
+         // if channel matches, deliver
+         for (const auto& receiver: _receivers)
+            if (receiver->_reception)
+               if (receiver->_channel == tag)
+                     receiver->_receive(t);
+      }
+
+      return t;
+   }
+   
+protected:
+   virtual T *_allocateInstance() { return new T; }
+public:
+   void subscribe(Receiver<T> *receiver) {
+      _receivers.insert(receiver);
+      receiver->_provider = this;
+   }
+   void unsubscribe(Receiver<T> *receiver) {
+      _receivers.erase(receiver);
+      receiver->_provider = nullptr;
+   }
 };
 
 #endif
