@@ -2,7 +2,6 @@
 #define GLUTIL_HPP_
 
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <cstring>
 #include <glm\glm.hpp>
 #include <glm\gtc\matrix_transform.hpp>
@@ -19,6 +18,14 @@ namespace GLUtil {
     class BadGLProgramException : public std::runtime_error {
     public:
         BadGLProgramException();
+    };
+
+    /* class GLErrorException
+       This exception is thrown when an error is caught by the OpenGL debug error handler.
+    */
+    class GLErrorException : public std::runtime_error {
+    public:
+        GLErrorException();
     };
 
     /* class GLStage
@@ -246,6 +253,9 @@ namespace GLUtil {
        height - height of viewport
     */
     void setViewport(GLint x, GLint y, GLint width, GLint height);
+
+    /* Initializes OpenGL. */
+    void glinit(bool debug);
 };
 
 #endif

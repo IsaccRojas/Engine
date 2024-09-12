@@ -1,12 +1,12 @@
-#include "../include/input.hpp"
+#include "../include/glfwinput.hpp"
 
-Input::Input(GLFWwindow *window, int pixel_width, int pixel_height) {
+GLFWInput::GLFWInput(GLFWwindow *window, int pixel_width, int pixel_height) {
     setWindow(window, pixel_width, pixel_height);
 }
-Input::Input() : _win_h(nullptr), _pixel_width(0), _pixel_height() {}
-Input::~Input() { /* automatic destruction is fine */ }
+GLFWInput::GLFWInput() : _win_h(nullptr), _pixel_width(0), _pixel_height() {}
+GLFWInput::~GLFWInput() { /* automatic destruction is fine */ }
 
-void Input::setWindow(GLFWwindow *window, int pixel_width, int pixel_height) {
+void GLFWInput::setWindow(GLFWwindow *window, int pixel_width, int pixel_height) {
     _win_h = window;
     _pixel_width = pixel_width;
     _pixel_height = pixel_height;
@@ -17,7 +17,7 @@ void Input::setWindow(GLFWwindow *window, int pixel_width, int pixel_height) {
         throw std::runtime_error("Attempt to get window size with invalid GLFWwindow reference");
 }
 
-void Input::update() {
+void GLFWInput::update() {
     if (!_win_h)
         throw std::runtime_error("Attempt to call on Input instance with invalid GLFWwindow reference");
 
@@ -104,7 +104,7 @@ void Input::update() {
     _pixel_mouse_y = (_pixel_height - (_pixel_height * (_win_mouse_y / _win_height))) - (_pixel_height / 2.0f);
 };
 
-void Input::setsticky(bool value) {
+void GLFWInput::setsticky(bool value) {
     if (!_win_h)
         throw std::runtime_error("Attempt to call on Input instance with invalid GLFWwindow reference");
     
@@ -114,21 +114,21 @@ void Input::setsticky(bool value) {
         glfwSetInputMode(_win_h, GLFW_STICKY_KEYS, GLFW_FALSE);  
 }
 
-bool Input::get_w() { return _w_p; }
-bool Input::get_a() { return _a_p; }
-bool Input::get_s() { return _s_p; }
-bool Input::get_d() { return _d_p; }
-bool Input::get_up() { return _up_p; }
-bool Input::get_left() { return _left_p; }
-bool Input::get_down() { return _down_p; }
-bool Input::get_right() { return _right_p; }
-bool Input::get_space() { return _space_p; }
-bool Input::get_enter() { return _enter_p; }
-bool Input::get_tab() { return _tab_p; }
-bool Input::get_m1() { return _m1_p; }
-bool Input::get_m2() { return _m2_p; }
+bool GLFWInput::get_w() { return _w_p; }
+bool GLFWInput::get_a() { return _a_p; }
+bool GLFWInput::get_s() { return _s_p; }
+bool GLFWInput::get_d() { return _d_p; }
+bool GLFWInput::get_up() { return _up_p; }
+bool GLFWInput::get_left() { return _left_p; }
+bool GLFWInput::get_down() { return _down_p; }
+bool GLFWInput::get_right() { return _right_p; }
+bool GLFWInput::get_space() { return _space_p; }
+bool GLFWInput::get_enter() { return _enter_p; }
+bool GLFWInput::get_tab() { return _tab_p; }
+bool GLFWInput::get_m1() { return _m1_p; }
+bool GLFWInput::get_m2() { return _m2_p; }
 
-glm::vec2 Input::inputdir() {
+glm::vec2 GLFWInput::inputdir() {
     float vertical = float(_w_p | _up_p) + (-1.0f * float(_s_p | _down_p));
     float horizontal = float(_d_p | _right_p) + (-1.0f * float(_a_p | _left_p));
     float angle = (horizontal != 0) ? glm::atan(glm::abs(vertical) / glm::abs(horizontal)) : (PI_INPUT / 2.0f);
@@ -138,6 +138,6 @@ glm::vec2 Input::inputdir() {
     );
 }
 
-glm::vec2 Input::mousepos() {
+glm::vec2 GLFWInput::mousepos() {
     return glm::vec2(_pixel_mouse_x, _pixel_mouse_y);
 }

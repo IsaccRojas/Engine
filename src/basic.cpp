@@ -11,8 +11,10 @@ void Basic::_initObject() {
 void Basic::_baseObject() {
     _baseBasic();
 
-    // update quad to match box position, and step animation
-    getQuad()->bv_pos.v = getBox()->pos;
+    // update quad to match box position (except for z-coordinate), and step animation
+    glm::vec2 boxpos = getBox()->pos;
+    getQuad()->bv_pos.v = glm::vec3(boxpos, getQuad()->bv_pos.v.z);
+
     stepAnim();
 
     // only queue if not set to be killed
@@ -28,5 +30,10 @@ void Basic::_killObject() {
 void Basic::_collisionObject(Box *box) {
     _collisionBasic(box);
 }
+
+void Basic::_initBasic() {}
+void Basic::_baseBasic() {}
+void Basic::_killBasic() {}
+void Basic::_collisionBasic(Box *box) {}
 
 Basic::Basic(glm::vec3 scale, glm::vec3 dimensions) : Object(), _scale(scale), _dimensions(dimensions) {}

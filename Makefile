@@ -14,11 +14,10 @@ LIBDIR = -L./core
 # source files
 SRCS = src/main.cpp
 SRCS += src/loop.cpp
-SRCS += src/glinit.cpp
+SRCS += src/coreinit.cpp
 SRCS += src/effect.cpp
 SRCS += src/basic.cpp
-SRCS += src/player.cpp
-SRCS += src/chaser.cpp
+SRCS += src/implementations.cpp
 
 all: out
 

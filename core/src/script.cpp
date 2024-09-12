@@ -12,10 +12,7 @@ Script::Script() :
     _kill_enqueued(false),
     _group(-1)
 {}
-Script::~Script() {
-    // try removing from existing executor
-    _scriptRemove();
-}
+Script::~Script() { /* automatic destruction is fine */ }
 
 Script &Script::operator=(Script &&other) {
     if (this != &other) {

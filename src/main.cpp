@@ -1,15 +1,20 @@
-#include "glinit.hpp"
+#include "coreinit.hpp"
 #include "loop.hpp"
 
 int main() {
     // --- OpenGL and window setup ---
 
-    std::cout << "Initializing OpenGL" << std::endl;
-    GLFWwindow *win_h = glinit(512, 512, "title", false);
+    std::cout << "Initializing core" << std::endl;
+    CoreResources *core = new CoreResources();
+    initializeCore(core);
 
     // --- main loop ---
 
-    loop(win_h);
+    std::cout << "Calling loop" << std::endl;
+    loop(core);
+
+    std::cout << "Destroying core" << std::endl;
+    delete core;
 
     std::cout << "Ending program" << std::endl;
     

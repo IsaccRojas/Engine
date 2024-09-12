@@ -206,7 +206,9 @@ void GLEnv::setTexArray(GLuint width, GLuint height, GLuint depth) {
 }
 
 void GLEnv::setTexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset) {
-    _texarray.subImage(0, xoffset, yoffset, zoffset, img.width(), img.height(), 1, img.copyData());
+    unsigned char *image_data = img.copyData();
+    _texarray.subImage(0, xoffset, yoffset, zoffset, img.width(), img.height(), 1, image_data);
+    delete image_data;
 }
 
 void GLEnv::setView(glm::mat4 view) {

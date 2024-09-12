@@ -37,10 +37,13 @@ physenv.o: ${SRCDIR}/physenv.cpp
 object.o: ${SRCDIR}/object.cpp
 	g++ ${CXXFLAGS} -c ${SRCDIR}/object.cpp -o object.o
 
-input.o: ${SRCDIR}/input.cpp
-	g++ ${CXXFLAGS} -c ${SRCDIR}/input.cpp -o input.o
+glfwinput.o: ${SRCDIR}/glfwinput.cpp
+	g++ ${CXXFLAGS} -c ${SRCDIR}/glfwinput.cpp -o glfwinput.o
 
-libcore.a: commonexcept.o util.o script.o glutil.o glenv.o text.o animation.o entity.o filter.o physenv.o object.o input.o
+glfwstate.o: ${SRCDIR}/glfwstate.cpp
+	g++ ${CXXFLAGS} -c ${SRCDIR}/glfwstate.cpp -o glfwstate.o
+
+libcore.a: commonexcept.o util.o script.o glutil.o glenv.o text.o animation.o entity.o filter.o physenv.o object.o glfwinput.o glfwstate.o
 	ar rcs libcore.a *.o
 
 # windows syntax

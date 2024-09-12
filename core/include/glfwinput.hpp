@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef INPUT_HPP_
 #define INPUT_HPP_
 
@@ -9,7 +7,7 @@
 
 #define PI_INPUT 3.14159265358979323846264338327950288
 
-class Input {
+class GLFWInput {
     GLFWwindow *_win_h;
     int _win_width;
     int _win_height;
@@ -33,9 +31,9 @@ class Input {
     double _pixel_mouse_x;
     double _pixel_mouse_y;
 public:
-    Input(GLFWwindow *window, int pixelwidth, int pixelheight);
-    Input();
-    ~Input();
+    GLFWInput(GLFWwindow *window, int pixelwidth, int pixelheight);
+    GLFWInput();
+    ~GLFWInput();
 
     void setWindow(GLFWwindow *window, int pixelwidth, int pixelheight);
 

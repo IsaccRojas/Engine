@@ -1,122 +1,5 @@
 #include "loop.hpp"
 
-enum Group { 
-    T_BASIC_ORBSHOT,
-    T_CHARACTER_PLAYER,
-    T_CHASER_SMALLBALL, T_CHASER_MEDIUMBALL, T_CHASER_BIGBALL, T_CHASER_VERYBIGBALL, 
-    T_EFFECT_SMALLSMOKE, T_EFFECT_MEDIUMSMOKE, T_EFFECT_BIGSMOKE, T_EFFECT_VERYBIGSMOKE, T_EFFECT_PLAYERSMOKE,
-    T_EFFECT_ORBSHOTPARTICLE, T_EFFECT_ORBSHOTBOOM, 
-    T_EFFECT_BALLPARTICLE, 
-    T_EFFECT_RING
-};
-
-class SmallSmoke : public Effect {
-    void _initEffect() {
-        getQuad()->bv_pos.v.z = 1.0f;
-        getAnimState().setCycleState(rand() % 2);
-    }
-    void _baseEffect() {}
-    void _killEffect() {}
-public:
-    SmallSmoke() : Effect(glm::vec3(16.0f, 16.0f, 1.0f), 20) {}
-};
-
-class MediumSmoke : public Effect {
-    void _initEffect() {
-        getQuad()->bv_pos.v.z = 1.0f;
-        getAnimState().setCycleState(rand() % 2);
-    }
-    void _baseEffect() {}
-    void _killEffect() {}
-public:
-    MediumSmoke() : Effect(glm::vec3(24.0f, 24.0f, 1.0f), 20) {}
-};
-
-class BigSmoke : public Effect {
-    void _initEffect() {
-        getQuad()->bv_pos.v.z = 1.0f;
-        getAnimState().setCycleState(rand() % 2);
-    }
-    void _baseEffect() {}
-    void _killEffect() {}
-public:
-    BigSmoke() : Effect(glm::vec3(26.0f, 26.0f, 1.0f), 20) {}
-};
-
-class VeryBigSmoke : public Effect {
-    void _initEffect() {
-        getQuad()->bv_pos.v.z = 1.0f;
-        getAnimState().setCycleState(rand() % 2);
-    }
-    void _baseEffect() {}
-    void _killEffect() {}
-public:
-    VeryBigSmoke() : Effect(glm::vec3(28.0f, 28.0f, 1.0f), 20) {}
-};
-
-class PlayerSmoke : public Effect {
-    void _initEffect() {
-        getQuad()->bv_pos.v.z = 1.0f;
-        getAnimState().setCycleState(rand() % 2);
-    }
-    void _baseEffect() {}
-    void _killEffect() {}
-public:
-    PlayerSmoke() : Effect(glm::vec3(16.0f, 16.0f, 1.0f), 20) {}
-};
-
-class OrbShotParticle : public Effect {
-    void _initEffect() { getQuad()->bv_pos.v.z = 1.0f; }
-    void _baseEffect() {}
-    void _killEffect() {}
-public:
-    OrbShotParticle() : Effect(glm::vec3(6.0f, 6.0f, 1.0f), 24) {}
-};
-
-class OrbShotBoom : public Effect {
-    void _initEffect() { getQuad()->bv_pos.v.z = 1.0f; }
-    void _baseEffect() {}
-    void _killEffect() {}
-public:
-    OrbShotBoom() : Effect(glm::vec3(8.0f, 8.0f, 1.0f), 24) {}
-};
-
-/*
-class BallParticle : public Effect {
-    glm::vec3 _dir;
-
-    void _initEffect() { getQuad()->bv_pos.v.z = 1.0f; }
-    void _baseEffect() {
-        getQuad()->bv_pos.v = getQuad()->bv_pos.v + _dir;
-    }
-    void _killEffect() {}
-public:
-    BallParticle(glm::vec3 dir) : Effect(glm::vec3(6.0f, 6.0f, 1.0f), 18), _dir(dir) {}
-};
-*/
-
-class Ring : public Effect {
-    void _initEffect() { getQuad()->bv_pos.v.z = -1.0f; }
-    void _baseEffect() {
-        std::vector ids = getExecutor()->getAllByGroup(T_CHARACTER_PLAYER);
-        Entity *player;
-        
-        getAnimState().setCycleState(0);
-        for (unsigned i = 0; i < ids.size(); i++) {
-            player = getExecutor()->getEntity(ids[i]);
-            
-            // quad position and box position are the same for players, so this is fine
-            if (glm::length(player->getQuad()->bv_pos.v - getQuad()->bv_pos.v) < 32.0f) {
-                getAnimState().setCycleState(1);
-                break;
-            }
-        }
-    }
-    void _killEffect() {}
-public:
-    Ring() : Effect(glm::vec3(64.0f, 64.0f, 1.0f), -1) {}
-};
-
 class SmallBallAllocator : public ObjectAllocatorInterface {
     bool *_killflag;
     Chaser *_allocate(int tag) override { return new Chaser(glm::vec3(16.0f, 16.0f, 1.0f), glm::vec3(10.0f, 10.0f, 1.0f), 1, "SmallSmoke", _killflag); }
@@ -148,7 +31,7 @@ public:
 class OrbShotAllocator : public ObjectProvider<OrbShot> {};
 
 class PlayerAllocator : public ObjectAllocatorInterface {
-    Input *_input;
+    GLFWInput *_input;
     OrbShotAllocator *_orbshot_allocator;
     Player *_allocate(int tag) override {
         Player *p = new Player(_input); 
@@ -156,64 +39,13 @@ class PlayerAllocator : public ObjectAllocatorInterface {
         return p;
     }
 public:
-    PlayerAllocator(Input *input, OrbShotAllocator *orbshot_allocator) : _input(input), _orbshot_allocator(orbshot_allocator) {}
+    PlayerAllocator(GLFWInput *input, OrbShotAllocator *orbshot_allocator) : _input(input), _orbshot_allocator(orbshot_allocator) {}
 };
 
-void loop(GLFWwindow *winhandle) {
+void loop(CoreResources *core) {
     srand(time(NULL));
-    
-    // initialize GLEnv instance
-    std::cout << "Setting up glenv" << std::endl;
-    GLEnv obj_glenv{2048};
-
-    std::cout << "Setting up texture array" << std::endl;
-    obj_glenv.setTexArray(133, 304, 4);
-    std::cout << "Setting texture" << std::endl;
-    obj_glenv.setTexture(Image("gfx/objects.png"), 0, 0, 0);
-    obj_glenv.setTexture(Image("gfx/effects.png"), 0, 0, 1);
-    obj_glenv.setTexture(Image("gfx/characters1.png"), 0, 0, 2); // each character is 7x24 pixels
-    obj_glenv.setTexture(Image("gfx/characters2.png"), 0, 0, 3); // each character is 5x10 pixels
-    int pixelwidth = 256;
-    int pixelheight = 256;
-    int pixellayers = 16;
-
-    float halfwidth = float(pixelwidth) / 2.0f;
-    float halfheight = float(pixelheight) / 2.0f;
-
-    std::cout << "Setting up view and projection matrices" << std::endl;
-    obj_glenv.setView(glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
-    // negative is "further back"
-    obj_glenv.setProj(glm::ortho(-1.0f * halfwidth, halfwidth, -1.0f * halfheight, halfheight, 0.0f, float(pixellayers)));
-
-    // set up some opengl parameters
-    std::cout << "Setting up some OpenGL parameters" << std::endl;
-    glfwSwapInterval(1);
-    glClearColor(0.35f, 0.35f, 0.35f, 0.0f);
-    glEnable(GL_DEPTH_TEST);
-    
-    // initialize animation map
-    std::cout << "Setting up animation map" << std::endl;
-    std::unordered_map<std::string, Animation> animations = loadAnimations("./animconfig");
-    
-
-    // initialize filter map
-    std::cout << "Setting up filter map" << std::endl;
-    std::unordered_map<std::string, Filter> filters = loadFilters("./filterconfig");
-
-    // initialize PhysEnv instance
-    std::cout << "Setting up physenv" << std::endl;
-    PhysEnv obj_physenv{2048};
-
-    // set up Executor instance
-    std::cout << "Setting up executor" << std::endl;
-    ObjectExecutor obj_executor{2048, 2, &obj_glenv, &animations, &obj_physenv, &filters};
-
-    // set up input
-    std::cout << "Setting up input" << std::endl;
-    Input input(winhandle, pixelwidth, pixelheight);
 
     std::cout << "Setting up allocators" << std::endl;
-
     bool killflag = false;
     GenericEntityAllocator<SmallSmoke> SmallSmoke_allocator;
     GenericEntityAllocator<MediumSmoke> MediumSmoke_allocator;
@@ -224,47 +56,47 @@ void loop(GLFWwindow *winhandle) {
     GenericEntityAllocator<OrbShotBoom> OrbShotBoom_allocator;
     GenericEntityAllocator<Ring> Ring_allocator;
     OrbShotAllocator OrbShot_allocator;
-    PlayerAllocator Player_allocator(&input, &OrbShot_allocator);
+    PlayerAllocator Player_allocator(&core->input, &OrbShot_allocator);
     SmallBallAllocator SmallBall_allocator(&killflag);
     MediumBallAllocator MediumBall_allocator(&killflag);
     BigBallAllocator BigBall_allocator(&killflag);
     VeryBigBallAllocator VeryBigBall_allocator(&killflag);
 
-    // add objects to manager
-    std::cout << "Adding entities and objects to manager" << std::endl;
-    obj_executor.addObject(&OrbShot_allocator, "OrbShot", T_BASIC_ORBSHOT, true, "OrbShot", "ProjectileFriendly", nullptr, nullptr);
-    obj_executor.addObject(&Player_allocator, "Player", T_CHARACTER_PLAYER, true, "Player", "Player", nullptr, nullptr);
-    obj_executor.addObject(&SmallBall_allocator, "SmallBall", T_CHASER_SMALLBALL, true, "SmallBall", "Enemy", nullptr, nullptr);
-    obj_executor.addObject(&MediumBall_allocator, "MediumBall", T_CHASER_MEDIUMBALL, true, "MediumBall", "Enemy", nullptr, nullptr);
-    obj_executor.addObject(&BigBall_allocator, "BigBall", T_CHASER_BIGBALL, true, "BigBall", "Enemy", nullptr, nullptr);
-    obj_executor.addObject(&VeryBigBall_allocator, "VeryBigBall", T_CHASER_VERYBIGBALL, true, "VeryBigBall", "Enemy", nullptr, nullptr);
-    obj_executor.addEntity(&SmallSmoke_allocator, "SmallSmoke", T_EFFECT_SMALLSMOKE, true, "SmallSmoke", nullptr, nullptr);
-    obj_executor.addEntity(&MediumSmoke_allocator, "MediumSmoke", T_EFFECT_MEDIUMSMOKE, true, "MediumSmoke", nullptr, nullptr);
-    obj_executor.addEntity(&BigSmoke_allocator, "BigSmoke", T_EFFECT_BIGSMOKE, true, "BigSmoke", nullptr, nullptr);
-    obj_executor.addEntity(&VeryBigSmoke_allocator, "VeryBigSmoke", T_EFFECT_VERYBIGSMOKE, true, "VeryBigSmoke", nullptr, nullptr);
-    obj_executor.addEntity(&PlayerSmoke_allocator, "PlayerSmoke", T_EFFECT_PLAYERSMOKE, true, "PlayerSmoke", nullptr, nullptr);
-    obj_executor.addEntity(&OrbShotParticle_allocator, "OrbShotParticle", T_EFFECT_ORBSHOTPARTICLE, true, "OrbShotParticle", nullptr, nullptr);
-    obj_executor.addEntity(&OrbShotBoom_allocator, "OrbShotBoom", T_EFFECT_ORBSHOTBOOM, true, "OrbShotBoom", nullptr, nullptr);
-    obj_executor.addEntity(&Ring_allocator, "Ring", T_EFFECT_RING, true, "Ring", nullptr, nullptr);
+    // add objects to executor
+    std::cout << "Adding entities and objects to executor" << std::endl;
+    core->executor.addObject(&OrbShot_allocator, "OrbShot", T_BASIC_ORBSHOT, true, "OrbShot", "ProjectileFriendly", nullptr, nullptr);
+    core->executor.addObject(&Player_allocator, "Player", T_BASIC_PLAYER, true, "Player", "Player", nullptr, nullptr);
+    core->executor.addObject(&SmallBall_allocator, "SmallBall", T_BASIC_SMALLBALL, true, "SmallBall", "Enemy", nullptr, nullptr);
+    core->executor.addObject(&MediumBall_allocator, "MediumBall", T_BASIC_MEDIUMBALL, true, "MediumBall", "Enemy", nullptr, nullptr);
+    core->executor.addObject(&BigBall_allocator, "BigBall", T_BASIC_BIGBALL, true, "BigBall", "Enemy", nullptr, nullptr);
+    core->executor.addObject(&VeryBigBall_allocator, "VeryBigBall", T_BASIC_VERYBIGBALL, true, "VeryBigBall", "Enemy", nullptr, nullptr);
+    core->executor.addEntity(&SmallSmoke_allocator, "SmallSmoke", T_EFFECT_SMALLSMOKE, true, "SmallSmoke", nullptr, nullptr);
+    core->executor.addEntity(&MediumSmoke_allocator, "MediumSmoke", T_EFFECT_MEDIUMSMOKE, true, "MediumSmoke", nullptr, nullptr);
+    core->executor.addEntity(&BigSmoke_allocator, "BigSmoke", T_EFFECT_BIGSMOKE, true, "BigSmoke", nullptr, nullptr);
+    core->executor.addEntity(&VeryBigSmoke_allocator, "VeryBigSmoke", T_EFFECT_VERYBIGSMOKE, true, "VeryBigSmoke", nullptr, nullptr);
+    core->executor.addEntity(&PlayerSmoke_allocator, "PlayerSmoke", T_EFFECT_PLAYERSMOKE, true, "PlayerSmoke", nullptr, nullptr);
+    core->executor.addEntity(&OrbShotParticle_allocator, "OrbShotParticle", T_EFFECT_ORBSHOTPARTICLE, true, "OrbShotParticle", nullptr, nullptr);
+    core->executor.addEntity(&OrbShotBoom_allocator, "OrbShotBoom", T_EFFECT_ORBSHOTBOOM, true, "OrbShotBoom", nullptr, nullptr);
+    core->executor.addEntity(&Ring_allocator, "Ring", T_EFFECT_RING, true, "Ring", nullptr, nullptr);
 
     // set up ring
     std::cout << "Setting up ring" << std::endl;
-    obj_executor.enqueueSpawnEntity("Ring", 0, -1, glm::vec3(0.0f));
+    core->executor.enqueueSpawnEntity("Ring", 0, -1, glm::vec3(0.0f));
 
     // text \"Test!\" Value: 23% (#8)
     std::cout << "Setting up text" << std::endl;
     TextConfig largefont{0, 0, 2, 5, 19, 7, 24, 0, 0, 1};
     TextConfig smallfont{0, 0, 3, 5, 19, 5, 10, 0, 0, 1};
     
-    Text toptext(&obj_glenv);
+    Text toptext(&core->glenv);
     toptext.setTextConfig(largefont);
     toptext.setPos(glm::vec3(0.0f, 96.0f, 1.0f));
 
-    Text subtext(&obj_glenv);
+    Text subtext(&core->glenv);
     subtext.setTextConfig(smallfont);
     subtext.setPos(glm::vec3(0.0f, 80.0f, 1.0f));
 
-    Text bottomtext(&obj_glenv);
+    Text bottomtext(&core->glenv);
     bottomtext.setTextConfig(smallfont);
     bottomtext.setPos(glm::vec3(0.0f, -80.0f, 1.0f));
 
@@ -289,21 +121,21 @@ void loop(GLFWwindow *winhandle) {
     int round = 0;
     bool entercheck = false;
     bool enterstate = false;
-    while (!glfwWindowShouldClose(winhandle)) {
+    while (!glfwWindowShouldClose(core->state.getWindowHandle())) {
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        input.update();
+        core->input.update();
 
         // force enter input state to only be true for one frame until released
         if (!entercheck) {
-            if (input.get_enter()) {
+            if (core->input.get_enter()) {
                 enterstate = true;
                 entercheck = true;
             } else
                 enterstate = false;
         } else {
             enterstate = false;
-            if (!input.get_enter()) {
+            if (!core->input.get_enter()) {
                 entercheck = false;
             }
         }
@@ -312,8 +144,8 @@ void loop(GLFWwindow *winhandle) {
             killflag = true;
 
             // spawn a player if none exist
-            if (obj_executor.getAllByGroup(1).size() == 0) {
-                obj_executor.enqueueSpawnObject("Player", 0, -1, glm::vec3(0.0f));
+            if (core->executor.getAllByGroup(1).size() == 0) {
+                core->executor.enqueueSpawnObject("Player", 0, -1, glm::vec3(0.0f));
             } 
             
             // check for input to start game if at least one player is spawned
@@ -330,13 +162,13 @@ void loop(GLFWwindow *winhandle) {
             killflag = false;
 
             // check if there are no players
-            std::vector<unsigned> players = obj_executor.getAllByGroup(1);
+            std::vector<unsigned> players = core->executor.getAllByGroup(1);
             if (players.size() == 0) {
                 game_state = 3;
 
             } else {
                 // use first player's position
-                glm::vec3 playerpos = obj_executor.getObject(players.at(0))->getBox()->pos;
+                glm::vec3 playerpos = core->executor.getObject(players.at(0))->getBox()->pos;
 
                 // check distance from center and change rate
                 if (glm::length(playerpos) < 32.0f)
@@ -352,29 +184,29 @@ void loop(GLFWwindow *winhandle) {
                 if (i % spawn_rate == 0) {
 
                     // get first random spawn vector with magnitude based on pixel space
-                    float spawn_radius1 = sqrtf((halfwidth * halfwidth) + (halfheight + halfheight)) + 64;
+                    float spawn_radius1 = sqrtf((128.0f * 128.0f) + (128.0f * 128.0f)) + 64.0f;
                     glm::vec3 spawn_vec1(spawn_radius1, 0.0f, 0.0f);
-                    spawn_vec1 = random_angle(spawn_vec1, 180);
+                    spawn_vec1 = random_angle(spawn_vec1, 180.0f);
 
                     // get second random spawn vector with random magnitude
                     int spawn_amount = int(float(rand() % round) / 4.0f) + 1;
                     for (int j = 0; j < spawn_amount; j++) {
                         float spawn_radius2 = float(rand() % 32);
                         glm::vec3 spawn_vec2(spawn_radius2, 0.0f, 0.0f);
-                        spawn_vec2 = random_angle(spawn_vec2, 180);
+                        spawn_vec2 = random_angle(spawn_vec2, 180.0f);
 
                         switch (int(float(rand() % round) / 5.0f)) {
                             case 0:
-                                obj_executor.enqueueSpawnObject("SmallBall", 0, -1, spawn_vec1 + spawn_vec2);
+                                core->executor.enqueueSpawnObject("SmallBall", 0, -1, spawn_vec1 + spawn_vec2);
                                 break;
                             case 1:
-                                obj_executor.enqueueSpawnObject("MediumBall", 0, -1, spawn_vec1 + spawn_vec2);
+                                core->executor.enqueueSpawnObject("MediumBall", 0, -1, spawn_vec1 + spawn_vec2);
                                 break;
                             case 2:
-                                obj_executor.enqueueSpawnObject("BigBall", 0, -1, spawn_vec1 + spawn_vec2);
+                                core->executor.enqueueSpawnObject("BigBall", 0, -1, spawn_vec1 + spawn_vec2);
                                 break;
                             case 3:
-                                obj_executor.enqueueSpawnObject("VeryBigBall", 0, -1, spawn_vec1 + spawn_vec2);
+                                core->executor.enqueueSpawnObject("VeryBigBall", 0, -1, spawn_vec1 + spawn_vec2);
                                 break;
                             default:
                                 break;
@@ -393,8 +225,8 @@ void loop(GLFWwindow *winhandle) {
             killflag = true;
 
             // respawn player if somehow got here and there are no players
-            if (obj_executor.getAllByGroup(1).size() == 0) {
-                obj_executor.enqueueSpawnObject("Player", 0, -1, glm::vec3(0.0f));
+            if (core->executor.getAllByGroup(1).size() == 0) {
+                core->executor.enqueueSpawnObject("Player", 0, -1, glm::vec3(0.0f));
             } 
 
             // check for input to start next round if at least one player is spawned
@@ -448,19 +280,19 @@ void loop(GLFWwindow *winhandle) {
         }
         
         // unset collided flags, and perform collision detection
-        obj_physenv.step();
-        obj_physenv.unsetCollidedFlags();
-        obj_physenv.detectCollision();
+        core->physenv.step();
+        core->physenv.unsetCollidedFlags();
+        core->physenv.detectCollision();
 
         // spawn, run execution queue 0, and kill
-        obj_executor.runSpawnQueue();
-        obj_executor.runExecQueue(0);
-        obj_executor.runKillQueue();
+        core->executor.runSpawnQueue();
+        core->executor.runExecQueue(0);
+        core->executor.runKillQueue();
 
         // spawn, run execution queue 1, and kill
-        obj_executor.runSpawnQueue();
-        obj_executor.runExecQueue(1);
-        obj_executor.runKillQueue();
+        core->executor.runSpawnQueue();
+        core->executor.runExecQueue(1);
+        core->executor.runKillQueue();
 
         // text updates
         toptext.update();
@@ -468,15 +300,12 @@ void loop(GLFWwindow *winhandle) {
         bottomtext.update();
         
         // graphics updates and draw
-        obj_glenv.update();
-        obj_glenv.draw();
+        core->glenv.update();
+        core->glenv.draw();
         
-        glfwSwapBuffers(winhandle);
+        glfwSwapBuffers(core->state.getWindowHandle());
         i++;
     };
-    
-    // terminate GLFW
-    std::cout << "Terminating GLFW" << std::endl;
-    glfwDestroyWindow(winhandle);
-    glfwTerminate();
+
+    std::cout << "Ending loop" << std::endl;
 }

@@ -1,7 +1,23 @@
 #include "../include/glutil.hpp"
 
 namespace GLUtil {
+    // opengl error handler
+    void GLAPIENTRY gl_err_handler(
+        GLenum src,
+        GLenum type,
+        GLuint id,
+        GLenum severity,
+        GLsizei len,
+        const GLchar* msg,
+        const void* param
+    )  {
+        std::cout << "ERR: gl_err_handler(): " << msg << std::endl;
+        throw GLUtil::GLErrorException();
+    }
+
     BadGLProgramException::BadGLProgramException() : std::runtime_error("Bad OpenGL program") {}
+
+    GLErrorException::GLErrorException() : std::runtime_error("OpenGL error") {}
 
     // _______________________________________ GLStage _______________________________________
 
@@ -451,4 +467,11 @@ namespace GLUtil {
         glViewport(x, y, width, height);
     }
 
+    void glinit(bool debug) {
+        // initialize glew
+        glewInit();
+        if (debug)
+            glEnable(GL_DEBUG_OUTPUT);
+        glDebugMessageCallback(gl_err_handler, NULL);
+    }
 };

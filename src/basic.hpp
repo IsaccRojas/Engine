@@ -13,10 +13,10 @@ class Basic : public Object {
     void _collisionObject(Box *box) override;
 
 protected:
-    virtual void _initBasic() = 0;
-    virtual void _baseBasic() = 0;
-    virtual void _killBasic() = 0;
-    virtual void _collisionBasic(Box *box) = 0;
+    virtual void _initBasic();
+    virtual void _baseBasic();
+    virtual void _killBasic();
+    virtual void _collisionBasic(Box *box);
 
 public:
     Basic(glm::vec3 scale, glm::vec3 dimensions);
