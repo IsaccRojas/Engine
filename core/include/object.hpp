@@ -146,10 +146,10 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class EntityProvider
-Implementation of EntityAllocatorInterface that interprets the tag argument as a
-"channel". Subscribed EntityReceivers will have their _receive() method invoked
-whenever instances of this class have their allocator invoked. Only EntityReceivers
+/* class ObjectProvider
+Implementation of ObjectAllocatorInterface that interprets the tag argument as a
+"channel". Subscribed Receivers will have their _receive() method invoked
+whenever instances of this class have their allocator invoked. Only Receivers
 with a matching tag value will be passed the allocated instance of T.
 */
 template<class T>
