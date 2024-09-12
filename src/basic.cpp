@@ -3,7 +3,7 @@
 void Basic::_initObject() {
     // use scale to set box and quad
     getBox()->dim = _dimensions;
-    getQuad()->bv_scale.v = glm::vec3(_scale.x, _scale.y, 1.0f);
+    getQuad()->bv_scale.v = _scale;
 
     _initBasic();
 }
@@ -21,6 +21,7 @@ void Basic::_baseObject() {
 }
 
 void Basic::_killObject() {
+    getQuad()->bv_scale.v = glm::vec3(0.0f);
     _killBasic();
 }
 

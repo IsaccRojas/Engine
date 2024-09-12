@@ -95,6 +95,8 @@ Executor *Script::getExecutor() {
     return _executor; 
 }
 
+int Script::getExecutorID() { return _executor_id; }
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 int Executor::ScriptEnqueue::spawn() {

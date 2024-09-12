@@ -78,24 +78,30 @@ class GenericObjectAllocator : public ObjectAllocatorInterface {
     Object *_allocate(int tag) override { return new T; }
 };
 
-/* abstract class ObjectReceiver
-   Interface that is used to allow reception of a generic specified type when
-   implemented, via subscription to an ObjectServicer of the same type.
-*/
-
 // prototype
 template<typename T>
 class ObjectServicer;
 
+/* abstract class ObjectReceiver
+Interface that is used to allow reception of a generic specified type when
+implemented, via subscription to a ObjectServicer of the same type.
+*/
 template<class T>
 class ObjectReceiver {
    friend ObjectServicer<T>;
+   ObjectServicer<T> *_servicer;
    int _channel;
+   bool _reception;
 protected:
    virtual void _receive(T *t) = 0;
-   ObjectReceiver() : _channel(-1) {}
+   ObjectReceiver() : _servicer(nullptr), _channel(-1), _reception(false) {}
+   ~ObjectReceiver() {
+      if (_servicer)
+         _servicer->unsubscribe(this);
+   }
 public:
    void setChannel(int channel) { _channel = channel; }
+   void enableReception(bool state) { _reception = state; }
    int getChannel() { return _channel; }
 };
 
@@ -118,16 +124,25 @@ class ObjectServicer : public ObjectAllocatorInterface {
       if (tag >= 0) {
          // if channel matches, deliver
          for (const auto& receiver: _receivers)
+            if (receiver->_reception)
                if (receiver->_channel == tag)
-                  receiver->_receive(t);
+                     receiver->_receive(t);
       }
 
       return t;
    }
+   
 protected:
    virtual T *_allocateInstance() { return new T; }
 public:
-   void subscribe(ObjectReceiver<T> *receiver) { _receivers.insert(receiver); }
+   void subscribe(ObjectReceiver<T> *receiver) {
+      _receivers.insert(receiver);
+      receiver->_servicer = this;
+   }
+   void unsubscribe(ObjectReceiver<T> *receiver) {
+      _receivers.erase(receiver);
+      receiver->_servicer = nullptr;
+   }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

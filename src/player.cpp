@@ -1,7 +1,39 @@
 #include "player.hpp"
 
+void OrbShot::_initBasic() {
+    _i = 0;
+    _lifetime = 119;
+    getBox()->vel = _direction;
+    getAnimState().setCycleState(0);
+}
+
+void OrbShot::_baseBasic() {
+    _i++;
+
+    if (_i % 10 == 0) {
+        getExecutor()->enqueueSpawnEntity("OrbShotParticle", 1, -1, getBox()->pos);
+    }
+
+    if (_i >= _lifetime || getBox()->getCollided())
+        enqueueKill();
+}
+
+void OrbShot::_killBasic() {
+    getExecutor()->enqueueSpawnEntity("OrbShotBoom", 1, -1, getBox()->pos);
+}
+
+void OrbShot::_collisionBasic(Box *box) {}
+
+OrbShot::OrbShot() : Basic(glm::vec3(6.0f, 6.0f, 1.0f), glm::vec3(4.0f, 4.0f, 0.0f)), _i(0), _lifetime(119), _direction(0.0f) {}
+
+void OrbShot::setDirection(glm::vec3 direction) { _direction = direction; }
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 void Player::_initBasic() {
     getAnimState().setCycleState(0);
+    setChannel(getExecutorID());
+    enableReception(true);
 }
 
 void Player::_baseBasic() {
@@ -17,9 +49,12 @@ void Player::_baseBasic() {
 
 void Player::_killBasic() {
     getExecutor()->enqueueSpawnEntity("PlayerSmoke", 1, -1, getBox()->pos);
+    enableReception(false);
 }
 
 void Player::_collisionBasic(Box *box) {}
+
+void Player::_receive(OrbShot *orbshot) { orbshot->setDirection(_dirvec); }
 
 Player::Player(Input *input) : 
     Basic(glm::vec3(16.0f, 16.0f, 0.0f), glm::vec3(6.0f, 13.0f, 0.0f)), 
@@ -29,7 +64,8 @@ Player::Player(Input *input) :
     _spd_max(0.8f), 
     _cooldown(0.0f), 
     _max_cooldown(15.0f), 
-    _prevmovedir(0.0f) 
+    _prevmovedir(0.0f),
+    _dirvec(0.0f)
 {}
 
 void Player::playerMotion() {
@@ -66,24 +102,23 @@ void Player::playerMotion() {
 void Player::playerAction() {
     // get mouse position
     glm::vec2 mousepos = _input->mousepos();
-    glm::vec3 dirvec;
 
     if (glm::abs(mousepos.x) <= 128 && glm::abs(mousepos.y) <= 128) {
         glm::vec3 mousepos3d = glm::vec3(mousepos.x, mousepos.y, 0.0f);
 
         // get normalized and scaled direction
-        dirvec = mousepos3d - getBox()->pos;
-        dirvec /= glm::length(dirvec);
+        _dirvec = mousepos3d - getBox()->pos;
+        _dirvec /= glm::length(_dirvec);
     } else
-        dirvec = glm::vec3(_prevmovedir.x, _prevmovedir.y, 0.0f);
+        _dirvec = glm::vec3(_prevmovedir.x, _prevmovedir.y, 0.0f);
     
     // spawn projectile if not on cooldown
     if (_cooldown <= 0.0f) {
         if (_input->get_m1() || _input->get_space()) {
             // spawn projectile and set cooldown
-            getExecutor()->enqueueSpawnObject("OrbShot", 0, -1, getBox()->pos);
+            getExecutor()->enqueueSpawnObject("OrbShot", 0, getExecutorID(), getBox()->pos);
             _cooldown = _max_cooldown;
         }
     } else
-        _cooldown -= 1.0f;  
+        _cooldown -= 1.0f;
 }

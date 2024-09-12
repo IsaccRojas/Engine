@@ -83,8 +83,8 @@ public:
    bool getExecEnqueued();
    bool getKillEnqueued();
    int getGroup();
-
    Executor *getExecutor();
+   int getExecutorID();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -110,24 +110,30 @@ class GenericAllocator : public AllocatorInterface {
    Script *_allocate(int tag) override { return new T; }
 };
 
-/* abstract class Receiver
-Interface that is used to allow reception of a generic specified type when
-implemented, via subscription to a Servicer of the same type.
-*/
-
 // prototype
 template<typename T>
 class Servicer;
 
+/* abstract class Receiver
+Interface that is used to allow reception of a generic specified type when
+implemented, via subscription to a Servicer of the same type.
+*/
 template<class T>
 class Receiver {
    friend Servicer<T>;
+   Servicer<T> *_servicer;
    int _channel;
+   bool _reception;
 protected:
    virtual void _receive(T *t) = 0;
-   Receiver() : _channel(-1) {}
+   Receiver() : _servicer(nullptr), _channel(-1), _reception(false) {}
+   ~Receiver() {
+      if (_servicer)
+         _servicer->unsubscribe(this);
+   }
 public:
    void setChannel(int channel) { _channel = channel; }
+   void enableReception(bool state) { _reception = state; }
    int getChannel() { return _channel; }
 };
 
@@ -150,16 +156,25 @@ class Servicer : public AllocatorInterface {
       if (tag >= 0) {
          // if channel matches, deliver
          for (const auto& receiver: _receivers)
+            if (receiver->_reception)
                if (receiver->_channel == tag)
-                  receiver->_receive(t);
+                     receiver->_receive(t);
       }
 
       return t;
    }
+   
 protected:
    virtual T *_allocateInstance() { return new T; }
 public:
-   void subscribe(Receiver<T> *receiver) { _receivers.insert(receiver); }
+   void subscribe(Receiver<T> *receiver) {
+      _receivers.insert(receiver);
+      receiver->_servicer = this;
+   }
+   void unsubscribe(Receiver<T> *receiver) {
+      _receivers.erase(receiver);
+      receiver->_servicer = nullptr;
+   }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

@@ -10,39 +10,6 @@ enum Group {
     T_EFFECT_RING
 };
 
-class OrbShot : public Basic {
-    int _i;
-    int _lifetime;
-
-    void _initBasic() {
-        _i = 0;
-        _lifetime = 119;
-        getAnimState().setCycleState(0);
-    }
-
-    void _baseBasic() {
-        _i++;
-
-        if (_i % 10 == 0) {
-            getExecutor()->enqueueSpawnEntity("OrbShotParticle", 1, -1, getBox()->pos);
-        }
-
-        if (_i >= _lifetime || getBox()->getCollided())
-            enqueueKill();
-    }
-
-    void _killBasic() {
-        getExecutor()->enqueueSpawnEntity("OrbShotBoom", 1, -1, getBox()->pos);
-    }
-
-    void _collisionBasic(Box *box) {}
-
-    void _captureBasic(Basic *captive) {}
-
-public:
-    OrbShot() : Basic(glm::vec3(6.0f, 6.0f, 1.0f), glm::vec3(4.0f, 4.0f, 0.0f)) {}
-};
-
 class SmallSmoke : public Effect {
     void _initEffect() {
         getQuad()->bv_pos.v.z = 1.0f;
@@ -150,13 +117,6 @@ public:
     Ring() : Effect(glm::vec3(64.0f, 64.0f, 1.0f), -1) {}
 };
 
-class PlayerAllocator : public ObjectAllocatorInterface {
-    Input *_input;
-    Player *_allocate(int tag) override { return new Player(_input); }
-public:
-    PlayerAllocator(Input *input) : _input(input) {}
-};
-
 class SmallBallAllocator : public ObjectAllocatorInterface {
     bool *_killflag;
     Chaser *_allocate(int tag) override { return new Chaser(glm::vec3(16.0f, 16.0f, 1.0f), glm::vec3(10.0f, 10.0f, 1.0f), 1, "SmallSmoke", _killflag); }
@@ -183,6 +143,20 @@ class VeryBigBallAllocator : public ObjectAllocatorInterface {
     Chaser *_allocate(int tag) override { return new Chaser(glm::vec3(24.0f, 24.0f, 1.0f), glm::vec3(20.0f, 20.0f, 1.0f), 4, "VeryBigSmoke", _killflag); }
 public:
     VeryBigBallAllocator(bool *killflag) : _killflag(killflag) {}
+};
+
+class OrbShotAllocator : public ObjectServicer<OrbShot> {};
+
+class PlayerAllocator : public ObjectAllocatorInterface {
+    Input *_input;
+    OrbShotAllocator *_orbshot_allocator;
+    Player *_allocate(int tag) override {
+        Player *p = new Player(_input); 
+        _orbshot_allocator->subscribe(p);
+        return p;
+    }
+public:
+    PlayerAllocator(Input *input, OrbShotAllocator *orbshot_allocator) : _input(input), _orbshot_allocator(orbshot_allocator) {}
 };
 
 void loop(GLFWwindow *winhandle) {
@@ -241,7 +215,6 @@ void loop(GLFWwindow *winhandle) {
     std::cout << "Setting up allocators" << std::endl;
 
     bool killflag = false;
-    GenericObjectAllocator<OrbShot> OrbShot_allocator;
     GenericEntityAllocator<SmallSmoke> SmallSmoke_allocator;
     GenericEntityAllocator<MediumSmoke> MediumSmoke_allocator;
     GenericEntityAllocator<BigSmoke> BigSmoke_allocator;
@@ -250,7 +223,8 @@ void loop(GLFWwindow *winhandle) {
     GenericEntityAllocator<OrbShotParticle> OrbShotParticle_allocator;
     GenericEntityAllocator<OrbShotBoom> OrbShotBoom_allocator;
     GenericEntityAllocator<Ring> Ring_allocator;
-    PlayerAllocator Player_allocator(&input);
+    OrbShotAllocator OrbShot_allocator;
+    PlayerAllocator Player_allocator(&input, &OrbShot_allocator);
     SmallBallAllocator SmallBall_allocator(&killflag);
     MediumBallAllocator MediumBall_allocator(&killflag);
     BigBallAllocator BigBall_allocator(&killflag);

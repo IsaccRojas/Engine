@@ -117,12 +117,20 @@ void PhysEnv::detectCollision() {
     // perform pair-wise collision detection
     for (unsigned i = 0; i < ids_size; i++) {
         if (_ids.at(i)) {
+            // get box and skip if zeroed out
+            Box &box1 = _boxes[i];
+            if (box1.dim == glm::vec3(0.0f))
+                continue;
 
             for (unsigned j = i + 1; j < ids_size; j++) {
                 if (_ids.at(j)) {
+                    Box &box2 = _boxes[j];
+                    if (box2.dim == glm::vec3(0.0f))
+                        continue;
+
                     // test filters against each other's IDs
-                    bool f1 = _boxes[i].getFilterState().hasFilter();
-                    bool f2 = _boxes[i].getFilterState().hasFilter();
+                    bool f1 = box1.getFilterState().hasFilter();
+                    bool f2 = box2.getFilterState().hasFilter();
                     
                     // if both have a filter, collide if both pass
                     // if neither have a filter, collide
@@ -131,11 +139,11 @@ void PhysEnv::detectCollision() {
                         continue;
                     if (
                         (!f1 && !f2) ||
-                            (_boxes[i].getFilterState().pass(_boxes[j].getFilterState().id()) &&
-                            _boxes[j].getFilterState().pass(_boxes[i].getFilterState().id()))
+                            (box1.getFilterState().pass(box2.getFilterState().id()) &&
+                            box2.getFilterState().pass(box1.getFilterState().id()))
                     )
                         // detect and handle collision
-                        collisionAABB(_boxes[i], _boxes[j]);
+                        collisionAABB(box1, box2);
 
                 }
             }

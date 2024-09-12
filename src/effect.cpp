@@ -2,7 +2,6 @@
 
 void Effect::_initEntity() {
     _initEffect();
-
     getQuad()->bv_scale.v = _scale;
     _i = 0;
 }
@@ -11,7 +10,6 @@ void Effect::_baseEntity() {
     _baseEffect();
 
     stepAnim();
-
     if (_lifetime >= 0) {
         _i++;
         if (_i >= _lifetime)
@@ -24,6 +22,7 @@ void Effect::_baseEntity() {
 }
 
 void Effect::_killEntity() {
+    getQuad()->bv_scale.v = glm::vec3(0.0f);
     _killEffect();
 }
 
