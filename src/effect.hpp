@@ -8,12 +8,15 @@ class Effect : public Entity {
     int _lifetime;
     int _i;
 
-    void _initEntity();
-    void _baseEntity();
-    void _killEntity();
+    void _initEntity() override;
+    void _baseEntity() override;
+    void _killEntity() override;
+
+protected:
     virtual void _initEffect();
     virtual void _baseEffect();
     virtual void _killEffect();
+
 public:
     // if lifetime = -1, will not be killed via _baseEntity() call
     Effect(glm::vec3 scale, int lifetime);

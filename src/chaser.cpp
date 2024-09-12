@@ -17,16 +17,16 @@ void Chaser::_baseBasic() {
 }
 
 void Chaser::_killBasic() {
-    getManager()->spawnEntityEnqueue(_killeffect.c_str(), 1, getBox()->pos);
+    getExecutor()->enqueueSpawnEntity(_killeffect.c_str(), 1, -1, getBox()->pos);
 }
 
 void Chaser::_collisionBasic(Box *box) {}
 
 Object *Chaser::_getTarget() {
     // return first ID found
-    std::vector<unsigned> ids = getManager()->getAllByGroup(1);
+    std::vector<unsigned> ids = getExecutor()->getAllByGroup(1);
     if (ids.size() > 0)
-        return getManager()->getObject(ids[0]);
+        return getExecutor()->getObject(ids[0]);
     else
         return nullptr;
 }

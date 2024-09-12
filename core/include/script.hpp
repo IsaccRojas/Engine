@@ -77,13 +77,14 @@ public:
    /* Sets various internal flags used by Executors to control state. Can be set manually to manipulate
       execution behavior.
    */
-   
    int getLastExecQueue();
    bool getInitialized();
    bool getKilled();
    bool getExecEnqueued();
    bool getKillEnqueued();
    int getGroup();
+
+   Executor *getExecutor();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -106,7 +107,7 @@ protected:
 */
 template<class T>
 class GenericAllocator : public AllocatorInterface {
-   Script *_allocate() override { return new T; }
+   Script *_allocate(int tag) override { return new T; }
 };
 
 /* abstract class Receiver
@@ -236,6 +237,9 @@ protected:
    // throws if current count is equal to maximum count
    void _checkCount();
 
+   // throws if the provided id is out of bounds or inactive
+   void _checkID(unsigned id);
+
    // initializes Script's Executor-related fields
    unsigned _setupScript(Script *script, const char *script_name, int execution_queue);
 
@@ -244,6 +248,7 @@ protected:
 
    // pushes an enqueue
    void _pushSpawnEnqueue(ScriptEnqueue *enqueue);
+   
 public:
    /* Calls init() with the provided arguments. */
    Executor(unsigned max_count, unsigned queues);

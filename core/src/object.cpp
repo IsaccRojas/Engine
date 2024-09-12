@@ -5,6 +5,7 @@ Object::Object(Object &&other) {
 }
 Object::Object() : 
     Entity(),
+    _objectexecutor(nullptr),
     _physenv(nullptr),
     _box(nullptr),
     _box_id(-1)
@@ -54,6 +55,8 @@ void Object::_objectRemove() {
 
 Box *Object::getBox() { return _box; }
 
+ObjectExecutor *Object::getExecutor() { return _objectexecutor; }
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 int ObjectExecutor::ObjectEnqueue::spawn() {
@@ -64,23 +67,26 @@ ObjectExecutor::ObjectEnqueue::ObjectEnqueue(ObjectExecutor *objectexecutor, std
     EntityEnqueue(nullptr, name, execution_queue, tag, pos), _objectexecutor(objectexecutor)
 {}
 
-void ObjectExecutor::_setupObject(Object *object, const char *object_name) {
+void ObjectExecutor::_setupObject(unsigned id, Object *object, const char *object_name) {
     // get information
     ObjectInfo &info = _objectinfos[object_name];
 
     // set up object information
+    object->_objectexecutor = this;
     object->_physenv = _physenv;
     object->_box_id = _physenv->genBox(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), std::bind(Object::_collisionObject, object, std::placeholders::_1));
     object->_box = _physenv->getBox(object->_box_id);
     object->_box->setFilter(&(*_filters)[info._filter_name]);
+
+    _objectvalues[id] = ObjectValues{object};
 }
 
 unsigned ObjectExecutor::_spawnObject(const char *object_name, int execution_queue, int tag, glm::vec3 pos) {
     // allocate instance and set it up
     Object *object = _objectinfos[object_name]._allocator->_allocate(tag);
     unsigned id = _setupScript(object, object_name, execution_queue);
-    _setupEntity(object, object_name);
-    _setupObject(object, object_name);
+    _setupEntity(id, object, object_name);
+    _setupObject(id, object, object_name);
     object->getQuad()->bv_pos.v = pos;
     object->getBox()->pos = pos;
 
@@ -98,7 +104,7 @@ ObjectExecutor &ObjectExecutor::operator=(ObjectExecutor &&other) {
     if (this == &other) {
         EntityExecutor::operator=(std::move(other));
         _objectinfos = other._objectinfos;
-        _objectenqueues = other._objectenqueues;
+        _objectvalues = other._objectvalues;
         _physenv = other._physenv;
         _filters = other._filters;
 
@@ -110,6 +116,8 @@ ObjectExecutor &ObjectExecutor::operator=(ObjectExecutor &&other) {
 
 void ObjectExecutor::init(unsigned max_count, unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters) {
     EntityExecutor::init(max_count, queues, glenv, animations);
+
+    _objectvalues = std::vector<ObjectValues>(max_count, ObjectValues{nullptr});
     _physenv = physenv;
     _filters = filters;
 }
@@ -117,9 +125,8 @@ void ObjectExecutor::init(unsigned max_count, unsigned queues, GLEnv *glenv, uno
 void ObjectExecutor::uninit() {
     EntityExecutor::uninit();
 
-    std::queue<ObjectEnqueue> empty;
     _objectinfos.clear();
-    std::swap(_objectenqueues, empty);
+    _objectvalues.clear();
     _physenv = nullptr;
     _filters = nullptr;
 }
@@ -134,4 +141,9 @@ void ObjectExecutor::addObject(ObjectAllocatorInterface *allocator, const char *
 
 void ObjectExecutor::enqueueSpawnObject(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
     _pushSpawnEnqueue(new ObjectEnqueue(this, entity_name, execution_queue, tag, pos));
+}
+
+Object *ObjectExecutor::getObject(unsigned id) {
+    _checkID(id);
+    return _objectvalues[id]._object_ref;
 }

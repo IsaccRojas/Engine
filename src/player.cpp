@@ -16,17 +16,21 @@ void Player::_baseBasic() {
 }
 
 void Player::_killBasic() {
-    getManager()->spawnEntityEnqueue("PlayerSmoke", 1, getBox()->pos);
+    getExecutor()->enqueueSpawnEntity("PlayerSmoke", 1, -1, getBox()->pos);
 }
 
 void Player::_collisionBasic(Box *box) {}
 
-Player::Player() : Basic(glm::vec3(16.0f, 16.0f, 0.0f), glm::vec3(6.0f, 13.0f, 0.0f)), _input(nullptr), _input_ready(false), _accel(0.2f), _deccel(0.15f), _spd_max(0.8f), _cooldown(0.0f), _max_cooldown(15.0f), _prevmovedir(0.0f) {}
-
-void Player::playerSetup(Input *input) {
-    _input = input;
-    _input_ready = true;
-};
+Player::Player(Input *input) : 
+    Basic(glm::vec3(16.0f, 16.0f, 0.0f), glm::vec3(6.0f, 13.0f, 0.0f)), 
+    _input(input),
+    _accel(0.2f), 
+    _deccel(0.15f), 
+    _spd_max(0.8f), 
+    _cooldown(0.0f), 
+    _max_cooldown(15.0f), 
+    _prevmovedir(0.0f) 
+{}
 
 void Player::playerMotion() {
     glm::vec3 &vel = getBox()->vel;
@@ -76,13 +80,8 @@ void Player::playerAction() {
     // spawn projectile if not on cooldown
     if (_cooldown <= 0.0f) {
         if (_input->get_m1() || _input->get_space()) {
-            // spawn projectile, set its position, and set cooldown
-            int id = getManager()->spawnObject("OrbShot", 0, getBox()->pos);
-            if (id >= 0) {
-                Object *shot = getManager()->getObject(id);
-                shot->getBox()->vel = dirvec;
-            }
-
+            // spawn projectile and set cooldown
+            getExecutor()->enqueueSpawnObject("OrbShot", 0, -1, getBox()->pos);
             _cooldown = _max_cooldown;
         }
     } else

@@ -6,14 +6,12 @@
 
 class Player : public Basic {
     Input *_input;
-    bool _input_ready;
 
     float _accel;
     float _deccel;
     float _spd_max;
     float _cooldown;
     float _max_cooldown;
-
     glm::vec2 _prevmovedir;
 
     void _initBasic();
@@ -22,9 +20,8 @@ class Player : public Basic {
     void _collisionBasic(Box *box);
 
 public:
-    Player();
+    Player(Input *input);
 
-    void playerSetup(Input *input);
     void playerMotion();
     void playerAction();
 };

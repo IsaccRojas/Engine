@@ -1,9 +1,5 @@
 #include "basic.hpp"
 
-
-
-/*
-
 void Basic::_initObject() {
     // use scale to set box and quad
     getBox()->dim = _dimensions;
@@ -32,14 +28,4 @@ void Basic::_collisionObject(Box *box) {
     _collisionBasic(box);
 }
 
-Basic::Basic(WatcherInterface *watcher, glm::vec3 scale, glm::vec3 dimensions) : Object(), _watcher(watcher), _scale(scale), _dimensions(dimensions) {}
-
-WatcherInterface *Basic::getWatcher() {
-    return _watcher;
-}
-
-void Basic::capture(Basic *captive) {
-    _captureBasic(captive);
-}
-
-*/
+Basic::Basic(glm::vec3 scale, glm::vec3 dimensions) : Object(), _scale(scale), _dimensions(dimensions) {}

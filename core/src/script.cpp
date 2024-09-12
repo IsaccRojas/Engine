@@ -89,6 +89,12 @@ void Script::enqueueKill() {
         _executor->enqueueKill(_executor_id);
 }
 
+Executor *Script::getExecutor() {
+    if (!_executor)
+        throw std::runtime_error("Attempt to get Executor with null Executor owner");
+    return _executor; 
+}
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 int Executor::ScriptEnqueue::spawn() {
@@ -137,6 +143,16 @@ void Executor::_checkCount() {
         throw CountLimitException();
 }
 
+void Executor::_checkID(unsigned id) {
+    // check bounds
+    if (id >= _ids.size())
+        throw std::out_of_range("Index out of range");
+
+    // check if active
+    if (!_ids.at(id))
+        throw InactiveIDException();
+}
+
 unsigned Executor::_setupScript(Script *script, const char *script_name, int execution_queue) {
     // get information
     ScriptInfo &info = _scriptinfos[script_name];
@@ -183,7 +199,7 @@ void Executor::init(unsigned max_count, unsigned queues) {
     for (unsigned i = 0; i < max_count; i++)
         _scripts.push_back(std::unique_ptr<Script>(nullptr));
 
-    _scriptvalues = std::vector<ScriptValues>(max_count, {nullptr, -1});
+    _scriptvalues = std::vector<ScriptValues>(max_count, ScriptValues{nullptr, -1});
     _queuepairs = std::vector<QueuePair>(queues, QueuePair{});
     _max_count = max_count;
     _count = 0;
@@ -212,23 +228,12 @@ void Executor::uninit() {
 }
 
 Script *Executor::get(unsigned id) {
-    // check bounds
-    if (id >= _ids.size())
-        throw std::out_of_range("Index out of range");
-
-    if (_ids.at(id))
-        return _scripts[id].get();
-
-    throw InactiveIDException();
+    _checkID(id);
+    return _scripts[id].get();
 }
 
 void Executor::remove(unsigned id) {
-    // check bounds
-    if (id >= _ids.size())
-        throw std::out_of_range("Index out of range");
-
-    if (!_ids.at(id))
-        throw InactiveIDException();
+    _checkID(id);
 
     // get values and info
     ScriptValues &scriptvalues = _scriptvalues[id];
@@ -259,38 +264,28 @@ void Executor::enqueueSpawn(const char *script_name, int execution_queue, int ta
 }
 
 void Executor::enqueueExec(unsigned id, unsigned queue) {
-    // check bounds
-    if (id >= _ids.size())
-        throw std::out_of_range("ID index out of range");
+    _checkID(id);
+
     if (queue >= _queuepairs.size())
         throw std::out_of_range("Execution queue index out of range");
 
-    if (_ids.at(id)) {
-        Script *script = _scripts[id].get();
-        if (!(script->_exec_enqueued)) {
-            // push to specified pair
-            _queuepairs[queue]._push_execqueue.push(id);
-            script->_exec_enqueued = true;
-        }
-    } else
-        throw InactiveIDException();
+    Script *script = _scripts[id].get();
+    if (!(script->_exec_enqueued)) {
+        // push to specified pair
+        _queuepairs[queue]._push_execqueue.push(id);
+        script->_exec_enqueued = true;
+    }
 }
 
 void Executor::enqueueKill(unsigned id) {
-    // check bounds
-    if (id >= _ids.size())
-        throw std::out_of_range("Index out of range");
+    _checkID(id);
 
-    if (_ids.at(id)) {
-        Script *script = _scripts[id].get();
-        if (!(script->_kill_enqueued)) {
-            // push to kill queue
-            _push_killqueue.push(id);
-            script->_kill_enqueued = true;
-        }
-    } else
-        throw InactiveIDException();
-
+    Script *script = _scripts[id].get();
+    if (!(script->_kill_enqueued)) {
+        // push to kill queue
+        _push_killqueue.push(id);
+        script->_kill_enqueued = true;
+    }
 }
 
 std::vector<unsigned> Executor::runSpawnQueue() {
@@ -323,30 +318,22 @@ void Executor::runExecQueue(unsigned queue) {
     Script *script;
     while (!(run_execqueue.empty())) {
         id = run_execqueue.front();
+        _checkID(id);
 
-        // check bounds
-        if (id < 0 || id >= _ids.size())
-            throw std::out_of_range("Index out of range");
+        script = _scripts[id].get();
+        script->_last_execqueue = queue;
+        script->_exec_enqueued = false;
 
-        // check if ID is active
-        if (_ids.at(id)) {
-            script = _scripts[id].get();
-            script->_last_execqueue = queue;
-            script->_exec_enqueued = false;
-
-            // check if script hasn't been killed yet
-            if (!(script->_killed)) {
-                // check if script needs to be initialized
-                if (!(script->_initialized)) {
-                    script->runInit();
-                    script->_initialized = true;
-                }
-
-                script->runBase();
+        // check if script hasn't been killed yet
+        if (!(script->_killed)) {
+            // check if script needs to be initialized
+            if (!(script->_initialized)) {
+                script->runInit();
+                script->_initialized = true;
             }
 
-        } else
-            throw InactiveIDException();
+            script->runBase();
+        }
         
         run_execqueue.pop();
     }
@@ -361,24 +348,17 @@ void Executor::runKillQueue() {
 
     while (!(_run_killqueue.empty())) {
         id = _run_killqueue.front();
+        _checkID(id);
 
-        // check bounds
-        if (id < 0 || id >= _ids.size())
-            throw std::out_of_range("Index out of range");
+        script = _scripts[id].get();
+
+        // check if script needs to be killed
+        if (!(script->_killed)) {
+            script->runKill();
+            script->_killed = true;
+        }
         
-        // check if ID is active
-        if (_ids.at(id)) {
-            script = _scripts[id].get();
-
-            // check if script needs to be killed
-            if (!(script->_killed)) {
-                script->runKill();
-                script->_killed = true;
-            }
-            
-            script->_kill_enqueued = false;
-        } else
-            throw InactiveIDException();
+        script->_kill_enqueued = false;
         
         _run_killqueue.pop();
     }
@@ -398,14 +378,8 @@ std::vector<unsigned> Executor::getAllByGroup(int group) {
 }
 
 std::string Executor::getName(unsigned id) {
-    // check bounds
-    if (id >= _ids.size())
-        throw std::out_of_range("Index out of range");
-
-    if (_ids.at(id))
-        return _scriptvalues[id]._manager_name;
-
-    throw InactiveIDException();
+    _checkID(id);
+    return _scriptvalues[id]._manager_name;
 }
 
 bool Executor::getInitialized() { return _initialized; }

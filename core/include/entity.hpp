@@ -15,6 +15,8 @@ class EntityExecutor;
 */
 class Entity : public Script {
     friend EntityExecutor;
+
+    EntityExecutor *_entityexecutor;
     
     // environmental references
     GLEnv *_glenv;
@@ -59,6 +61,8 @@ public:
 
     AnimationState &getAnimState();
     Quad *getQuad();
+
+    EntityExecutor *getExecutor();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -80,7 +84,7 @@ protected:
 */
 template<class T>
 class GenericEntityAllocator : public EntityAllocatorInterface {
-   Entity *_allocate() override { return new T; }
+   Entity *_allocate(int tag) override { return new T; }
 };
 
 /* abstract class EntityReceiver
@@ -143,7 +147,11 @@ class EntityExecutor : public Executor {
        EntityAllocatorInterface *_allocator;
        std::string _animation_name;
     };
-    
+
+    struct EntityValues {
+       Entity *_entity_ref;
+    };
+
 protected:
    // class to store enqueues and polymorphically spawn later
     class EntityEnqueue : public ScriptEnqueue {
@@ -158,17 +166,18 @@ protected:
 private:
     // internal variables for added Entity information and enqueued Entities
     std::unordered_map<std::string, EntityInfo> _entityinfos;
+    std::vector<EntityValues> _entityvalues;
 
     GLEnv *_glenv;
     unordered_map_string_Animation_t *_animations;
 
 protected:
-
     // initializes Entity's EntityExecutor-related fields (should already have an ID by the time this is invoked)
-    void _setupEntity(Entity *entity, const char *entity_name);
+    void _setupEntity(unsigned id, Entity *entity, const char *entity_name);
 
     // spawns an Entity using a name previously added to this manager, and returns its ID
     unsigned _spawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos);
+    
 public:
     /* Calls init() with the provided arguments. */
     EntityExecutor(unsigned max_count, unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations);
@@ -197,6 +206,8 @@ public:
 
     /* Enqueues an Entity to be spawned when calling runSpawnQueue(). */
     void enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos);
+
+    Entity *getEntity(unsigned id);
 };
 
 #endif

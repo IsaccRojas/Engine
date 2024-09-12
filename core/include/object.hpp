@@ -15,6 +15,8 @@ class ObjectExecutor;
 class Object : public Entity {
     friend ObjectExecutor;
 
+    ObjectExecutor *_objectexecutor;
+
     // environmental references
     PhysEnv *_physenv;
 
@@ -50,6 +52,8 @@ public:
     Object &operator=(const Object &other) = delete;
 
     Box *getBox();
+
+    ObjectExecutor *getExecutor();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -71,7 +75,7 @@ protected:
 */
 template<class T>
 class GenericObjectAllocator : public ObjectAllocatorInterface {
-    Object *_allocate() override { return new T; }
+    Object *_allocate(int tag) override { return new T; }
 };
 
 /* abstract class ObjectReceiver
@@ -135,6 +139,10 @@ class ObjectExecutor : public EntityExecutor {
        std::string _filter_name;
     };
 
+    struct ObjectValues {
+       Object *_object_ref;
+    };
+
    // class to store enqueues and polymorphically spawn later
     class ObjectEnqueue : public EntityEnqueue {
        friend ObjectExecutor;
@@ -145,17 +153,17 @@ class ObjectExecutor : public EntityExecutor {
 
     // internal variables for added Object information and enqueued Entities
     std::unordered_map<std::string, ObjectInfo> _objectinfos;
+    std::vector<ObjectValues> _objectvalues;
 
     PhysEnv *_physenv;
     unordered_map_string_Filter_t *_filters;
 
-    std::queue<ObjectEnqueue> _objectenqueues;
-
     // initializes Object's ObjectExecutor-related fields (should already have an ID by the time this is invoked)
-    void _setupObject(Object *object, const char *object_name);
+    void _setupObject(unsigned id, Object *object, const char *object_name);
 
     // spawns an Object using a name previously added to this manager, and returns its ID
     unsigned _spawnObject(const char *object_name, int execution_queue, int tag, glm::vec3 pos);
+    
 public:
     /* Calls init() with the provided arguments. */
     ObjectExecutor(unsigned max_count, unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters);
@@ -184,6 +192,8 @@ public:
 
     /* Enqueues an Object to be spawned when calling runSpawnQueue(). */
     void enqueueSpawnObject(const char *entity_name, int execution_queue, int tag, glm::vec3 pos);
+
+    Object *getObject(unsigned id);
 };
 
 #endif

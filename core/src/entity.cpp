@@ -5,6 +5,7 @@ Entity::Entity(Entity &&other) {
 }
 Entity::Entity() : 
     Script(),
+    _entityexecutor(nullptr),
     _glenv(nullptr),
     _quad(nullptr),
     _frame(nullptr),
@@ -85,6 +86,8 @@ AnimationState &Entity::getAnimState() { return _animationstate; }
 
 Quad *Entity::getQuad() { return _quad; }
 
+EntityExecutor *Entity::getExecutor() { return _entityexecutor; }
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 int EntityExecutor::EntityEnqueue::spawn() {
@@ -95,23 +98,26 @@ EntityExecutor::EntityEnqueue::EntityEnqueue(EntityExecutor *entityexecutor, std
     ScriptEnqueue(nullptr, name, execution_queue, tag), _entityexecutor(entityexecutor), _pos(pos)
 {}
 
-void EntityExecutor::_setupEntity(Entity *entity, const char *entity_name) {
+void EntityExecutor::_setupEntity(unsigned id, Entity *entity, const char *entity_name) {
     // get information
     EntityInfo &info = _entityinfos[entity_name];
 
     // set up entity fields
+    entity->_entityexecutor = this;
     entity->_glenv = _glenv;
     entity->_quad_id = _glenv->genQuad(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), glm::vec2(0.0f));
     entity->_quad = _glenv->getQuad(entity->_quad_id);
     entity->_animationstate.setAnimation(&(*_animations)[info._animation_name]);
     entity->_frame = entity->_animationstate.getCurrent();
+
+    _entityvalues[id] = EntityValues{entity};
 }
 
 unsigned EntityExecutor::_spawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
     // allocate instance and set it up
     Entity *entity = _entityinfos[entity_name]._allocator->_allocate(tag);
     unsigned id = _setupScript(entity, entity_name, execution_queue);
-    _setupEntity(entity, entity_name);
+    _setupEntity(id, entity, entity_name);
     entity->getQuad()->bv_pos.v = pos;
 
     return id;
@@ -128,6 +134,7 @@ EntityExecutor &EntityExecutor::operator=(EntityExecutor &&other) {
     if (this == &other) {
         Executor::operator=(std::move(other));
         _entityinfos = other._entityinfos;
+        _entityvalues = other._entityvalues;
         _glenv = other._glenv;
         _animations = other._animations;
 
@@ -139,6 +146,8 @@ EntityExecutor &EntityExecutor::operator=(EntityExecutor &&other) {
 
 void EntityExecutor::init(unsigned max_count, unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations) {
     Executor::init(max_count, queues);
+
+    _entityvalues = std::vector<EntityValues>(max_count, EntityValues{nullptr});
     _glenv = glenv;
     _animations = animations;
 }
@@ -147,6 +156,7 @@ void EntityExecutor::uninit() {
     Executor::uninit();
 
     _entityinfos.clear();
+    _entityvalues.clear();
     _glenv = nullptr;
     _animations = nullptr;
 }
@@ -161,4 +171,9 @@ void EntityExecutor::addEntity(EntityAllocatorInterface *allocator, const char *
 
 void EntityExecutor::enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
     _pushSpawnEnqueue(new EntityEnqueue(this, entity_name, execution_queue, tag, pos));
+}
+
+Entity *EntityExecutor::getEntity(unsigned id) {
+    _checkID(id);
+    return _entityvalues[id]._entity_ref;
 }
