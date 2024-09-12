@@ -87,42 +87,32 @@ Quad *Entity::getQuad() { return _quad; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void EntityExecutor::_setupEntity(Entity *entity, Animation *animation) {
+int EntityExecutor::EntityEnqueue::spawn() {
+    return _entityexecutor->_spawnEntity(_name.c_str(), _execution_queue, _tag, _pos);
+}
+
+EntityExecutor::EntityEnqueue::EntityEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag, glm::vec3 pos) :
+    ScriptEnqueue(nullptr, name, execution_queue, tag), _entityexecutor(entityexecutor), _pos(pos)
+{}
+
+void EntityExecutor::_setupEntity(Entity *entity, const char *entity_name) {
+    // get information
+    EntityInfo &info = _entityinfos[entity_name];
+
+    // set up entity fields
     entity->_glenv = _glenv;
     entity->_quad_id = _glenv->genQuad(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), glm::vec2(0.0f));
     entity->_quad = _glenv->getQuad(entity->_quad_id);
-    entity->_animationstate.setAnimation(animation);
+    entity->_animationstate.setAnimation(&(*_animations)[info._animation_name]);
     entity->_frame = entity->_animationstate.getCurrent();
 }
 
 unsigned EntityExecutor::_spawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
-    // fail if exceeding max size
-    if (_count >= _max_count)
-        throw CountLimitException();
-
-    // get type information
-    ScriptInfo &scriptinfo = _scriptinfos[entity_name];
-    EntityInfo &entityinfo = _entityinfos[entity_name];
-
-    // push to storage
-    Entity *entity = entityinfo._allocator->_allocate(tag);
-    unsigned id = _ids.push();
-    _scripts[id] = std::unique_ptr<Script>(entity);
-    _scriptvalues[id] = ScriptValues{entity_name, scriptinfo._group};
-
-    // set up script-level and entity-level values
-    _setupScript(entity, id, scriptinfo._removeonkill, scriptinfo._group);
-    _setupEntity(entity, &(*_animations)[entityinfo._animation_name]);
-
-    // enqueue if non-negative queue provided
-    if (execution_queue >= 0)
-        enqueueExec(id, execution_queue);
-    
-    _count++;
-    
-    // try spawn callback if it exists
-    if (scriptinfo._spawn_callback)
-        scriptinfo._spawn_callback(id);
+    // allocate instance and set it up
+    Entity *entity = _entityinfos[entity_name]._allocator->_allocate(tag);
+    unsigned id = _setupScript(entity, entity_name, execution_queue);
+    _setupEntity(entity, entity_name);
+    entity->getQuad()->bv_pos.v = pos;
 
     return id;
 }
@@ -138,7 +128,6 @@ EntityExecutor &EntityExecutor::operator=(EntityExecutor &&other) {
     if (this == &other) {
         Executor::operator=(std::move(other));
         _entityinfos = other._entityinfos;
-        _entityenqueues = other._entityenqueues;
         _glenv = other._glenv;
         _animations = other._animations;
 
@@ -156,12 +145,8 @@ void EntityExecutor::init(unsigned max_count, unsigned queues, GLEnv *glenv, uno
 
 void EntityExecutor::uninit() {
     Executor::uninit();
-    if (!_initialized)
-        return;
 
-    std::queue<EntityEnqueue> empty;
     _entityinfos.clear();
-    std::swap(_entityenqueues, empty);
     _glenv = nullptr;
     _animations = nullptr;
 }
@@ -174,33 +159,6 @@ void EntityExecutor::addEntity(EntityAllocatorInterface *allocator, const char *
         throw std::runtime_error("Attempt to add already added name");
 }
 
-void EntityExecutor::enqueueSpawn(const char *script_name, int execution_queue, int tag) {
-    // names are not checked here for the sake of efficiency
-    _scriptenqueues.push(ScriptEnqueue{script_name, execution_queue, tag});
-    _entityenqueues.push(EntityEnqueue{false, glm::vec3(0.0f)});
-}
-
 void EntityExecutor::enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
-    // names are not checked here for the sake of efficiency
-    _scriptenqueues.push(ScriptEnqueue{entity_name, execution_queue, tag});
-    _entityenqueues.push(EntityEnqueue{true, pos});
-}
-
-std::vector<unsigned> EntityExecutor::runSpawnQueue() {
-    std::vector<unsigned> ids;
-
-    while (!(_scriptenqueues.empty())) {
-        ScriptEnqueue &scriptenqueue = _scriptenqueues.front();
-        EntityEnqueue &entityenqueue = _entityenqueues.front();
-
-        if (entityenqueue._is_entity)
-            ids.push_back(_spawnEntity(scriptenqueue._name.c_str(), scriptenqueue._execution_queue, scriptenqueue._tag, entityenqueue._pos));
-        else
-            ids.push_back(_spawnScript(scriptenqueue._name.c_str(), scriptenqueue._execution_queue, scriptenqueue._tag));
-        
-        _scriptenqueues.pop();
-        _entityenqueues.pop();
-    }
-
-    return ids;
+    _pushSpawnEnqueue(new EntityEnqueue(this, entity_name, execution_queue, tag, pos));
 }

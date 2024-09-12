@@ -91,6 +91,14 @@ void Script::enqueueKill() {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+int Executor::ScriptEnqueue::spawn() {
+    return _executor->_spawnScript(_name.c_str(), _execution_queue, _tag);
+}
+Executor::ScriptEnqueue::ScriptEnqueue(Executor *executor, std::string name, int execution_queue, int tag) :
+    _executor(executor), _name(name), _execution_queue(execution_queue), _tag(tag)
+{}
+Executor::ScriptEnqueue::~ScriptEnqueue() {}
+
 Executor::Executor(unsigned max_count, unsigned queues) : _initialized(false) {
     init(max_count, queues);
 }
@@ -100,8 +108,16 @@ Executor::~Executor() { /* automatic destruction is fine */ }
 
 Executor &Executor::operator=(Executor &&other) {
     if (this != &other) {
+        // deallocate existing enqueues
+        while (!(_scriptenqueues.empty())) {
+            delete _scriptenqueues.front();
+            _scriptenqueues.pop();
+        }
+
         _ids = other._ids;
         _scripts = std::move(other._scripts);
+        _scriptinfos = other._scriptinfos;
+        _scriptvalues = other._scriptvalues;
         _queuepairs = other._queuepairs;
         _push_killqueue = other._push_killqueue;
         _run_killqueue = other._run_killqueue;
@@ -109,48 +125,56 @@ Executor &Executor::operator=(Executor &&other) {
         _count = other._count;
         _initialized = other._initialized;
 
-        // safe as there are no deallocations (unique_ptrs should be moved by this point)
+        // safe as there are no more deallocations (unique_ptrs should be moved by this point)
         other.uninit();
     }
     return *this;
 }
 
-void Executor::_setupScript(Script *script, unsigned executor_id, bool removeonkill, int group) {
-    script->_executor = this;
-    script->_executor_id = executor_id;
-    script->_removeonkill = removeonkill;
-    script->_group = group;
-}
-
-unsigned Executor::_spawnScript(const char *script_name, int execution_queue, int tag) {
-    // fail if exceeding max size
+void Executor::_checkCount() {
+    // fail max size reached
     if (_count >= _max_count)
         throw CountLimitException();
+}
 
-    // get type information
+unsigned Executor::_setupScript(Script *script, const char *script_name, int execution_queue) {
+    // get information
     ScriptInfo &info = _scriptinfos[script_name];
 
-    // push to storage
-    Script *script = info._allocator->_allocate(tag);
+    // store data
     unsigned id = _ids.push();
     _scripts[id] = std::unique_ptr<Script>(script);
     _scriptvalues[id] = ScriptValues{script_name, info._group};
 
-    // set up script
-    _setupScript(script, id, info._removeonkill, info._group);
-
+    // set script fields
+    script->_executor = this;
+    script->_executor_id = id;
+    script->_removeonkill = info._removeonkill;
+    script->_group = info._group;
+    
     // enqueue if non-negative queue provided
     if (execution_queue >= 0)
         enqueueExec(id, execution_queue);
-    
-    _count++;
     
     // try spawn callback if it exists
     if (info._spawn_callback)
         info._spawn_callback(id);
 
+    _count++;
     return id;
 }
+
+unsigned Executor::_spawnScript(const char *script_name, int execution_queue, int tag) {
+    // allocate instance and set it up
+    Script *script = _scriptinfos[script_name]._allocator->_allocate(tag);
+    unsigned id = _setupScript(script, script_name, execution_queue);
+
+    return id;
+}
+
+void Executor::_pushSpawnEnqueue(ScriptEnqueue *enqueue) {
+    _scriptenqueues.push(enqueue);
+};
 
 void Executor::init(unsigned max_count, unsigned queues) {
     if (_initialized)
@@ -170,7 +194,11 @@ void Executor::uninit() {
     if (!_initialized)
         return;
 
-    std::queue<ScriptEnqueue> empty;
+    // deallocate existing enqueues
+    while (!(_scriptenqueues.empty())) {
+        delete _scriptenqueues.front();
+        _scriptenqueues.pop();
+    }
     
     _scripts.clear();
     _scriptvalues.clear();
@@ -179,7 +207,7 @@ void Executor::uninit() {
     _count = 0;
     _ids.clear();
     _scriptinfos.clear();
-    std::swap(_scriptenqueues, empty);
+
     _initialized = false;
 }
 
@@ -227,8 +255,7 @@ void Executor::add(AllocatorInterface *allocator, const char *name, int group, b
 }
 
 void Executor::enqueueSpawn(const char *script_name, int execution_queue, int tag) {
-    // names are not checked here for the sake of efficiency
-    _scriptenqueues.push(ScriptEnqueue{script_name, execution_queue, tag});
+    _pushSpawnEnqueue(new ScriptEnqueue(this, script_name, execution_queue, tag));
 }
 
 void Executor::enqueueExec(unsigned id, unsigned queue) {
@@ -267,11 +294,14 @@ void Executor::enqueueKill(unsigned id) {
 }
 
 std::vector<unsigned> Executor::runSpawnQueue() {
+    _checkCount();
+    
     std::vector<unsigned> ids;
 
     while (!(_scriptenqueues.empty())) {
-        ScriptEnqueue &scriptenqueue = _scriptenqueues.front();
-        ids.push_back(_spawnScript(scriptenqueue._name.c_str(), scriptenqueue._execution_queue, scriptenqueue._tag));
+        ScriptEnqueue *scriptenqueue = _scriptenqueues.front();
+        ids.push_back(scriptenqueue->spawn());
+        delete scriptenqueue;
         _scriptenqueues.pop();
     }
 

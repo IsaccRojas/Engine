@@ -138,27 +138,34 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 class EntityExecutor : public Executor {
-public:
     // struct holding Entity information mapped to a name
     struct EntityInfo {
        EntityAllocatorInterface *_allocator;
        std::string _animation_name;
     };
-    struct EntityEnqueue {
-      bool _is_entity;
-      glm::vec3 _pos;
+    
+protected:
+   // class to store enqueues and polymorphically spawn later
+    class EntityEnqueue : public ScriptEnqueue {
+       friend EntityExecutor;
+       EntityExecutor *_entityexecutor;
+    protected:
+       glm::vec3 _pos;
+       virtual int spawn() override;
+       EntityEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag, glm::vec3 pos);
     };
 
-protected:
+private:
     // internal variables for added Entity information and enqueued Entities
     std::unordered_map<std::string, EntityInfo> _entityinfos;
-    std::queue<EntityEnqueue> _entityenqueues;
 
     GLEnv *_glenv;
     unordered_map_string_Animation_t *_animations;
 
-    // initializes Entity's EntityExecutor-related fields
-    void _setupEntity(Entity *entity, Animation *animation);
+protected:
+
+    // initializes Entity's EntityExecutor-related fields (should already have an ID by the time this is invoked)
+    void _setupEntity(Entity *entity, const char *entity_name);
 
     // spawns an Entity using a name previously added to this manager, and returns its ID
     unsigned _spawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos);
@@ -188,12 +195,8 @@ public:
     */
     void addEntity(EntityAllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::string animation_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback);
 
-    /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
-    virtual void enqueueSpawn(const char *script_name, int execution_queue, int tag) override;
     /* Enqueues an Entity to be spawned when calling runSpawnQueue(). */
-    virtual void enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos);
-    /* Spawns all Entities (or sub classes) queued for spawning with enqueueSpawn(). */
-    virtual std::vector<unsigned> runSpawnQueue() override;
+    void enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos);
 };
 
 #endif

@@ -172,7 +172,6 @@ public:
    of this class without calling init() first.
 */
 class Executor {
-public:
    // struct holding Script information mapped to a name
    struct ScriptInfo {
       int _group;
@@ -188,14 +187,21 @@ public:
       int _group;
    };
 
-   // _valid flag is used to prevent instance from being spawned as a Script
-   struct ScriptEnqueue {
+protected:
+   // class to store enqueues and polymorphically spawn later
+   class ScriptEnqueue {
+      friend Executor;
+      Executor *_executor;
+   protected:
       std::string _name;
       int _execution_queue;
       int _tag;
+      virtual int spawn();
+      ScriptEnqueue(Executor *executor, std::string name, int execution_queue, int tag);
+      virtual ~ScriptEnqueue();
    };
 
-protected:
+private:
    /* Script data structures */
    // IDs to distribute to Scripts
    SlotVec _ids;
@@ -207,8 +213,8 @@ protected:
    // internal variables for added script information and active scripts
    std::unordered_map<std::string, ScriptInfo> _scriptinfos;
    std::vector<ScriptValues> _scriptvalues;
-   std::queue<ScriptEnqueue> _scriptenqueues;
-   
+   std::queue<ScriptEnqueue*> _scriptenqueues;
+
    // queues of IDs to be executed; swapped on execution
    struct QueuePair {
       std::queue<unsigned> _push_execqueue;
@@ -226,11 +232,18 @@ protected:
 
    bool _initialized;
 
+protected:
+   // throws if current count is equal to maximum count
+   void _checkCount();
+
    // initializes Script's Executor-related fields
-   void _setupScript(Script *script, unsigned executor_id, bool removeonkill, int group);
+   unsigned _setupScript(Script *script, const char *script_name, int execution_queue);
 
    // spawns a Script using a name previously added to this manager, and returns its ID
    unsigned _spawnScript(const char *script_name, int execution_queue, int tag);
+
+   // pushes an enqueue
+   void _pushSpawnEnqueue(ScriptEnqueue *enqueue);
 public:
    /* Calls init() with the provided arguments. */
    Executor(unsigned max_count, unsigned queues);
@@ -266,7 +279,7 @@ public:
    void add(AllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback);
 
    /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
-   virtual void enqueueSpawn(const char *script_name, int execution_queue, int tag);
+   void enqueueSpawn(const char *script_name, int execution_queue, int tag);
    /* Enqueues a Script instance corresponding to the ID provided to be executed when runExecQueue() is called. */
    void enqueueExec(unsigned id, unsigned queue);
    /* Enqueues a Script instance corresponding to the ID provided to be killed when runKillQueue() is called. */
@@ -279,7 +292,7 @@ public:
    /* Calls the kill() method on all erasure-queued Scripts if it has not been called yet. */
    void runKillQueue();
    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(). */
-   virtual std::vector<unsigned> runSpawnQueue();
+   std::vector<unsigned> runSpawnQueue();
 
    /* Returns true if the provided ID is active. */
    bool hasID(unsigned id);
