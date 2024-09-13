@@ -98,7 +98,7 @@ public:
     void setDirection(glm::vec3 direction);
 };
 
-class Player : public Basic, public Receiver<OrbShot> {
+class Player : public Basic, public ProvidedType<Player>, public Receiver<OrbShot> {
     GLFWInput *_input;
 
     float _accel;
@@ -121,7 +121,7 @@ public:
     void playerAction();
 };
 
-class Chaser : public Basic {
+class Chaser : public Basic, public Receiver<Player> {
     float _accel;
     float _deccel;
     float _spd_max;

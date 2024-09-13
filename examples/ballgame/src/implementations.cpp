@@ -148,11 +148,12 @@ void Chaser::_collisionBasic(Box *box) {}
 
 Object *Chaser::_getTarget() {
     // return first ID found
-    std::vector<unsigned> ids = getExecutor()->getAllByGroup(T_BASIC_PLAYER);
-    if (ids.size() > 0)
-        return getExecutor()->getObject(ids[0]);
-    else
-        return nullptr;
+    auto players = getAllProvided();
+    if (players)
+        for (auto &player : *players)
+            return player;
+    
+    return nullptr;
 }
 
 Chaser::Chaser(glm::vec3 scale, glm::vec3 dimensions, float health, std::string killeffect, bool *killflag) : 

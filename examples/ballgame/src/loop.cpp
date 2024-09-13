@@ -2,10 +2,10 @@
 
 Allocators::Allocators(GLFWInput *input, bool *killflag) : 
     Player_allocator(input, &(this->OrbShot_allocator)),
-    SmallBall_allocator(killflag),
-    MediumBall_allocator(killflag),
-    BigBall_allocator(killflag),
-    VeryBigBall_allocator(killflag)
+    SmallBall_allocator(&(this->Player_allocator), killflag),
+    MediumBall_allocator(&(this->Player_allocator), killflag),
+    BigBall_allocator(&(this->Player_allocator), killflag),
+    VeryBigBall_allocator(&(this->Player_allocator), killflag)
 {}
 
 // need this to initialize Text members
