@@ -1,0 +1,28 @@
+{
+	"name" : "SmallBall",
+	"cycles" : {
+		"cycle1" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 16.0, 0.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame2" : {
+					"texpos" : [16.0, 16.0, 0.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				},
+				"frame3" : {
+					"texpos" : [32.0, 16.0, 0.0],
+					"texsize" : [16.0, 16.0],
+					"offset" : [0.0, 0.0, 0.0],
+					"duration" : 8
+				}
+			},
+			"loop" : true
+		}
+	}
+}

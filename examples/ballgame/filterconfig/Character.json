@@ -1,0 +1,8 @@
+{
+	"name" : "Character",
+    "id" : 1,
+    "whitelist" : [],
+    "blacklist" : [],
+    "correctionWhitelist" : [],
+    "correctionBlacklist" : []
+}
