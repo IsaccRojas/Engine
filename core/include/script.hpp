@@ -274,8 +274,8 @@ template<typename T>
 class Provider;
 
 /* abstract class Receiver
-Interface that is used to allow reception of a generic specified type when
-implemented, via subscription to a Provider of the same type.
+   Interface that is used to allow reception of a generic specified type when
+   implemented, via subscription to a Provider of the same type.
 */
 template<class T>
 class Receiver {
@@ -284,7 +284,7 @@ class Receiver {
    int _channel;
    bool _reception;
 protected:
-   virtual void _receive(T *t) = 0;
+   virtual void _receive(T *t) {};
    Receiver() : _provider(nullptr), _channel(-1), _reception(false) {}
    virtual ~Receiver() {
       if (_provider)
@@ -294,24 +294,56 @@ public:
    void setChannel(int channel) { _channel = channel; }
    void enableReception(bool state) { _reception = state; }
    int getChannel() { return _channel; }
+   const std::unordered_set<T*>* getAllProvided() { return &(_provider->_providedtypes); }
+};
+
+/* abstract class Provided
+   Interface that is used to allow storage and retrieval of the inheriting
+   class by a Provider. Classes that do not implement this interface cannot be
+   allocated by Providers. Template parameter type must be the inheriting class.
+*/
+template<class T>
+class ProvidedType {
+   friend Provider<T>;
+   Provider<T> *_provider;
+   T *_tref;
+public:
+   virtual ~ProvidedType() {
+      removeFromProvider();
+   }
+   void removeFromProvider() {
+      if (_provider)
+         _provider->_tryRemove(_tref);
+   }
 };
 
 /* class Provider
-Implementation of AllocatorInterface that interprets the tag argument as a
-"channel". Subscribed Receivers will have their _receive() method invoked
-whenever instances of this class have their allocator invoked. Only Receivers
-with a matching tag value will be passed the allocated instance of T.
+   Implementation of AllocatorInterface that interprets the tag argument as a
+   "channel". Subscribed Receivers will have their _receive() method invoked
+   whenever instances of this class have their allocator invoked. Only Receivers
+   with a matching tag value will be passed the allocated instance of T. T must
+   inherit ProvidedType<T>.
 */
 template<class T>
 class Provider : public AllocatorInterface {
-   std::unordered_set<Receiver<T>*> _receivers;
-   Script *_allocate(int tag) override { return this->_provideType(tag); }
+   friend ProvidedType<T>;
 
+   std::unordered_set<Receiver<T>*> _receivers;
+   std::unordered_set<T*> _providedtypes;
+
+   Script *_allocate(int tag) override { return this->_provideType(tag); }
+   void _tryRemove(T *t) {
+      if (_providedtypes.find(t) != _providedtypes.end())
+         _providedtypes.erase(t);
+   }
 protected:
    T *_provideType(int tag) {
       // interpret tag as channel
 
       T *t = _allocateInstance();
+      _providedtypes.insert(t);
+      t->_provider = this;
+      t->_tref = t;
 
       // if channel is non-negative, deliver instance
       if (tag >= 0) {
@@ -325,7 +357,6 @@ protected:
       return t;
    }
    virtual T *_allocateInstance() { return new T; }
-
 public:
    virtual ~Provider() {
       auto iter = _receivers.begin();

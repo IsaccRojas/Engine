@@ -20,6 +20,7 @@ void OrbShot::_baseBasic() {
 
 void OrbShot::_killBasic() {
     getExecutor()->enqueueSpawnEntity("OrbShotBoom", 1, -1, getBox()->pos);
+    removeFromProvider();
 }
 
 void OrbShot::_collisionBasic(Box *box) {}

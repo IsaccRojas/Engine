@@ -84,7 +84,7 @@ public:
     Ring() : Effect(glm::vec3(64.0f, 64.0f, 1.0f), -1) {}
 };
 
-class OrbShot : public Basic {
+class OrbShot : public Basic, public ProvidedType<OrbShot> {
     int _i;
     int _lifetime;
     glm::vec3 _direction;
