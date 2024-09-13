@@ -3,3 +3,4 @@
 *.exe
 *.dll
 .vscode/
+examples/ballgame/releases/
