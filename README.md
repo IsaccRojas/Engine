@@ -19,57 +19,85 @@ modified by mechanisms like executors and managers.
 
 The software design is a mostly linear hierarchy, with the form as follows:
 
-![Software diagram.](https://i.imgur.com/39l9ziu.png)
+![Software diagram.](https://i.imgur.com/njATU5d.png)
 
-**Scripts**, **ScriptManagers**, and **Executors** form the bottom layer of the system.
-These are units of execution used by the executor to embody a scripting
-mechanism. The Script class is designed to be inherited. ScriptManagers will
-automatically handle Script memory for the user, as well as associate them with
-an executor.
+**Scripts** and **Executors** form the bottom layer of the system, and embody 
+a scripting mechanism. The Script class is an interface modeling an execution 
+lifetime. The **AllocatorInterface** must be implemented, and an instance can be 
+provided to an **Executor** instance and mapped to a name. This enables the **Executor**
+to instantiate and manage **Script** subtypes, "executing" them through a queueing
+API.
 
-**Entities** and **EntityManagers** form the next layer. Entities are Scripts with a **Quad**,
-a graphical presence controlled by an existing **GLEnv**. The GLEnv component
-encapsulates the OpenGL graphical backend for the system, managing data buffers;
+**Entities** and **EntityExecutors** form the next layer. Entities are Scripts that
+contain a **Quad**, a graphical presence controlled by an existing **GLEnv**. The GLEnv 
+component encapsulates the OpenGL graphical backend for the system, managing data buffers;
 this is primarily done through wrappers defined in the ``glutil.hpp`` module.
 
-**Objects** and **ObjectManagers** form the uppermost layer. Objects are Entities with a
+**Objects** and **ObjectExecutors** form the uppermost layer. Objects are Entities with a
 **Box**, a physical presence controlled by an existing **PhysEnv**. The PhysEnv component
-facilitates physics-related simulations, i.e. collision detection based on the
-current state of all contained Boxes.
+facilitates physics-related simulations, i.e. collision detection based on the current state 
+of all contained Boxes.
+
+Additionally included in the library is a templated **ProvidedType**, **Provider**, and **Receiver** scheme that
+implements **AllocaterInterface** to enable simplistic runtime routing of allocated instances
+of subtypes implementing **Script**, **Entity**, or **Object**.
+
+Simplistic wrappers for GLFW window and input handling are also included.
 
 ## Descriptions & Usage
 
-### Scripts, Entities, and Objects
+### Scripts, Entities, Objects, and Allocators
 
 **Scripts** represent an interface that allows the user specify the behavior of methods
-controlled by an **Executor**:
+controlled by an **Executor**, with the following exposed virtual methods:
 
-- `init()`: will be called when the Script is queued for execution in an Executor and 
-            the method `runExec()` is called, only the first time.
+- `init()`: will be called when the Script is queued for execution in an Executor, only the
+            first time it is executed.
 - `base()`: will be called every time the Script is queued for execution in an Executor 
-            and the method `runExecQueue(unsigned)` is called.
+            and execution is called.
 - `kill()`: will be called every time the Script is queued for killing in an Executor 
-          and the method `runKillQueue(unsigned)` is called. `base()` will not be called after 
-          this occurs.
+            and the killing is called. `base()` will not be called after this occurs.
 
-The Scripts contain various flags that dictate this behavior set and unset by Executors, 
-that can be manually controlled by the user as well.
+The Scripts contain various flags that dictate this behavior set and unset by Executors. Executors
+must be provided with an instantiation of an implementation of **AllocatorInterface**, which can be
+mapped to a string name and callbacks.
 
-**Entities** are Scripts that contain a **Quad**. They must be provided a reference to an instance
-of **GLEnv** to allow their `init()`, `base()`, and `kill()` methods to be called by an Executor.
-They can then freely generate and remove their Quad from their provided GLEnv within their user-defined
-behaviors. Note that their interface instead specifies `initEntity()`, `baseEntity()`, and `killEntity()`
-to be overridden instead, which each call the former three.
+**Entities** are Scripts that contain a reference to a **Quad**. **EntityExecutors** must be passed a
+reference of **GLEnv** and a reference of an **Animation** map to instantiate this Quad reference, 
+which are assigned to the Entity by the EntityExecutor on allocation. `initEntity()`, `baseEntity()`, 
+and `killEntity()` are instead exposed, which wrap the ``init()``, ``base()`` and ``kill()`` methods.
 
-**Objects** are Entities that contain a **Box**. Just like Entities, they must be provided a 
-reference to an instance of **PhysEnv** to allow their `init()`, `base()`, and `kill()` methods to work.
-They can then freely generate and remove their Box from their provided PhysEnv within their user-defined
-behaviors. Their interface specifies `initObject()`, `baseObject()`, and `killObject()` to be 
-overridden.
+**Objects** are Entities that contain a reference to a **Box**. **ObjectExecutors** must be passed a
+reference of **PhysEnv** and a reference of a **Filter** map to instantiate this Box reference, 
+which are assigned to the Object by the ObjectExecutor on allocation. `initObject()`, `baseObject()`, 
+and `killObject()` are instead exposed, which wrap the ``initEntity()``, ``baseEntity()`` and ``killEntity()`` 
+methods.
 
 ### Executors, GLEnvs and PhysEnvs
 
-**Executors** represent a "scripting" mechanism. Given instances of Scripts, they can then be 
+**Executors** represent a "scripting" mechanism. When provided with instances of **AllocatorInterface** mapped
+to a name, they can enqueue "spawns" of **Scripts** with the names added, and enqueue active Script instances
+for execution or to be killed.
+
+The following fields can be mapped to stored AllocatorInterface references, via ``Executor::add()``:
+- `const char *name`: name to associate with the allocator.
+- `int group`: internal value tied to Script for client use, and with getAllByGroup(int) method.
+- `bool removeonkill`: removes this Script from this Executor when it is killed.
+- `std::function<void(unsigned)> spawn_callback` - function callback to invoke after Script has been instantiated with this allocator, and setup.
+- `std::function<void(unsigned)> remove_callback` - function callback to call before this Script is removed from the Executor.
+
+After adding an AllocatorInterface to an Executor, it can be invoked via calls to ``Executor::enqueueSpawn()`` passing
+the corresponding mapped name as an argument, as well as specifying an initial execution queue to insert the instantiated
+Script into. A tag argument can also be passed, which will later be provided to the corresponding AllocatorInterface for
+user interpretation. A subsequent call to ``Executor::runSpawnQueue()`` can be invoked to perform all previously enqueued spawns.
+
+Executor-instantiated Scripts are assigned an ID that is unique for the duration of their lifetime within the Executor; that
+is, until Executor::remove() is invoked with their ID as an argument, which can be called by killing the Script
+if `removeonkill` is set for its allocator mapping.
+
+
+Active Scripts can be controlled via the following API:
+
 enqueued via `enqueueExec(...)` and `enqueueKill(...)`, and the Executor can subsequently 
 perform calls on the Script methods `init()`, `base()`, and `kill()` through calls to the 
 methods `runExecQueue(unsigned)` and `runKillQueue(unsigned)`. The Executors do not own any 
@@ -103,11 +131,7 @@ to this function that will control what the Manager does upon invoking this meth
 
 The **ScriptManager** class specifies the following fields to bind to an allocator:
 
-- `const char *name`: name to associate with the allocator.
-- `int group`: internal value tied to Script for client use, and with getAllByGroup(int) method.
-- `force_removeonkill`: removes this Script from this Manager when it is killed by the Executor.
-- `spawn_callback` - function callback to call after Script has been spawned and setup.
-- `remove_callback` - function callback to call before Script has been removed.
+
 
 The **EntityManager** subclass specifies the following additional fields:
 
