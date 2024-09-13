@@ -156,7 +156,7 @@ template<class T>
 class ObjectProvider : public ObjectAllocatorInterface, public Provider<T> {
    Object *_allocate(int tag) override { return this->_provideType(tag); }
 protected:
-   virtual T *_allocateInstance() { return new T; }
+   virtual T *_allocateInstance() = 0;
 };
 
 #endif

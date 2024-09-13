@@ -280,21 +280,29 @@ class Provider;
 template<class T>
 class Receiver {
    friend Provider<T>;
-   Provider<T> *_provider;
+   Provider<T> *_r_provider;
    int _channel;
    bool _reception;
 protected:
    virtual void _receive(T *t) {};
-   Receiver() : _provider(nullptr), _channel(-1), _reception(false) {}
-   virtual ~Receiver() {
-      if (_provider)
-         _provider->unsubscribe(this);
-   }
+   Receiver() : _r_provider(nullptr), _channel(-1), _reception(false) {}
 public:
+   virtual ~Receiver() {
+      unsubscribeFromProvider();
+   }
    void setChannel(int channel) { _channel = channel; }
    void enableReception(bool state) { _reception = state; }
    int getChannel() { return _channel; }
-   const std::unordered_set<T*>* getAllProvided() { return &(_provider->_providedtypes); }
+   const std::unordered_set<T*>* getAllProvided() { 
+      if (_r_provider)
+         return _r_provider->getAllProvided(); 
+      else
+         return nullptr;
+   }
+   void unsubscribeFromProvider() {
+      if (_r_provider)
+         _r_provider->tryUnsubscribe(this);
+   }
 };
 
 /* abstract class Provided
@@ -305,15 +313,17 @@ public:
 template<class T>
 class ProvidedType {
    friend Provider<T>;
-   Provider<T> *_provider;
-   T *_tref;
+   Provider<T> *_pt_provider;
+   T *_t_ref;
+protected:
+   ProvidedType() : _pt_provider(nullptr), _t_ref(nullptr) {}
 public:
    virtual ~ProvidedType() {
       removeFromProvider();
    }
    void removeFromProvider() {
-      if (_provider)
-         _provider->_tryRemove(_tref);
+      if (_pt_provider)
+         _pt_provider->tryRemoveProvidedType(_t_ref);
    }
 };
 
@@ -326,24 +336,18 @@ public:
 */
 template<class T>
 class Provider : public AllocatorInterface {
-   friend ProvidedType<T>;
-
    std::unordered_set<Receiver<T>*> _receivers;
    std::unordered_set<T*> _providedtypes;
 
    Script *_allocate(int tag) override { return this->_provideType(tag); }
-   void _tryRemove(T *t) {
-      if (_providedtypes.find(t) != _providedtypes.end())
-         _providedtypes.erase(t);
-   }
 protected:
    T *_provideType(int tag) {
       // interpret tag as channel
 
       T *t = _allocateInstance();
       _providedtypes.insert(t);
-      t->_provider = this;
-      t->_tref = t;
+      t->_pt_provider = this;
+      t->_t_ref = t;
 
       // if channel is non-negative, deliver instance
       if (tag >= 0) {
@@ -356,22 +360,28 @@ protected:
 
       return t;
    }
-   virtual T *_allocateInstance() { return new T; }
+   virtual T *_allocateInstance() = 0;
 public:
    virtual ~Provider() {
-      auto iter = _receivers.begin();
-      while (iter != _receivers.end()) {
-         unsubscribe(*iter);
-         iter = _receivers.begin();
-      }
+      for (const auto& receiver: _receivers)
+         receiver->_r_provider = nullptr;
+      for (const auto& providedtype: _providedtypes)
+         providedtype->_pt_provider = nullptr;
    }
    void subscribe(Receiver<T> *receiver) {
       _receivers.insert(receiver);
-      receiver->_provider = this;
+      receiver->_r_provider = this;
    }
-   void unsubscribe(Receiver<T> *receiver) {
-      _receivers.erase(receiver);
-      receiver->_provider = nullptr;
+   void tryUnsubscribe(Receiver<T>* r) {
+      if (_receivers.find(r) != _receivers.end())
+         _receivers.erase(r);
+   }
+   void tryRemoveProvidedType(T *t) {
+      if (_providedtypes.find(t) != _providedtypes.end())
+         _providedtypes.erase(t);
+   }
+   const std::unordered_set<T*>* getAllProvided() {
+      return &_providedtypes;
    }
 };
 
