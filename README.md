@@ -51,12 +51,12 @@ Simplistic wrappers for GLFW window and input handling are also included.
 **Scripts** represent an interface that allows the user specify the behavior of methods
 controlled by an **Executor**, with the following exposed virtual methods:
 
-- `init()`: will be called when the Script is queued for execution in an Executor, only the
+- `Script::_init()`: will be called when the Script is queued for execution in an Executor, only the
             first time it is executed.
-- `base()`: will be called every time the Script is queued for execution in an Executor 
+- `Script::_base()`: will be called every time the Script is queued for execution in an Executor 
             and execution is called.
-- `kill()`: will be called every time the Script is queued for killing in an Executor 
-            and the killing is called. `base()` will not be called after this occurs.
+- `Script::_kill()`: will be called every time the Script is queued for killing in an Executor 
+            and the killing is called. `Script::_base()` will not be called after this occurs.
 
 The Scripts contain various flags that dictate this behavior set and unset by Executors. Executors
 must be provided with an instantiation of an implementation of **AllocatorInterface**, which can be
@@ -64,13 +64,13 @@ mapped to a string name and callbacks.
 
 **Entities** are Scripts that contain a reference to a **Quad**. **EntityExecutors** must be passed a
 reference of **GLEnv** and a reference of an **Animation** map to instantiate this Quad reference, 
-which are assigned to the Entity by the EntityExecutor on allocation. `initEntity()`, `baseEntity()`, 
-and `killEntity()` are instead exposed, which wrap the ``init()``, ``base()`` and ``kill()`` methods.
+which are assigned to the Entity by the EntityExecutor on allocation. `Entity::_initEntity()`, `Entity::_baseEntity()`, 
+and `Entity::_killEntity()` are instead exposed, which wrap the ``Script::_init()``, ``Script::_base()`` and ``Script::_kill()`` methods.
 
 **Objects** are Entities that contain a reference to a **Box**. **ObjectExecutors** must be passed a
 reference of **PhysEnv** and a reference of a **Filter** map to instantiate this Box reference, 
-which are assigned to the Object by the ObjectExecutor on allocation. `initObject()`, `baseObject()`, 
-and `killObject()` are instead exposed, which wrap the ``initEntity()``, ``baseEntity()`` and ``killEntity()`` 
+which are assigned to the Object by the ObjectExecutor on allocation. `Object::_initObject()`, `Object::_baseObject()`, 
+and `Object::_killObject()` are instead exposed, which wrap the ``Entity::_initEntity()``, ``Entity::_baseEntity()`` and ``Entity::_killEntity()`` 
 methods.
 
 ### Executors, GLEnvs and PhysEnvs
@@ -104,13 +104,13 @@ Active Scripts can be controlled via the following API:
 **GLEnvs** represent a graphical environment. They simplify an interface to OpenGL constructs, including data buffers, 
 Projection, View, and Transformation matrices, and texture data. GLEnvs can internally instantiate **Quads** via 
 `GLEnv::genQuad()`, which the user can obtain references to and manipulate. These Quads can have their representative data
-written to the underlying OpenGL API via calls to ``update()`` methods either on the Quads or on the owning GLEnv instance.
+written to the underlying OpenGL API via calls to ``GLEnv::update()`` methods either on the Quads or on the owning GLEnv instance.
 Rendering can be performed with the `GLEnv::draw()` method.
 
 **PhysEnvs** represent a physical environment. They embody a physical space within which **Boxes** exist, which the PhysEnv 
 can perform collision detection and other physics-related computations with. PhysEnvs can internally instantiate Boxes via 
-`genBox()`. In this call, Boxes can also be given a callback to be executed on collision. Detection is done on all 
-owned Boxes with `detectCollision()`.
+`PhysEnv::genBox()`. In this call, Boxes can also be given a callback to be executed on collision. Detection is done on all 
+owned Boxes with `PhysEnv::detectCollision()`.
 
 **EntityExecutors** and **ObjectExecutors** facilitate the execution of the **Entity** and **Object** subtypes, respectively,
 by extending the Executor definition with subtype getters and additional fields to map to their added AllocatorInterfaces.
@@ -118,7 +118,25 @@ by extending the Executor definition with subtype getters and additional fields 
 ### ProvidedTypes, Providers, and Receivers
 
 The **ProvidedType**, **Provider** and **Receiver** class templates are included in the library as extension of the **AllocatorInterface**
-mechanism.
+mechanism, to facilitate simple routing of references between **Executor**-managed **Script** covariants.
+
+Providers are implementations of AllocatorInterface that extend the allocation method with storage of the allocated
+instances, which must inherit ProvidedType. The tag argument of the ``AllocatorInterface::_allocate()`` method in 
+this case is interpreted as a channel. On invocation of this method, the ProvidedType reference is stored, as well as 
+broadcasted to any subscribed Receivers (via ``Provider<T>::subscribe()``) with a matching channel value through
+``Receiver<T>::_receive()``.
+
+A class inheriting ProvidedType is simply extended to store a corresponding reference to a Provider, so that, given
+that the Provider stores this type, it can be removed on destruction or earlier. The class inheriting ProvidedType
+must provide itself as the template argument.
+
+A class inheriting Receiver is extended to enable reception and getting of instances of a class inheriting ProvidedType,
+and contains state related to a Provider. It may override ``Receiver<T>::_receive()`` to be broadcasted any spawns tagged
+with its channel, and retrieve any active ProvidedTypes via ``Receiver<T>::getAllProvided()``.
+
+Note that these three template definitions are codependent, and some declaration of ProvidedType<T>, Provider<T>, and
+Receiver<T> must exist for the same ``T`` if any one exists. In other words, if something is provided, it must be received; 
+and vice versa.
 
 ### Animation Configuration
 
@@ -214,8 +232,8 @@ members, which are used for filtering collisions when detection occurs.
 
 The top-level `core/` directory contains the core library. The `examples/` directory contains
 a small example game demonstrating usage of the library, of which a binary compiled on a 64-bit
-Windows 10 architecture is available in Releases. It is being used for basic testing and rapidly 
-changes with respect to the binary.
+Windows 10 architecture is available in Releases. It is being used for basic testing and the
+source code may rapidly change with respect to the available binary.
 
 This is a small personal project and was made for personal use. While it will be in
 continuous development, updates will not be consistent and the present code may not
