@@ -5,7 +5,8 @@ Allocators::Allocators(GLFWInput *input, bool *killflag) :
     SmallBall_allocator(&(this->Player_allocator), killflag),
     MediumBall_allocator(&(this->Player_allocator), killflag),
     BigBall_allocator(&(this->Player_allocator), killflag),
-    VeryBigBall_allocator(&(this->Player_allocator), killflag)
+    VeryBigBall_allocator(&(this->Player_allocator), killflag),
+    Ring_allocator(&(this->Player_allocator))
 {}
 
 // need this to initialize Text members

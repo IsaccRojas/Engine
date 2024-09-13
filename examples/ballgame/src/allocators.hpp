@@ -63,3 +63,14 @@ class VeryBigBallAllocator : public ObjectAllocatorInterface {
 public:
     VeryBigBallAllocator(PlayerAllocator *player_allocator, bool *killflag) : _player_allocator(player_allocator), _killflag(killflag) {}
 };
+
+class RingAllocator : public EntityAllocatorInterface {
+    PlayerAllocator *_player_allocator;
+    Ring *_allocate(int tag) override {
+        Ring *r = new Ring;
+        _player_allocator->subscribe(r);
+        return r;
+    }
+public:
+    RingAllocator(PlayerAllocator *player_allocator) : _player_allocator(player_allocator) {}
+};

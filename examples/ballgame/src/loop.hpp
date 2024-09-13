@@ -19,13 +19,13 @@ struct Allocators {
     GenericEntityAllocator<PlayerSmoke> PlayerSmoke_allocator;
     GenericEntityAllocator<OrbShotParticle> OrbShotParticle_allocator;
     GenericEntityAllocator<OrbShotBoom> OrbShotBoom_allocator;
-    GenericEntityAllocator<Ring> Ring_allocator;
     OrbShotAllocator OrbShot_allocator;
     PlayerAllocator Player_allocator;
     SmallBallAllocator SmallBall_allocator;
     MediumBallAllocator MediumBall_allocator;
     BigBallAllocator BigBall_allocator;
     VeryBigBallAllocator VeryBigBall_allocator;
+    RingAllocator Ring_allocator;
 
     // need this to initialize some members
     Allocators(GLFWInput *input, bool *killflag);

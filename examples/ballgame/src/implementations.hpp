@@ -45,45 +45,6 @@ public:
     OrbShotBoom() : Effect(glm::vec3(8.0f, 8.0f, 1.0f), 24) {}
 };
 
-/*
-class BallParticle : public Effect {
-    glm::vec3 _dir;
-
-    void _initEffect() { getQuad()->bv_pos.v.z = 1.0f; }
-    void _baseEffect() {
-        getQuad()->bv_pos.v = getQuad()->bv_pos.v + _dir;
-    }
-    void _killEffect() {}
-public:
-    BallParticle(glm::vec3 dir) : Effect(glm::vec3(6.0f, 6.0f, 1.0f), 18), _dir(dir) {}
-};
-*/
-
-class Ring : public Effect {
-    void _initEffect() {
-        // display beneath other objects
-        getQuad()->bv_pos.v.z = -1.0f;
-    }
-    void _baseEffect() {
-        std::vector ids = getExecutor()->getAllByGroup(T_BASIC_PLAYER);
-        Entity *player;
-        
-        getAnimState().setCycleState(0);
-        for (unsigned i = 0; i < ids.size(); i++) {
-            player = getExecutor()->getEntity(ids[i]);
-            
-            // quad position and box position are the same for players, so this is fine
-            if (glm::length(player->getQuad()->bv_pos.v - getQuad()->bv_pos.v) < 32.0f) {
-                getAnimState().setCycleState(1);
-                break;
-            }
-        }
-    }
-    void _killEffect() {}
-public:
-    Ring() : Effect(glm::vec3(64.0f, 64.0f, 1.0f), -1) {}
-};
-
 class OrbShot : public Basic, public ProvidedType<OrbShot> {
     int _i;
     int _lifetime;
@@ -143,6 +104,36 @@ public:
 
     void chaserMotion();
     void chaserCollision();
+};
+
+class Ring : public Effect, public Receiver<Player> {
+    void _initEffect() {
+        // display beneath other objects
+        getQuad()->bv_pos.v.z = -1.0f;
+    }
+    void _baseEffect() {
+        int cyclestate = 0;
+
+        // get first player found
+        Player *p = nullptr;
+        auto players = getAllProvided();
+        if (players) {
+            for (auto &player : *players) {
+                p = player;
+                break;
+            }
+        }
+
+        // check player's distance from this instance's center
+        if (p)
+            if (glm::length(p->getBox()->pos - getQuad()->bv_pos.v) < 32.0f)
+                cyclestate = 1;
+                
+        getAnimState().setCycleState(cyclestate);
+    }
+    void _killEffect() {}
+public:
+    Ring() : Effect(glm::vec3(64.0f, 64.0f, 1.0f), -1) {}
 };
 
 #endif
