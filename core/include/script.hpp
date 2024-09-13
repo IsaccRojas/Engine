@@ -327,6 +327,13 @@ protected:
    virtual T *_allocateInstance() { return new T; }
 
 public:
+   virtual ~Provider() {
+      auto iter = _receivers.begin();
+      while (iter != _receivers.end()) {
+         unsubscribe(*iter);
+         iter = _receivers.begin();
+      }
+   }
    void subscribe(Receiver<T> *receiver) {
       _receivers.insert(receiver);
       receiver->_provider = this;

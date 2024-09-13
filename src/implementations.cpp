@@ -34,9 +34,6 @@ void Player::_initBasic() {
     getAnimState().setCycleState(0);
     setChannel(getExecutorID());
     enableReception(true);
-
-    // display player on top of other objects
-    getQuad()->bv_pos.v.z = 1.0f;
 }
 
 void Player::_baseBasic() {

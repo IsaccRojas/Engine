@@ -60,6 +60,10 @@ public:
 */
 
 class Ring : public Effect {
+    void _initEffect() {
+        // display beneath other objects
+        getQuad()->bv_pos.v.z = -1.0f;
+    }
     void _baseEffect() {
         std::vector ids = getExecutor()->getAllByGroup(T_BASIC_PLAYER);
         Entity *player;
