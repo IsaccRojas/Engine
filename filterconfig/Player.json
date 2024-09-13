@@ -1,8 +1,0 @@
-{
-	"name" : "Player",
-    "id" : 2,
-    "whitelist" : [],
-    "blacklist" : [2, 3],
-    "correctionWhitelist" : [],
-    "correctionBlacklist" : [1, 2, 3, 4, 5]
-}
