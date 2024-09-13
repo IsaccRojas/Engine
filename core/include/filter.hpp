@@ -1,3 +1,6 @@
+#ifndef FILTER_HPP_
+#define FILTER_HPP_
+
 #include <iostream>
 #include <vector>
 #include <stdio.h>
@@ -6,9 +9,6 @@
 #include <fstream>
 #include "json.hpp"
 #include "util.hpp"
-
-#ifndef FILTER_HPP_
-#define FILTER_HPP_
 
 bool isIn(std::vector<int> &v, int x);
 
