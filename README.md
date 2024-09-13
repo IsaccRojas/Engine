@@ -19,7 +19,7 @@ modified by mechanisms like executors and managers.
 
 The software design is a mostly linear hierarchy, with the form as follows:
 
-![Software diagram.](https://i.imgur.com/njATU5d.png)
+![Software diagram.](https://i.imgur.com/c8BmHL3.png)
 
 **Scripts** and **Executors** form the bottom layer of the system, and embody 
 a scripting mechanism. The Script class is an interface modeling an execution 
