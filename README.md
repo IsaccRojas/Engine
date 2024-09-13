@@ -95,56 +95,30 @@ Executor-instantiated Scripts are assigned an ID that is unique for the duration
 is, until Executor::remove() is invoked with their ID as an argument, which can be called by killing the Script
 if `removeonkill` is set for its allocator mapping.
 
-
 Active Scripts can be controlled via the following API:
+- ``Executor::enqueueExec(int id, unsigned queue)`` - Enqueues Script corresponding to ID argument for execution, into the specified queue.
+- ``Executor::enqueueKill(int id)`` - Enqueues Script corresponding to ID argument to be killed.
+- ``Executor::runExecQueue(unsigned queue)`` - Executes all Scripts previously enqueued into the provided execution queue.
+- ``Executor::runKillQueue()`` - Kills all Scripts previously enqueued to be killed.
 
-enqueued via `enqueueExec(...)` and `enqueueKill(...)`, and the Executor can subsequently 
-perform calls on the Script methods `init()`, `base()`, and `kill()` through calls to the 
-methods `runExecQueue(unsigned)` and `runKillQueue(unsigned)`. The Executors do not own any 
-memory; they simply take references to existing Scripts. This allows faster book-keeping 
-and internal data management. A single Executor instance can also support multiple execution
-queues.
+**GLEnvs** represent a graphical environment. They simplify an interface to OpenGL constructs, including data buffers, 
+Projection, View, and Transformation matrices, and texture data. GLEnvs can internally instantiate **Quads** via 
+`GLEnv::genQuad()`, which the user can obtain references to and manipulate. These Quads can have their representative data
+written to the underlying OpenGL API via calls to ``update()`` methods either on the Quads or on the owning GLEnv instance.
+Rendering can be performed with the `GLEnv::draw()` method.
 
-**GLEnvs** represent a graphical environment. They simplify an interface to OpenGL constructs,
-including data buffers, Projection, View, and Transformation matrices, and texture data.
-GLEnvs can internally "generate" **Quads** via `genQuad(...)`, which the user can obtain references 
-to and manipulate. These Quads are then used for rendering, done with the `draw()` command.
-GLEnv instances own the Quads that they generate.
+**PhysEnvs** represent a physical environment. They embody a physical space within which **Boxes** exist, which the PhysEnv 
+can perform collision detection and other physics-related computations with. PhysEnvs can internally instantiate Boxes via 
+`genBox()`. In this call, Boxes can also be given a callback to be executed on collision. Detection is done on all 
+owned Boxes with `detectCollision()`.
 
-**PhysEnvs** represent a physical environment. They embody a physical space within which
-**Boxes** exist, which the PhysEnv can perform collision detection and other physics-related
-computations with. Boxes are "generated" via `genBox(...)`. In this call, Boxes can also be
-given a callback to be executed on collision. Detection is done on all existing and owned Boxes
-with `detectCollision()`.
+**EntityExecutors** and **ObjectExecutors** facilitate the execution of the **Entity** and **Object** subtypes, respectively,
+by extending the Executor definition with subtype getters and additional fields to map to their added AllocatorInterfaces.
 
-### Managers
+### ProvidedTypes, Providers, and Receivers
 
-**Managers** exist at each primary layer of the system, to provide the user with a simpler
-means of managing **Script**, **Entity**, and **Object** instances, as well as to correlate them
-with their corresponding controllers (**Executor**, **GLEnv**, and **PhysEnv** instances).
-
-Managers can be given an "allocator"; this is a function that allocates an instance of a Script,
-Entity, or Object on the heap and provides that address to the Manager. It must have the signature
-`Script* allocate(void)` (or a pointer to some subclass of Script as the return value). The Manager
-will own and manage the memory returned by this function. The user can also "bind" various flags 
-to this function that will control what the Manager does upon invoking this method.
-
-The **ScriptManager** class specifies the following fields to bind to an allocator:
-
-
-
-The **EntityManager** subclass specifies the following additional fields:
-
-- `animation`: name of animation to give to AnimationState of spawned Entity, from provided Animation map 
-               (see below for more details).
-
-The **ObjectManager** subclass further specifies the following additional field:
-
-- `filter`: name of filter to give to FilterState of spawned Object, from provided Filter map 
-               (see below for more details).
-
-Note that an EntityManager can contain both Entities and Scripts. An ObjectManager can contain Objects,
-Entities and Scripts.
+The **ProvidedType**, **Provider** and **Receiver** class templates are included in the library as extension of the **AllocatorInterface**
+mechanism.
 
 ### Animation Configuration
 
@@ -203,8 +177,8 @@ Each frame should contain a "texpos", "texsize", "offset", and "duration" field,
 certain texture data values and values for use by Animation and AnimationState instances.
 
 The function `loadAnimations(const char*)` loads Animations from a directory and returns a
-map that an **EntityManager** can store a reference to. **Entities** contain AnimationStates,
-which are used for writing to their **Quad** as their `baseEntity()` is called.
+map that an **EntityExecutor** instance can store a reference to. **Entities** contain a AnimationState member,
+which is used for writing to their assigned **Quad** reference as their `baseEntity()` method is called.
 
 ### Filter Configuration
 
@@ -233,15 +207,15 @@ The "id" field is the individual value of the filter. The "whitelist" and "black
 fields are arrays of integer for the filter to use when attempting to pass values.
 
 The function `loadFilters(const char*)` loads Filters from a directory and returns a
-map that an **ObjectManager** can store a reference to. **Objects** contain FilterStates,
-which are used for filtering collisions when detection occurs.
-
-Note that this module is currently not in use.
+map that an **ObjectExecutor** instance can store a reference to. **Objects** contain FilterState
+members, which are used for filtering collisions when detection occurs.
 
 ## Additional Notes
 
-The top-level `src/` directory contains a demonstration of the core library, which
-is being used for very basic testing and rapidly changes.
+The top-level `core/` directory contains the core library. The `examples/` directory contains
+a small example game demonstrating usage of the library, of which a binary compiled on a 64-bit
+Windows 10 architecture is available in Releases. It is being used for basic testing and rapidly 
+changes with respect to the binary.
 
 This is a small personal project and was made for personal use. While it will be in
 continuous development, updates will not be consistent and the present code may not
