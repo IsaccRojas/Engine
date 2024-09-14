@@ -342,6 +342,11 @@ public:
    }
 };
 
+/* abstract class ProvidedAllocator
+   Interface that extends AllocatorInterface to have its allocations intercepted and stored
+   by a containing Provider. Only classes inheriting ProvidedType<T> can be instantiated
+   by this class.
+*/
 template<class T>
 class ProvidedAllocator : public AllocatorInterface {
    friend Provider<T>;
@@ -357,6 +362,7 @@ protected:
    T * _allocateStore(int tag) {
       T *t = _allocateProvided();
 
+      // if in a provider, give it this T
       if (_a_provider)
             _a_provider->_storeType(t, tag);
       
@@ -380,6 +386,9 @@ public:
 };
 
 /* class Provider
+   Stores ProvidedAllocators of the same templated type. Whenever its stored allocators are
+   invoked, the instance is stored here for broadcasting and getting by any subscribed
+   Receivers.
 */
 template<class T>
 class Provider {
@@ -419,6 +428,7 @@ public:
          allocator.second->_a_provider = nullptr;
    }
 
+   /* Adds the allocator to this provider's set of allocators, enabling interception of their allocations. */
    void addAllocator(ProvidedAllocator<T> *allocator, const char *name) {
       if (allocator->_a_provider)
          throw std::runtime_error("Attempt to add already added ProvidedAllocator");
@@ -458,6 +468,7 @@ public:
       return &_providedtypes;
    }
 
+   /* Returns the allocator mapped to the name. */
    ProvidedAllocator<T>* getAllocator(const char *name) {
       return _allocators[name];
    }

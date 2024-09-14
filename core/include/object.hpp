@@ -146,13 +146,10 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class ObjectProvider
-Implementation of ObjectAllocatorInterface that interprets the tag argument as a
-"channel". Subscribed Receivers will have their _receive() method invoked
-whenever instances of this class have their allocator invoked. Only Receivers
-with a matching tag value will be passed the allocated instance of T.
+/* abstract class ProvidedObjectAllocator
+   Interface that extends ObjectAllocatorInterface to have its allocations intercepted and stored
+   by a containing Provider.
 */
-
 template<class T>
 class ProvidedObjectAllocator : public ProvidedEntityAllocator<T>, public ObjectAllocatorInterface {
    Object *_allocate(int tag) override { return this->_allocateStore(tag); }

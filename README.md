@@ -19,7 +19,7 @@ modified by mechanisms like executors and managers.
 
 The software design is a mostly linear hierarchy, with the form as follows:
 
-![Software diagram.](https://i.imgur.com/c8BmHL3.png)
+![Software diagram.](https://i.imgur.com/q2k8koX.png)
 
 **Scripts** and **Executors** form the bottom layer of the system, and embody 
 a scripting mechanism. The Script class is an interface modeling an execution 
@@ -115,16 +115,19 @@ owned Boxes with `PhysEnv::detectCollision()`.
 **EntityExecutors** and **ObjectExecutors** facilitate the execution of the **Entity** and **Object** subtypes, respectively,
 by extending the Executor definition with subtype getters and additional fields to map to their added AllocatorInterfaces.
 
-### ProvidedTypes, Providers, and Receivers
+### ProvidedTypes, Providers, ProvidedAllocators, and Receivers
 
-The **ProvidedType**, **Provider** and **Receiver** class templates are included in the library as extension of the **AllocatorInterface**
-mechanism, to facilitate simple routing of references between **Executor**-managed **Script** covariants.
+The **ProvidedType**, **Provider**, **ProvidedAllocator** and **Receiver** class templates are included in the library as an
+extension of the **AllocatorInterface** mechanism, to facilitate simple routing of references between **Executor**-managed 
+**Script** covariants.
 
-Providers are implementations of AllocatorInterface that extend the allocation method with storage of the allocated
-instances, which must inherit ProvidedType. The tag argument of the ``AllocatorInterface::_allocate()`` method in 
-this case is interpreted as a channel. On invocation of this method, the ProvidedType reference is stored, as well as 
-broadcasted to any subscribed Receivers (via ``Provider<T>::subscribe()``) with a matching channel value through
-``Receiver<T>::_receive()``.
+ProvidedAllocators are implementations of AllocatorInterface that extend the allocation method with the passing of the allocated
+instances (which must inherit ProvidedType) to a containing Provider.
+
+Providers store ProvidedAllocator references in order to have their allocations stored here for broadcasting and getting. The 
+tag argument of the ``AllocatorInterface::_allocate()`` method in this scheme's case is interpreted as a channel. On invocation
+of this method on any of the contained ProvidedAllocators, the ProvidedType reference is stored, as well as broadcasted to any 
+subscribed Receivers (via ``Provider<T>::subscribe()``) with a matching channel value through ``Receiver<T>::_receive()``.
 
 A class inheriting ProvidedType is simply extended to store a corresponding reference to a Provider, so that, given
 that the Provider stores this type, it can be removed on destruction or earlier. The class inheriting ProvidedType
@@ -132,10 +135,10 @@ must provide itself as the template argument.
 
 A class inheriting Receiver is extended to enable reception and getting of instances of a class inheriting ProvidedType,
 and contains state related to a Provider. It may override ``Receiver<T>::_receive()`` to be broadcasted any spawns tagged
-with its channel, and retrieve any active ProvidedTypes via ``Receiver<T>::getAllProvided()``.
+with its channel from subscribed Providers, and retrieve any active ProvidedTypes via ``Receiver<T>::getAllProvided()``.
 
-Note that these three template definitions are codependent, and some declaration of ProvidedType<T>, Provider<T>, and
-Receiver<T> must exist for the same ``T`` if any one exists. In other words, if something is provided, it must be received; 
+Note that these four template definitions are codependent, and some declaration of ProvidedType<T>, Provider<T>, ProvidedAllocator<T>, 
+and Receiver<T> must exist for the same ``T`` if any one exists. In other words, if something is provided, it must be received; 
 and vice versa.
 
 ### Animation Configuration
