@@ -273,49 +273,49 @@ public:
 template<typename T>
 class Provider;
 
-/* abstract class Receiver
+/* class Receiver
    Interface that is used to allow reception of a generic specified type when
    implemented, via subscription to a Provider of the same type.
 */
 template<class T>
 class Receiver {
-   friend Provider<T>;
+    friend Provider<T>;
 
-   // reference to provider
-   Provider<T> *_r_provider;
-   int _channel;
-   bool _reception;
+    // reference to provider
+    Provider<T> *_r_provider;
+    int _channel;
+    bool _reception;
 
 protected:
-   // invoked on provider allocation if tag matches this receiver's channel
-   virtual void _receive(T *t) {};
-   Receiver() : _r_provider(nullptr), _channel(-1), _reception(false) {}
+    // invoked on provider allocation if tag matches this receiver's channel
+    virtual void _receive(T *t) {};
+    Receiver() : _r_provider(nullptr), _channel(-1), _reception(false) {}
 
 public:
-   virtual ~Receiver() {
-      unsubscribeFromProvider();
-   }
+    virtual ~Receiver() {
+        unsubscribeFromProvider();
+    }
 
-   void setChannel(int channel) { _channel = channel; }
-   void enableReception(bool state) { _reception = state; }
-   int getChannel() { return _channel; }
-   
-   /* Returns reference to provider's active set of T references, if it exists. */
-   const std::unordered_set<T*>* getAllProvided() { 
-      if (_r_provider)
-         return _r_provider->getAllProvided(); 
-      else
-         return nullptr;
-   }
+    void setChannel(int channel) { _channel = channel; }
+    void enableReception(bool state) { _reception = state; }
+    int getChannel() { return _channel; }
+    
+    /* Returns reference to provider's active set of T references, if it exists. */
+    const std::unordered_set<T*>* getAllProvided() { 
+        if (_r_provider)
+            return _r_provider->getAllProvided(); 
+        else
+            return nullptr;
+    }
 
-   /* Unsubscribes from subscribed provider. Does nothing if not subscribed. */
-   void unsubscribeFromProvider() {
-      if (_r_provider)
-         _r_provider->tryUnsubscribe(this);
-   }
+    /* Unsubscribes from subscribed provider. Does nothing if not subscribed. */
+    void unsubscribeFromProvider() {
+        if (_r_provider)
+            _r_provider->tryUnsubscribe(this);
+    }
 };
 
-/* abstract class Provided
+/* class ProvidedType
    Interface that is used to allow storage and retrieval of the inheriting
    class by a Provider. Classes that do not implement this interface cannot be
    allocated by Providers. Template parameter type must be the inheriting class.
@@ -323,6 +323,7 @@ public:
 template<class T>
 class ProvidedType {
    friend Provider<T>;
+
    Provider<T> *_pt_provider;
    T *_t_ref;
 
@@ -341,27 +342,59 @@ public:
    }
 };
 
-/* class Provider
-   Implementation of AllocatorInterface that interprets the tag argument as a
-   "channel". Subscribed Receivers will have their _receive() method invoked
-   whenever instances of this class have their allocator invoked. Only Receivers
-   with a matching tag value will be passed the allocated instance of T. T must
-   inherit ProvidedType<T>.
-*/
 template<class T>
-class Provider : public AllocatorInterface {
-   std::unordered_set<Receiver<T>*> _receivers;
-   std::unordered_set<T*> _providedtypes;
+class ProvidedAllocator : public AllocatorInterface {
+   friend Provider<T>;
 
-   Script *_allocate(int tag) override { return this->_provideType(tag); }
+   Provider<T> *_a_provider;
+   std::string _name;
+   
+   Script *_allocate(int tag) override {
+      return _allocateStore(tag);
+   }
 
 protected:
-   // allocates instance of T, stores it and broadcasts it
-   T *_provideType(int tag) {
+   T * _allocateStore(int tag) {
+      T *t = _allocateProvided();
+
+      if (_a_provider)
+            _a_provider->_storeType(t, tag);
+      
+      return t;
+   }
+
+   virtual T *_allocateProvided() = 0;
+
+   ProvidedAllocator() : _a_provider(nullptr) {}
+
+public:
+   virtual ~ProvidedAllocator() {
+      removeFromProvider();
+   }
+
+   /* Removes from containing provider. Does nothing if not contained within a provider. */
+   void removeFromProvider() {
+      if (_a_provider)
+         _a_provider->tryRemoveAllocator(_name);
+   }
+};
+
+/* class Provider
+*/
+template<class T>
+class Provider {
+   friend ProvidedAllocator<T>;
+
+   std::unordered_set<Receiver<T>*> _receivers;
+   std::unordered_set<T*> _providedtypes;
+   std::unordered_map<std::string, ProvidedAllocator<T>*> _allocators;
+
+protected:
+   // stores and broadcasts instances of T
+   void _storeType(T *t, int tag) {
       // interpret tag as channel
 
-      // allocate covariant of ProvidedType<T>, set its fields and store it
-      T *t = _allocateInstance();
+      // set fields of providedtype and store it
       _providedtypes.insert(t);
       t->_pt_provider = this;
       t->_t_ref = t;
@@ -370,30 +403,40 @@ protected:
       if (tag >= 0) {
          // if channel matches, deliver
          for (const auto& receiver: _receivers)
-            if (receiver->_reception)
-               if (receiver->_channel == tag)
-                     receiver->_receive(t);
+               if (receiver->_reception)
+                  if (receiver->_channel == tag)
+                           receiver->_receive(t);
       }
-
-      return t;
    }
-   virtual T *_allocateInstance() = 0;
+
 public:
    virtual ~Provider() {
       for (const auto& receiver: _receivers)
          receiver->_r_provider = nullptr;
       for (const auto& providedtype: _providedtypes)
          providedtype->_pt_provider = nullptr;
+      for (const auto& allocator: _allocators)
+         allocator.second->_a_provider = nullptr;
+   }
+
+   void addAllocator(ProvidedAllocator<T> *allocator, const char *name) {
+      if (allocator->_a_provider)
+         throw std::runtime_error("Attempt to add already added ProvidedAllocator");
+      _allocators[name] = allocator;
+      allocator->_a_provider = this;
+      allocator->_name = name;
    }
 
    /* Subscribes the receiver to this provider's allocations, enabling receiving and getting instances. */
    void subscribe(Receiver<T> *receiver) {
+      if (receiver->_r_provider)
+         throw std::runtime_error("Attempt to subscribe already subscribed Receiver");
       _receivers.insert(receiver);
       receiver->_r_provider = this;
    }
 
    /* Tries to unsubscribe the receiver from this provider's allocations. Does nothing if not subscribed. */
-   void tryUnsubscribe(Receiver<T>* r) {
+   void tryUnsubscribe(Receiver<T> *r) {
       if (_receivers.find(r) != _receivers.end())
          _receivers.erase(r);
    }
@@ -404,9 +447,19 @@ public:
          _providedtypes.erase(t);
    }
 
+   /* Tries to remove a named allocator from this provider's storage. Does nothing if the name is not contained. */
+   void tryRemoveAllocator(std::string name) {
+      if (_allocators.find(name) != _allocators.end())
+         _allocators.erase(name);
+   }
+
    /* Returns read-only reference to all stored T references in this provider. */
    const std::unordered_set<T*>* getAllProvided() {
       return &_providedtypes;
+   }
+
+   ProvidedAllocator<T>* getAllocator(const char *name) {
+      return _allocators[name];
    }
 };
 

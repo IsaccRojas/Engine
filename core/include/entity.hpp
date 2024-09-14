@@ -160,17 +160,17 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class EntityProvider
+/* class abstract EntityProvider
 Implementation of EntityAllocatorInterface that interprets the tag argument as a
 "channel". Subscribed Receivers will have their _receive() method invoked
 whenever instances of this class have their allocator invoked. Only Receivers
 with a matching tag value will be passed the allocated instance of T.
 */
 template<class T>
-class EntityProvider : public EntityAllocatorInterface, public Provider<T> {
-   Entity *_allocate(int tag) override { return this->_provideType(tag); }
+class ProvidedEntityAllocator : public ProvidedAllocator<T>, public EntityAllocatorInterface {
+   Entity *_allocate(int tag) override { return this->_allocateStore(tag); }
 protected:
-   virtual T *_allocateInstance() = 0;
+   virtual T *_allocateProvided() = 0;
 };
 
 #endif

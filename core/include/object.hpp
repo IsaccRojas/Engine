@@ -152,11 +152,12 @@ Implementation of ObjectAllocatorInterface that interprets the tag argument as a
 whenever instances of this class have their allocator invoked. Only Receivers
 with a matching tag value will be passed the allocated instance of T.
 */
+
 template<class T>
-class ObjectProvider : public ObjectAllocatorInterface, public Provider<T> {
-   Object *_allocate(int tag) override { return this->_provideType(tag); }
+class ProvidedObjectAllocator : public ProvidedEntityAllocator<T>, public ObjectAllocatorInterface {
+   Object *_allocate(int tag) override { return this->_allocateStore(tag); }
 protected:
-   virtual T *_allocateInstance() = 0;
+   virtual T *_allocateProvided() = 0;
 };
 
 #endif

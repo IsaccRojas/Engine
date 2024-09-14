@@ -26,6 +26,8 @@ struct Allocators {
     BigBallAllocator BigBall_allocator;
     VeryBigBallAllocator VeryBigBall_allocator;
     RingAllocator Ring_allocator;
+    Provider<OrbShot> OrbShot_provider;
+    Provider<Player> Player_provider;
 
     // need this to initialize some members
     Allocators(GLFWInput *input, bool *killflag);

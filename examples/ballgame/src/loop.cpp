@@ -1,12 +1,12 @@
 #include "loop.hpp"
 
 Allocators::Allocators(GLFWInput *input, bool *killflag) : 
-    Player_allocator(input, &(this->OrbShot_allocator)),
-    SmallBall_allocator(&(this->Player_allocator), killflag),
-    MediumBall_allocator(&(this->Player_allocator), killflag),
-    BigBall_allocator(&(this->Player_allocator), killflag),
-    VeryBigBall_allocator(&(this->Player_allocator), killflag),
-    Ring_allocator(&(this->Player_allocator))
+    Player_allocator(input, &(this->OrbShot_provider)),
+    SmallBall_allocator(&(this->Player_provider), killflag),
+    MediumBall_allocator(&(this->Player_provider), killflag),
+    BigBall_allocator(&(this->Player_provider), killflag),
+    VeryBigBall_allocator(&(this->Player_provider), killflag),
+    Ring_allocator(&(this->Player_provider))
 {}
 
 // need this to initialize Text members
@@ -17,6 +17,8 @@ void loop(CoreResources *core) {
 
     GlobalState globalstate(&core->glenv);
     Allocators allocators(&core->input, &globalstate.killflag);
+    allocators.OrbShot_provider.addAllocator(&allocators.OrbShot_allocator, "OrbShot");
+    allocators.Player_provider.addAllocator(&allocators.Player_allocator, "Player");
 
     std::cout << "Setting up allocators and initial game state" << std::endl;
     addAllocators(core, &globalstate, &allocators);
