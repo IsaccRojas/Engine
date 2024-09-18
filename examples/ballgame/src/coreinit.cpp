@@ -48,13 +48,9 @@ void initializeCore(CoreResources *core) {
     core->glenv.setView(glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
     core->glenv.setProj(glm::ortho(-1.0f * halfwidth, halfwidth, -1.0f * halfheight, halfheight, 0.0f, float(PIXEL_LEVELS)));
 
-    // set up PhysEnv
-    std::cout << "Setting up PhysEnv" << std::endl;
-    core->physenv.init(MAX_COUNT);
-
     // set up Executor
     std::cout << "Setting up Executor" << std::endl;
-    core->executor.init(MAX_COUNT, EXECUTION_QUEUES, &core->glenv, &core->animations, &core->physenv, &core->filters);
+    core->executor.init(EXECUTION_QUEUES, &core->glenv, &core->animations, &core->physenv, &core->filters);
 
     // set up GLFWInput
     std::cout << "Setting up GLFWInput" << std::endl;

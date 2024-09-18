@@ -121,7 +121,7 @@ Entity *EntityExecutor::_spawnEntity(const char *entity_name, int execution_queu
     return entity;
 }
 
-EntityExecutor::EntityExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations) : Executor(queues), _glenv(glenv), _animations(animations) {}
+EntityExecutor::EntityExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations) : Executor() { init(queues, glenv, animations); }
 EntityExecutor::EntityExecutor(EntityExecutor &&other) : Executor() { operator=(std::move(other)); }
 EntityExecutor::EntityExecutor() : Executor(), _glenv(nullptr), _animations(nullptr) {}
 EntityExecutor::~EntityExecutor() { /* automatic destruction is fine */ }
@@ -137,6 +137,19 @@ EntityExecutor &EntityExecutor::operator=(EntityExecutor &&other) {
         other._animations = nullptr;
     }
     return *this;
+}
+
+void EntityExecutor::init(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations) {
+    Executor::init(queues);
+    _glenv = glenv;
+    _animations = animations;
+}
+
+void EntityExecutor::uninit() {
+    Executor::uninit();
+    _entityinfos.clear();
+    _glenv = nullptr;
+    _animations = nullptr;
 }
 
 void EntityExecutor::addEntity(EntityAllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::string animation_name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback) {

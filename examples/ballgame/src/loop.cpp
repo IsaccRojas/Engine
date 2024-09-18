@@ -22,12 +22,12 @@ void loop(CoreResources *core) {
 
     std::cout << "Setting up allocators and initial game state" << std::endl;
     addAllocators(core, &globalstate, &allocators);
-    gameInitialize(core, &globalstate);
+    gameInitialize(core, &globalstate, &allocators);
 
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(core->state.getWindowHandle())) {
-        gameStep(core, &globalstate);
-        gameProcess(core, &globalstate);
+        gameStep(core, &globalstate, &allocators);
+        gameProcess(core, &globalstate, &allocators);
     };
 
     std::cout << "Ending loop" << std::endl;
@@ -51,7 +51,7 @@ void addAllocators(CoreResources *core, GlobalState *globalstate, Allocators *al
     core->executor.addEntity(&allocators->Ring_allocator, "Ring", T_EFFECT_RING, true, "Ring", nullptr, nullptr);
 }
 
-void gameInitialize(CoreResources *core, GlobalState *globalstate) {
+void gameInitialize(CoreResources *core, GlobalState *globalstate, Allocators *allocators) {
     core->executor.enqueueSpawnEntity("Ring", 0, -1, glm::vec3(0.0f));
 
     TextConfig largefont{0, 0, 2, 5, 19, 7, 24, 0, 0, 1};
@@ -86,7 +86,7 @@ void gameInitialize(CoreResources *core, GlobalState *globalstate) {
     globalstate->enter_state = false;
 }
 
-void gameStep(CoreResources *core, GlobalState *globalstate) {
+void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocators) {
     // force enter input state to only be true for one frame until released
     if (!globalstate->enter_check) {
         if (core->input.get_enter()) {
@@ -105,9 +105,8 @@ void gameStep(CoreResources *core, GlobalState *globalstate) {
         globalstate->killflag = true;
 
         // spawn a player if none exist
-        if (core->executor.getAllByGroup(1).size() == 0) {
+        if (allocators->Player_provider.getProvidedCount() == 0)
             core->executor.enqueueSpawnObject("Player", 0, -1, glm::vec3(0.0f));
-        } 
         
         // check for input to start game if at least one player is spawned
         else if (globalstate->enter_state) {
@@ -123,13 +122,14 @@ void gameStep(CoreResources *core, GlobalState *globalstate) {
         globalstate->killflag = false;
 
         // check if there are no players
-        std::vector<unsigned> players = core->executor.getAllByGroup(1);
-        if (players.size() == 0) {
+        auto player_set = allocators->Player_provider.getAllProvided();
+        
+        if (player_set->size() == 0) {
             globalstate->game_state = 3;
 
         } else {
             // use first player's position
-            glm::vec3 playerpos = core->executor.getObject(players.at(0))->getBox()->pos;
+            glm::vec3 playerpos = (*(player_set->begin()))->getBox()->pos;
 
             // check distance from center and change rate
             if (glm::length(playerpos) < 32.0f)
@@ -186,7 +186,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate) {
         globalstate->killflag = true;
 
         // respawn player if somehow got here and there are no players
-        if (core->executor.getAllByGroup(1).size() == 0) {
+        if (allocators->Player_provider.getProvidedCount() == 0) {
             core->executor.enqueueSpawnObject("Player", 0, -1, glm::vec3(0.0f));
         } 
 
@@ -243,7 +243,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate) {
     globalstate->i++;
 }
 
-void gameProcess(CoreResources *core, GlobalState *state) {
+void gameProcess(CoreResources *core, GlobalState *state, Allocators *allocators) {
     glfwPollEvents();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

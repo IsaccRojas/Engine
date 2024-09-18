@@ -11,6 +11,7 @@
 
 #include "commonexcept.hpp"
 #include "managedlist.hpp"
+#include "managedqueue.hpp"
 
 // prototype
 class Executor;
@@ -140,6 +141,7 @@ protected:
       int _tag;
       virtual Script *spawn();
       ScriptEnqueue(Executor *executor, std::string name, int execution_queue, int tag);
+   public:
       virtual ~ScriptEnqueue();
    };
 
@@ -150,7 +152,7 @@ private:
 
    // internal variables for added script information and active scripts
    std::unordered_map<std::string, ScriptInfo> _scriptinfos;
-   std::queue<ScriptEnqueue*> _scriptenqueues;
+   ManagedQueue<ScriptEnqueue> _scriptenqueues;
 
    // queues of Scripts to be executed; swapped on execution
    struct QueuePair {
@@ -162,6 +164,8 @@ private:
    // queue of Scripts to be erased
    std::queue<Script*> _push_killqueue;
    std::queue<Script*> _run_killqueue;
+
+   bool _initialized;
 
 protected:
    // initializes Script's Executor-related fields
@@ -186,6 +190,12 @@ public:
 
    Executor &operator=(Executor &&other);
    Executor &operator=(const Executor &other) = delete;
+
+   /* Initializes internal Executor data. It is undefined behavior to make calls on this instance
+      before calling this and after uninit().
+   */
+   void init(unsigned queues);
+   void uninit();
 
    /* Erases the passed Script. The reference becomes invalid after this is called.
    */
@@ -226,6 +236,8 @@ public:
    unsigned getCount();
    /* Returns number of execution queues in this executor. */
    int getQueueCount();
+
+   bool initialized();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -427,6 +439,11 @@ public:
    /* Returns read-only reference to all stored T references in this provider. */
    const std::unordered_set<T*>* getAllProvided() {
       return &_providedtypes;
+   }
+
+   /* Returns the number of ProvidedType instances currently contained. */
+   unsigned getProvidedCount() {
+      return _providedtypes.size();
    }
 
    /* Returns the allocator mapped to the name. */

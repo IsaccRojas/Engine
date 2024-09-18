@@ -86,11 +86,9 @@ Object *ObjectExecutor::_spawnObject(const char *object_name, int execution_queu
     return object;
 }
 
-ObjectExecutor::ObjectExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters) :
-    EntityExecutor(queues, glenv, animations),
-    _physenv(physenv),
-    _filters(filters) 
-{}
+ObjectExecutor::ObjectExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters) : EntityExecutor() {
+    init(queues, glenv, animations, physenv, filters);
+}
 ObjectExecutor::ObjectExecutor(ObjectExecutor &&other) : EntityExecutor() { operator=(std::move(other)); }
 ObjectExecutor::ObjectExecutor() : EntityExecutor(), _physenv(nullptr), _filters(nullptr) {}
 ObjectExecutor::~ObjectExecutor() { /* automatic destruction is fine */ }
@@ -106,6 +104,19 @@ ObjectExecutor &ObjectExecutor::operator=(ObjectExecutor &&other) {
         other._filters = nullptr;
     }
     return *this;
+}
+
+void ObjectExecutor::init(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters) {
+    EntityExecutor::init(queues, glenv, animations);
+    _physenv = physenv;
+    _filters = filters;
+}
+
+void ObjectExecutor::uninit() {
+    EntityExecutor::uninit();
+    _objectinfos.clear();
+    _physenv = nullptr;
+    _filters = nullptr;
 }
 
 void ObjectExecutor::addObject(ObjectAllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::string animation_name, std::string filter_name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback) {

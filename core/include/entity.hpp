@@ -122,6 +122,7 @@ protected:
    Entity *_spawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos);
     
 public:
+   /* Calls init() with the provided arguments. */
    EntityExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations);
    EntityExecutor(EntityExecutor &&other);
    EntityExecutor();
@@ -130,6 +131,12 @@ public:
 
    EntityExecutor &operator=(EntityExecutor &&other);
    EntityExecutor &operator=(const EntityExecutor &other) = delete;
+
+   /* Initializes internal EntityExecutor data. It is undefined behavior to make calls on this instance
+      before calling this and after uninit().
+   */
+   void init(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations);
+   void uninit();
 
    /* Adds a Entity allocator with initialization information to this manager, allowing its given
       name to be used for future spawns.

@@ -128,6 +128,10 @@ bool PhysEnv::hasBox(Box *box) {
     return (box->_physenv == this);
 }
 
+void PhysEnv::clear() {
+    _boxes.clear();
+}
+
 // only detects 2D collision for now
 void PhysEnv::collisionAABB(Box &box1, Box &box2) {
     glm::vec3 &pos1 = box1.pos;

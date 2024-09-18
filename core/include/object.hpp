@@ -117,6 +117,12 @@ public:
    ObjectExecutor &operator=(ObjectExecutor &&other);
    ObjectExecutor &operator=(const ObjectExecutor &other) = delete;
 
+   /* Initializes internal EntityExecutor data. It is undefined behavior to make calls on this instance
+      before calling this and after uninit().
+   */
+   void init(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters);
+   void uninit();
+
    /* Adds a Object allocator with initialization information to this manager, allowing its given
       name to be used for future spawns.
       - allocator - Reference to instance of class implementing ObjectAllocatorInterface.

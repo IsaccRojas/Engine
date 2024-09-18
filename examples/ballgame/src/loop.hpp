@@ -66,12 +66,12 @@ void loop(CoreResources *core);
 void addAllocators(CoreResources *core, GlobalState *globalstate, Allocators *allocators);
 
 /* Handles initialization of game state. */
-void gameInitialize(CoreResources *core, GlobalState *globalstate);
+void gameInitialize(CoreResources *core, GlobalState *globalstate, Allocators *allocators);
 
 /* Handles one iteration of game state. */
-void gameStep(CoreResources *core, GlobalState *globalstate);
+void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocators);
 
 /* Handles processing of core data. */
-void gameProcess(CoreResources *core, GlobalState *globalstate);
+void gameProcess(CoreResources *core, GlobalState *globalstate, Allocators *allocators);
 
 #endif

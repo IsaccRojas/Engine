@@ -98,32 +98,25 @@ Executor::ScriptEnqueue::ScriptEnqueue(Executor *executor, std::string name, int
 {}
 Executor::ScriptEnqueue::~ScriptEnqueue() {}
 
-Executor::Executor(unsigned queues) : _queuepairs(queues, QueuePair{}) {}
-Executor::Executor() {}
+Executor::Executor(unsigned queues) { init(queues); }
+Executor::Executor() : _initialized(false) {}
 Executor::Executor(Executor &&other) { operator=(std::move(other)); }
 Executor::~Executor() { /* automatic destruction is fine */ }
 
 Executor &Executor::operator=(Executor &&other) {
     if (this != &other) {
-        // deallocate existing enqueues
-        while (!(_scriptenqueues.empty())) {
-            delete _scriptenqueues.front();
-            _scriptenqueues.pop();
-        }
-
         std::queue<Script*> empty1;
         std::queue<Script*> empty2;
 
         _scripts.move(other._scripts);
         _scriptinfos = other._scriptinfos;
+        _scriptenqueues.move(other._scriptenqueues);
         _queuepairs = other._queuepairs;
         _push_killqueue = other._push_killqueue;
         _run_killqueue = other._run_killqueue;
-        other._scripts.clear();
-        other._scriptinfos.clear();
-        other._queuepairs.clear();
-        other._push_killqueue.swap(empty1);
-        other._run_killqueue.swap(empty2);
+
+        // safe as structures owning memory are already moved
+        other.uninit();
     }
     return *this;
 }
@@ -166,6 +159,29 @@ void Executor::_checkOwned(Script *script) {
         std::runtime_error("Attempt to use Script reference that is not contained by this Executor");
 }
 
+void Executor::init(unsigned queues) {
+    if (_initialized)
+        throw std::runtime_error("Attempt to initialize already initialized Executor");
+    
+    _queuepairs = std::vector<QueuePair>(queues, QueuePair{});
+    _initialized = true;
+}
+
+void Executor::uninit() {
+    if (!_initialized)
+        return;
+
+    std::queue<Script*> empty1;
+    std::queue<Script*> empty2;
+
+    _scripts.clear();
+    _scriptinfos.clear();
+    _scriptenqueues.clear();
+    _queuepairs.clear();
+    _push_killqueue.swap(empty1);
+    _run_killqueue.swap(empty2);
+}
+
 void Executor::erase(Script *script) {
     _checkOwned(script);
 
@@ -176,8 +192,6 @@ void Executor::erase(Script *script) {
     if (scriptinfo._remove_callback)
         scriptinfo._remove_callback(script);
 
-    // unset Script's executor reference to deactivate destructor
-    script->_executor = nullptr;
     _scripts.erase(script->_this_iter);
 }
 
@@ -216,13 +230,11 @@ void Executor::enqueueKill(Script *script) {
 }
 
 std::vector<Script*> Executor::runSpawnQueue() {
-    
     std::vector<Script*> scripts;
 
     while (!(_scriptenqueues.empty())) {
         ScriptEnqueue *scriptenqueue = _scriptenqueues.front();
         scripts.push_back(scriptenqueue->spawn());
-        delete scriptenqueue;
         _scriptenqueues.pop();
     }
 
@@ -297,3 +309,5 @@ bool Executor::has(Script *script) {
 unsigned Executor::getCount() { return _scripts.size(); }
 
 int Executor::getQueueCount() { return _queuepairs.size(); }
+
+bool Executor::initialized() { return _initialized; }

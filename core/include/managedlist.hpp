@@ -1,7 +1,6 @@
 #ifndef MANAGEDLIST_HPP_
 #define MANAGEDLIST_HPP_
 
-#include <exception>
 #include <list>
 
 /* class ManagedList
@@ -16,8 +15,8 @@ class ManagedList {
 public:
     ManagedList() {}
     ManagedList(ManagedList &&other) : _Ts(other._Ts) { other._Ts.clear(); }
-    ~ManagedList() { clear(); }
     ManagedList(const ManagedList &other) = delete;
+    ~ManagedList() { clear(); }
     
 
     ManagedList &operator=(ManagedList &&other) {}
@@ -37,7 +36,7 @@ public:
         return (_Ts.end()--);
     }
 
-    /* Removes the reference at the provided iterator from the list. Note that the reference 
+    /* Deletes and erases the reference at the provided iterator from the list. Note that the reference 
        becomes invalid after calling this.
     */
     void erase(typename std::list<T*>::iterator elem) {

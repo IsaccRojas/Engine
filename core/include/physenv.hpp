@@ -111,6 +111,9 @@ public:
    /* Returns true if the provided Box belongs to this PhysEnv instance. */
    bool hasBox(Box *box);
 
+   /* Removes all boxes within this environment. Invalidates any returned references. */
+   void clear();
+
    /* Detects and handles AABB collision between two provided Boxes. */
    static void collisionAABB(Box &box1, Box &box2);
 };
