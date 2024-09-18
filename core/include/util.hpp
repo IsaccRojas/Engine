@@ -6,6 +6,7 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <queue>
 
 #define PI_UTIL 3.14159265358979323846264338327950288
 
@@ -52,9 +53,8 @@ public:
 class SlotVec {
     //main ID vector
     std::vector<bool> _ids;
-    //vector of free IDs
-    std::vector<unsigned> _free_ids;
-
+    //queue of free IDs
+    std::queue<unsigned> _free_ids;
 public:
     SlotVec();
     ~SlotVec();

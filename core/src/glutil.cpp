@@ -456,7 +456,7 @@ namespace GLUtil {
 
     void renderInst(GLsizei count, GLuint numinst) {
         glDrawElementsInstanced(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr, numinst);
-    };
+    }
 
     void compute(GLuint groups_x, GLuint groups_y, GLuint groups_z) {
         glDispatchCompute(groups_x, groups_y, groups_z);    

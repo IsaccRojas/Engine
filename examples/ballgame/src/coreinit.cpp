@@ -13,7 +13,7 @@ const unsigned PIXEL_HEIGHT = WINDOW_HEIGHT / 2;
 const unsigned PIXEL_LEVELS = 16;
 
 const unsigned TEX_SPACE_WIDTH = 133;
-const unsigned TEX_SPACE_HEIGHT = 304;
+const unsigned TEX_SPACE_HEIGHT = 318;
 const unsigned TEX_SPACE_LEVELS = 4;
 
 const float CLEAR_COLOR_GRAY = 0.35f;

@@ -75,8 +75,8 @@ unsigned SlotVec::push() {
         return _ids.size() - 1;
     }
 
-    unsigned i = _free_ids.back();
-    _free_ids.pop_back();
+    unsigned i = _free_ids.front();
+    _free_ids.pop();
     _ids[i] = true;
     return i;
 }
@@ -84,7 +84,7 @@ unsigned SlotVec::push() {
 void SlotVec::remove(unsigned i) {
     if (_ids[i]) {
         _ids[i] = false;
-        _free_ids.push_back(i);
+        _free_ids.push(i);
     } else
         throw InactiveIDException();
 }
@@ -100,7 +100,8 @@ std::vector<unsigned> SlotVec::getUsed() {
 
 void SlotVec::clear() {
     _ids.clear();
-    _free_ids.clear();
+    std::queue<unsigned> empty;
+    _free_ids.swap(empty);
 }
 
 bool SlotVec::at(unsigned i) { return _ids[i]; }

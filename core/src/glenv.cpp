@@ -227,7 +227,7 @@ void GLEnv::update() {
 }
 
 void GLEnv::draw() {
-    // draw a number of instances equal to the number of IDs in system, active or not, using the element buffer
+    // draw a number of instances equal to the number of IDs in system, active or not, using the vertices in the element buffer
     // (Instances with inactive IDs will be zeroed out per the draw flag)
     GLUtil::renderInst(6, _ids.size());
 }

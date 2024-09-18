@@ -9,8 +9,8 @@
 #include <glm\glm.hpp>
 #include <unordered_set>
 
-#include "util.hpp"
 #include "commonexcept.hpp"
+#include "managedlist.hpp"
 
 // prototype
 class Executor;
@@ -24,20 +24,22 @@ class Script {
    friend Executor;
 
    // fields maintained by owning Executor
-   Executor *_executor;  
-   int _executor_id;
+   Executor *_executor;
+   std::list<Script*>::iterator _this_iter;
+   std::list<Script*>::iterator _values_iter;
    int _last_execqueue;
    bool _removeonkill;
    bool _initialized;
    bool _killed;
    bool _exec_enqueued;
    bool _kill_enqueued; 
+   const char *_script_name;
 
    // settable integer usable for identification
    int _group;
 
-   // sets the Script up with an Executor
-   void _scriptRemove();
+   // removes the Script from its owning Executor
+   void _scriptErase();
 protected:
    /* Functions to be overridden by children.
       - _init() is called by runInit(). _runInit() is called on execution, only for the first time the Script is queued.
@@ -82,9 +84,9 @@ public:
    bool getKilled();
    bool getExecEnqueued();
    bool getKillEnqueued();
+   const char *getName();
    int getGroup();
    Executor *getExecutor();
-   int getExecutorID();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -114,11 +116,8 @@ class GenericAllocator : public AllocatorInterface {
 
 /* class Executor
    Encapsulates an execution environment for queue-able, inheritable Script instances.
-   Uses queues to control execution and erasure of Script instances. A variable number
-   of queues for execution can be specified.
-
-   It is undefined behavior to make method calls (except for uninit()) on instances 
-   of this class without calling init() first.
+   Uses queues to control execution and erasure of Scripts. A variable number of queues 
+   for execution can be specified.
 */
 class Executor {
    // struct holding Script information mapped to a name
@@ -126,14 +125,8 @@ class Executor {
       int _group;
       bool _removeonkill;
       AllocatorInterface *_allocator;
-      std::function<void(unsigned)> _spawn_callback;
-      std::function<void(unsigned)> _remove_callback;
-   };
-
-   // struct holding IDs and other flags belonging to the managed Script during its lifetime
-   struct ScriptValues {
-      const char *_script_name;
-      int _group;
+      std::function<void(Script*)> _spawn_callback;
+      std::function<void(Script*)> _remove_callback;
    };
 
 protected:
@@ -145,80 +138,58 @@ protected:
       std::string _name;
       int _execution_queue;
       int _tag;
-      virtual int spawn();
+      virtual Script *spawn();
       ScriptEnqueue(Executor *executor, std::string name, int execution_queue, int tag);
       virtual ~ScriptEnqueue();
    };
 
 private:
    /* Script data structures */
-   // IDs to distribute to Scripts
-   SlotVec _ids;
-
-   // vector of unique_ptrs of Scripts; allocated references are stored here so that they are
-   // guaranteed to be deleted at some point, even if this vector remains unused
-   std::vector<std::unique_ptr<Script>> _scripts;
+   // memory-managed list of Script references
+   ManagedList<Script> _scripts;
 
    // internal variables for added script information and active scripts
    std::unordered_map<std::string, ScriptInfo> _scriptinfos;
-   std::vector<ScriptValues> _scriptvalues;
    std::queue<ScriptEnqueue*> _scriptenqueues;
 
-   // queues of IDs to be executed; swapped on execution
+   // queues of Scripts to be executed; swapped on execution
    struct QueuePair {
-      std::queue<unsigned> _push_execqueue;
-      std::queue<unsigned> _run_execqueue;
+      std::queue<Script*> _push_execqueue;
+      std::queue<Script*> _run_execqueue;
    };
    std::vector<QueuePair> _queuepairs;
    
-   // queue of IDS to be erased
-   std::queue<unsigned> _push_killqueue;
-   std::queue<unsigned> _run_killqueue;
-   
-   // maximum number of active Scripts allowed and current count
-   unsigned _max_count;
-   unsigned _count;
-
-   bool _initialized;
+   // queue of Scripts to be erased
+   std::queue<Script*> _push_killqueue;
+   std::queue<Script*> _run_killqueue;
 
 protected:
-   // throws if current count is equal to maximum count
-   void _checkCount();
-
-   // throws if the provided id is out of bounds or inactive
-   void _checkID(unsigned id);
-
    // initializes Script's Executor-related fields
-   unsigned _setupScript(Script *script, const char *script_name, int execution_queue);
+   void _setupScript(Script *script, const char *script_name, int execution_queue);
 
    // spawns a Script using a name previously added to this manager, and returns its ID
-   unsigned _spawnScript(const char *script_name, int execution_queue, int tag);
+   Script *_spawnScript(const char *script_name, int execution_queue, int tag);
 
    // pushes an enqueue
    void _pushSpawnEnqueue(ScriptEnqueue *enqueue);
-   
+
+   // checks if the provided Script belongs to this Executor; throws if not
+   void _checkOwned(Script *script);
+
 public:
    /* Calls init() with the provided arguments. */
-   Executor(unsigned max_count, unsigned queues);
-   Executor(Executor &&other);
+   Executor(unsigned queues);
    Executor();
+   Executor(Executor &&other);
    Executor(const Executor &other) = delete;
    virtual ~Executor();
 
    Executor &operator=(Executor &&other);
    Executor &operator=(const Executor &other) = delete;
 
-   void init(unsigned max_count, unsigned queues);
-   void uninit();
-
-   /* Returns a pointer to a Script instance in the environment corresponding to the provided ID. Returns nullptr if the
-      ID does not exist in the environment.
+   /* Erases the passed Script. The reference becomes invalid after this is called.
    */
-   Script* get(unsigned id);
-   /* Removes the provided ID from the system by making its ID available for writing. Note that it is undefined 
-      behavior to use the passed ID after calling this.
-   */
-   void remove(unsigned id);
+   void erase(Script *script);
 
    /* Adds an Script allocator with initialization information to this manager, allowing its given
       name to be used for future spawns.
@@ -229,14 +200,14 @@ public:
       - spawn_callback - function callback to call after Script has been spawned and setup
       - remove_callback - function callback to call before Script has been removed
    */
-   void add(AllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback);
+   void add(AllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback);
 
    /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
    void enqueueSpawn(const char *script_name, int execution_queue, int tag);
-   /* Enqueues a Script instance corresponding to the ID provided to be executed when runExecQueue() is called. */
-   void enqueueExec(unsigned id, unsigned queue);
-   /* Enqueues a Script instance corresponding to the ID provided to be killed when runKillQueue() is called. */
-   void enqueueKill(unsigned id);
+   /* Enqueues a Script instance to be executed when runExecQueue() is called. */
+   void enqueueExec(Script *script, unsigned queue);
+   /* Enqueues a Script instance to be killed when runKillQueue() is called. */
+   void enqueueKill(Script *script);
 
    /* Executes all currently enqueued Scripts in the specified queue, and dequeues them. This will call the 
       (init() method if it has not yet been called, and the) base() method on every active Script.
@@ -245,25 +216,15 @@ public:
    /* Calls the kill() method on all erasure-queued Scripts if it has not been called yet. */
    void runKillQueue();
    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(). */
-   std::vector<unsigned> runSpawnQueue();
+   std::vector<Script*> runSpawnQueue();
 
-   /* Returns true if the provided ID is active. */
-   bool hasID(unsigned id);
+   /* Returns true if the provided Script reference is owned by this instance. */
+   bool has(Script *script);
    /* Returns true if the provided Script name has been previously added to this manager. */
    bool hasAdded(const char *script_name);
-   /* Returns a vector of IDs of all active Scripts with the corresponding group. */
-   std::vector<unsigned> getAllByGroup(int group);
-   /* Returns the internal name corresponding to the provided ID, if it exists. */
-   std::string getName(unsigned id);
-   /* Returns whether this instance has been initialized or not. */
-   bool getInitialized();
-   /* Returns the number of active scripts in the manager. */
+   /* Returns the number of Scripts in this executor. */
    unsigned getCount();
-   /* Returns the maximum number of active scripts allowed in the manager. */
-   unsigned getMaxCount();
-   /* Gets the maximum generated ID during this manager's lifetime. */
-   int getMaxID();
-   /* Returns number of execution queues in this instance. */
+   /* Returns number of execution queues in this executor. */
    int getQueueCount();
 };
 

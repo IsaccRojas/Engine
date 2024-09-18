@@ -90,7 +90,7 @@ EntityExecutor *Entity::getExecutor() { return _entityexecutor; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-int EntityExecutor::EntityEnqueue::spawn() {
+Entity *EntityExecutor::EntityEnqueue::spawn() {
     return _entityexecutor->_spawnEntity(_name.c_str(), _execution_queue, _tag, _pos);
 }
 
@@ -98,7 +98,7 @@ EntityExecutor::EntityEnqueue::EntityEnqueue(EntityExecutor *entityexecutor, std
     ScriptEnqueue(nullptr, name, execution_queue, tag), _entityexecutor(entityexecutor), _pos(pos)
 {}
 
-void EntityExecutor::_setupEntity(unsigned id, Entity *entity, const char *entity_name) {
+void EntityExecutor::_setupEntity(Entity *entity, const char *entity_name) {
     // get information
     EntityInfo &info = _entityinfos[entity_name];
 
@@ -109,24 +109,20 @@ void EntityExecutor::_setupEntity(unsigned id, Entity *entity, const char *entit
     entity->_quad = _glenv->getQuad(entity->_quad_id);
     entity->_animationstate.setAnimation(&(*_animations)[info._animation_name]);
     entity->_frame = entity->_animationstate.getCurrent();
-
-    _entityvalues[id] = EntityValues{entity};
 }
 
-unsigned EntityExecutor::_spawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
+Entity *EntityExecutor::_spawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
     // allocate instance and set it up
     Entity *entity = _entityinfos[entity_name]._allocator->_allocate(tag);
-    unsigned id = _setupScript(entity, entity_name, execution_queue);
-    _setupEntity(id, entity, entity_name);
+    _setupScript(entity, entity_name, execution_queue);
+    _setupEntity(entity, entity_name);
     entity->getQuad()->bv_pos.v = pos;
 
-    return id;
+    return entity;
 }
 
-EntityExecutor::EntityExecutor(unsigned max_count, unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations) : Executor() {
-    init(max_count, queues, glenv, animations);
-}
-EntityExecutor::EntityExecutor(EntityExecutor &&other) { operator=(std::move(other)); }
+EntityExecutor::EntityExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations) : Executor(queues), _glenv(glenv), _animations(animations) {}
+EntityExecutor::EntityExecutor(EntityExecutor &&other) : Executor() { operator=(std::move(other)); }
 EntityExecutor::EntityExecutor() : Executor(), _glenv(nullptr), _animations(nullptr) {}
 EntityExecutor::~EntityExecutor() { /* automatic destruction is fine */ }
 
@@ -134,34 +130,16 @@ EntityExecutor &EntityExecutor::operator=(EntityExecutor &&other) {
     if (this == &other) {
         Executor::operator=(std::move(other));
         _entityinfos = other._entityinfos;
-        _entityvalues = other._entityvalues;
         _glenv = other._glenv;
         _animations = other._animations;
-
-        // safe as there are no deallocations (unique_ptrs should be moved by this point)
-        other.uninit();
+        other._entityinfos.clear();
+        other._glenv = nullptr;
+        other._animations = nullptr;
     }
     return *this;
 }
 
-void EntityExecutor::init(unsigned max_count, unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations) {
-    Executor::init(max_count, queues);
-
-    _entityvalues = std::vector<EntityValues>(max_count, EntityValues{nullptr});
-    _glenv = glenv;
-    _animations = animations;
-}
-
-void EntityExecutor::uninit() {
-    Executor::uninit();
-
-    _entityinfos.clear();
-    _entityvalues.clear();
-    _glenv = nullptr;
-    _animations = nullptr;
-}
-
-void EntityExecutor::addEntity(EntityAllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::string animation_name, std::function<void(unsigned)> spawn_callback, std::function<void(unsigned)>  remove_callback) {
+void EntityExecutor::addEntity(EntityAllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::string animation_name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback) {
     if (!hasAdded(name)) {
         Executor::add(nullptr, name, group, removeonkill, spawn_callback, remove_callback);
         _entityinfos[name] = EntityInfo{allocator, animation_name};
@@ -171,9 +149,4 @@ void EntityExecutor::addEntity(EntityAllocatorInterface *allocator, const char *
 
 void EntityExecutor::enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
     _pushSpawnEnqueue(new EntityEnqueue(this, entity_name, execution_queue, tag, pos));
-}
-
-Entity *EntityExecutor::getEntity(unsigned id) {
-    _checkID(id);
-    return _entityvalues[id]._entity_ref;
 }

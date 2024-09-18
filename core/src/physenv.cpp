@@ -3,6 +3,7 @@
 // _______________________________________ Box _______________________________________
 
 Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::function<void(Box*)> callback) :
+    _physenv(nullptr),
     _collided(false),
     _prev_pos(position),
     _callback(callback),
@@ -13,6 +14,7 @@ Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::func
 {}
 
 Box::Box() :
+    _physenv(nullptr),
     _collided(false),
     _prev_pos(glm::vec3(0.0f)),
     _callback(nullptr),
@@ -53,127 +55,78 @@ bool Box::getCollided() { return _collided; }
 
 // _______________________________________ PhysEnv _______________________________________
 
-PhysEnv::PhysEnv(unsigned max_count) : _initialized(false) {
-    init(max_count);
-}
-PhysEnv::PhysEnv() : _max_count(0), _count(0), _initialized(false) {}
+PhysEnv::PhysEnv() {}
 PhysEnv::~PhysEnv() { /* automatic destruction is fine */ }
 
-void PhysEnv::init(unsigned max_count) {
-    if (_initialized)
-        throw InitializedException();
+Box *PhysEnv::push(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback) {
+    _boxes.push_back(Box{pos, dim, vel, callback});
     
-    _boxes = std::vector<Box>(max_count, Box());
-    _max_count = max_count;
-    _count = 0;
-    _initialized = true;
+    // assign iterator position and this reference to Box
+    Box *b = &(*_boxes.rbegin());
+    b->_physenv = this;
+    b->_this_iter = (_boxes.end()--);
+
+    return b;
 }
 
-void PhysEnv::uninit() {
-    if (!_initialized)
-        return;
+void PhysEnv::erase(Box *box) {
+    if (box->_physenv != this)
+        throw std::runtime_error("Attempt to erase Box from PhysEnv that does not own it");
     
-    _ids.clear();
-    _boxes.clear();
-    _max_count = 0;
-    _count = 0;
-    _initialized = false;
-}
-
-unsigned PhysEnv::genBox(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback) {
-    // if number of active IDs is greater than or equal to maximum allowed count, return -1
-    if (_count >= _max_count)
-        throw CountLimitException();
-
-    // get a new unique ID
-    unsigned id = _ids.push();
-    
-    // generate box by providing parameters and use id to specify an offset into them
-    _boxes[id] = Box{pos, dim, vel, callback};
-
-    _count++;
-    return id;
-}
-
-void PhysEnv::remove(unsigned id) {
-    if (id >= _ids.size())
-        throw std::out_of_range("Index out of range");
-
-    // call _ids to make the ID usable again
-    _ids.remove(id);
-
-    _count--;
+    _boxes.erase(box->_this_iter);
 }
 
 void PhysEnv::unsetCollidedFlags() {
-    for (unsigned i = 0; i < _ids.size(); i++)
-        if (_ids.at(i))
-            _boxes[i]._collided = false;
+    for (auto &box : _boxes)
+        box._collided = false;
 }
 
 void PhysEnv::detectCollision() {
-    unsigned ids_size = _ids.size();
-
     // perform pair-wise collision detection
-    for (unsigned i = 0; i < ids_size; i++) {
-        if (_ids.at(i)) {
-            // get box and skip if zeroed out
-            Box &box1 = _boxes[i];
-            if (box1.dim == glm::vec3(0.0f))
+    for (auto iter1 = _boxes.begin(); iter1 != _boxes.end(); iter1++) {
+
+        // get box and skip if zeroed out
+        Box &box1 = *iter1;
+        if (box1.dim == glm::vec3(0.0f))
+            continue;
+
+        for (auto iter2 = (iter1++); iter2 != _boxes.end(); iter2++) {
+
+            Box &box2 = *iter2;
+            if (box2.dim == glm::vec3(0.0f))
                 continue;
 
-            for (unsigned j = i + 1; j < ids_size; j++) {
-                if (_ids.at(j)) {
-                    Box &box2 = _boxes[j];
-                    if (box2.dim == glm::vec3(0.0f))
-                        continue;
-
-                    // test filters against each other's IDs
-                    bool f1 = box1.getFilterState().hasFilter();
-                    bool f2 = box2.getFilterState().hasFilter();
-                    
-                    // if both have a filter, collide if both pass
-                    // if neither have a filter, collide
-                    // if only one has a filter, skip
-                    if (f1 != f2)
-                        continue;
-                    if (
-                        (!f1 && !f2) ||
-                            (box1.getFilterState().pass(box2.getFilterState().id()) &&
-                            box2.getFilterState().pass(box1.getFilterState().id()))
-                    )
-                        // detect and handle collision
-                        collisionAABB(box1, box2);
-
-                }
-            }
+            // test filters against each other's IDs
+            bool f1 = box1.getFilterState().hasFilter();
+            bool f2 = box2.getFilterState().hasFilter();
+            
+            // if both have a filter, collide if both pass
+            // if neither have a filter, collide
+            // if only one has a filter, skip
+            if (f1 != f2)
+                continue;
+            if (
+                (!f1 && !f2) ||
+                    (box1.getFilterState().pass(box2.getFilterState().id()) &&
+                    box2.getFilterState().pass(box1.getFilterState().id()))
+            )
+            
+            // detect and handle collision
+            collisionAABB(box1, box2);
 
         }
+
     }
 }
 
 void PhysEnv::step() {
-    for (unsigned i = 0; i < _ids.size(); i++)
-        // only try calling step on index i if it is an active ID in _ids
-        if (_ids.at(i))
-            _boxes[i].step();
+    for (auto &box : _boxes)
+        box.step();
 }
 
-Box *PhysEnv::getBox(unsigned id) {
-    if (id >= _ids.size())
-        throw std::out_of_range("Index out of range");
-
-    if (_ids.at(id))
-        return &(_boxes[id]);
-    
-    throw InactiveIDException();
+bool PhysEnv::hasBox(Box *box) {
+    return (box->_physenv == this);
 }
-
-std::vector<unsigned> PhysEnv::getIDs() { return _ids.getUsed(); }
-
-bool PhysEnv::hasID(unsigned id) { return _ids.at(id); }
-
-bool PhysEnv::getInitialized() { return _initialized; }
 
 // only detects 2D collision for now
 void PhysEnv::collisionAABB(Box &box1, Box &box2) {
