@@ -63,16 +63,22 @@ namespace GLUtil {
         */
         void setAttribFormat(GLuint index, GLint size, GLenum type, GLuint byte_offset, GLuint divisor);
         
-        /* Binds attribute to the specified buffer index.
-        */
+        /* Binds attribute to the specified buffer index. */
         void setAttribBufferIndex(GLuint attrib_index, GLuint binding_index);
 
-        /* Binds buffer handler to the specified attribute buffer index; size and offset in bytes (e.g. 16 for 4 4-byte vertices).
-        */
+        /* Binds buffer handler to the specified attribute buffer index; size and offset in bytes (e.g. 16 for 4 4-byte vertices). */
         void bindBufferToIndex(GLuint buffer_handle, GLuint index, GLintptr offset, GLsizei stride);
 
-        /* Binds this VAO and program to the main VAO and program binding points, enabling it for use on draw calls.
-        */
+        /* Binds buffer handler to be used to get elements to specify vertex render order. */
+        void bindElementBuffer(GLuint buffer_handle);
+
+        /* Sets uniform value in program. */
+        void uniform1i(GLuint index, GLint value);
+        void uniform1f(GLuint index, GLfloat value);
+        void uniformmat4f(GLuint index, glm::mat4 value);
+        void uniform3ui(GLuint index, glm::uvec3 value);
+
+        /* Binds this VAO and program to the main VAO and program binding points, enabling it for use on draw calls. */
         void use();
     };
 
@@ -242,20 +248,6 @@ namespace GLUtil {
 
         void update();
     };
-    
-    /* Sets uniform value in program.
-    */
-    void uniformi(GLuint index, GLint value);
-    void uniformf(GLuint index, GLfloat value);
-    void uniformmat4f(GLuint index, glm::mat4 value);
-
-    /* Sets element buffer to use for rendering.
-    */
-    void setElementBuffer(GLuint buf_h);
-
-    /* Binds buffer storage to index for compute shading.
-    */
-    void storage(GLuint buf_h, GLuint index);
 
     /* Renders provided number of elements in the specified mode.
     */
@@ -263,11 +255,7 @@ namespace GLUtil {
 
     /* Renders provided number of elements in the specified mode, as numinst instances.
     */
-    void renderInst(GLenum mode, GLsizei count, GLuint num_inst);
-
-    /* Runs compute shader on specified groups.
-    */
-    void compute(GLuint groups_x, GLuint groups_y, GLuint groups_z);
+    void renderInst(GLenum mode, GLsizei count, GLuint num_inst, bool with_elements);
 
     /* Sets OpenGL viewport.
        x - x coordinate of viewport

@@ -3,6 +3,7 @@
 Script::Script(Script &&other) { operator=(std::move(other)); }
 Script::Script() :
     _executor(nullptr),
+    _executor_id(0),
     _last_execqueue(-1),
     _removeonkill(false),
     _initialized(false), 
@@ -17,8 +18,8 @@ Script::~Script() { /* automatic destruction is fine */ }
 Script &Script::operator=(Script &&other) {
     if (this != &other) {
         _executor = other._executor;
+        _executor_id = other._executor_id;
         _this_iter = other._this_iter;
-        _values_iter = other._values_iter;
         _last_execqueue = other._last_execqueue;
         _removeonkill = other._removeonkill;
         _initialized = other._initialized;
@@ -28,6 +29,7 @@ Script &Script::operator=(Script &&other) {
         _script_name = other._script_name;
         _group = other._group;
         other._executor = nullptr;
+        other._executor_id = 0;
         other._last_execqueue = -1;
         other._removeonkill = false;
         other._initialized = false;
@@ -88,6 +90,10 @@ Executor *Script::getExecutor() {
     return _executor; 
 }
 
+unsigned Script::getExecutorID() {
+    return _executor_id;
+}
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 Script *Executor::ScriptEnqueue::spawn() {
@@ -109,6 +115,7 @@ Executor &Executor::operator=(Executor &&other) {
         std::queue<Script*> empty2;
 
         _scripts.move(other._scripts);
+        _intgen = other._intgen;
         _scriptinfos = other._scriptinfos;
         _scriptenqueues.move(other._scriptenqueues);
         _queuepairs = other._queuepairs;
@@ -127,6 +134,7 @@ void Executor::_setupScript(Script *script, const char *script_name, int executi
 
     // store data
     script->_executor = this;
+    script->_executor_id = _intgen.push();
     script->_this_iter = _scripts.push_back(script);
 
     // set script fields
@@ -175,6 +183,7 @@ void Executor::uninit() {
     std::queue<Script*> empty2;
 
     _scripts.clear();
+    _intgen.clear();
     _scriptinfos.clear();
     _scriptenqueues.clear();
     _queuepairs.clear();
@@ -192,6 +201,7 @@ void Executor::erase(Script *script) {
     if (scriptinfo._remove_callback)
         scriptinfo._remove_callback(script);
 
+    _intgen.remove(script->_executor_id);
     _scripts.erase(script->_this_iter);
 }
 

@@ -21,10 +21,10 @@ namespace GLUtil {
 
     // _______________________________________ GLStage _______________________________________
 
-    GLStage::GLStage(const char *shader_srcs[], GLenum shader_types[], int count) : _program_h(-1) {
+    GLStage::GLStage(const char *shader_srcs[], GLenum shader_types[], int count) : _program_h(-1), _vao_h(-1) {
         init(shader_srcs, shader_types, count);
     }
-    GLStage::GLStage() : _program_h(-1) {}
+    GLStage::GLStage() : _program_h(-1), _vao_h(-1) {}
 
     GLStage::GLStage(GLStage &&other) {
         operator=(std::move(other));
@@ -99,7 +99,7 @@ namespace GLUtil {
 
         // create VAO
         unsigned vao_h;
-        glGenVertexArrays(1, &vao_h);
+        glCreateVertexArrays(1, &vao_h);
         _vao_h = vao_h;
     }
 
@@ -128,6 +128,26 @@ namespace GLUtil {
 
     void GLStage::bindBufferToIndex(GLuint buffer_handle, GLuint index, GLintptr offset, GLsizei stride) {
         glVertexArrayVertexBuffer(_vao_h, index, buffer_handle, offset, stride);
+    }
+
+    void GLStage::bindElementBuffer(GLuint buffer_handle) {
+        glVertexArrayElementBuffer(_vao_h, buffer_handle);
+    }
+
+    void GLStage::uniform1i(GLuint index, GLint value) {
+        glProgramUniform1i(_program_h, index, value);
+    }
+
+    void GLStage::uniform1f(GLuint index, GLfloat value) {
+        glProgramUniform1f(_program_h, index, value);
+    }
+
+    void GLStage::uniformmat4f(GLuint index, glm::mat4 value) {
+        glProgramUniformMatrix4fv(_program_h, index, 1, false, glm::value_ptr(value));
+    }
+
+    void GLStage::uniform3ui(GLuint index, glm::uvec3 value) {
+        glProgramUniform3ui(_program_h, index, value.x, value.y, value.z);
     }
 
     void GLStage::use() {
@@ -335,21 +355,10 @@ namespace GLUtil {
         _store_format = store_format;
         _data_format = data_format;
         _type = type;
-
         _width = width;
         _height = height;
         _depth = depth;
-
-        bind(GL_TEXTURE_2D_ARRAY);
-        GLsizei levelwidth;
-        GLsizei levelheight;
-        // allocate 3D memory for the texture, with a specified level of detail
-        for (int i = 0; i < levels; i++) {
-            levelwidth = _width / glm::exp(i);
-            levelheight = _height / glm::exp(i);
-            glTexImage3D(GL_TEXTURE_2D_ARRAY, i, _store_format, levelwidth, levelheight, _depth, 0, _data_format, _type, NULL);
-        }
-        _size = _width * _height * _depth;
+        glTextureStorage3D(_tex_h, levels, store_format, width, height, depth);
 
         _allocated = true;
     }
@@ -474,24 +483,6 @@ namespace GLUtil {
 
     // ______________________________________________________________________________
 
-    void uniformi(GLuint index, GLint value) {
-        glUniform1i(index, value);
-    }
-    void uniformf(GLuint index, GLfloat value) {
-        glUniform1f(index, value);
-    }
-    void uniformmat4f(GLuint index, glm::mat4 value) {
-        glUniformMatrix4fv(index, 1, false, glm::value_ptr(value));
-    }
-
-    void setElementBuffer(GLuint buf_h) {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf_h);
-    }
-
-    void storage(GLuint buf_h, GLuint index) {
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, buf_h);
-    }
-
     void render(GLenum mode, GLsizei count, bool with_elements) {
         if (with_elements)
             glDrawElements(mode, count, GL_UNSIGNED_INT, nullptr);
@@ -499,13 +490,11 @@ namespace GLUtil {
             glDrawArrays(mode, 0, count);
     }
 
-    void renderInst(GLenum mode, GLsizei count, GLuint numinst) {
-        glDrawElementsInstanced(mode, count, GL_UNSIGNED_INT, nullptr, numinst);
-    }
-
-    void compute(GLuint groups_x, GLuint groups_y, GLuint groups_z) {
-        glDispatchCompute(groups_x, groups_y, groups_z);    
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    void renderInst(GLenum mode, GLsizei count, GLuint numinst, bool with_elements) {
+        if (with_elements)
+            glDrawElementsInstanced(mode, count, GL_UNSIGNED_INT, nullptr, numinst);
+        else
+            glDrawArraysInstanced(mode, 0, count, numinst);
     }
 
     void setViewport(GLint x, GLint y, GLint width, GLint height) {

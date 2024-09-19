@@ -12,12 +12,12 @@
 
 std::string readfile(const char *filename);
 
-/* class InactiveIDException
-   This exception is thrown when an inactive ID is accessed in a SlotVec instance.
+/* class InactiveIntException
+   This exception is thrown when an inactive integer provided by an IntGenerator is accessed.
 */
-class InactiveIDException : public std::logic_error {
+class InactiveIntException : public std::logic_error {
 public:
-    InactiveIDException();
+    InactiveIntException();
 };
 
 class Image {
@@ -47,17 +47,17 @@ public:
     bool empty();
 };
 
-/* class SlotVec
-   Provides and manages unique addresses on push and removal.
+/* class IntGenerator
+   Provides and manages unique integers on push and removal.
 */
-class SlotVec {
+class IntGenerator {
     //main ID vector
     std::vector<bool> _ids;
     //queue of free IDs
     std::queue<unsigned> _free_ids;
 public:
-    SlotVec();
-    ~SlotVec();
+    IntGenerator();
+    ~IntGenerator();
 
     // default copy assignment/construction are fine
 

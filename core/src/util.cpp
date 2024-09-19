@@ -3,7 +3,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../include/stb_image.h"
 
-InactiveIDException::InactiveIDException() : std::logic_error("Inactive ID accessed") {}
+InactiveIntException::InactiveIntException() : std::logic_error("Inactive IntGenerator integer accessed") {}
 
 std::string readfile(const char *filename) {
     std::ifstream infile(filename);
@@ -66,10 +66,10 @@ int Image::components() { return _components; }
 int Image::size() { return _size; }
 bool Image::empty() { return (_data == NULL); }
 
-SlotVec::SlotVec() {}
-SlotVec::~SlotVec() { /* automatic destruction is fine */ }
+IntGenerator::IntGenerator() {}
+IntGenerator::~IntGenerator() { /* automatic destruction is fine */ }
 
-unsigned SlotVec::push() {
+unsigned IntGenerator::push() {
     if (_free_ids.empty()) {
         _ids.push_back(true);
         return _ids.size() - 1;
@@ -81,15 +81,15 @@ unsigned SlotVec::push() {
     return i;
 }
 
-void SlotVec::remove(unsigned i) {
+void IntGenerator::remove(unsigned i) {
     if (_ids[i]) {
         _ids[i] = false;
         _free_ids.push(i);
     } else
-        throw InactiveIDException();
+        throw InactiveIntException();
 }
 
-std::vector<unsigned> SlotVec::getUsed() {
+std::vector<unsigned> IntGenerator::getUsed() {
     std::vector<unsigned> indices;
     for (unsigned i = 0; i < _ids.size(); i++)
         if (_ids[i])
@@ -98,18 +98,18 @@ std::vector<unsigned> SlotVec::getUsed() {
     return indices;
 }
 
-void SlotVec::clear() {
+void IntGenerator::clear() {
     _ids.clear();
     std::queue<unsigned> empty;
     _free_ids.swap(empty);
 }
 
-bool SlotVec::at(unsigned i) { return _ids[i]; }
-bool SlotVec::operator[](unsigned i) { return _ids[i]; }
-bool SlotVec::empty() { return (_ids.size() == 0); }
-unsigned SlotVec::size() { return _ids.size(); }
-unsigned SlotVec::freeSize() { return _free_ids.size(); }
-unsigned SlotVec::fillSize() { return _ids.size() - _free_ids.size(); }
+bool IntGenerator::at(unsigned i) { return _ids[i]; }
+bool IntGenerator::operator[](unsigned i) { return _ids[i]; }
+bool IntGenerator::empty() { return (_ids.size() == 0); }
+unsigned IntGenerator::size() { return _ids.size(); }
+unsigned IntGenerator::freeSize() { return _free_ids.size(); }
+unsigned IntGenerator::fillSize() { return _ids.size() - _free_ids.size(); }
 
 bool endsWith(const std::string& str, const std::string& suffix)
 {

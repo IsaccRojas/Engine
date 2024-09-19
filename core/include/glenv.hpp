@@ -108,8 +108,8 @@ class GLEnv {
     GLUtil::GLBuffer _glb_draw;
 
     /* environment system variables */
-    // IDs to distribute to Quads, and Quads
-    SlotVec _quad_ids;
+    // Offsets to distribute to Quads, and Quads
+    IntGenerator _quad_offsets;
     std::vector<Quad> _quads;
 
     // maximum number of active Quads allowed
@@ -139,20 +139,20 @@ public:
        scale - GLM vec3 scale of Quad
        texpos - GLM vec3 texture position of Quad (multi-level 2D texture space)
        texsize - GLM vec2 texture size of Quad (added to positions to get a rectangle)
-       Returns the integer ID of Quad. This number can be used to index into the internal Quad container and
-       obtain a reference (see the get() method). This ID is unique and will be valid for the lifetime 
+       Returns the integer offset of Quad. This number can be used to index into the internal Quad container and
+       obtain a reference (see the get() method). This offset is unique and will be valid for the lifetime 
        of the Quad (see the erase() method). If the maximum number of active Quads allowed is exceeded, -1 is
        returned instead.
     */
     unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::vec2 texsize);
-    /* Removes the Quad with the provided ID from the system. This will cause the provided ID to be 
+    /* Removes the Quad with the provided offset from the system. This will cause the provided offset to be 
        invalid until returned again by the genQuad() method. Note that this method does not actually
-       free any GPU memory; it simply makes the specific ID usable again by the system. Attempting to use
-       the same ID after erasing it and before receiving it again by genQuad() will result in undefined 
+       free any GPU memory; it simply makes the specific offset usable again by the system. Attempting to use
+       the same offset after erasing it and before receiving it again by genQuad() will result in undefined 
        behavior.
-       id - ID of Quad to remove
+       offset - offset of Quad to remove
     */
-    void remove(unsigned id);
+    void remove(unsigned offset);
 
     /* Initializes texture array space with unsigned byte storage in RGBA format.
        width - width of space
@@ -178,18 +178,16 @@ public:
     /* Writes data of all quads in system to their respective buffers. */
     void update();
     /* Draws Quads in memory using internal shader program. This is done by drawing a number of unit Quad
-       instances corresponding to the number of IDs generated, and using the specific Quad parameters and
+       instances corresponding to the number of offsets generated, and using the specific Quad parameters and
        shader matrices to transform them. */
     void drawQuads();
 
-    /* Returns a raw Quad pointer to the Quad with the specified ID. 
-       id - ID of Quad to get reference of
-    */
-    Quad *getQuad(unsigned id);
-    /* Returns all active IDs in system. (note that this allocates a vector and will take O(n) time) */
-    std::vector<unsigned> getIDs();
-    /* Returns true if the provided ID is active. */
-    bool hasID(unsigned id);
+    /* Returns a raw Quad pointer to the Quad with the specified offset. */
+    Quad *getQuad(unsigned offset);
+    /* Returns all active offsets in system. (note that this instantiates a vector and will take O(n) time) */
+    std::vector<unsigned> getOffsets();
+    /* Returns true if the provided offset is active. */
+    bool hasOffset(unsigned offset);
     /* Returns whether this instance has been initialized or not. */
     bool getInitialized();
 };

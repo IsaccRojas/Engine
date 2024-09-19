@@ -12,6 +12,7 @@
 #include "commonexcept.hpp"
 #include "managedlist.hpp"
 #include "managedqueue.hpp"
+#include "util.hpp"
 
 // prototype
 class Executor;
@@ -26,8 +27,8 @@ class Script {
 
    // fields maintained by owning Executor
    Executor *_executor;
+   unsigned _executor_id;
    std::list<Script*>::iterator _this_iter;
-   std::list<Script*>::iterator _values_iter;
    int _last_execqueue;
    bool _removeonkill;
    bool _initialized;
@@ -88,6 +89,7 @@ public:
    const char *getName();
    int getGroup();
    Executor *getExecutor();
+   unsigned getExecutorID();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -147,8 +149,9 @@ protected:
 
 private:
    /* Script data structures */
-   // memory-managed list of Script references
+   // memory-managed list of Script references and IntGenerator to provide Scripts with unique identifiers
    ManagedList<Script> _scripts;
+   IntGenerator _intgen;
 
    // internal variables for added script information and active scripts
    std::unordered_map<std::string, ScriptInfo> _scriptinfos;
