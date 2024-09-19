@@ -29,13 +29,15 @@ namespace GLUtil {
     };
 
     /* class GLStage
-       Represents an execution stage of OpenGL; stores a program handle.
+       Represents an execution stage of OpenGL; stores a program handle and VAO.
 
        It is undefined behavior to make method calls (except for uninit()) on instances 
        of this class without calling init() first.
     */
     class GLStage {
         GLint _program_h;
+        GLint _vao_h;
+
     public:
         /* Calls init() with the provided arguments. */
         GLStage(const char *shader_srcs[], GLenum shader_types[], int count);
@@ -52,7 +54,24 @@ namespace GLUtil {
         void init(const char *shader_srcs[], GLenum shader_types[], int count);
         void uninit();
 
-        /* Binds this program to the main program binding point.
+        /* Formats attribute in binded program, and enables it.
+           index - layout index of attribute
+           size - number of values in attribute (e.g. 3 for a vec3)
+           type - type of values (e.g. GL_FLOAT)
+           offset - offset of index in buffer per element, in bytes (e.g. 12 if values are after a vec3's values)
+           divisor - number of instances to process before changing value (0 for per vertex, 1 for per instance, etc.)
+        */
+        void setAttribFormat(GLuint index, GLint size, GLenum type, GLuint byte_offset, GLuint divisor);
+        
+        /* Binds attribute to the specified buffer index.
+        */
+        void setAttribBufferIndex(GLuint attrib_index, GLuint binding_index);
+
+        /* Binds buffer handler to the specified attribute buffer index; size and offset in bytes (e.g. 16 for 4 4-byte vertices).
+        */
+        void bindBufferToIndex(GLuint buffer_handle, GLuint index, GLintptr offset, GLsizei stride);
+
+        /* Binds this VAO and program to the main VAO and program binding points, enabling it for use on draw calls.
         */
         void use();
     };
@@ -87,10 +106,6 @@ namespace GLUtil {
         /* Binds buffer handle of GLBuffer to target.
         */
         void bind(GLenum target);
-
-        /* Binds buffer handle of GLBuffer to attribute index binding point; size and offset in bytes (e.g. 16 for 4 4-byte vertices).
-        */
-        void bindIndex(GLuint index, GLintptr offset, GLsizei stride);
 
         /* Binds buffer handle of GLBuffer to target at base.
         */
@@ -163,6 +178,27 @@ namespace GLUtil {
         GLuint depth();
     };
 
+    /* class BFloat
+       Wraps a float with a specific offset into a GLBuffer.
+    */
+    class BFloat {
+        GLBuffer *_buf;
+        GLuint _off;
+    public:
+        GLfloat v;
+
+        BFloat(GLBuffer *buffer, GLuint offset);
+        BFloat(const BFloat &other);
+        BFloat();
+        ~BFloat();
+
+        BFloat& operator=(const BFloat &other);
+
+        void setBuffer(GLBuffer *buffer, GLuint offset);
+
+        void update();
+    };
+
     /* class BVec2
        Wraps a glm::vec2 with a specific offset into a GLBuffer.
     */
@@ -206,19 +242,6 @@ namespace GLUtil {
 
         void update();
     };
-
-    /* Formats attribute in binded program, and enables it.
-       index - layout index of attribute
-       size - number of values in attribute (e.g. 3 for a vec3)
-       type - type of values (e.g. GL_FLOAT)
-       offset - offset of index in buffer per element, in bytes (e.g. 12 if values are after a vec3's values)
-       divisor - number of instances to process before changing value (0 for per vertex, 1 for per instance, etc.)
-    */
-    void formatAttrib(GLuint index, GLint size, GLenum type, GLuint byte_offset, GLuint divisor);
-    
-    /* Binds attribute to buffer index.
-    */
-    void bindAttrib(GLuint attrib_index, GLuint binding_index);
     
     /* Sets uniform value in program.
     */
@@ -234,13 +257,13 @@ namespace GLUtil {
     */
     void storage(GLuint buf_h, GLuint index);
 
-    /* Renders provided number of elements.
+    /* Renders provided number of elements in the specified mode.
     */
-    void render(GLsizei count, bool with_elements);
+    void render(GLenum mode, GLsizei count, bool with_elements);
 
-    /* Renders provided number of elements, as numinst instances.
+    /* Renders provided number of elements in the specified mode, as numinst instances.
     */
-    void renderInst(GLsizei count, GLuint num_inst);
+    void renderInst(GLenum mode, GLsizei count, GLuint num_inst);
 
     /* Runs compute shader on specified groups.
     */

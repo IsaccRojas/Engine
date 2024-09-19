@@ -43,11 +43,11 @@ namespace GLUtil {
     };
 
     void GLStage::init(const char *shader_srcs[], GLenum shader_types[], int count) {
-        if (_program_h != -1)
+        if (_program_h != -1 || _vao_h != -1)
             throw InitializedException();
         
-        GLint success = 0;
         // create shaders
+        GLint success = 0;
         GLuint *shaders = new GLuint[count];
         for (int i = 0; i < count; i++) {
             shaders[i] = glCreateShader(shader_types[i]);
@@ -96,16 +96,43 @@ namespace GLUtil {
             glDeleteShader(shaders[i]);
         }
         delete[] shaders;
+
+        // create VAO
+        unsigned vao_h;
+        glGenVertexArrays(1, &vao_h);
+        _vao_h = vao_h;
     }
 
     void GLStage::uninit() {
         if (_program_h != -1)
             glDeleteProgram(_program_h);
+
+        if (_vao_h != -1) {
+            unsigned vao_h = _vao_h;
+            glDeleteVertexArrays(1, &vao_h);
+        }
+
         _program_h = -1;
+        _vao_h = -1;
+    }
+
+    void GLStage::setAttribFormat(GLuint index, GLint size, GLenum type, GLuint byte_offset, GLuint divisor) {
+        glVertexArrayAttribFormat(_vao_h, index, size, type, false, byte_offset);
+        glEnableVertexArrayAttrib(_vao_h, index);
+        glVertexArrayBindingDivisor(_vao_h, index, divisor);
+    }
+
+    void GLStage::setAttribBufferIndex(GLuint attrib_index, GLuint binding_index) {
+        glVertexArrayAttribBinding(_vao_h, attrib_index, binding_index);
+    }
+
+    void GLStage::bindBufferToIndex(GLuint buffer_handle, GLuint index, GLintptr offset, GLsizei stride) {
+        glVertexArrayVertexBuffer(_vao_h, index, buffer_handle, offset, stride);
     }
 
     void GLStage::use() {
-         glUseProgram(_program_h); 
+        glBindVertexArray(_vao_h);
+        glUseProgram(_program_h); 
     }
 
     // _______________________________________ GLBuffer _______________________________________
@@ -164,11 +191,6 @@ namespace GLUtil {
     void GLBuffer::bind(GLenum target) {
         GLuint buf_h = _buf_h;
         glBindBuffer(target, buf_h);
-    }
-
-    void GLBuffer::bindIndex(GLuint index, GLintptr offset, GLsizei stride) {
-        GLuint buf_h = _buf_h;
-        glBindVertexBuffer(index, buf_h, offset, stride);
     }
 
     void GLBuffer::bindBase(GLenum target, GLuint index) {
@@ -342,6 +364,39 @@ namespace GLUtil {
     GLuint GLTexture2DArray::height() { return _height; }
     GLuint GLTexture2DArray::depth() { return _depth; }
 
+    // _______________________________________ BFloat _______________________________________
+
+    BFloat::BFloat(GLBuffer *buffer, GLuint offset) : 
+        _buf(buffer), 
+        _off(offset),
+        v(0.0f)
+    {}
+    BFloat::BFloat(const BFloat &other) {
+        operator=(other);
+    }
+    BFloat::BFloat() : _buf(nullptr), _off(0), v(0.0f) {}
+    BFloat::~BFloat() { /* automatic destruction is fine */ }
+
+    BFloat& BFloat::operator=(const BFloat &other) {
+        _buf = other._buf;
+        _off = other._off;
+        v = other.v;
+
+        return *this;
+    }
+
+    void BFloat::setBuffer(GLBuffer *buffer, GLuint offset) {
+        _buf = buffer;
+        _off = offset;
+    }
+
+    void BFloat::update() {
+        if (!_buf)
+            throw std::runtime_error("Attempt to write subdata with null GLBuffer reference");
+
+        _buf->subData(sizeof(v), &v, _off);
+    }
+
     // _______________________________________ BVec2 _______________________________________
 
     BVec2::BVec2(GLBuffer *buffer, GLuint offset) : 
@@ -419,16 +474,6 @@ namespace GLUtil {
 
     // ______________________________________________________________________________
 
-    void formatAttrib(GLuint index, GLint size, GLenum type, GLuint byte_offset, GLuint divisor) {
-        glVertexAttribFormat(index, size, type, false, byte_offset);
-        glVertexAttribDivisor(index, divisor);
-        glEnableVertexAttribArray(index);
-    }
-
-    void bindAttrib(GLuint attrib_index, GLuint binding_index) {
-        glVertexAttribBinding(attrib_index, binding_index);
-    }
-
     void uniformi(GLuint index, GLint value) {
         glUniform1i(index, value);
     }
@@ -447,15 +492,15 @@ namespace GLUtil {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, buf_h);
     }
 
-    void render(GLsizei count, bool with_elements) {
+    void render(GLenum mode, GLsizei count, bool with_elements) {
         if (with_elements)
-            glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, NULL);
+            glDrawElements(mode, count, GL_UNSIGNED_INT, nullptr);
         else
-            glDrawArrays(GL_TRIANGLES, 0, count);
+            glDrawArrays(mode, 0, count);
     }
 
-    void renderInst(GLsizei count, GLuint numinst) {
-        glDrawElementsInstanced(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr, numinst);
+    void renderInst(GLenum mode, GLsizei count, GLuint numinst) {
+        glDrawElementsInstanced(mode, count, GL_UNSIGNED_INT, nullptr, numinst);
     }
 
     void compute(GLuint groups_x, GLuint groups_y, GLuint groups_z) {

@@ -13,6 +13,18 @@ void Quad::update() {
     bv_texsize.update();
 }
 
+// _______________________________________ Point _______________________________________
+
+Point::Point(GLUtil::BVec3 position, GLUtil::BFloat radius, GLUtil::BVec3 color) : bv_pos(position), bf_radius(radius), bv_color(color) {}
+Point::Point() {}
+Point::~Point() { /* automatic destruction is fine */ }
+
+void Point::update() {
+    bv_pos.update();
+    bf_radius.update();
+    bv_color.update();
+}
+
 // _______________________________________ GLEnv _______________________________________
 
 GLEnv::GLEnv(unsigned maxcount) : _initialized(false) {
@@ -39,12 +51,12 @@ GLEnv& GLEnv::operator=(GLEnv &&other) {
         _glb_texpos = std::move(other._glb_texpos);
         _glb_texsize = std::move(other._glb_texsize);
         _glb_draw = std::move(other._glb_draw);
-        _ids = other._ids;
+        _quad_ids = other._quad_ids;
         _quads = other._quads;
         _max_count = other._max_count;
         _count = other._count;
         _initialized = other._initialized;
-        other._ids.clear();
+        other._quad_ids.clear();
         other._quads.clear();
         other._max_count = 0;
         other._initialized = false;
@@ -95,43 +107,43 @@ void GLEnv::init(unsigned max_count) {
 
     // generate and use program
     _stage.init(shaders, types, 2);
-    _stage.use();
 
-    // set up attributes with instancing (model vertices, position, scale, texture position, texture size, draw flag, texarray dimensions)
-    GLUtil::formatAttrib(0, 4, GL_FLOAT, 0, 0);
-    GLUtil::formatAttrib(1, 3, GL_FLOAT, 0, 1);
-    GLUtil::formatAttrib(2, 3, GL_FLOAT, 0, 1);
-    GLUtil::formatAttrib(3, 3, GL_FLOAT, 0, 1);
-    GLUtil::formatAttrib(4, 2, GL_FLOAT, 0, 1);
-    GLUtil::formatAttrib(5, 1, GL_FLOAT, 0, 1);
+    // set format of attributes (model vertices, position, scale, texture position, texture size, draw flag, texarray dimensions)
+    _stage.setAttribFormat(0, 4, GL_FLOAT, 0, 0);
+    _stage.setAttribFormat(1, 3, GL_FLOAT, 0, 1);
+    _stage.setAttribFormat(2, 3, GL_FLOAT, 0, 1);
+    _stage.setAttribFormat(3, 3, GL_FLOAT, 0, 1);
+    _stage.setAttribFormat(4, 2, GL_FLOAT, 0, 1);
+    _stage.setAttribFormat(5, 1, GL_FLOAT, 0, 1);
 
-    // bind attribute to buffer storage locations 0-4
-    GLUtil::bindAttrib(0, 0);
-    GLUtil::bindAttrib(1, 1);
-    GLUtil::bindAttrib(2, 2);
-    GLUtil::bindAttrib(3, 3);
-    GLUtil::bindAttrib(4, 4);
-    GLUtil::bindAttrib(5, 5);
+    // set attribute buffer indices to 0-4
+    _stage.setAttribBufferIndex(0, 0);
+    _stage.setAttribBufferIndex(1, 1);
+    _stage.setAttribBufferIndex(2, 2);
+    _stage.setAttribBufferIndex(3, 3);
+    _stage.setAttribBufferIndex(4, 4);
+    _stage.setAttribBufferIndex(5, 5);
 
     /* set up buffers */
 
-    // write instance model data and elements to buffers, bind model buffer to storage location 0, 
-    // and bind element buffer to OpenGL system
+    // write instance model data and elements to buffers and bind element buffer to OpenGL system
     _glb_modelbuf.subData(sizeof(data_model), data_model, 0 * sizeof(GLfloat));
     _glb_elembuf.subData(sizeof(data_elem), data_elem, 0 * sizeof(GLfloat));
-    _glb_modelbuf.bindIndex(0, 0, 4 * sizeof(GLfloat));
-
     GLUtil::setElementBuffer(_glb_elembuf.handle());
 
-    // bind position, texture position, texture size and draw flag buffers to storage locations 1-4
-    _glb_pos.bindIndex(1, 0, 3 * sizeof(GLfloat));
-    _glb_scale.bindIndex(2, 0, 3 * sizeof(GLfloat));
-    _glb_texpos.bindIndex(3, 0, 3 * sizeof(GLfloat));
-    _glb_texsize.bindIndex(4, 0, 2 * sizeof(GLfloat));
-    _glb_draw.bindIndex(5, 0, 1 * sizeof(GLfloat));
+    // bind buffers to attribute buffer indices
+    _stage.bindBufferToIndex(_glb_modelbuf.handle(), 0, 0, 4 * sizeof(GLfloat));
+    _stage.bindBufferToIndex(_glb_pos.handle(), 1, 0, 3 * sizeof(GLfloat));
+    _stage.bindBufferToIndex(_glb_scale.handle(), 2, 0, 3 * sizeof(GLfloat));
+    _stage.bindBufferToIndex(_glb_texpos.handle(), 3, 0, 3 * sizeof(GLfloat));
+    _stage.bindBufferToIndex(_glb_texsize.handle(), 4, 0, 2 * sizeof(GLfloat));
+    _stage.bindBufferToIndex(_glb_draw.handle(), 5, 0, 1 * sizeof(GLfloat));
 
     // initialize texture array
     _texarray.init();
+
+    // use program
+    _stage.use();
     
     _initialized = true;
 }
@@ -149,7 +161,7 @@ void GLEnv::uninit() {
     _glb_texpos.uninit();
     _glb_texsize.uninit();
     _glb_draw.uninit();
-    _ids.clear();
+    _quad_ids.clear();
     _quads.clear();
     _max_count = 0;
     _initialized = false;
@@ -161,7 +173,7 @@ unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::v
         throw CountLimitException();
 
     // get a new unique ID
-    unsigned id = _ids.push();
+    unsigned id = _quad_ids.push();
     
     // generate quad by providing the position, texture position, and texture size buffers, and
     // use id to specify an offset into them
@@ -187,11 +199,11 @@ unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec3 texpos, glm::v
 }
 
 void GLEnv::remove(unsigned id) {
-    if (id >= _ids.size())
+    if (id >= _quad_ids.size())
         throw std::out_of_range("Index out of range");
 
-    // call _ids to make the ID usable again
-    _ids.remove(id);
+    // call _quad_ids to make the ID usable again
+    _quad_ids.remove(id);
 
     // unset the draw flag for this specific offset, zeroing out its instance
     GLfloat draw = 0.0f;
@@ -220,30 +232,30 @@ void GLEnv::setProj(glm::mat4 proj) {
 }
 
 void GLEnv::update() {
-    for (unsigned i = 0; i < _ids.size(); i++)
-        // only try calling update on index i if it is an active ID in _ids
-        if (_ids[i])
+    for (unsigned i = 0; i < _quad_ids.size(); i++)
+        // only try calling update on index i if it is an active ID in _quad_ids
+        if (_quad_ids[i])
             _quads[i].update();
 }
 
-void GLEnv::draw() {
+void GLEnv::drawQuads() {
     // draw a number of instances equal to the number of IDs in system, active or not, using the vertices in the element buffer
     // (Instances with inactive IDs will be zeroed out per the draw flag)
-    GLUtil::renderInst(6, _ids.size());
+    GLUtil::renderInst(GL_TRIANGLES, 6, _quad_ids.size());
 }
 
 Quad *GLEnv::getQuad(unsigned id) {
-    if (id >= _ids.size())
+    if (id >= _quad_ids.size())
         throw std::out_of_range("Index out of range");
 
-    if (_ids.at(id))
+    if (_quad_ids.at(id))
         return &_quads[id];
     
     throw InactiveIDException();
 }
 
-std::vector<unsigned> GLEnv::getIDs() { return _ids.getUsed(); }
+std::vector<unsigned> GLEnv::getIDs() { return _quad_ids.getUsed(); }
 
-bool GLEnv::hasID(unsigned id) { return _ids.at(id); }
+bool GLEnv::hasID(unsigned id) { return _quad_ids.at(id); }
 
 bool GLEnv::getInitialized() { return _initialized; }

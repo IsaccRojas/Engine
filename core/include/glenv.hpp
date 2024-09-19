@@ -35,6 +35,35 @@ public:
     void update();
 };
 
+/* class Point
+   Encapsulates Point-like data for OpenGL environments.
+   Uses BVec instances to store basic parameters of points:
+
+   - position - location of point in 3D space
+   - radius - radius of point
+   - color - RGB color of point
+*/
+class Point {
+public:
+   /* BVecs containing references to Point's associated OpenGL buffers */
+    GLUtil::BVec3 bv_pos;
+    GLUtil::BFloat bf_radius;
+    GLUtil::BVec3 bv_color;
+    /* position - location of point in 3D space
+       radius - radius of point
+       color - color of point
+       texturesize - width and height of texture to use, applied to UV coordinates to get rectangle 
+    */
+    Point(GLUtil::BVec3 position, GLUtil::BFloat radius, GLUtil::BVec3 color);
+    Point();
+    ~Point();
+
+    // default copy assignment/construction are fine
+
+    /* Calls update() on all internal BVec instances, writing their respective data into their respective buffers. */
+    void update();
+};
+
 /* class GLEnv
    Encapsulates all OpenGL environment related data and methods. 
    Currently restricted to draw Quads with a simple fragment shader and vertex shader, and parameterized
@@ -79,10 +108,10 @@ class GLEnv {
     GLUtil::GLBuffer _glb_draw;
 
     /* environment system variables */
-    // IDs to distribute to Quads
-    SlotVec _ids;
-    // quads
+    // IDs to distribute to Quads, and Quads
+    SlotVec _quad_ids;
     std::vector<Quad> _quads;
+
     // maximum number of active Quads allowed
     unsigned _max_count;
     unsigned _count;
@@ -151,7 +180,7 @@ public:
     /* Draws Quads in memory using internal shader program. This is done by drawing a number of unit Quad
        instances corresponding to the number of IDs generated, and using the specific Quad parameters and
        shader matrices to transform them. */
-    void draw();
+    void drawQuads();
 
     /* Returns a raw Quad pointer to the Quad with the specified ID. 
        id - ID of Quad to get reference of

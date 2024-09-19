@@ -273,7 +273,7 @@ void gameProcess(CoreResources *core, GlobalState *state, Allocators *allocators
     
     // graphics updates and draw
     core->glenv.update();
-    core->glenv.draw();
+    core->glenv.drawQuads();
 
     glfwSwapBuffers(core->state.getWindowHandle());
 }
