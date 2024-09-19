@@ -60,11 +60,13 @@ PhysEnv::~PhysEnv() { /* automatic destruction is fine */ }
 
 Box *PhysEnv::push(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback) {
     _boxes.push_back(Box{pos, dim, vel, callback});
-    
+    auto iter = _boxes.end();
+    iter--;
+
     // assign iterator position and this reference to Box
-    Box *b = &(*_boxes.rbegin());
+    Box *b = &(*iter);
     b->_physenv = this;
-    b->_this_iter = (_boxes.end()--);
+    b->_this_iter = iter;
 
     return b;
 }
@@ -90,7 +92,9 @@ void PhysEnv::detectCollision() {
         if (box1.dim == glm::vec3(0.0f))
             continue;
 
-        for (auto iter2 = (iter1++); iter2 != _boxes.end(); iter2++) {
+        auto iter2 = iter1;
+        iter2++;
+        for (;iter2 != _boxes.end(); iter2++) {
 
             Box &box2 = *iter2;
             if (box2.dim == glm::vec3(0.0f))

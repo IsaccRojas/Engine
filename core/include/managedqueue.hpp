@@ -14,12 +14,15 @@ class ManagedQueue {
 
 public:
     ManagedQueue() {}
-    ManagedQueue(ManagedQueue &&other) : _Ts(other._Ts) { other._Ts.clear(); }
+    ManagedQueue(ManagedQueue &&other) { operator=(std::move(other)); }
     ManagedQueue(const ManagedQueue &other) = delete;
     ~ManagedQueue() { clear(); }
     
-
-    ManagedQueue &operator=(ManagedQueue &&other) {}
+    ManagedQueue &operator=(ManagedQueue &&other) {
+        _Ts = other._Ts;
+        std::queue<T*> empty;
+        other._Ts.swap(empty);
+    }
     ManagedQueue &operator=(const ManagedQueue &other) = delete;
 
     /* Deletes and removes all stored references. */

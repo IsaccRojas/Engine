@@ -14,12 +14,14 @@ class ManagedList {
 
 public:
     ManagedList() {}
-    ManagedList(ManagedList &&other) : _Ts(other._Ts) { other._Ts.clear(); }
+    ManagedList(ManagedList &&other) { operator=(std::move(other)); }
     ManagedList(const ManagedList &other) = delete;
     ~ManagedList() { clear(); }
     
-
-    ManagedList &operator=(ManagedList &&other) {}
+    ManagedList &operator=(ManagedList &&other) {
+        _Ts = other._Ts;
+        other._Ts.clear();
+    }
     ManagedList &operator=(const ManagedList &other) = delete;
 
     /* Deletes and removes all stored references. */
@@ -33,14 +35,17 @@ public:
     */
     typename std::list<T*>::iterator push_back(T *t) {
         _Ts.push_back(t);
-        return (_Ts.end()--);
+        auto iter = _Ts.end();
+        iter--;
+        return iter;
     }
 
     /* Deletes and erases the reference at the provided iterator from the list. Note that the reference 
        becomes invalid after calling this.
     */
     void erase(typename std::list<T*>::iterator elem) {
-        delete *elem;
+        T *t = *elem;
+        delete t;
         _Ts.erase(elem);
     }
 
