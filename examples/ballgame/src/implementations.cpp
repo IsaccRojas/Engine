@@ -33,7 +33,7 @@ void OrbShot::setDirection(glm::vec3 direction) { _direction = direction; }
 
 void Player::_initBasic() {
     getAnimState().setCycleState(0);
-    setChannel(int(this));
+    setChannel(1);
     enableReception(true);
 }
 
@@ -117,7 +117,7 @@ void Player::playerAction() {
     if (_cooldown <= 0.0f) {
         if (_input->get_m1() || _input->get_space()) {
             // spawn projectile and set cooldown
-            getExecutor()->enqueueSpawnObject("OrbShot", 0, int(this), getBox()->pos);
+            getExecutor()->enqueueSpawnObject("OrbShot", 0, 1, getBox()->pos);
             _cooldown = _max_cooldown;
         }
     } else

@@ -105,9 +105,10 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
         globalstate->killflag = true;
 
         // spawn a player if none exist
-        if (allocators->Player_provider.getProvidedCount() == 0)
+        if (allocators->Player_provider.getProvidedCount() == 0) {
             core->executor.enqueueSpawnObject("Player", 0, -1, glm::vec3(0.0f));
-        
+        }
+
         // check for input to start game if at least one player is spawned
         else if (globalstate->enter_state) {
             globalstate->round = 1;
@@ -214,7 +215,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
     float percent = 100.0f * (globalstate->number / globalstate->target_number);
     std::stringstream stream;
     stream << std::fixed << std::setprecision(1) << percent;
-    
+
     switch (globalstate->game_state) {
         case 0: 
             globalstate->toptext.setText("Ball Game");
@@ -264,7 +265,7 @@ void gameProcess(CoreResources *core, GlobalState *state, Allocators *allocators
     core->executor.runSpawnQueue();
     core->executor.runExecQueue(1);
     core->executor.runKillQueue();
-
+    
     // text updates
     state->toptext.update();
     state->subtext.update();
