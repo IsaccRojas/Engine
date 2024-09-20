@@ -9,7 +9,7 @@ void Effect::_initEntity() {
 void Effect::_baseEntity() {
     _baseEffect();
 
-    stepAnim();
+    getQuad()->stepAnim();
     if (_lifetime >= 0) {
         _i++;
         if (_i >= _lifetime)

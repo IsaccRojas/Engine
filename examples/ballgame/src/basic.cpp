@@ -15,7 +15,7 @@ void Basic::_baseObject() {
     glm::vec2 boxpos = getBox()->pos;
     getQuad()->bv_pos.v = glm::vec3(boxpos, getQuad()->bv_pos.v.z);
 
-    stepAnim();
+    getQuad()->stepAnim();
 
     // only queue if not set to be killed
     if (!getKillEnqueued())

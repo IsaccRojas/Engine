@@ -76,6 +76,7 @@ namespace GLUtil {
         void uniform1i(GLuint index, GLint value);
         void uniform1f(GLuint index, GLfloat value);
         void uniformmat4f(GLuint index, glm::mat4 value);
+        void uniform2ui(GLuint index, glm::uvec2 value);
         void uniform3ui(GLuint index, glm::uvec3 value);
 
         /* Binds this VAO and program to the main VAO and program binding points, enabling it for use on draw calls. */
@@ -243,6 +244,28 @@ namespace GLUtil {
         ~BVec3();
 
         BVec3& operator=(const BVec3 &other);
+
+        void setBuffer(GLBuffer *buffer, GLuint offset);
+
+        void update();
+    };
+
+    /* class BVec4
+       Wraps a glm::vec4 with a specific offset into a GLBuffer.
+    */
+    class BVec4 {
+        GLBuffer *_buf;
+        GLuint _off;
+        GLfloat _data[4];
+    public:
+        glm::vec4 v;
+
+        BVec4(GLBuffer *buffer, GLuint offset);
+        BVec4(const BVec4 &other);
+        BVec4();
+        ~BVec4();
+
+        BVec4& operator=(const BVec4 &other);
 
         void setBuffer(GLBuffer *buffer, GLuint offset);
 

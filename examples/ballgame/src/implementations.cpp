@@ -4,7 +4,7 @@ void OrbShot::_initBasic() {
     _i = 0;
     _lifetime = 119;
     getBox()->vel = _direction;
-    getAnimState().setCycleState(0);
+    getQuad()->getAnimState().setCycleState(0);
 }
 
 void OrbShot::_baseBasic() {
@@ -32,14 +32,14 @@ void OrbShot::setDirection(glm::vec3 direction) { _direction = direction; }
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Player::_initBasic() {
-    getAnimState().setCycleState(0);
+    getQuad()->getAnimState().setCycleState(0);
     setChannel(1);
     enableReception(true);
 }
 
 void Player::_baseBasic() {
-    if (getAnimState().completed())
-        getAnimState().setCycleState(1);
+    if (getQuad()->getAnimState().completed())
+        getQuad()->getAnimState().setCycleState(1);
 
     if (getBox()->getCollided())
         enqueueKill();
@@ -125,7 +125,7 @@ void Player::playerAction() {
 }
 
 void Chaser::_initBasic() {
-    getAnimState().setCycleState(0);
+    getQuad()->getAnimState().setCycleState(0);
 }
 
 void Chaser::_baseBasic() {

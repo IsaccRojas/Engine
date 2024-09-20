@@ -25,10 +25,15 @@ void loop(CoreResources *core) {
     gameInitialize(core, &globalstate, &allocators);
 
     std::cout << "Running loop" << std::endl;
-    while (!glfwWindowShouldClose(core->state.getWindowHandle())) {
+
+    int quadoff = core->glenv.genQuad(glm::vec3(48.0f, 48.0f, 0.0f), glm::vec3(16.0f, 16.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::vec3(0.0f), glm::vec2(0.0f), GLE_ELLIPSE);
+
+    while (!glfwWindowShouldClose(core->state.getWindowHandle()) && !core->input.get_esc()) {
         gameStep(core, &globalstate, &allocators);
         gameProcess(core, &globalstate, &allocators);
     };
+
+    core->glenv.remove(quadoff);
 
     std::cout << "Ending loop" << std::endl;
 }

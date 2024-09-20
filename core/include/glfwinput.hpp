@@ -24,6 +24,7 @@ class GLFWInput {
     bool _space_p;
     bool _enter_p;
     bool _tab_p;
+    bool _esc_p;
     bool _m1_p;
     bool _m2_p;
     double _win_mouse_x;
@@ -52,6 +53,7 @@ public:
     bool get_space();
     bool get_enter();
     bool get_tab();
+    bool get_esc();
     bool get_m1();
     bool get_m2();
 

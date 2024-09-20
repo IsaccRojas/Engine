@@ -61,11 +61,8 @@ void Text::update() {
     if (!_update)
         return;
     
-    if (!_glenv) {
-        std::cerr << "WARN: attempt to update with null GLEnv reference in Text instance " << this << std::endl;
-        // throw error maybe
-        return;
-    }
+    if (!_glenv)
+        throw std::runtime_error("WARN: attempt to update Text with null GLEnv reference");
 
     int l_ids = _quadids.size();
     int l_str = _textstr.size();
@@ -85,13 +82,13 @@ void Text::update() {
     } else {
         // push new IDs to vector (TODO: assign proper values on generation)
         for (int i = l_ids; i < l_str; i++)
-            _quadids.push_back(_glenv->genQuad(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), glm::vec2(0.0f)));
+            _quadids.push_back(_glenv->genQuad(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), glm::vec3(0.0f), glm::vec2(0.0f), GLE_RECT));
     }
-
+    
     // set position start to be half-way leftward across complete text width, to center the text
     Quad *quad;
     int shift = (_tc.text_width * _scale.x) + _tc.spacing;
-    int pos_start = ((l_str * shift) * -0.5f) + (_tc.text_width * _scale.x * 0.5f);
+    float pos_start = ((l_str * (_tc.text_width * _scale.x)) + ((l_str - 1) * _tc.spacing)) * -0.5f;
     
     // update IDs with new character information
     for (int i = 0; i < l_str; i++) {

@@ -129,7 +129,7 @@ class Ring : public Effect, public Receiver<Player> {
             if (glm::length(p->getBox()->pos - getQuad()->bv_pos.v) < 32.0f)
                 cyclestate = 1;
                 
-        getAnimState().setCycleState(cyclestate);
+        getQuad()->getAnimState().setCycleState(cyclestate);
     }
     void _killEffect() {}
 public:

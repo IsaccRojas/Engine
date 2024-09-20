@@ -47,6 +47,8 @@ void initializeCore(CoreResources *core) {
     float halfheight = float(PIXEL_HEIGHT) / 2.0f;
     core->glenv.setView(glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
     core->glenv.setProj(glm::ortho(-1.0f * halfwidth, halfwidth, -1.0f * halfheight, halfheight, 0.0f, float(PIXEL_LEVELS)));
+    core->glenv.setWindowSpace(WINDOW_WIDTH, WINDOW_HEIGHT);
+    core->glenv.setPixelSpace(PIXEL_WIDTH, PIXEL_HEIGHT, PIXEL_LEVELS);
 
     // set up Executor
     std::cout << "Setting up Executor" << std::endl;

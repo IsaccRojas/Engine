@@ -146,6 +146,10 @@ namespace GLUtil {
         glProgramUniformMatrix4fv(_program_h, index, 1, false, glm::value_ptr(value));
     }
 
+    void GLStage::uniform2ui(GLuint index, glm::uvec2 value) {
+        glProgramUniform2ui(_program_h, index, value.x, value.y);
+    }
+
     void GLStage::uniform3ui(GLuint index, glm::uvec3 value) {
         glProgramUniform3ui(_program_h, index, value.x, value.y, value.z);
     }
@@ -478,6 +482,46 @@ namespace GLUtil {
         _data[0] = v.x;
         _data[1] = v.y;
         _data[2] = v.z;
+        _buf->subData(sizeof(_data), _data, _off);
+    }
+
+    // _______________________________________ BVec4 _______________________________________
+
+    BVec4::BVec4(GLBuffer *buffer, GLuint offset) : 
+        _buf(buffer), 
+        _off(offset)
+    {}
+    BVec4::BVec4(const BVec4 &other) {
+        operator=(other);
+    }
+    BVec4::BVec4() : _buf(nullptr), _off(0) {}
+    BVec4::~BVec4() { /* automatic destruction is fine */ }
+
+    BVec4& BVec4::operator=(const BVec4 &other) {
+        _buf = other._buf;
+        _off = other._off;
+        _data[0] = other._data[0];
+        _data[1] = other._data[1];
+        _data[2] = other._data[2];
+        _data[3] = other._data[3];
+        v = other.v;
+
+        return *this;
+    }
+
+    void BVec4::setBuffer(GLBuffer *buffer, GLuint offset) {
+        _buf = buffer;
+        _off = offset;
+    }
+
+    void BVec4::update() {
+        if (!_buf)
+            throw std::runtime_error("Attempt to write subdata with null GLBuffer reference");
+
+        _data[0] = v.x;
+        _data[1] = v.y;
+        _data[2] = v.z;
+        _data[3] = v.w;
         _buf->subData(sizeof(_data), _data, _off);
     }
 

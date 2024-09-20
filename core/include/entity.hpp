@@ -20,17 +20,8 @@ class Entity : public Script {
    
    // environmental references
    GLEnv *_glenv;
-
-   // sprite objects
    Quad *_quad;
-   Frame *_frame;
-
-   // sprite variables/flags
    int _quad_id;
-   bool _first_step;
-
-   // controllable variables
-   AnimationState _animationstate;
 
    // called by execution environment
    void _init() override;
@@ -57,9 +48,6 @@ public:
    Entity& operator=(Entity &&other);
    Entity& operator=(const Entity &other) = delete;
 
-   void stepAnim();
-
-   AnimationState &getAnimState();
    Quad *getQuad();
 
    EntityExecutor *getExecutor();
