@@ -1,64 +1,53 @@
 #include "implementations.hpp"
 
-void OrbShot::_initBasic() {
+void Bullet::_initPhysBall() {
     _i = 0;
-    _lifetime = 119;
-    getBox()->vel = _direction;
-    getQuad()->getAnimState().setCycleState(0);
+    box()->vel = _direction;
 }
 
-void OrbShot::_baseBasic() {
+void Bullet::_basePhysBall() {
     _i++;
 
     if (_i % 10 == 0) {
-        getExecutor()->enqueueSpawnEntity("OrbShotParticle", 1, -1, getBox()->pos);
+        executor().enqueueSpawnEntity("BulletParticle", 1, -1, transform());
     }
 
-    if (_i >= _lifetime || getBox()->getCollided())
+    if (_i >= _lifetime || box()->getCollided())
         enqueueKill();
 }
 
-void OrbShot::_killBasic() {
-    getExecutor()->enqueueSpawnEntity("OrbShotBoom", 1, -1, getBox()->pos);
+void Bullet::_killPhysBall() {
     removeFromProvider();
 }
 
-void OrbShot::_collisionBasic(Box *box) {}
+Bullet::Bullet() : PhysBall("", "Bullet"), _i(0), _lifetime(119), _direction(0.0f) {}
 
-OrbShot::OrbShot() : Basic(glm::vec3(6.0f, 6.0f, 1.0f), glm::vec3(4.0f, 4.0f, 0.0f)), _i(0), _lifetime(119), _direction(0.0f) {}
-
-void OrbShot::setDirection(glm::vec3 direction) { _direction = direction; }
+void Bullet::setDirection(glm::vec3 direction) { _direction = direction; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Player::_initBasic() {
-    getQuad()->getAnimState().setCycleState(0);
+void Player::_initPhysBall() {
     setChannel(1);
     enableReception(true);
 }
 
-void Player::_baseBasic() {
-    if (getQuad()->getAnimState().completed())
-        getQuad()->getAnimState().setCycleState(1);
-
-    if (getBox()->getCollided())
+void Player::_basePhysBall() {
+    if (box()->getCollided())
         enqueueKill();
 
     playerMotion();
     playerAction();
 }
 
-void Player::_killBasic() {
-    getExecutor()->enqueueSpawnEntity("PlayerSmoke", 1, -1, getBox()->pos);
+void Player::_killPhysBall() {
     enableReception(false);
+    removeFromProvider();
 }
 
-void Player::_collisionBasic(Box *box) {}
-
-void Player::_receive(OrbShot *orbshot) { orbshot->setDirection(_dirvec); }
+void Player::_receive(Bullet *bullet) { bullet->setDirection(_dirvec); }
 
 Player::Player(GLFWInput *input) : 
-    Basic(glm::vec3(16.0f, 16.0f, 0.0f), glm::vec3(6.0f, 13.0f, 0.0f)), 
+    PhysBall("", "Player"),
     _input(input),
     _accel(0.2f), 
     _deccel(0.15f), 
@@ -70,7 +59,7 @@ Player::Player(GLFWInput *input) :
 {}
 
 void Player::playerMotion() {
-    glm::vec3 &vel = getBox()->vel;
+    glm::vec3 &vel = box()->vel;
     glm::vec3 vel_i = vel;
     float spd_i = glm::length(vel);
     float dec_factor;
@@ -108,7 +97,7 @@ void Player::playerAction() {
         glm::vec3 mousepos3d = glm::vec3(mousepos.x, mousepos.y, 0.0f);
 
         // get normalized and scaled direction
-        _dirvec = mousepos3d - getBox()->pos;
+        _dirvec = mousepos3d - box()->transform.pos;
         _dirvec /= glm::length(_dirvec);
     } else
         _dirvec = glm::vec3(_prevmovedir.x, _prevmovedir.y, 0.0f);
@@ -117,36 +106,33 @@ void Player::playerAction() {
     if (_cooldown <= 0.0f) {
         if (_input->get_m1() || _input->get_space()) {
             // spawn projectile and set cooldown
-            getExecutor()->enqueueSpawnObject("OrbShot", 0, 1, getBox()->pos);
+            executor().enqueueSpawnEntity("Bullet", 0, 1, transform());
             _cooldown = _max_cooldown;
         }
     } else
         _cooldown -= 1.0f;
 }
 
-void Chaser::_initBasic() {
-    getQuad()->getAnimState().setCycleState(0);
-}
+// --------------------------------------------------------------------------------------------------------------------------
 
-void Chaser::_baseBasic() {
+void Enemy::_initPhysBall() {}
+
+void Enemy::_basePhysBall() {
     if (*_killflag) {
         enqueueKill();
         return;
     }
     
-    if (getBox()->getCollided())
-        chaserCollision();
-    chaserMotion();
+    if (box()->getCollided())
+        enemyCollision();
+    enemyMotion();
+
     _t++;
 }
 
-void Chaser::_killBasic() {
-    getExecutor()->enqueueSpawnEntity(_killeffect.c_str(), 1, -1, getBox()->pos);
-}
+void Enemy::_killPhysBall() {}
 
-void Chaser::_collisionBasic(Box *box) {}
-
-Object *Chaser::_getTarget() {
+Entity *Enemy::_getTarget() {
     // return first ID found
     auto players = getAllProvided();
     if (players)
@@ -156,23 +142,22 @@ Object *Chaser::_getTarget() {
     return nullptr;
 }
 
-Chaser::Chaser(glm::vec3 scale, glm::vec3 dimensions, float health, std::string killeffect, bool *killflag) : 
-    Basic(scale, dimensions), 
+Enemy::Enemy(bool *killflag) :
+    PhysBall("", "Enemy"),
     _accel(0.075f), 
     _deccel(0.05f), 
     _spd_max(0.15f), 
     _t(rand() % 256), 
     _prevdir(0.0f),
-    _health(health),
-    _killeffect(killeffect),
+    _health(1.0f),
     _killflag(killflag)
 {}
 
-void Chaser::chaserMotion() {
+void Enemy::enemyMotion() {
     // get a target
-    Object *target = _getTarget();
+    Entity *target = _getTarget();
 
-    glm::vec3 &vel = getBox()->vel;
+    glm::vec3 &vel = box()->vel;
     glm::vec3 vel_i = vel;
     float spd_i = glm::length(vel);
     float dec_factor;
@@ -193,7 +178,7 @@ void Chaser::chaserMotion() {
     // accelerate based on position of target
     glm::vec3 dir;
     if (target) {
-        dir = glm::normalize(target->getBox()->pos - getBox()->pos);
+        dir = glm::normalize(target->transform().pos - transform().pos);
         if (dir.x == 0.0f && dir.y == 0.0f)
             dir = _prevdir;
         else
@@ -212,7 +197,7 @@ void Chaser::chaserMotion() {
         vel = glm::normalize(vel) * _spd_max;
 }
 
-void Chaser::chaserCollision() {
+void Enemy::enemyCollision() {
         _health--;
 
     // spawn 2-3 particles
@@ -225,3 +210,34 @@ void Chaser::chaserCollision() {
     if (_health <= 0)
         enqueueKill();
 }
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void Ring::_initGfxBall() {
+    // display beneath other objects
+    quad()->bv_pos.v.z = -1.0f;
+    quad()->bv_scale.v = glm::vec3(64.0f, 64.0f, 1.0f);
+}
+
+void Ring::_baseGfxBall() {
+    int cyclestate = 0;
+
+    // get first player found
+    Player *p = nullptr;
+    auto players = getAllProvided();
+    if (players) {
+        for (auto &player : *players) {
+            p = player;
+            break;
+        }
+    }
+
+    // check player's distance from this instance's center
+    if (p)
+        if (glm::length(p->box()->transform.pos - quad()->bv_pos.v) < 32.0f)
+            cyclestate = 1;
+}
+
+void Ring::_killGfxBall() {}
+
+Ring::Ring() : GfxBall("", -1) {}

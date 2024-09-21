@@ -1,65 +1,29 @@
 #ifndef IMPLEMENTATIONS_HPP_
 #define IMPLEMENTATIONS_HPP_
 
-#include "effect.hpp"
-#include "basic.hpp"
+#include "gfxball.hpp"
+#include "physball.hpp"
 #include "../../../core/include/glfwinput.hpp"
 
 enum Group { 
-    T_BASIC_ORBSHOT, T_BASIC_PLAYER, T_BASIC_SMALLBALL, T_BASIC_MEDIUMBALL, T_BASIC_BIGBALL, T_BASIC_VERYBIGBALL, 
-    T_EFFECT_SMALLSMOKE, T_EFFECT_MEDIUMSMOKE, T_EFFECT_BIGSMOKE, T_EFFECT_VERYBIGSMOKE, T_EFFECT_PLAYERSMOKE, T_EFFECT_ORBSHOTPARTICLE, T_EFFECT_ORBSHOTBOOM, T_EFFECT_BALLPARTICLE, T_EFFECT_RING
+    G_PHYSBALL_BULLET, G_PHYSBALL_PLAYER, G_PHYSBALL_ENEMY,
+    G_GFXBALL_RING
 };
 
-class SmallSmoke : public Effect {
-public:
-    SmallSmoke() : Effect(glm::vec3(16.0f, 16.0f, 1.0f), 20) {}
-};
-
-class MediumSmoke : public Effect {
-public:
-    MediumSmoke() : Effect(glm::vec3(24.0f, 24.0f, 1.0f), 20) {}
-};
-
-class BigSmoke : public Effect {
-public:
-    BigSmoke() : Effect(glm::vec3(26.0f, 26.0f, 1.0f), 20) {}
-};
-
-class VeryBigSmoke : public Effect {
-public:
-    VeryBigSmoke() : Effect(glm::vec3(28.0f, 28.0f, 1.0f), 20) {}
-};
-
-class PlayerSmoke : public Effect {
-public:
-    PlayerSmoke() : Effect(glm::vec3(16.0f, 16.0f, 1.0f), 20) {}
-};
-
-class OrbShotParticle : public Effect {
-public:
-    OrbShotParticle() : Effect(glm::vec3(6.0f, 6.0f, 1.0f), 24) {}
-};
-
-class OrbShotBoom : public Effect {
-public:
-    OrbShotBoom() : Effect(glm::vec3(8.0f, 8.0f, 1.0f), 24) {}
-};
-
-class OrbShot : public Basic, public ProvidedType<OrbShot> {
+class Bullet : public PhysBall, public ProvidedType<Bullet> {
     int _i;
     int _lifetime;
     glm::vec3 _direction;
 
-    void _initBasic();
-    void _baseBasic();
-    void _killBasic();
-    void _collisionBasic(Box *box);
+    void _initPhysBall();
+    void _basePhysBall();
+    void _killPhysBall();
 public:
-    OrbShot();
+    Bullet();
     void setDirection(glm::vec3 direction);
 };
 
-class Player : public Basic, public ProvidedType<Player>, public Receiver<OrbShot> {
+class Player : public PhysBall, public ProvidedType<Player>, public Receiver<Bullet> {
     GLFWInput *_input;
 
     float _accel;
@@ -70,11 +34,10 @@ class Player : public Basic, public ProvidedType<Player>, public Receiver<OrbSho
     glm::vec2 _prevmovedir;
     glm::vec3 _dirvec;
 
-    void _initBasic();
-    void _baseBasic();
-    void _killBasic();
-    void _collisionBasic(Box *box);
-    void _receive(OrbShot *orbshot) override;
+    void _initPhysBall();
+    void _basePhysBall();
+    void _killPhysBall();
+    void _receive(Bullet *bullet) override;
 public:
     Player(GLFWInput *input);
 
@@ -82,7 +45,7 @@ public:
     void playerAction();
 };
 
-class Chaser : public Basic, public Receiver<Player> {
+class Enemy : public PhysBall, public Receiver<Player> {
     float _accel;
     float _deccel;
     float _spd_max;
@@ -90,50 +53,26 @@ class Chaser : public Basic, public Receiver<Player> {
     glm::vec3 _prevdir;
 
     float _health;
-    std::string _killeffect;
     bool *_killflag;
 
-    void _initBasic();
-    void _baseBasic();
-    void _killBasic();
-    void _collisionBasic(Box *box);
+    void _initPhysBall();
+    void _basePhysBall();
+    void _killPhysBall();
 
-    Object *_getTarget();
+    Entity *_getTarget();
 public:
-    Chaser(glm::vec3 scale, glm::vec3 dimensions, float health, std::string killeffect, bool *killflag);
+    Enemy(bool *killflag);
 
-    void chaserMotion();
-    void chaserCollision();
+    void enemyMotion();
+    void enemyCollision();
 };
 
-class Ring : public Effect, public Receiver<Player> {
-    void _initEffect() {
-        // display beneath other objects
-        getQuad()->bv_pos.v.z = -1.0f;
-    }
-    void _baseEffect() {
-        int cyclestate = 0;
-
-        // get first player found
-        Player *p = nullptr;
-        auto players = getAllProvided();
-        if (players) {
-            for (auto &player : *players) {
-                p = player;
-                break;
-            }
-        }
-
-        // check player's distance from this instance's center
-        if (p)
-            if (glm::length(p->getBox()->pos - getQuad()->bv_pos.v) < 32.0f)
-                cyclestate = 1;
-                
-        getQuad()->getAnimState().setCycleState(cyclestate);
-    }
-    void _killEffect() {}
+class Ring : public GfxBall, public Receiver<Player> {
+    void _initGfxBall();
+    void _baseGfxBall();
+    void _killGfxBall();
 public:
-    Ring() : Effect(glm::vec3(64.0f, 64.0f, 1.0f), -1) {}
+    Ring();
 };
 
 #endif

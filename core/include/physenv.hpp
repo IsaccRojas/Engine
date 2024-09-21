@@ -8,6 +8,11 @@
 #include <functional>
 #include <list>
 
+struct Transform {
+   glm::vec3 pos;
+   glm::vec3 scale;
+};
+
 class PhysEnv;
 
 /* class Box
@@ -32,16 +37,14 @@ class Box {
    std::function<void(Box*)> _callback;
 public:
    // physics variables
-   glm::vec3 pos;
-   glm::vec3 dim;
+   Transform transform;
    glm::vec3 vel;
    float mass;
-   /* position - location of box in 3D space
-      dimensions - dimensions of box in 3D space
+   /* position - transform to define box's position and scale in 3D space
       velocity - current velocity of box in 3D space
       callback - collision callback
    */
-   Box(glm::vec3 position, glm::vec3 dimensions, glm::vec3 velocity, std::function<void(Box*)> callback);
+   Box(Transform transformation, glm::vec3 velocity, std::function<void(Box*)> callback);
    Box();
    ~Box();
 
@@ -60,10 +63,10 @@ public:
    void setFilter(Filter *filter);
 
    /* Gets the box's collision filter state. */
-   FilterState &getFilterState();
+   FilterState &filterstate();
 
    /* Gets the box's previous position. */
-   glm::vec3 &getPrevPos();
+   glm::vec3 &prevpos();
 
    /* Returns whether the box was collided with or not. This is only set and unset by an owning PhysEnv. */
    bool getCollided();
@@ -87,13 +90,12 @@ public:
 
    /* Generates an active Box in system. You must call the step() method on the environment or a reference 
       to the Box itself to move it within the physical space.
-      pos - GLM vec3 position of Box
-      dim - GLM vec3 dimensions of Box
+      transf - Transform of Box
       vel - GLM vec3 velocity of Box
       callback - void(Box*) function pointer to callback of Box
       Returns a reference to the Box that is valid until it is erased from the environment.
    */
-   Box *push(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback);
+   Box *push(Transform transf, glm::vec3 vel, std::function<void(Box*)> callback);
    /* Removes the Box reference from the system. This will cause the provided reference to be invalid.
    */
    void erase(Box *box);

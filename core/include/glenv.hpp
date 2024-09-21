@@ -16,7 +16,6 @@
    - texture size - width and height of texture to use, applied to UV coordinates to get rectangle
 */
 class Quad {
-   Frame *_frame;
    bool _first_step;
 
    // controllable variables
@@ -48,7 +47,7 @@ public:
    void setAnim(Animation *animation);
 
    /* Returns reference to contained Animation state. */
-   AnimationState &getAnimState();
+   AnimationState &animationstate();
 
    /* Steps animation, if one is contained */
    void stepAnim();

@@ -88,7 +88,7 @@ public:
    bool getKillEnqueued();
    const char *getName();
    int getGroup();
-   Executor *getExecutor();
+   Executor &executor();
    unsigned getExecutorID();
 };
 

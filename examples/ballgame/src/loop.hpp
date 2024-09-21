@@ -12,21 +12,11 @@
 #include <thread>
 
 struct Allocators {
-    GenericEntityAllocator<SmallSmoke> SmallSmoke_allocator;
-    GenericEntityAllocator<MediumSmoke> MediumSmoke_allocator;
-    GenericEntityAllocator<BigSmoke> BigSmoke_allocator;
-    GenericEntityAllocator<VeryBigSmoke> VeryBigSmoke_allocator;
-    GenericEntityAllocator<PlayerSmoke> PlayerSmoke_allocator;
-    GenericEntityAllocator<OrbShotParticle> OrbShotParticle_allocator;
-    GenericEntityAllocator<OrbShotBoom> OrbShotBoom_allocator;
-    OrbShotAllocator OrbShot_allocator;
+    BulletAllocator Bullet_allocator;
     PlayerAllocator Player_allocator;
-    SmallBallAllocator SmallBall_allocator;
-    MediumBallAllocator MediumBall_allocator;
-    BigBallAllocator BigBall_allocator;
-    VeryBigBallAllocator VeryBigBall_allocator;
+    EnemyAllocator Enemy_allocator;
     RingAllocator Ring_allocator;
-    Provider<OrbShot> OrbShot_provider;
+    Provider<Bullet> Bullet_provider;
     Provider<Player> Player_provider;
 
     // need this to initialize some members

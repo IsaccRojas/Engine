@@ -11,7 +11,7 @@ struct CoreResources {
     unordered_map_string_Animation_t animations;
     unordered_map_string_Filter_t filters;
     PhysEnv physenv;
-    ObjectExecutor executor;
+    EntityExecutor executor;
 };
 
 /* Initializes core library data structures.

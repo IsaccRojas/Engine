@@ -14,13 +14,13 @@
    Represents a graphical frame; the data corresponding to a single "image" in an animation.
    - texpos - texture position
    - texsize - width and height of texture
-   - offset - physical offset to apply to instance using this data (currently unused)
+   - scale - scale to apply to instance using this data
    - duration - number of time steps this frame lasts
 */
 struct Frame {
     glm::vec3 texpos;
     glm::vec2 texsize;
-    glm::vec3 offset;
+    glm::vec3 scale;
     unsigned duration;
 };
 
@@ -41,12 +41,12 @@ public:
     /* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
     corresponding to the desired order of the frames.
     */
-    Cycle& addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 offset, unsigned duration);
+    Cycle& addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 scale, unsigned duration);
     Cycle& addFrame(const Frame &frame);
 
     void setLoop(bool loop);
 
-    Frame& getFrame(unsigned i);
+    Frame& frame(unsigned i);
 
     unsigned count() const;
 
@@ -69,7 +69,7 @@ public:
     */
     Animation& addCycle(Cycle &cycle);
 
-    Cycle& getCycle(unsigned i);
+    Cycle& cycle(unsigned i);
 
     unsigned count();
 };
@@ -117,7 +117,7 @@ public:
 
     /* Gets the current frame of the cycle. Causes an error if no frames exist.
     */
-    Frame *getCurrent();
+    const Frame &current();
 
     bool hasAnimation();
 
@@ -141,13 +141,13 @@ public:
                     "framename1" : {
                         "texpos" : [0.0, 1.0],
                         "texsize" : [2.0, 3.0],
-                        "offset" : [4.0, 5.0, 6.0],
+                        "scale" : [4.0, 5.0, 6.0],
                         "duration" : 4
                     },
                     "framename2" : {
                         "texpos" : [7.0, 8.0],
                         "texsize" : [9.0, 10.0],
-                        "offset" : [11.0, 12.0, 13.0],
+                        "scale" : [11.0, 12.0, 13.0],
                         "duration" : 8
                     }
                     // ...

@@ -2,13 +2,12 @@
 
 // _______________________________________ Box _______________________________________
 
-Box::Box(glm::vec3 position, glm::vec3 velocity, glm::vec3 dimensions, std::function<void(Box*)> callback) :
+Box::Box(Transform transformation, glm::vec3 velocity, std::function<void(Box*)> callback) :
     _physenv(nullptr),
     _collided(false),
-    _prev_pos(position),
+    _prev_pos(transformation.pos),
     _callback(callback),
-    pos(position),
-    dim(dimensions),
+    transform(transformation),
     vel(velocity),
     mass(1.0f)
 {}
@@ -18,8 +17,7 @@ Box::Box() :
     _collided(false),
     _prev_pos(glm::vec3(0.0f)),
     _callback(nullptr),
-    pos(glm::vec3(0.0f)),
-    dim(glm::vec3(0.0f)),
+    transform(Transform{glm::vec3(0.0f), glm::vec3(0.0f)}),
     vel(glm::vec3(0.0f)),
     mass(1.0f)
 {}
@@ -31,8 +29,8 @@ void Box::setCallback(std::function<void(Box*)> callback) {
 }
 
 void Box::step() {
-    _prev_pos = pos;
-    pos = pos + vel;
+    _prev_pos = transform.pos;
+    transform.pos = transform.pos + vel;
 }
 
 void Box::collide(Box *box) {
@@ -43,11 +41,11 @@ void Box::setFilter(Filter *filter) {
     _filter_state.setFilter(filter);
 }
 
-FilterState& Box::getFilterState() {
+FilterState& Box::filterstate() {
     return _filter_state;
 }
 
-glm::vec3& Box::getPrevPos() {
+glm::vec3& Box::prevpos() {
     return _prev_pos;
 }
 
@@ -58,8 +56,8 @@ bool Box::getCollided() { return _collided; }
 PhysEnv::PhysEnv() {}
 PhysEnv::~PhysEnv() { /* automatic destruction is fine */ }
 
-Box *PhysEnv::push(glm::vec3 pos, glm::vec3 dim, glm::vec3 vel, std::function<void(Box*)> callback) {
-    _boxes.push_back(Box{pos, dim, vel, callback});
+Box *PhysEnv::push(Transform transf, glm::vec3 vel, std::function<void(Box*)> callback) {
+    _boxes.push_back(Box{transf, vel, callback});
     auto iter = _boxes.end();
     iter--;
 
@@ -89,7 +87,7 @@ void PhysEnv::detectCollision() {
 
         // get box and skip if zeroed out
         Box &box1 = *iter1;
-        if (box1.dim == glm::vec3(0.0f))
+        if (box1.transform.scale == glm::vec3(0.0f))
             continue;
 
         auto iter2 = iter1;
@@ -97,12 +95,12 @@ void PhysEnv::detectCollision() {
         for (;iter2 != _boxes.end(); iter2++) {
 
             Box &box2 = *iter2;
-            if (box2.dim == glm::vec3(0.0f))
+            if (box2.transform.scale == glm::vec3(0.0f))
                 continue;
 
             // test filters against each other's IDs
-            bool f1 = box1.getFilterState().hasFilter();
-            bool f2 = box2.getFilterState().hasFilter();
+            bool f1 = box1.filterstate().hasFilter();
+            bool f2 = box2.filterstate().hasFilter();
             
             // if both have a filter, collide if both pass
             // if neither have a filter, collide
@@ -111,8 +109,8 @@ void PhysEnv::detectCollision() {
                 continue;
             if (
                 (!f1 && !f2) ||
-                    (box1.getFilterState().pass(box2.getFilterState().id()) &&
-                    box2.getFilterState().pass(box1.getFilterState().id()))
+                    (box1.filterstate().pass(box2.filterstate().id()) &&
+                    box2.filterstate().pass(box1.filterstate().id()))
             )
             
             // detect and handle collision
@@ -138,10 +136,10 @@ void PhysEnv::clear() {
 
 // only detects 2D collision for now
 void PhysEnv::collisionAABB(Box &box1, Box &box2) {
-    glm::vec3 &pos1 = box1.pos;
-    glm::vec3 &dim1 = box1.dim;
-    glm::vec3 &pos2 = box2.pos;
-    glm::vec3 &dim2 = box2.dim;
+    glm::vec3 &pos1 = box1.transform.pos;
+    glm::vec3 &dim1 = box1.transform.scale;
+    glm::vec3 &pos2 = box2.transform.pos;
+    glm::vec3 &dim2 = box2.transform.scale;
 
     // get current collision
     float coll_hor_space = glm::abs(pos1.x - pos2.x) - ((dim1.x + dim2.x) / 2.0f);

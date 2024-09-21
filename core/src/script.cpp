@@ -86,8 +86,8 @@ void Script::enqueueKill() {
         _executor->enqueueKill(this);
 }
 
-Executor *Script::getExecutor() {
-    return _executor; 
+Executor &Script::executor() {
+    return *_executor; 
 }
 
 unsigned Script::getExecutorID() {

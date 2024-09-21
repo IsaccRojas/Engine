@@ -5,91 +5,65 @@ Entity::Entity(Entity &&other) {
 }
 Entity::Entity() : 
     Script(),
-    _entityexecutor(nullptr),
-    _glenv(nullptr),
-    _quad(nullptr),
-    _quad_id(-1)
+    _entityexecutor(nullptr)
 {}
-Entity::~Entity() {
-    // try removing existing Quad
-    _entityRemove();
-}
+Entity::~Entity() { /* automatic destruction is fine */ }
 
 Entity &Entity::operator=(Entity &&other) {
     if (this != &other) {
         Script::operator=(std::move(other));
-        _glenv = other._glenv;
-        _quad = other._quad;
-        _quad_id = other._quad_id;
-        other._glenv = nullptr;
-        other._quad = nullptr;
-        other._quad_id = -1;
+        _entityexecutor = other._entityexecutor;
+        other._entityexecutor = nullptr;
     }
     return *this;
 }
 
 void Entity::_init() {
-    if (_glenv)
+    if (_entityexecutor)
         _initEntity();
 }
 
 void Entity::_base() {
-    if (_glenv)
+    if (_entityexecutor)
         _baseEntity();
 }
 
 void Entity::_kill() {
-    if (_glenv)
+    if (_entityexecutor)
         _killEntity();
 }
 
-void Entity::_entityRemove() {
-    // remove Quad from owning GLEnv (if this has a GLEnv reference, it must have a valid Quad and Animation so don't need to check)
-    if (_glenv)
-        _glenv->remove(_quad_id);
-    
-    _glenv = nullptr;
-    _quad = nullptr;
-    _quad_id = -1;
-}
-
-Quad *Entity::getQuad() { return _quad; }
-
-EntityExecutor *Entity::getExecutor() { return _entityexecutor; }
+EntityExecutor &Entity::executor() { return *_entityexecutor; }
+Transform &Entity::transform() { return _transform; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 Entity *EntityExecutor::EntityEnqueue::spawn() {
-    return _entityexecutor->_spawnEntity(_name.c_str(), _execution_queue, _tag, _pos);
+    return _entityexecutor->_spawnEntity(_name.c_str(), _execution_queue, _tag, _transform);
 }
 
-EntityExecutor::EntityEnqueue::EntityEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag, glm::vec3 pos) :
-    ScriptEnqueue(nullptr, name, execution_queue, tag), _entityexecutor(entityexecutor), _pos(pos)
+EntityExecutor::EntityEnqueue::EntityEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag, Transform transform) :
+    ScriptEnqueue(nullptr, name, execution_queue, tag), _entityexecutor(entityexecutor), _transform(transform)
 {}
 
 void EntityExecutor::_setupEntity(Entity *entity, const char *entity_name) {
-    // get information
-    EntityInfo &info = _entityinfos[entity_name];
-
     // set up entity fields
     entity->_entityexecutor = this;
-    entity->_glenv = _glenv;
-    entity->_quad_id = _glenv->genQuad(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), glm::vec3(0.0f), glm::vec2(0.0f), GLE_RECT);
-    entity->_quad = _glenv->getQuad(entity->_quad_id);
-    entity->_quad->setAnim(&(*_animations)[info._animation_name]);
 }
 
-Entity *EntityExecutor::_spawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
+Entity *EntityExecutor::_spawnEntity(const char *entity_name, int execution_queue, int tag, Transform transform) {
     // allocate instance and set it up
     Entity *entity = _entityinfos[entity_name]._allocator->_allocate(tag);
     _setupScript(entity, entity_name, execution_queue);
     _setupEntity(entity, entity_name);
-    entity->getQuad()->bv_pos.v = pos;
+    entity->transform() = transform;
 
     return entity;
 }
 
-EntityExecutor::EntityExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations) : Executor() { init(queues, glenv, animations); }
+EntityExecutor::EntityExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters) : Executor() { 
+    init(queues, glenv, animations, physenv, filters);
+}
 EntityExecutor::EntityExecutor(EntityExecutor &&other) : Executor() { operator=(std::move(other)); }
 EntityExecutor::EntityExecutor() : Executor(), _glenv(nullptr), _animations(nullptr) {}
 EntityExecutor::~EntityExecutor() { /* automatic destruction is fine */ }
@@ -100,17 +74,23 @@ EntityExecutor &EntityExecutor::operator=(EntityExecutor &&other) {
         _entityinfos = other._entityinfos;
         _glenv = other._glenv;
         _animations = other._animations;
+        _physenv = other._physenv;
+        _filters = other._filters;
         other._entityinfos.clear();
         other._glenv = nullptr;
         other._animations = nullptr;
+        other._physenv = nullptr;
+        other._filters = nullptr;
     }
     return *this;
 }
 
-void EntityExecutor::init(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations) {
+void EntityExecutor::init(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters) {
     Executor::init(queues);
     _glenv = glenv;
     _animations = animations;
+    _physenv = physenv;
+    _filters = filters;
 }
 
 void EntityExecutor::uninit() {
@@ -118,16 +98,23 @@ void EntityExecutor::uninit() {
     _entityinfos.clear();
     _glenv = nullptr;
     _animations = nullptr;
+    _physenv = nullptr;
+    _filters = nullptr;
 }
 
-void EntityExecutor::addEntity(EntityAllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::string animation_name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback) {
+void EntityExecutor::addEntity(EntityAllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback) {
     if (!hasAdded(name)) {
         Executor::add(nullptr, name, group, removeonkill, spawn_callback, remove_callback);
-        _entityinfos[name] = EntityInfo{allocator, animation_name};
+        _entityinfos[name] = EntityInfo{allocator};
     } else
         throw std::runtime_error("Attempt to add already added name");
 }
 
-void EntityExecutor::enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos) {
-    _pushSpawnEnqueue(new EntityEnqueue(this, entity_name, execution_queue, tag, pos));
+void EntityExecutor::enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, Transform transform) {
+    _pushSpawnEnqueue(new EntityEnqueue(this, entity_name, execution_queue, tag, transform));
 }
+
+GLEnv &EntityExecutor::glenv() { return *_glenv; }
+unordered_map_string_Animation_t &EntityExecutor::animations() { return *_animations; }
+PhysEnv &EntityExecutor::physenv() { return *_physenv; }
+unordered_map_string_Filter_t &EntityExecutor::filters() { return *_filters; }

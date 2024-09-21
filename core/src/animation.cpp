@@ -6,12 +6,12 @@ Cycle::Cycle(bool loop) {
 Cycle::Cycle() : _loop(false) {}
 Cycle::~Cycle() { /* automatic destruction is fine */ }
 
-Cycle& Cycle::addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 offset, unsigned duration) {
-    _frames.push_back(Frame{texpos, texsize, offset, duration});
+Cycle& Cycle::addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 scale, unsigned duration) {
+    _frames.push_back(Frame{texpos, texsize, scale, duration});
     return *this;
 }
 Cycle& Cycle::addFrame(const Frame &frame) {
-    _frames.push_back(Frame{frame.texpos, frame.texsize, frame.offset, frame.duration});
+    _frames.push_back(Frame{frame.texpos, frame.texsize, frame.scale, frame.duration});
     return *this;
 }
 
@@ -19,7 +19,7 @@ void Cycle::setLoop(bool loop) {
     _loop = loop;
 }
 
-Frame& Cycle::getFrame(unsigned i) {
+Frame& Cycle::frame(unsigned i) {
     return _frames[i];
 }
 
@@ -39,7 +39,7 @@ Animation& Animation::addCycle(Cycle &cycle) {
     return *this;
 }
 
-Cycle& Animation::getCycle(unsigned i) {
+Cycle& Animation::cycle(unsigned i) {
     return _cycles[i];
 }
 
@@ -71,8 +71,8 @@ void AnimationState::setAnimation(Animation *animation) {
     _completed = false;
 
     if (_animation) {
-        _current_cycle = &(_animation->getCycle(_cycle_state));
-        _current_frame = &(_current_cycle->getFrame(_frame_state));
+        _current_cycle = &(_animation->cycle(_cycle_state));
+        _current_frame = &(_current_cycle->frame(_frame_state));
     } else {
         _current_cycle = nullptr;
         _current_frame = nullptr;
@@ -86,7 +86,7 @@ void AnimationState::setCycleState(unsigned cyclestate) {
     if (cyclestate == _cycle_state)
         return;
     _cycle_state = cyclestate;
-    _current_cycle = &(_animation->getCycle(_cycle_state));
+    _current_cycle = &(_animation->cycle(_cycle_state));
     this->setFrameState(0);
 }
 
@@ -95,7 +95,7 @@ void AnimationState::setFrameState(unsigned framestate) {
         throw std::runtime_error("Attempt to set frame state with null Animation reference");
 
     _frame_state = framestate;
-    _current_frame = &(_current_cycle->getFrame(_frame_state));
+    _current_frame = &(_current_cycle->frame(_frame_state));
     _step = 0;
     _completed = false;
         
@@ -132,11 +132,11 @@ void AnimationState::step() {
     }
 }
 
-Frame *AnimationState::getCurrent() {
+const Frame &AnimationState::current() {
     if (!_animation)
         throw std::runtime_error("Attempt to get current frame with null Animation reference");
     
-    return _current_frame;
+    return *_current_frame;
 }
 
 bool AnimationState::hasAnimation() { return _animation != nullptr; }
@@ -254,36 +254,36 @@ std::unordered_map<std::string, Animation> loadAnimations(std::string dir) {
                                         goto dir_loop_end;
                                     }
 
-                                    // get frame offset
-                                    if (frame_data.contains("offset") && frame_data["offset"].is_array() && frame_data["offset"].size() == 3) {
+                                    // get frame scale
+                                    if (frame_data.contains("scale") && frame_data["scale"].is_array() && frame_data["scale"].size() == 3) {
                                         // get first value
-                                        auto value0 = frame_data["offset"][0];
+                                        auto value0 = frame_data["scale"][0];
                                         if (value0.is_number_float()) {
-                                            frame.offset.x = value0;
+                                            frame.scale.x = value0;
                                         } else {
-                                            std::cerr << "Error loading .json file '" << filename << "': index 0 of field 'offset' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' is not a floating point number" << std::endl;
+                                            std::cerr << "Error loading .json file '" << filename << "': index 0 of field 'scale' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' is not a floating point number" << std::endl;
                                             goto dir_loop_end;
                                         }
 
                                         // get second value
-                                        auto value1 = frame_data["offset"][1];
+                                        auto value1 = frame_data["scale"][1];
                                         if (value1.is_number_float()) {
-                                            frame.offset.y = value1;
+                                            frame.scale.y = value1;
                                         } else {
-                                            std::cerr << "Error loading .json file '" << filename << "': index 1 of field 'offset' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' is not a floating point number" << std::endl;
+                                            std::cerr << "Error loading .json file '" << filename << "': index 1 of field 'scale' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' is not a floating point number" << std::endl;
                                             goto dir_loop_end;
                                         }
 
                                         // get third value
-                                        auto value2 = frame_data["offset"][2];
+                                        auto value2 = frame_data["scale"][2];
                                         if (value2.is_number_float()) {
-                                            frame.offset.z = value2;
+                                            frame.scale.z = value2;
                                         } else {
-                                            std::cerr << "Error loading .json file '" << filename << "': index 2 of field 'offset' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' is not a floating point number" << std::endl;
+                                            std::cerr << "Error loading .json file '" << filename << "': index 2 of field 'scale' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' is not a floating point number" << std::endl;
                                             goto dir_loop_end;
                                         }
                                     } else {
-                                        std::cerr << "Error loading .json file '" << filename << "': field 'offset' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' does not exist, is not an array, or is not length 3" << std::endl;
+                                        std::cerr << "Error loading .json file '" << filename << "': field 'scale' of frame '" << iter_frames.key() << "' of cycle '" << iter_cycles.key() << "' does not exist, is not an array, or is not length 3" << std::endl;
                                         goto dir_loop_end;
                                     }
 

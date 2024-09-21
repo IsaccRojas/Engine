@@ -1,11 +1,8 @@
 #include "loop.hpp"
 
 Allocators::Allocators(GLFWInput *input, bool *killflag) : 
-    Player_allocator(input, &(this->OrbShot_provider)),
-    SmallBall_allocator(&(this->Player_provider), killflag),
-    MediumBall_allocator(&(this->Player_provider), killflag),
-    BigBall_allocator(&(this->Player_provider), killflag),
-    VeryBigBall_allocator(&(this->Player_provider), killflag),
+    Player_allocator(input, &(this->Bullet_provider)),
+    Enemy_allocator(&(this->Player_provider), killflag),
     Ring_allocator(&(this->Player_provider))
 {}
 
@@ -17,7 +14,7 @@ void loop(CoreResources *core) {
 
     GlobalState globalstate(&core->glenv);
     Allocators allocators(&core->input, &globalstate.killflag);
-    allocators.OrbShot_provider.addAllocator(&allocators.OrbShot_allocator, "OrbShot");
+    allocators.Bullet_provider.addAllocator(&allocators.Bullet_allocator, "Bullet");
     allocators.Player_provider.addAllocator(&allocators.Player_allocator, "Player");
 
     std::cout << "Setting up allocators and initial game state" << std::endl;
@@ -40,24 +37,14 @@ void loop(CoreResources *core) {
 
 void addAllocators(CoreResources *core, GlobalState *globalstate, Allocators *allocators) {
     // add objects to executor
-    core->executor.addObject(&allocators->OrbShot_allocator, "OrbShot", T_BASIC_ORBSHOT, true, "OrbShot", "ProjectileFriendly", nullptr, nullptr);
-    core->executor.addObject(&allocators->Player_allocator, "Player", T_BASIC_PLAYER, true, "Player", "Player", nullptr, nullptr);
-    core->executor.addObject(&allocators->SmallBall_allocator, "SmallBall", T_BASIC_SMALLBALL, true, "SmallBall", "Enemy", nullptr, nullptr);
-    core->executor.addObject(&allocators->MediumBall_allocator, "MediumBall", T_BASIC_MEDIUMBALL, true, "MediumBall", "Enemy", nullptr, nullptr);
-    core->executor.addObject(&allocators->BigBall_allocator, "BigBall", T_BASIC_BIGBALL, true, "BigBall", "Enemy", nullptr, nullptr);
-    core->executor.addObject(&allocators->VeryBigBall_allocator, "VeryBigBall", T_BASIC_VERYBIGBALL, true, "VeryBigBall", "Enemy", nullptr, nullptr);
-    core->executor.addEntity(&allocators->SmallSmoke_allocator, "SmallSmoke", T_EFFECT_SMALLSMOKE, true, "SmallSmoke", nullptr, nullptr);
-    core->executor.addEntity(&allocators->MediumSmoke_allocator, "MediumSmoke", T_EFFECT_MEDIUMSMOKE, true, "MediumSmoke", nullptr, nullptr);
-    core->executor.addEntity(&allocators->BigSmoke_allocator, "BigSmoke", T_EFFECT_BIGSMOKE, true, "BigSmoke", nullptr, nullptr);
-    core->executor.addEntity(&allocators->VeryBigSmoke_allocator, "VeryBigSmoke", T_EFFECT_VERYBIGSMOKE, true, "VeryBigSmoke", nullptr, nullptr);
-    core->executor.addEntity(&allocators->PlayerSmoke_allocator, "PlayerSmoke", T_EFFECT_PLAYERSMOKE, true, "PlayerSmoke", nullptr, nullptr);
-    core->executor.addEntity(&allocators->OrbShotParticle_allocator, "OrbShotParticle", T_EFFECT_ORBSHOTPARTICLE, true, "OrbShotParticle", nullptr, nullptr);
-    core->executor.addEntity(&allocators->OrbShotBoom_allocator, "OrbShotBoom", T_EFFECT_ORBSHOTBOOM, true, "OrbShotBoom", nullptr, nullptr);
-    core->executor.addEntity(&allocators->Ring_allocator, "Ring", T_EFFECT_RING, true, "Ring", nullptr, nullptr);
+    core->executor.addEntity(&allocators->Bullet_allocator, "Bullet", G_PHYSBALL_BULLET, true, nullptr, nullptr);
+    core->executor.addEntity(&allocators->Player_allocator, "Player", G_PHYSBALL_PLAYER, true, nullptr, nullptr);
+    core->executor.addEntity(&allocators->Enemy_allocator, "Enemy", G_PHYSBALL_ENEMY, true, nullptr, nullptr);
+    core->executor.addEntity(&allocators->Ring_allocator, "Ring", G_GFXBALL_RING, true, nullptr, nullptr);
 }
 
 void gameInitialize(CoreResources *core, GlobalState *globalstate, Allocators *allocators) {
-    core->executor.enqueueSpawnEntity("Ring", 0, -1, glm::vec3(0.0f));
+    core->executor.enqueueSpawnEntity("Ring", 0, -1, Transform{});
 
     TextConfig largefont{0, 0, 2, 5, 19, 7, 24, 0, 0, 1};
     TextConfig smallfont{0, 0, 3, 5, 19, 5, 10, 0, 0, 1};
@@ -111,7 +98,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
 
         // spawn a player if none exist
         if (allocators->Player_provider.getProvidedCount() == 0) {
-            core->executor.enqueueSpawnObject("Player", 0, -1, glm::vec3(0.0f));
+            core->executor.enqueueSpawnEntity("Player", 0, -1, Transform{});
         }
 
         // check for input to start game if at least one player is spawned
@@ -135,7 +122,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
 
         } else {
             // use first player's position
-            glm::vec3 playerpos = (*(player_set->begin()))->getBox()->pos;
+            glm::vec3 playerpos = (*(player_set->begin()))->transform().pos;
 
             // check distance from center and change rate
             if (glm::length(playerpos) < 32.0f)
@@ -164,16 +151,16 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
 
                     switch (int(float(rand() % globalstate->round) / 5.0f)) {
                         case 0:
-                            core->executor.enqueueSpawnObject("SmallBall", 0, -1, spawn_vec1 + spawn_vec2);
+                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(0.0f)});
                             break;
                         case 1:
-                            core->executor.enqueueSpawnObject("MediumBall", 0, -1, spawn_vec1 + spawn_vec2);
+                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(0.0f)});
                             break;
                         case 2:
-                            core->executor.enqueueSpawnObject("BigBall", 0, -1, spawn_vec1 + spawn_vec2);
+                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(0.0f)});
                             break;
                         case 3:
-                            core->executor.enqueueSpawnObject("VeryBigBall", 0, -1, spawn_vec1 + spawn_vec2);
+                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(0.0f)});
                             break;
                         default:
                             break;
@@ -193,7 +180,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
 
         // respawn player if somehow got here and there are no players
         if (allocators->Player_provider.getProvidedCount() == 0) {
-            core->executor.enqueueSpawnObject("Player", 0, -1, glm::vec3(0.0f));
+            core->executor.enqueueSpawnEntity("Player", 0, -1, Transform{});
         } 
 
         // check for input to start next round if at least one player is spawned

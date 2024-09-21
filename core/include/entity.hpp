@@ -1,34 +1,30 @@
 #ifndef ENTITY_HPP_
 #define ENTITY_HPP_
 
+#include "physenv.hpp"
 #include "animation.hpp"
 #include "glenv.hpp"
 #include "script.hpp"
 
 typedef std::unordered_map<std::string, Animation> unordered_map_string_Animation_t;
+typedef std::unordered_map<std::string, Filter> unordered_map_string_Filter_t;
 
 class EntityExecutor;
 
 /* class Entity
-   Represents a Script that contains a Quad. entitySetup() must be called for the
-   script methods _initEntity(), _baseEntity(), and _killEntity() to do anything.
+   Represents a Script that contains references to external resources, and a Transform.
 */
 class Entity : public Script {
    friend EntityExecutor;
 
    EntityExecutor *_entityexecutor;
-   
-   // environmental references
-   GLEnv *_glenv;
-   Quad *_quad;
-   int _quad_id;
+   Transform _transform;
 
    // called by execution environment
    void _init() override;
    void _base() override;
    void _kill() override;
 
-   void _entityRemove();
 protected:
    /* Functions to be overridden by children.
       - _initEntity() is called by _init(). _init() is called on execution, only for the first time the entity is queued.
@@ -48,9 +44,8 @@ public:
    Entity& operator=(Entity &&other);
    Entity& operator=(const Entity &other) = delete;
 
-   Quad *getQuad();
-
-   EntityExecutor *getExecutor();
+   EntityExecutor &executor();
+   Transform &transform();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -72,7 +67,7 @@ protected:
 */
 template<class T>
 class GenericEntityAllocator : public EntityAllocatorInterface {
-   Entity *_allocate(int tag) override { return new T; }
+   Entity *_allocate(int tag) override { return new T; } 
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -81,7 +76,6 @@ class EntityExecutor : public Executor {
    // struct holding Entity information mapped to a name
    struct EntityInfo {
       EntityAllocatorInterface *_allocator;
-      std::string _animation_name;
    };
 
 protected:
@@ -90,9 +84,9 @@ protected:
       friend EntityExecutor;
       EntityExecutor *_entityexecutor;
    protected:
-      glm::vec3 _pos;
+      Transform _transform;
       virtual Entity *spawn() override;
-      EntityEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag, glm::vec3 pos);
+      EntityEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag, Transform transform);
    };
 
 private:
@@ -101,17 +95,19 @@ private:
 
    GLEnv *_glenv;
    unordered_map_string_Animation_t *_animations;
+   PhysEnv *_physenv;
+   unordered_map_string_Filter_t *_filters;
 
 protected:
    // initializes Entity's EntityExecutor-related fields
    void _setupEntity(Entity *entity, const char *entity_name);
 
    // spawns an Entity using a name previously added to this EntityExecutor
-   Entity *_spawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos);
+   Entity *_spawnEntity(const char *entity_name, int execution_queue, int tag, Transform transform);
     
 public:
    /* Calls init() with the provided arguments. */
-   EntityExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations);
+   EntityExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters);
    EntityExecutor(EntityExecutor &&other);
    EntityExecutor();
    EntityExecutor(const EntityExecutor &other) = delete;
@@ -123,7 +119,7 @@ public:
    /* Initializes internal EntityExecutor data. It is undefined behavior to make calls on this instance
       before calling this and after uninit().
    */
-   void init(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations);
+   void init(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters);
    void uninit();
 
    /* Adds a Entity allocator with initialization information to this manager, allowing its given
@@ -132,14 +128,18 @@ public:
       - name - name to associate with the allocator
       - group - value to associate with all instances of this Entity
       - removeonkill - removes this Entity from this manager when it is killed
-      - animation_name - animation to associate with this name
       - spawn_callback - function callback to call after Entity has been spawned and setup
       - remove_callback - function callback to call before Entity has been removed
    */
-   void addEntity(EntityAllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::string animation_name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback);
+   void addEntity(EntityAllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback);
 
    /* Enqueues an Entity to be spawned when calling runSpawnQueue(). */
-   void enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, glm::vec3 pos);
+   void enqueueSpawnEntity(const char *entity_name, int execution_queue, int tag, Transform transform);
+
+   GLEnv &glenv();
+   unordered_map_string_Animation_t &animations();
+   PhysEnv &physenv();
+   unordered_map_string_Filter_t &filters();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

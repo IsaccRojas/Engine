@@ -3,7 +3,6 @@
 // _______________________________________ Quad _______________________________________
 
 Quad::Quad(GLUtil::BVec3 position, GLUtil::BVec3 scale, GLUtil::BVec4 color, GLUtil::BVec3 textureposition, GLUtil::BVec2 texturesize) : 
-    _frame(nullptr),
     _first_step(false),
     bv_pos(position), 
     bv_scale(scale),
@@ -24,11 +23,10 @@ void Quad::update() {
 
 void Quad::setAnim(Animation *animation) {
     _animationstate.setAnimation(animation);
-    _frame = _animationstate.getCurrent();
     _first_step = true;
 }
 
-AnimationState &Quad::getAnimState() {
+AnimationState &Quad::animationstate() {
     return _animationstate;
 }
 
@@ -39,14 +37,14 @@ void Quad::stepAnim() {
     if (!_first_step) {
         // step animation and retrieve current frame
         _animationstate.step();
-        _frame = _animationstate.getCurrent();
     } else {
         _first_step = false;
     }
 
     // write frame data to quad
-    bv_texpos.v = _frame->texpos;
-    bv_texsize.v = _frame->texsize;
+    bv_texpos.v = _animationstate.current().texpos;
+    bv_texsize.v = _animationstate.current().texsize;
+    bv_scale.v = _animationstate.current().scale;
 }
 
 // _______________________________________ Shaders _______________________________________
