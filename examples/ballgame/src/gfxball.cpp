@@ -2,9 +2,8 @@
 
 void GfxBall::_initEntity() {
     // create and set quad
-    _quad = executor().glenv().getQuad(
-        executor().glenv().genQuad(transform().pos, transform().scale, glm::vec4(1.0f), glm::vec3(0.0f), glm::vec2(0.0f), GLE_ELLIPSE)
-    );
+    _quad_off = executor().glenv().genQuad(transform.pos, transform.scale, glm::vec4(1.0f), glm::vec3(0.0f), glm::vec2(0.0f), GLE_ELLIPSE);
+    _quad = executor().glenv().getQuad(_quad_off);
 
     // set animation if it is named
     if (_animation_name != "")
@@ -18,7 +17,8 @@ void GfxBall::_baseEntity() {
     _baseGfxBall();
 
     // update quad to match Script transform (except for z-coordinate), and step animation
-    _quad->bv_pos.v = glm::vec3(transform().pos.x, transform().pos.y, _quad->bv_pos.v.z);
+    _quad->bv_pos.v = glm::vec3(transform.pos.x, transform.pos.y, _quad->bv_pos.v.z);
+    _quad->bv_scale.v = transform.scale;
 
     _quad->stepAnim();
 
@@ -34,7 +34,8 @@ void GfxBall::_baseEntity() {
 }
 
 void GfxBall::_killEntity() {
-    _quad->bv_scale.v = glm::vec3(0.0f);
+    executor().glenv().remove(_quad_off);
+
     _killGfxBall();
 }
 

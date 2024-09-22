@@ -18,7 +18,6 @@ class Entity : public Script {
    friend EntityExecutor;
 
    EntityExecutor *_entityexecutor;
-   Transform _transform;
 
    // called by execution environment
    void _init() override;
@@ -45,7 +44,8 @@ public:
    Entity& operator=(const Entity &other) = delete;
 
    EntityExecutor &executor();
-   Transform &transform();
+   
+   Transform transform;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

@@ -5,6 +5,7 @@
 
 class PhysBall : public Entity {
     Quad *_quad;
+    unsigned _quad_off;
     Box *_box;
     
     std::string _animation_name;
@@ -23,6 +24,7 @@ public:
     PhysBall(std::string animation_name, std::string filter_name);
     Quad *quad();
     Box *box();
+    glm::vec3 vel;
 };
 
 #endif

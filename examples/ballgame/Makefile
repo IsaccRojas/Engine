@@ -15,8 +15,8 @@ LIBDIR = -L./../../core
 SRCS = src/main.cpp
 SRCS += src/loop.cpp
 SRCS += src/coreinit.cpp
-SRCS += src/effect.cpp
-SRCS += src/basic.cpp
+SRCS += src/gfxball.cpp
+SRCS += src/physball.cpp
 SRCS += src/implementations.cpp
 
 all: out

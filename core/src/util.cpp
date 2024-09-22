@@ -109,7 +109,7 @@ bool IntGenerator::operator[](unsigned i) { return _ids[i]; }
 bool IntGenerator::empty() { return (_ids.size() == 0); }
 unsigned IntGenerator::size() { return _ids.size(); }
 unsigned IntGenerator::freeSize() { return _free_ids.size(); }
-unsigned IntGenerator::fillSize() { return _ids.size() - _free_ids.size(); }
+unsigned IntGenerator::activeSize() { return _ids.size() - _free_ids.size(); }
 
 bool endsWith(const std::string& str, const std::string& suffix)
 {

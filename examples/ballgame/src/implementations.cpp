@@ -2,14 +2,20 @@
 
 void Bullet::_initPhysBall() {
     _i = 0;
-    box()->vel = _direction;
+    vel = _direction;
+
+    // display on level with other entities
+    quad()->bv_pos.v.z = 0.0f;
+
+    // override transform scale
+    transform = Transform{transform.pos, glm::vec3(6.0f, 6.0f, 0.0f)};
 }
 
 void Bullet::_basePhysBall() {
     _i++;
 
     if (_i % 10 == 0) {
-        executor().enqueueSpawnEntity("BulletParticle", 1, -1, transform());
+        //executor().enqueueSpawnEntity("BulletParticle", 1, -1, transform);
     }
 
     if (_i >= _lifetime || box()->getCollided())
@@ -27,8 +33,14 @@ void Bullet::setDirection(glm::vec3 direction) { _direction = direction; }
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Player::_initPhysBall() {
-    setChannel(1);
+    setChannel(getExecutorID());
     enableReception(true);
+
+    // display on level with other entities
+    quad()->bv_pos.v.z = 0.0f;
+    
+    // override transform scale
+    transform = Transform{transform.pos, glm::vec3(12.0f, 12.0f, 0.0f)};
 }
 
 void Player::_basePhysBall() {
@@ -59,7 +71,6 @@ Player::Player(GLFWInput *input) :
 {}
 
 void Player::playerMotion() {
-    glm::vec3 &vel = box()->vel;
     glm::vec3 vel_i = vel;
     float spd_i = glm::length(vel);
     float dec_factor;
@@ -106,7 +117,7 @@ void Player::playerAction() {
     if (_cooldown <= 0.0f) {
         if (_input->get_m1() || _input->get_space()) {
             // spawn projectile and set cooldown
-            executor().enqueueSpawnEntity("Bullet", 0, 1, transform());
+            executor().enqueueSpawnEntity("Bullet", 0, getExecutorID(), transform);
             _cooldown = _max_cooldown;
         }
     } else
@@ -115,7 +126,11 @@ void Player::playerAction() {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Enemy::_initPhysBall() {}
+void Enemy::_initPhysBall() {
+    // display on top of other entities
+    quad()->bv_pos.v.z = 1.0f;
+    quad()->bv_color.v = glm::vec4(0.2116f, 0.2116f, 0.2166f, 1.0f);
+}
 
 void Enemy::_basePhysBall() {
     if (*_killflag) {
@@ -130,7 +145,9 @@ void Enemy::_basePhysBall() {
     _t++;
 }
 
-void Enemy::_killPhysBall() {}
+void Enemy::_killPhysBall() {
+    enableReception(false);
+}
 
 Entity *Enemy::_getTarget() {
     // return first ID found
@@ -157,7 +174,6 @@ void Enemy::enemyMotion() {
     // get a target
     Entity *target = _getTarget();
 
-    glm::vec3 &vel = box()->vel;
     glm::vec3 vel_i = vel;
     float spd_i = glm::length(vel);
     float dec_factor;
@@ -178,7 +194,7 @@ void Enemy::enemyMotion() {
     // accelerate based on position of target
     glm::vec3 dir;
     if (target) {
-        dir = glm::normalize(target->transform().pos - transform().pos);
+        dir = glm::normalize(target->transform.pos - transform.pos);
         if (dir.x == 0.0f && dir.y == 0.0f)
             dir = _prevdir;
         else
@@ -214,9 +230,11 @@ void Enemy::enemyCollision() {
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Ring::_initGfxBall() {
-    // display beneath other objects
+    // display beneath other entities
     quad()->bv_pos.v.z = -1.0f;
-    quad()->bv_scale.v = glm::vec3(64.0f, 64.0f, 1.0f);
+
+    // override transform scale
+    transform = Transform{transform.pos, glm::vec3(64.0f, 64.0f, 0.0f)};
 }
 
 void Ring::_baseGfxBall() {
@@ -234,7 +252,7 @@ void Ring::_baseGfxBall() {
 
     // check player's distance from this instance's center
     if (p)
-        if (glm::length(p->box()->transform.pos - quad()->bv_pos.v) < 32.0f)
+        if (glm::length(p->transform.pos - transform.pos) < 32.0f)
             cyclestate = 1;
 }
 

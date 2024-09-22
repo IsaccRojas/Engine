@@ -9,8 +9,8 @@
 #include <list>
 
 struct Transform {
-   glm::vec3 pos;
-   glm::vec3 scale;
+   glm::vec3 pos = glm::vec3(0.0f);
+   glm::vec3 scale = glm::vec3(0.0f);
 };
 
 class PhysEnv;

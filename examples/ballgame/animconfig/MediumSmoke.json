@@ -6,25 +6,25 @@
 				"frame1" : {
 					"texpos" : [0.0, 0.0, 1.0],
 					"texsize" : [24.0, 24.0],
-					"offset" : [0.0, 0.0, 0.0],
+					"scale" : [0.0, 0.0, 0.0],
 					"duration" : 8
 				},
 				"frame2" : {
 					"texpos" : [24.0, 0.0, 1.0],
 					"texsize" : [24.0, 24.0],
-					"offset" : [0.0, 0.0, 0.0],
+					"scale" : [0.0, 0.0, 0.0],
 					"duration" : 4
 				},
 				"frame3" : {
 					"texpos" : [48.0, 0.0, 1.0],
 					"texsize" : [24.0, 24.0],
-					"offset" : [0.0, 0.0, 0.0],
+					"scale" : [0.0, 0.0, 0.0],
 					"duration" : 4
 				},
 				"frame4" : {
 					"texpos" : [72.0, 0.0, 1.0],
 					"texsize" : [24.0, 24.0],
-					"offset" : [0.0, 0.0, 0.0],
+					"scale" : [0.0, 0.0, 0.0],
 					"duration" : 4
 				}
 			},
@@ -35,25 +35,25 @@
 				"frame1" : {
 					"texpos" : [0.0, 24.0, 1.0],
 					"texsize" : [24.0, 24.0],
-					"offset" : [0.0, 0.0, 0.0],
+					"scale" : [0.0, 0.0, 0.0],
 					"duration" : 8
 				},
 				"frame2" : {
 					"texpos" : [24.0, 24.0, 1.0],
 					"texsize" : [24.0, 24.0],
-					"offset" : [0.0, 0.0, 0.0],
+					"scale" : [0.0, 0.0, 0.0],
 					"duration" : 4
 				},
 				"frame3" : {
 					"texpos" : [48.0, 24.0, 1.0],
 					"texsize" : [24.0, 24.0],
-					"offset" : [0.0, 0.0, 0.0],
+					"scale" : [0.0, 0.0, 0.0],
 					"duration" : 4
 				},
 				"frame4" : {
 					"texpos" : [72.0, 24.0, 1.0],
 					"texsize" : [24.0, 24.0],
-					"offset" : [0.0, 0.0, 0.0],
+					"scale" : [0.0, 0.0, 0.0],
 					"duration" : 4
 				}
 			},

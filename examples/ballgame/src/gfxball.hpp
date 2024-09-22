@@ -5,6 +5,7 @@
 
 class GfxBall : public Entity {
     Quad *_quad;
+    unsigned _quad_off;
     std::string _animation_name;
 
     int _lifetime;

@@ -34,7 +34,6 @@ void Entity::_kill() {
 }
 
 EntityExecutor &Entity::executor() { return *_entityexecutor; }
-Transform &Entity::transform() { return _transform; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -56,7 +55,7 @@ Entity *EntityExecutor::_spawnEntity(const char *entity_name, int execution_queu
     Entity *entity = _entityinfos[entity_name]._allocator->_allocate(tag);
     _setupScript(entity, entity_name, execution_queue);
     _setupEntity(entity, entity_name);
-    entity->transform() = transform;
+    entity->transform = transform;
 
     return entity;
 }

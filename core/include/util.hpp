@@ -55,6 +55,9 @@ class IntGenerator {
     std::vector<bool> _ids;
     //queue of free IDs
     std::queue<unsigned> _free_ids;
+
+    unsigned _count;
+
 public:
     IntGenerator();
     ~IntGenerator();
@@ -86,8 +89,54 @@ public:
     unsigned size();
     /* Returns count of free IDs. */
     unsigned freeSize();
-    /* Returns size of active IDs (O(n) time). */
-    unsigned fillSize();
+    /* Returns count of active IDs. */
+    unsigned activeSize();
+};
+
+template<typename T>
+class IntgenVector {
+    std::vector<T> _data;
+    IntGenerator _intgen;
+
+public:
+    /* Note that construction with a capacity and value does not 
+       push to the internal IntGenerator, so active size will still be
+       initialized as 0.
+    */
+    IntgenVector(unsigned capacity, T t) : _data(capacity, t) {}
+    IntgenVector() {}
+    
+    unsigned push(T t) {
+        unsigned i = _intgen.push();
+        if (i >= _data.size())
+            _data.push_back(t);
+        else
+            _data[i] = t;
+        return i;
+    }
+
+    void remove(int i) {
+        _intgen.remove(i);
+    }
+
+    T get(int i) {
+        if (!_intgen[i])
+            throw InactiveIntException();
+        
+        return _data[i];
+    }
+
+    bool active(int i) {
+        return _intgen[i];
+    }
+
+    unsigned activeSize() {
+        return _intgen.activeSize();
+    }
+
+    /* Returns all data (including inactive elements). */
+    std::vector<T> &data() { return _data; }
+    IntGenerator &intgen() { return _intgen; }
 };
 
 /* Checks if provided string ends with the provided suffix.

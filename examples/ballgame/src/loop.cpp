@@ -22,15 +22,10 @@ void loop(CoreResources *core) {
     gameInitialize(core, &globalstate, &allocators);
 
     std::cout << "Running loop" << std::endl;
-
-    int quadoff = core->glenv.genQuad(glm::vec3(48.0f, 48.0f, 0.0f), glm::vec3(16.0f, 16.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::vec3(0.0f), glm::vec2(0.0f), GLE_ELLIPSE);
-
     while (!glfwWindowShouldClose(core->state.getWindowHandle()) && !core->input.get_esc()) {
         gameStep(core, &globalstate, &allocators);
         gameProcess(core, &globalstate, &allocators);
     };
-
-    core->glenv.remove(quadoff);
 
     std::cout << "Ending loop" << std::endl;
 }
@@ -44,7 +39,7 @@ void addAllocators(CoreResources *core, GlobalState *globalstate, Allocators *al
 }
 
 void gameInitialize(CoreResources *core, GlobalState *globalstate, Allocators *allocators) {
-    core->executor.enqueueSpawnEntity("Ring", 0, -1, Transform{});
+    //core->executor.enqueueSpawnEntity("Ring", 0, -1, Transform{});
 
     TextConfig largefont{0, 0, 2, 5, 19, 7, 24, 0, 0, 1};
     TextConfig smallfont{0, 0, 3, 5, 19, 5, 10, 0, 0, 1};
@@ -122,7 +117,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
 
         } else {
             // use first player's position
-            glm::vec3 playerpos = (*(player_set->begin()))->transform().pos;
+            glm::vec3 playerpos = (*(player_set->begin()))->transform.pos;
 
             // check distance from center and change rate
             if (glm::length(playerpos) < 32.0f)
@@ -151,16 +146,16 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
 
                     switch (int(float(rand() % globalstate->round) / 5.0f)) {
                         case 0:
-                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(0.0f)});
+                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(12.0f)});
                             break;
                         case 1:
-                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(0.0f)});
+                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(12.0f)});
                             break;
                         case 2:
-                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(0.0f)});
+                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(12.0f)});
                             break;
                         case 3:
-                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(0.0f)});
+                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(12.0f)});
                             break;
                         default:
                             break;
@@ -244,7 +239,6 @@ void gameProcess(CoreResources *core, GlobalState *state, Allocators *allocators
     core->input.update();
     
     // unset collided flags, and perform collision detection
-    core->physenv.step();
     core->physenv.unsetCollidedFlags();
     core->physenv.detectCollision();
 
