@@ -1,6 +1,7 @@
 #include "loop.hpp"
 
-Allocators::Allocators(GLFWInput *input, bool *killflag) : 
+Allocators::Allocators(GLFWInput *input, bool *killflag) :
+    Bullet_allocator(&(this->ShrinkParticle_provider)),
     Player_allocator(input, &(this->Bullet_provider)),
     Enemy_allocator(&(this->Player_provider), killflag),
     Ring_allocator(&(this->Player_provider))
@@ -16,6 +17,7 @@ void loop(CoreResources *core) {
     Allocators allocators(&core->input, &globalstate.killflag);
     allocators.Bullet_provider.addAllocator(&allocators.Bullet_allocator, "Bullet");
     allocators.Player_provider.addAllocator(&allocators.Player_allocator, "Player");
+    allocators.ShrinkParticle_provider.addAllocator(&allocators.ShrinkParticle_allocator, "ShrinkParticle");
 
     std::cout << "Setting up allocators and initial game state" << std::endl;
     addAllocators(core, &globalstate, &allocators);
@@ -36,10 +38,11 @@ void addAllocators(CoreResources *core, GlobalState *globalstate, Allocators *al
     core->executor.addEntity(&allocators->Player_allocator, "Player", G_PHYSBALL_PLAYER, true, nullptr, nullptr);
     core->executor.addEntity(&allocators->Enemy_allocator, "Enemy", G_PHYSBALL_ENEMY, true, nullptr, nullptr);
     core->executor.addEntity(&allocators->Ring_allocator, "Ring", G_GFXBALL_RING, true, nullptr, nullptr);
+    core->executor.addEntity(&allocators->ShrinkParticle_allocator, "ShrinkParticle", G_GFXBALL_SHRINKPARTICLE, true, nullptr, nullptr);
 }
 
 void gameInitialize(CoreResources *core, GlobalState *globalstate, Allocators *allocators) {
-    //core->executor.enqueueSpawnEntity("Ring", 0, -1, Transform{});
+    core->executor.enqueueSpawnEntity("Ring", 0, -1, Transform{});
 
     TextConfig largefont{0, 0, 2, 5, 19, 7, 24, 0, 0, 1};
     TextConfig smallfont{0, 0, 3, 5, 19, 5, 10, 0, 0, 1};

@@ -1,6 +1,17 @@
 #include "implementations.hpp"
 
-class BulletAllocator : public ProvidedEntityAllocator<Bullet> { Bullet *_allocateProvided() override { return new Bullet; } };
+class ShrinkParticleAllocator : public ProvidedEntityAllocator<ShrinkParticle> { ShrinkParticle *_allocateProvided() override { return new ShrinkParticle; } };
+
+class BulletAllocator : public ProvidedEntityAllocator<Bullet> {
+    Provider<ShrinkParticle> *_shrinkparticle_provider;
+    Bullet *_allocateProvided() override {
+        Bullet *b = new Bullet;
+        _shrinkparticle_provider->subscribe(b);
+        return b;
+    }
+public:
+    BulletAllocator(Provider<ShrinkParticle> *shrinkparticle_provider) : _shrinkparticle_provider(shrinkparticle_provider) {}
+};
 
 class PlayerAllocator : public ProvidedEntityAllocator<Player> {
     GLFWInput *_input;

@@ -34,7 +34,8 @@ void Box::step() {
 }
 
 void Box::collide(Box *box) {
-    _callback(box);
+    if (_callback)
+        _callback(box);
 }
 
 void Box::setFilter(Filter *filter) {

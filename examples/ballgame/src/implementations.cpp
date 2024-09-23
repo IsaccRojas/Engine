@@ -9,22 +9,31 @@ void Bullet::_initPhysBall() {
 
     // override transform scale
     transform = Transform{transform.pos, glm::vec3(6.0f, 6.0f, 0.0f)};
+
+    setChannel(getExecutorID());
+    enableReception(true);
 }
 
 void Bullet::_basePhysBall() {
     _i++;
 
-    if (_i % 10 == 0) {
-        //executor().enqueueSpawnEntity("BulletParticle", 1, -1, transform);
-    }
+    if (_i % 6 == 0)
+        executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
 
     if (_i >= _lifetime || box()->getCollided())
         enqueueKill();
 }
 
 void Bullet::_killPhysBall() {
+    enableReception(false);
     removeFromProvider();
 }
+
+void Bullet::_receive(ShrinkParticle *p) {
+    p->basescale = glm::vec3(4.0f);
+    p->color = glm::vec4(1.0f);
+    p->lifetime = 24;
+};
 
 Bullet::Bullet() : PhysBall("", "Bullet"), _i(0), _lifetime(119), _direction(0.0f) {}
 
@@ -127,8 +136,8 @@ void Player::playerAction() {
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Enemy::_initPhysBall() {
-    // display on top of other entities
-    quad()->bv_pos.v.z = 1.0f;
+    // display on level with other entities
+    quad()->bv_pos.v.z = 0.0f;
     quad()->bv_color.v = glm::vec4(0.2116f, 0.2116f, 0.2166f, 1.0f);
 }
 
@@ -145,9 +154,7 @@ void Enemy::_basePhysBall() {
     _t++;
 }
 
-void Enemy::_killPhysBall() {
-    enableReception(false);
-}
+void Enemy::_killPhysBall() {}
 
 Entity *Enemy::_getTarget() {
     // return first ID found
@@ -238,7 +245,7 @@ void Ring::_initGfxBall() {
 }
 
 void Ring::_baseGfxBall() {
-    int cyclestate = 0;
+    quad()->bv_color.v = glm::vec4(0.4941f, 0.4941f, 0.4941f, 1.0f);
 
     // get first player found
     Player *p = nullptr;
@@ -253,9 +260,33 @@ void Ring::_baseGfxBall() {
     // check player's distance from this instance's center
     if (p)
         if (glm::length(p->transform.pos - transform.pos) < 32.0f)
-            cyclestate = 1;
+            quad()->bv_color.v = glm::vec4(0.6039f, 0.6039f, 0.6039f, 1.0f);
 }
 
 void Ring::_killGfxBall() {}
 
 Ring::Ring() : GfxBall("", -1) {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void ShrinkParticle::_initGfxBall() {
+    // display on level with other entities
+    quad()->bv_pos.v.z = 0.0f;
+    quad()->bv_color.v = color;
+
+    // override transform scale
+    transform = Transform{transform.pos, basescale};
+
+    _lifetime = lifetime;
+}
+
+void ShrinkParticle::_baseGfxBall() {
+    // scale quad linearly with lifetime
+    transform.scale = basescale * ((lifetime - float(_i)) / lifetime);
+}
+
+void ShrinkParticle::_killGfxBall() {
+    removeFromProvider();
+}
+
+ShrinkParticle::ShrinkParticle() : GfxBall("", 0), basescale(glm::vec3(0.0f)), color(glm::vec4(0.0f)), lifetime(0) {}

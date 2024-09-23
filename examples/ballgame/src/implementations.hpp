@@ -7,10 +7,12 @@
 
 enum Group { 
     G_PHYSBALL_BULLET, G_PHYSBALL_PLAYER, G_PHYSBALL_ENEMY,
-    G_GFXBALL_RING
+    G_GFXBALL_RING, G_GFXBALL_SHRINKPARTICLE
 };
 
-class Bullet : public PhysBall, public ProvidedType<Bullet> {
+class ShrinkParticle;
+
+class Bullet : public PhysBall, public ProvidedType<Bullet>, public Receiver<ShrinkParticle> {
     int _i;
     int _lifetime;
     glm::vec3 _direction;
@@ -18,6 +20,8 @@ class Bullet : public PhysBall, public ProvidedType<Bullet> {
     void _initPhysBall();
     void _basePhysBall();
     void _killPhysBall();
+    void _receive(ShrinkParticle *p) override;
+
 public:
     Bullet();
     void setDirection(glm::vec3 direction);
@@ -38,6 +42,7 @@ class Player : public PhysBall, public ProvidedType<Player>, public Receiver<Bul
     void _basePhysBall();
     void _killPhysBall();
     void _receive(Bullet *bullet) override;
+
 public:
     Player(GLFWInput *input);
 
@@ -60,6 +65,7 @@ class Enemy : public PhysBall, public Receiver<Player> {
     void _killPhysBall();
 
     Entity *_getTarget();
+
 public:
     Enemy(bool *killflag);
 
@@ -71,8 +77,21 @@ class Ring : public GfxBall, public Receiver<Player> {
     void _initGfxBall();
     void _baseGfxBall();
     void _killGfxBall();
+
 public:
     Ring();
+};
+
+class ShrinkParticle : public GfxBall, public ProvidedType<ShrinkParticle> {
+    void _initGfxBall();
+    void _baseGfxBall();
+    void _killGfxBall();
+
+public:
+    ShrinkParticle();
+    glm::vec3 basescale;
+    glm::vec4 color;
+    unsigned lifetime;
 };
 
 #endif

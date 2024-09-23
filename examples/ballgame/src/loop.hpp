@@ -16,9 +16,11 @@ struct Allocators {
     PlayerAllocator Player_allocator;
     EnemyAllocator Enemy_allocator;
     RingAllocator Ring_allocator;
+    ShrinkParticleAllocator ShrinkParticle_allocator;
     Provider<Bullet> Bullet_provider;
     Provider<Player> Player_provider;
-
+    Provider<ShrinkParticle> ShrinkParticle_provider;
+    
     // need this to initialize some members
     Allocators(GLFWInput *input, bool *killflag);
 };

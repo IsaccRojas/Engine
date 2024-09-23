@@ -8,14 +8,14 @@ class GfxBall : public Entity {
     unsigned _quad_off;
     std::string _animation_name;
 
-    int _lifetime;
-    int _i;
-
     void _initEntity() override;
     void _baseEntity() override;
     void _killEntity() override;
 
 protected:
+    int _lifetime;
+    int _i;
+    
     virtual void _initGfxBall();
     virtual void _baseGfxBall();
     virtual void _killGfxBall();
