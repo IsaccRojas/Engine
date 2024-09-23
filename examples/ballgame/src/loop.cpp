@@ -2,22 +2,38 @@
 
 Allocators::Allocators(GLFWInput *input, bool *killflag) :
     Bullet_allocator(&(this->ShrinkParticle_provider)),
-    Player_allocator(input, &(this->Bullet_provider)),
-    Enemy_allocator(&(this->Player_provider), killflag),
+    Player_allocator(input, &(this->Bullet_provider), &(this->ShrinkParticle_provider)),
+    Enemy_allocator(&(this->Player_provider), &(this->ShrinkParticle_provider), killflag),
     Ring_allocator(&(this->Player_provider))
 {}
 
 // need this to initialize Text members
-GlobalState::GlobalState(GLEnv *glenv) : toptext(glenv), subtext(glenv), bottomtext(glenv) {}
+GlobalState::GlobalState(GLEnv *glenv) : toptext(glenv), subtext(glenv), bottomtext(glenv) {
+    setChannel(65536);
+    enableReception(true);
+}
+
+// set health of created enemies
+void GlobalState::_receive(Enemy *enemy) {
+    if (!size_factors.empty()) {
+        int size_factor = size_factors.front();
+        enemy->setHealth(1.0f + float(size_factor));
+        size_factors.pop();
+    }
+}
 
 void loop(CoreResources *core) {
     srand(time(NULL));
 
     GlobalState globalstate(&core->glenv);
     Allocators allocators(&core->input, &globalstate.killflag);
+    
+    // store allocators into providers to intercept their allocations
     allocators.Bullet_provider.addAllocator(&allocators.Bullet_allocator, "Bullet");
     allocators.Player_provider.addAllocator(&allocators.Player_allocator, "Player");
+    allocators.Enemy_provider.addAllocator(&allocators.Enemy_allocator, "Enemy");
     allocators.ShrinkParticle_provider.addAllocator(&allocators.ShrinkParticle_allocator, "ShrinkParticle");
+    allocators.Enemy_provider.subscribe(&globalstate);
 
     std::cout << "Setting up allocators and initial game state" << std::endl;
     addAllocators(core, &globalstate, &allocators);
@@ -66,7 +82,7 @@ void gameInitialize(CoreResources *core, GlobalState *globalstate, Allocators *a
     globalstate->i = 0;
     globalstate->number = 0.0f;
     globalstate->rate = 0.0f;
-    globalstate->target_number = 200.0f;
+    globalstate->target_number = 300.0f;
     globalstate->max_rate = 0.09375f;
     globalstate->rate_increase = 0.00035f;
     globalstate->rate_decrease = -0.0007f;
@@ -123,7 +139,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
             glm::vec3 playerpos = (*(player_set->begin()))->transform.pos;
 
             // check distance from center and change rate
-            if (glm::length(playerpos) < 32.0f)
+            if (glm::length(playerpos) < 48.0f)
                 globalstate->rate += globalstate->rate_increase;
             else
                 globalstate->rate += globalstate->rate_decrease;
@@ -147,22 +163,10 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
                     glm::vec3 spawn_vec2(spawn_radius2, 0.0f, 0.0f);
                     spawn_vec2 = random_angle(spawn_vec2, 180.0f);
 
-                    switch (int(float(rand() % globalstate->round) / 5.0f)) {
-                        case 0:
-                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(12.0f)});
-                            break;
-                        case 1:
-                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(12.0f)});
-                            break;
-                        case 2:
-                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(12.0f)});
-                            break;
-                        case 3:
-                            core->executor.enqueueSpawnEntity("Enemy", 0, -1, Transform{spawn_vec1 + spawn_vec2, glm::vec3(12.0f)});
-                            break;
-                        default:
-                            break;
-                    }
+                    // get random size factor, and store factor
+                    int size_factor = int(float(rand() % globalstate->round) / 4.0f);
+                    core->executor.enqueueSpawnEntity("Enemy", 0, 65536, Transform{spawn_vec1 + spawn_vec2, glm::vec3(12.0f + (2.0f * float(size_factor)))});
+                    globalstate->size_factors.push(size_factor);
                 }
             }
 
@@ -245,14 +249,18 @@ void gameProcess(CoreResources *core, GlobalState *state, Allocators *allocators
     core->physenv.unsetCollidedFlags();
     core->physenv.detectCollision();
 
-    // spawn, run execution queue 0, and kill
+    // spawn anything enqueued by previous step
     core->executor.runSpawnQueue();
-    core->executor.runExecQueue(0);
-    core->executor.runKillQueue();
 
-    // spawn, run execution queue 1, and kill
+    // run execution queue 0, spawn anything
+    core->executor.runExecQueue(0);
     core->executor.runSpawnQueue();
+
+    // run execution queue 1, spawn anything
     core->executor.runExecQueue(1);
+    core->executor.runSpawnQueue();
+
+    // kill
     core->executor.runKillQueue();
     
     // text updates

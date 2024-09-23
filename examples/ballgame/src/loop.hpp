@@ -19,13 +19,14 @@ struct Allocators {
     ShrinkParticleAllocator ShrinkParticle_allocator;
     Provider<Bullet> Bullet_provider;
     Provider<Player> Player_provider;
+    Provider<Enemy> Enemy_provider;
     Provider<ShrinkParticle> ShrinkParticle_provider;
     
     // need this to initialize some members
     Allocators(GLFWInput *input, bool *killflag);
 };
 
-struct GlobalState {
+struct GlobalState : public Receiver<Enemy> {
     int game_state;
     int i;
 
@@ -49,6 +50,10 @@ struct GlobalState {
 
     // need this to initialize Text members
     GlobalState(GLEnv *glenv);
+
+    std::queue<int> size_factors;
+
+    void _receive(Enemy *enemy) override;
 };
 
 /* Primary program execution loop. */

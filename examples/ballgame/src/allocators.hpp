@@ -16,25 +16,38 @@ public:
 class PlayerAllocator : public ProvidedEntityAllocator<Player> {
     GLFWInput *_input;
     Provider<Bullet> *_bullet_provider;
+    Provider<ShrinkParticle> *_shrinkparticle_provider;
     Player *_allocateProvided() override {
         Player *p = new Player(_input);
         _bullet_provider->subscribe(p);
+        _shrinkparticle_provider->subscribe(p);
         return p;
     }
 public:
-    PlayerAllocator(GLFWInput *input, Provider<Bullet> *bullet_provider) : _input(input), _bullet_provider(bullet_provider) {}
+    PlayerAllocator(GLFWInput *input, Provider<Bullet> *bullet_provider, Provider<ShrinkParticle> *shrinkparticle_provider) : 
+        _input(input), 
+        _bullet_provider(bullet_provider),
+        _shrinkparticle_provider(shrinkparticle_provider)
+    {}
 };
 
-class EnemyAllocator : public EntityAllocatorInterface {
+class EnemyAllocator : public ProvidedEntityAllocator<Enemy> {
     Provider<Player> *_player_provider;
+    Provider<ShrinkParticle> *_shrinkparticle_provider;
+
     bool *_killflag;
-    Enemy *_allocate(int tag) override { 
+    Enemy *_allocateProvided() override { 
         Enemy *e = new Enemy(_killflag); 
         _player_provider->subscribe(e);
+        _shrinkparticle_provider->subscribe(e);
         return e;
     }
 public:
-    EnemyAllocator(Provider<Player> *player_provider, bool *killflag) : _player_provider(player_provider), _killflag(killflag) {}
+    EnemyAllocator(Provider<Player> *player_provider, Provider<ShrinkParticle> *shrinkparticle_provider, bool *killflag) : 
+        _player_provider(player_provider), 
+        _shrinkparticle_provider(shrinkparticle_provider),
+        _killflag(killflag) 
+    {}
 };
 
 class RingAllocator : public EntityAllocatorInterface {

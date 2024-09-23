@@ -20,8 +20,10 @@ void Bullet::_basePhysBall() {
     if (_i % 6 == 0)
         executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
 
-    if (_i >= _lifetime || box()->getCollided())
+    if (_i >= _lifetime || box()->getCollided()) {
         enqueueKill();
+        executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
+    }
 }
 
 void Bullet::_killPhysBall() {
@@ -30,9 +32,10 @@ void Bullet::_killPhysBall() {
 }
 
 void Bullet::_receive(ShrinkParticle *p) {
-    p->basescale = glm::vec3(4.0f);
-    p->color = glm::vec4(1.0f);
-    p->lifetime = 24;
+    if (!getKillEnqueued())
+        p->set(glm::vec3(4.0f), glm::vec4(1.0f), 24, glm::vec3(0.0f));
+    else
+        p->set(transform.scale, glm::vec4(1.0f), 24, _direction / 4.0f);
 };
 
 Bullet::Bullet() : PhysBall("", "Bullet"), _i(0), _lifetime(119), _direction(0.0f) {}
@@ -42,8 +45,10 @@ void Bullet::setDirection(glm::vec3 direction) { _direction = direction; }
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Player::_initPhysBall() {
-    setChannel(getExecutorID());
-    enableReception(true);
+    Receiver<Bullet>::setChannel(getExecutorID());
+    Receiver<Bullet>::enableReception(true);
+    Receiver<ShrinkParticle>::setChannel(getExecutorID());
+    Receiver<ShrinkParticle>::enableReception(true);
 
     // display on level with other entities
     quad()->bv_pos.v.z = 0.0f;
@@ -53,19 +58,30 @@ void Player::_initPhysBall() {
 }
 
 void Player::_basePhysBall() {
-    if (box()->getCollided())
+    if (box()->getCollided()) {
         enqueueKill();
+        playerDeath();
+    }
 
     playerMotion();
     playerAction();
 }
 
 void Player::_killPhysBall() {
-    enableReception(false);
+    Receiver<Bullet>::enableReception(false);
+    Receiver<ShrinkParticle>::enableReception(false);
     removeFromProvider();
 }
 
 void Player::_receive(Bullet *bullet) { bullet->setDirection(_dirvec); }
+void Player::_receive(ShrinkParticle *particle) {
+    // pop direction and set particle with it
+    if (!_deathparticledirs.empty()) {
+        glm::vec3 &dir = _deathparticledirs.front();
+        particle->set(transform.scale * 1.25f, glm::vec4(1.0f), 30, dir * 0.3f);
+        _deathparticledirs.pop();
+    }
+}
 
 Player::Player(GLFWInput *input) : 
     PhysBall("", "Player"),
@@ -133,32 +149,66 @@ void Player::playerAction() {
         _cooldown -= 1.0f;
 }
 
+void Player::playerDeath() {
+    // get random count of 3-4, and random starting angle
+    int count = (rand() % 2) + 3;
+    glm::vec3 angle = random_angle(glm::vec3(1.0f, 0.0f, 0.0f), 180);
+    for (int i = 0; i < count; i++) {
+        // rotate angle by 360 / count around Z axis
+        angle = glm::rotate(angle, glm::radians(360.0f / float(count)), glm::vec3(0.0f, 0.0f, 1.0f));
+
+        // enqueue particle and store angle
+        executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
+        _deathparticledirs.push(angle);
+    }
+}
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Enemy::_initPhysBall() {
     // display on level with other entities
     quad()->bv_pos.v.z = 0.0f;
     quad()->bv_color.v = glm::vec4(0.2116f, 0.2116f, 0.2166f, 1.0f);
+
+    Receiver<ShrinkParticle>::setChannel(getExecutorID());
+    Receiver<ShrinkParticle>::enableReception(true);
 }
 
 void Enemy::_basePhysBall() {
-    if (*_killflag) {
+    if (_health <= 0 || *_killflag) {
         enqueueKill();
-        return;
-    }
+        enemyDeath();
+
+    } else {
+        if (box()->getCollided())
+            enemyCollision();
     
-    if (box()->getCollided())
-        enemyCollision();
-    enemyMotion();
+        enemyMotion();
+    }
 
     _t++;
 }
 
 void Enemy::_killPhysBall() {}
 
+void Enemy::_receive(ShrinkParticle *particle) {
+    // pop direction and set particle with it
+    if (!_deathparticledirs.empty()) {
+        glm::vec3 &dir = _deathparticledirs.front();
+
+        // use different values if death particles or not
+        if (!getKillEnqueued())
+            particle->set(transform.scale * 0.5f, glm::vec4(0.2116f, 0.2116f, 0.2166f, 1.0f), 12, dir * 0.75f);
+        else
+            particle->set(transform.scale * 1.25f, glm::vec4(0.2116f, 0.2116f, 0.2166f, 1.0f), 30, dir * 0.3f);
+        
+        _deathparticledirs.pop();
+    }
+}
+
 Entity *Enemy::_getTarget() {
     // return first ID found
-    auto players = getAllProvided();
+    auto players = Receiver<Player>::getAllProvided();
     if (players)
         for (auto &player : *players)
             return player;
@@ -221,18 +271,39 @@ void Enemy::enemyMotion() {
 }
 
 void Enemy::enemyCollision() {
-        _health--;
+    _health--;
 
-    // spawn 2-3 particles
-    int count = (rand() % 2) + 2;
-    for (int i = 0; i < count; i++) {
-        //Entity *effect = getManager()->getEntity(getManager()->spawnEntity("BallParticle"));
-        //effect->getQuad()->pos.v = getBox()->pos;
+    // only spawn damage particles if you're not going to die afterward
+    if (_health > 0) {
+        // get random count of 2-3, and random starting angle
+        int count = (rand() % 2) + 2;
+        glm::vec3 angle = random_angle(glm::vec3(1.0f, 0.0f, 0.0f), 180);
+        for (int i = 0; i < count; i++) {
+            // rotate angle by 360 / count around Z axis
+            angle = glm::rotate(angle, glm::radians(360.0f / float(count)), glm::vec3(0.0f, 0.0f, 1.0f));
+
+            // enqueue particle and store angle
+            executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
+            _deathparticledirs.push(angle);
+        }
     }
-
-    if (_health <= 0)
-        enqueueKill();
 }
+
+void Enemy::enemyDeath() {
+    // get random count of 3-4, and random starting angle
+    int count = (rand() % 2) + 3;
+    glm::vec3 angle = random_angle(glm::vec3(1.0f, 0.0f, 0.0f), 180);
+    for (int i = 0; i < count; i++) {
+        // rotate angle by 360 / count around Z axis
+        angle = glm::rotate(angle, glm::radians(360.0f / float(count)), glm::vec3(0.0f, 0.0f, 1.0f));
+
+        // enqueue particle and store angle
+        executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
+        _deathparticledirs.push(angle);
+    }
+}
+
+void Enemy::setHealth(float health) { _health = health; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -241,7 +312,7 @@ void Ring::_initGfxBall() {
     quad()->bv_pos.v.z = -1.0f;
 
     // override transform scale
-    transform = Transform{transform.pos, glm::vec3(64.0f, 64.0f, 0.0f)};
+    transform = Transform{transform.pos, glm::vec3(96.0f, 96.0f, 0.0f)};
 }
 
 void Ring::_baseGfxBall() {
@@ -259,7 +330,7 @@ void Ring::_baseGfxBall() {
 
     // check player's distance from this instance's center
     if (p)
-        if (glm::length(p->transform.pos - transform.pos) < 32.0f)
+        if (glm::length(p->transform.pos - transform.pos) < 48.0f)
             quad()->bv_color.v = glm::vec4(0.6039f, 0.6039f, 0.6039f, 1.0f);
 }
 
@@ -272,21 +343,26 @@ Ring::Ring() : GfxBall("", -1) {}
 void ShrinkParticle::_initGfxBall() {
     // display on level with other entities
     quad()->bv_pos.v.z = 0.0f;
-    quad()->bv_color.v = color;
-
-    // override transform scale
-    transform = Transform{transform.pos, basescale};
-
-    _lifetime = lifetime;
+    quad()->bv_color.v = _color;
 }
 
 void ShrinkParticle::_baseGfxBall() {
     // scale quad linearly with lifetime
-    transform.scale = basescale * ((lifetime - float(_i)) / lifetime);
+    transform.pos = transform.pos + _vel;
+    transform.scale = _basescale * ((_lifetime - float(_i)) / _lifetime);
 }
 
 void ShrinkParticle::_killGfxBall() {
     removeFromProvider();
 }
 
-ShrinkParticle::ShrinkParticle() : GfxBall("", 0), basescale(glm::vec3(0.0f)), color(glm::vec4(0.0f)), lifetime(0) {}
+ShrinkParticle::ShrinkParticle() : GfxBall("", 0), _basescale(glm::vec3(0.0f)), _color(glm::vec4(0.0f)), _vel(0.0f) {}
+
+void ShrinkParticle::set(glm::vec3 basescale, glm::vec4 color, unsigned lifetime, glm::vec3 vel) {
+    _basescale = basescale;
+    _color = color;
+    _lifetime = lifetime;
+    _vel = vel;
+
+    transform.scale = _basescale;
+}

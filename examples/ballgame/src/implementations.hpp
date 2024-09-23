@@ -27,7 +27,7 @@ public:
     void setDirection(glm::vec3 direction);
 };
 
-class Player : public PhysBall, public ProvidedType<Player>, public Receiver<Bullet> {
+class Player : public PhysBall, public ProvidedType<Player>, public Receiver<Bullet>, public Receiver<ShrinkParticle> {
     GLFWInput *_input;
 
     float _accel;
@@ -38,19 +38,23 @@ class Player : public PhysBall, public ProvidedType<Player>, public Receiver<Bul
     glm::vec2 _prevmovedir;
     glm::vec3 _dirvec;
 
+    std::queue<glm::vec3> _deathparticledirs;
+
     void _initPhysBall();
     void _basePhysBall();
     void _killPhysBall();
     void _receive(Bullet *bullet) override;
+    void _receive(ShrinkParticle *particle) override;
 
 public:
     Player(GLFWInput *input);
 
     void playerMotion();
     void playerAction();
+    void playerDeath();
 };
 
-class Enemy : public PhysBall, public Receiver<Player> {
+class Enemy : public PhysBall, public ProvidedType<Enemy>, public Receiver<Player>, public Receiver<ShrinkParticle> {
     float _accel;
     float _deccel;
     float _spd_max;
@@ -60,9 +64,12 @@ class Enemy : public PhysBall, public Receiver<Player> {
     float _health;
     bool *_killflag;
 
+    std::queue<glm::vec3> _deathparticledirs;
+
     void _initPhysBall();
     void _basePhysBall();
     void _killPhysBall();
+    void _receive(ShrinkParticle *p);
 
     Entity *_getTarget();
 
@@ -71,6 +78,8 @@ public:
 
     void enemyMotion();
     void enemyCollision();
+    void enemyDeath();
+    void setHealth(float health);
 };
 
 class Ring : public GfxBall, public Receiver<Player> {
@@ -83,15 +92,17 @@ public:
 };
 
 class ShrinkParticle : public GfxBall, public ProvidedType<ShrinkParticle> {
+    glm::vec3 _basescale;
+    glm::vec4 _color;
+    glm::vec3 _vel;
+    
     void _initGfxBall();
     void _baseGfxBall();
     void _killGfxBall();
 
 public:
     ShrinkParticle();
-    glm::vec3 basescale;
-    glm::vec4 color;
-    unsigned lifetime;
+    void set(glm::vec3 basescale, glm::vec4 color, unsigned lifetime, glm::vec3 vel);
 };
 
 #endif
