@@ -115,8 +115,10 @@ class PhysSpace {
 public:
     PhysSpace() {}
     ~PhysSpace() {
-        for (auto &t : _Ts)
-            erase(t);
+        for (auto &t : _Ts) {
+            t->_physspace = nullptr;
+            delete t;
+        }
     }
 
     // default copy assignment/construction are fine
@@ -151,11 +153,11 @@ public:
     void erase(ColliderInterface<T> *t) {
         if (t->_physspace != this)
             throw std::runtime_error("Attempt to erase Box from PhysEnv that does not own it");
+        
+        _Ts.erase(t->_this_iter);
 
         t->_physspace = nullptr;
         delete t;
-
-        _Ts.erase(t->_this_iter);
     }
 
     /* Sets collided count to 0 for all contained instances. */
