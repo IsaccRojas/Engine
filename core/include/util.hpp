@@ -56,8 +56,6 @@ class IntGenerator {
     //queue of free IDs
     std::queue<unsigned> _free_ids;
 
-    unsigned _count;
-
 public:
     IntGenerator();
     ~IntGenerator();

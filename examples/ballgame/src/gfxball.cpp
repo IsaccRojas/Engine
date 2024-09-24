@@ -46,6 +46,7 @@ void GfxBall::_killGfxBall() {}
 GfxBall::GfxBall(std::string animation_name, int lifetime) : 
     Entity(), 
     _quad(nullptr),
+    _quad_off(0),
     _animation_name(animation_name),
     _lifetime(lifetime),
     _i(0)

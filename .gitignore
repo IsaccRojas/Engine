@@ -1,6 +1,10 @@
 *.o
 *.a
+*.lib
 *.exe
+*.ilk
+*.pdb
+*.exp
 *.dll
 .vscode/
 examples/ballgame/releases/

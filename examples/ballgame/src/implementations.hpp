@@ -17,9 +17,9 @@ class Bullet : public PhysBall, public ProvidedType<Bullet>, public Receiver<Shr
     int _lifetime;
     glm::vec3 _direction;
 
-    void _initPhysBall();
-    void _basePhysBall();
-    void _killPhysBall();
+    void _initPhysBall() override;
+    void _basePhysBall() override;
+    void _killPhysBall() override;
     void _receive(ShrinkParticle *p) override;
 
 public:
@@ -40,9 +40,9 @@ class Player : public PhysBall, public ProvidedType<Player>, public Receiver<Bul
 
     std::queue<glm::vec3> _deathparticledirs;
 
-    void _initPhysBall();
-    void _basePhysBall();
-    void _killPhysBall();
+    void _initPhysBall() override;
+    void _basePhysBall() override;
+    void _killPhysBall() override;
     void _receive(Bullet *bullet) override;
     void _receive(ShrinkParticle *particle) override;
 
@@ -66,10 +66,11 @@ class Enemy : public PhysBall, public ProvidedType<Enemy>, public Receiver<Playe
 
     std::queue<glm::vec3> _deathparticledirs;
 
-    void _initPhysBall();
-    void _basePhysBall();
-    void _killPhysBall();
-    void _receive(ShrinkParticle *p);
+    void _initPhysBall() override;
+    void _basePhysBall() override;
+    void _killPhysBall() override;
+    void _receive(Player *p) override;
+    void _receive(ShrinkParticle *p) override;
 
     Entity *_getTarget();
 
@@ -83,9 +84,9 @@ public:
 };
 
 class Ring : public GfxBall, public Receiver<Player> {
-    void _initGfxBall();
-    void _baseGfxBall();
-    void _killGfxBall();
+    void _initGfxBall() override;
+    void _baseGfxBall() override;
+    void _killGfxBall() override;
 
 public:
     Ring();
@@ -96,9 +97,9 @@ class ShrinkParticle : public GfxBall, public ProvidedType<ShrinkParticle> {
     glm::vec4 _color;
     glm::vec3 _vel;
     
-    void _initGfxBall();
-    void _baseGfxBall();
-    void _killGfxBall();
+    void _initGfxBall() override;
+    void _baseGfxBall() override;
+    void _killGfxBall() override;
 
 public:
     ShrinkParticle();

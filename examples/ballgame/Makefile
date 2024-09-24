@@ -1,15 +1,15 @@
-CXXFLAGS = -ggdb -Wall -O0
+CXXFLAGS = -ggdb -Wall -O0 -std=c++17 -fsanitize=address,undefined -fno-omit-frame-pointer
 
 # graphics environment libraries
-GLLIBS = -lglfw3dll
-GLLIBS += -lglew32
-GLLIBS += -lopengl32
+GLLIBS = -llibglfw3dll.lib
+GLLIBS += -lglew32.lib
+GLLIBS += -lopengl32.lib
 
 # core library
-CORELIB = -lcore
+CORELIB = -lcore.lib
 
 # library directory
-LIBDIR = -L./../../core
+LIBDIR = -L./../../core -LC:/dev/lib
 
 # source files
 SRCS = src/main.cpp
@@ -22,12 +22,12 @@ SRCS += src/implementations.cpp
 all: out
 
 libcore.a:
-	mingw32-make -C ../../core
+	make -C ../../core
 
 out: libcore.a
-	g++ ${CXXFLAGS} ${SRCS} ${LIBDIR} ${CORELIB} ${GLLIBS} -o out
+	clang++ ${CXXFLAGS} ${SRCS} ${LIBDIR} ${CORELIB} ${GLLIBS} -o out.exe
 
 # windows syntax
 clean:
 	rd out.exe
-	mingw32-make -C core clean
+	make -C core clean

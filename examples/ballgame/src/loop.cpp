@@ -117,7 +117,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
 
         // check for input to start game if at least one player is spawned
         else if (globalstate->enter_state) {
-            globalstate->round = 12;
+            globalstate->round = 40;
             globalstate->number = 0.0f;
             globalstate->rate = 0.0f;
             globalstate->spawn_rate = glm::clamp(int(80.0f - (25.0f * std::log10(float(globalstate->round)))), 5, 60);

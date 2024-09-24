@@ -192,6 +192,8 @@ void Enemy::_basePhysBall() {
 
 void Enemy::_killPhysBall() {}
 
+void Enemy::_receive(Player *player) {}
+
 void Enemy::_receive(ShrinkParticle *particle) {
     // pop direction and set particle with it
     if (!_deathparticledirs.empty()) {
