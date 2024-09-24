@@ -1,4 +1,6 @@
-CXXFLAGS = -ggdb -Wall -O0 -std=c++17 -fsanitize=address,undefined -fno-omit-frame-pointer
+CXXFLAGS = -std=c++17 -Wall -O0 -glldb -fsanitize=address,undefined -fno-omit-frame-pointer
+# debug flags: -O0 -glldb -fsanitize=address,undefined -fno-omit-frame-pointer
+# release flags: -O3
 
 SRCDIR = ./src
 

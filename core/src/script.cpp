@@ -69,7 +69,7 @@ bool Script::getInitialized() { return _initialized; }
 bool Script::getKilled() { return _killed; }
 bool Script::getExecEnqueued() { return _exec_enqueued; }
 bool Script::getKillEnqueued() { return _kill_enqueued; }
-const char *Script::getName() { return _script_name; }
+const char *Script::getName() { return _script_name.c_str(); }
 int Script::getGroup() { return _group; }
 
 void Script::enqueueExec(unsigned queue) {
@@ -102,7 +102,7 @@ Script *Executor::ScriptEnqueue::spawn() {
 Executor::ScriptEnqueue::ScriptEnqueue(Executor *executor, std::string name, int execution_queue, int tag) :
     _executor(executor), _name(name), _execution_queue(execution_queue), _tag(tag)
 {}
-Executor::ScriptEnqueue::~ScriptEnqueue() {}
+Executor::ScriptEnqueue::~ScriptEnqueue() { /* automatic destruction is fine */ }
 
 Executor::Executor(unsigned queues) { init(queues); }
 Executor::Executor() : _initialized(false) {}
@@ -137,7 +137,7 @@ void Executor::_setupScript(Script *script, const char *script_name, int executi
     script->_executor_id = _intgen.push();
     script->_this_iter = _scripts.push_back(script);
 
-    // set script fields
+    // set script fields (make copy of string passed)
     script->_removeonkill = info._removeonkill;
     script->_script_name = script_name;
     script->_group = info._group;

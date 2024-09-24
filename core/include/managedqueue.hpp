@@ -27,11 +27,8 @@ public:
 
     /* Deletes and removes all stored references. */
     void clear() {
-        while (!_Ts.empty()) {
-            T *t = _Ts.front();
-            delete t;
-            _Ts.pop();
-        }
+        while (!_Ts.empty())
+            pop();
     }
 
     /* Takes ownership of and inserts a reference into this queue. */

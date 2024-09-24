@@ -90,8 +90,7 @@ Player::Player(GLFWInput *input) :
     _deccel(0.15f), 
     _spd_max(0.8f), 
     _cooldown(0.0f),
-    // default max cooldown is 15.0f
-    _max_cooldown(7.5f), 
+    _max_cooldown(15.0f), 
     _prevmovedir(0.0f),
     _dirvec(0.0f)
 {}

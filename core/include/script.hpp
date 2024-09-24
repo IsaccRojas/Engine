@@ -35,7 +35,7 @@ class Script {
    bool _killed;
    bool _exec_enqueued;
    bool _kill_enqueued; 
-   const char *_script_name;
+   std::string _script_name;
 
    // settable integer usable for identification
    int _group;
