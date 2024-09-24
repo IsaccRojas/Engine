@@ -6,7 +6,7 @@
 class PhysBall : public Entity {
     Quad *_quad;
     unsigned _quad_off;
-    Box *_box;
+    Sphere *_sphere;
     
     std::string _animation_name;
     std::string _filter_name;
@@ -23,7 +23,7 @@ protected:
 public:
     PhysBall(std::string animation_name, std::string filter_name);
     Quad *quad();
-    Box *box();
+    Sphere *sphere();
     glm::vec3 vel;
 };
 

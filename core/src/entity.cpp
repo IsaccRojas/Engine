@@ -60,8 +60,8 @@ Entity *EntityExecutor::_spawnEntity(const char *entity_name, int execution_queu
     return entity;
 }
 
-EntityExecutor::EntityExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters) : Executor() { 
-    init(queues, glenv, animations, physenv, filters);
+EntityExecutor::EntityExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysSpace<Box> *box_space, PhysSpace<Sphere> *sphere_space, unordered_map_string_Filter_t *filters) : Executor() { 
+    init(queues, glenv, animations, box_space, sphere_space, filters);
 }
 EntityExecutor::EntityExecutor(EntityExecutor &&other) : Executor() { operator=(std::move(other)); }
 EntityExecutor::EntityExecutor() : Executor(), _glenv(nullptr), _animations(nullptr) {}
@@ -73,22 +73,25 @@ EntityExecutor &EntityExecutor::operator=(EntityExecutor &&other) {
         _entityinfos = other._entityinfos;
         _glenv = other._glenv;
         _animations = other._animations;
-        _physenv = other._physenv;
+        _box_space = other._box_space;
+        _sphere_space = other._sphere_space;
         _filters = other._filters;
         other._entityinfos.clear();
         other._glenv = nullptr;
         other._animations = nullptr;
-        other._physenv = nullptr;
+        other._box_space = nullptr;
+        other._sphere_space = nullptr;
         other._filters = nullptr;
     }
     return *this;
 }
 
-void EntityExecutor::init(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters) {
+void EntityExecutor::init(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysSpace<Box> *box_space, PhysSpace<Sphere> *sphere_space, unordered_map_string_Filter_t *filters) {
     Executor::init(queues);
     _glenv = glenv;
     _animations = animations;
-    _physenv = physenv;
+    _box_space = box_space;
+    _sphere_space = sphere_space;
     _filters = filters;
 }
 
@@ -97,7 +100,8 @@ void EntityExecutor::uninit() {
     _entityinfos.clear();
     _glenv = nullptr;
     _animations = nullptr;
-    _physenv = nullptr;
+    _box_space = nullptr;
+    _sphere_space = nullptr;
     _filters = nullptr;
 }
 
@@ -115,5 +119,6 @@ void EntityExecutor::enqueueSpawnEntity(const char *entity_name, int execution_q
 
 GLEnv &EntityExecutor::glenv() { return *_glenv; }
 unordered_map_string_Animation_t &EntityExecutor::animations() { return *_animations; }
-PhysEnv &EntityExecutor::physenv() { return *_physenv; }
+PhysSpace<Box> &EntityExecutor::boxspace() { return *_box_space; }
+PhysSpace<Sphere> &EntityExecutor::spherespace() { return *_sphere_space; }
 unordered_map_string_Filter_t &EntityExecutor::filters() { return *_filters; }

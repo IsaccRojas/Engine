@@ -10,7 +10,8 @@ struct CoreResources {
     GLEnv glenv;
     unordered_map_string_Animation_t animations;
     unordered_map_string_Filter_t filters;
-    PhysEnv physenv;
+    PhysSpace<Box> box_space;
+    PhysSpace<Sphere> sphere_space;
     EntityExecutor executor;
 };
 

@@ -20,7 +20,7 @@ void Bullet::_basePhysBall() {
     if (_i % 6 == 0)
         executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
 
-    if (_i >= _lifetime || box()->getCollided()) {
+    if (_i >= _lifetime || sphere()->getCollidedCount()) {
         enqueueKill();
         executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
     }
@@ -58,7 +58,7 @@ void Player::_initPhysBall() {
 }
 
 void Player::_basePhysBall() {
-    if (box()->getCollided()) {
+    if (sphere()->getCollidedCount()) {
         enqueueKill();
         playerDeath();
     }
@@ -89,8 +89,9 @@ Player::Player(GLFWInput *input) :
     _accel(0.2f), 
     _deccel(0.15f), 
     _spd_max(0.8f), 
-    _cooldown(0.0f), 
-    _max_cooldown(15.0f), 
+    _cooldown(0.0f),
+    // default max cooldown is 15.0f
+    _max_cooldown(7.5f), 
     _prevmovedir(0.0f),
     _dirvec(0.0f)
 {}
@@ -133,7 +134,7 @@ void Player::playerAction() {
         glm::vec3 mousepos3d = glm::vec3(mousepos.x, mousepos.y, 0.0f);
 
         // get normalized and scaled direction
-        _dirvec = mousepos3d - box()->transform.pos;
+        _dirvec = mousepos3d - sphere()->transform.pos;
         _dirvec /= glm::length(_dirvec);
     } else
         _dirvec = glm::vec3(_prevmovedir.x, _prevmovedir.y, 0.0f);
@@ -180,7 +181,7 @@ void Enemy::_basePhysBall() {
         enemyDeath();
 
     } else {
-        if (box()->getCollided())
+        if (sphere()->getCollidedCount())
             enemyCollision();
     
         enemyMotion();
@@ -198,7 +199,7 @@ void Enemy::_receive(ShrinkParticle *particle) {
 
         // use different values if death particles or not
         if (!getKillEnqueued())
-            particle->set(transform.scale * 0.5f, glm::vec4(0.2116f, 0.2116f, 0.2166f, 1.0f), 12, dir * 0.75f);
+            particle->set(transform.scale * 0.75f, glm::vec4(0.2116f, 0.2116f, 0.2166f, 1.0f), 12, dir * 1.0f);
         else
             particle->set(transform.scale * 1.25f, glm::vec4(0.2116f, 0.2116f, 0.2166f, 1.0f), 30, dir * 0.3f);
         
@@ -312,7 +313,7 @@ void Ring::_initGfxBall() {
     quad()->bv_pos.v.z = -1.0f;
 
     // override transform scale
-    transform = Transform{transform.pos, glm::vec3(96.0f, 96.0f, 0.0f)};
+    transform = Transform{transform.pos, glm::vec3(128.0f, 128.0f, 0.0f)};
 }
 
 void Ring::_baseGfxBall() {
@@ -330,7 +331,7 @@ void Ring::_baseGfxBall() {
 
     // check player's distance from this instance's center
     if (p)
-        if (glm::length(p->transform.pos - transform.pos) < 48.0f)
+        if (glm::length(p->transform.pos - transform.pos) < 64.0f)
             quad()->bv_color.v = glm::vec4(0.6039f, 0.6039f, 0.6039f, 1.0f);
 }
 

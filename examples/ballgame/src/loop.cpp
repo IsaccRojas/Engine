@@ -82,7 +82,7 @@ void gameInitialize(CoreResources *core, GlobalState *globalstate, Allocators *a
     globalstate->i = 0;
     globalstate->number = 0.0f;
     globalstate->rate = 0.0f;
-    globalstate->target_number = 300.0f;
+    globalstate->target_number = 325.0f;
     globalstate->max_rate = 0.09375f;
     globalstate->rate_increase = 0.00035f;
     globalstate->rate_decrease = -0.0007f;
@@ -117,7 +117,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
 
         // check for input to start game if at least one player is spawned
         else if (globalstate->enter_state) {
-            globalstate->round = 1;
+            globalstate->round = 12;
             globalstate->number = 0.0f;
             globalstate->rate = 0.0f;
             globalstate->spawn_rate = glm::clamp(int(80.0f - (25.0f * std::log10(float(globalstate->round)))), 5, 60);
@@ -139,7 +139,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
             glm::vec3 playerpos = (*(player_set->begin()))->transform.pos;
 
             // check distance from center and change rate
-            if (glm::length(playerpos) < 48.0f)
+            if (glm::length(playerpos) < 64.0f)
                 globalstate->rate += globalstate->rate_increase;
             else
                 globalstate->rate += globalstate->rate_decrease;
@@ -246,8 +246,10 @@ void gameProcess(CoreResources *core, GlobalState *state, Allocators *allocators
     core->input.update();
     
     // unset collided flags, and perform collision detection
-    core->physenv.unsetCollidedFlags();
-    core->physenv.detectCollision();
+    core->box_space.resetCollidedCount();
+    core->box_space.detectCollision();
+    core->sphere_space.resetCollidedCount();
+    core->sphere_space.detectCollision();
 
     // spawn anything enqueued by previous step
     core->executor.runSpawnQueue();

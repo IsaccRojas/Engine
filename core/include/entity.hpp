@@ -1,10 +1,10 @@
 #ifndef ENTITY_HPP_
 #define ENTITY_HPP_
 
-#include "physenv.hpp"
+#include "script.hpp"
 #include "animation.hpp"
 #include "glenv.hpp"
-#include "script.hpp"
+#include "physspace.hpp"
 
 typedef std::unordered_map<std::string, Animation> unordered_map_string_Animation_t;
 typedef std::unordered_map<std::string, Filter> unordered_map_string_Filter_t;
@@ -95,7 +95,8 @@ private:
 
    GLEnv *_glenv;
    unordered_map_string_Animation_t *_animations;
-   PhysEnv *_physenv;
+   PhysSpace<Box> *_box_space;
+   PhysSpace<Sphere> *_sphere_space;
    unordered_map_string_Filter_t *_filters;
 
 protected:
@@ -107,7 +108,7 @@ protected:
     
 public:
    /* Calls init() with the provided arguments. */
-   EntityExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters);
+   EntityExecutor(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysSpace<Box> *box_space, PhysSpace<Sphere> *sphere_space, unordered_map_string_Filter_t *filters);
    EntityExecutor(EntityExecutor &&other);
    EntityExecutor();
    EntityExecutor(const EntityExecutor &other) = delete;
@@ -119,7 +120,7 @@ public:
    /* Initializes internal EntityExecutor data. It is undefined behavior to make calls on this instance
       before calling this and after uninit().
    */
-   void init(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysEnv *physenv, unordered_map_string_Filter_t *filters);
+   void init(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysSpace<Box> *box_space, PhysSpace<Sphere> *sphere_space, unordered_map_string_Filter_t *filters);
    void uninit();
 
    /* Adds a Entity allocator with initialization information to this manager, allowing its given
@@ -138,7 +139,8 @@ public:
 
    GLEnv &glenv();
    unordered_map_string_Animation_t &animations();
-   PhysEnv &physenv();
+   PhysSpace<Box> &boxspace();
+   PhysSpace<Sphere> &spherespace();
    unordered_map_string_Filter_t &filters();
 };
 

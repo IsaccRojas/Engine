@@ -28,8 +28,8 @@ animation.o: ${SRCDIR}/animation.cpp
 filter.o: ${SRCDIR}/filter.cpp
 	g++ ${CXXFLAGS} -c ${SRCDIR}/filter.cpp -o filter.o
 
-physenv.o: ${SRCDIR}/physenv.cpp
-	g++ ${CXXFLAGS} -c ${SRCDIR}/physenv.cpp -o physenv.o
+physspace.o: ${SRCDIR}/physspace.cpp
+	g++ ${CXXFLAGS} -c ${SRCDIR}/physspace.cpp -o physspace.o
 
 entity.o: ${SRCDIR}/entity.cpp
 	g++ ${CXXFLAGS} -c ${SRCDIR}/entity.cpp -o entity.o
@@ -40,7 +40,7 @@ glfwinput.o: ${SRCDIR}/glfwinput.cpp
 glfwstate.o: ${SRCDIR}/glfwstate.cpp
 	g++ ${CXXFLAGS} -c ${SRCDIR}/glfwstate.cpp -o glfwstate.o
 
-libcore.a: commonexcept.o util.o script.o glutil.o glenv.o text.o animation.o filter.o physenv.o entity.o glfwinput.o glfwstate.o
+libcore.a: commonexcept.o util.o script.o glutil.o glenv.o text.o animation.o filter.o physspace.o entity.o glfwinput.o glfwstate.o
 	ar rcs libcore.a *.o
 
 # windows syntax

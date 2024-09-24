@@ -52,7 +52,7 @@ void initializeCore(CoreResources *core) {
 
     // set up Executor
     std::cout << "Setting up Executor" << std::endl;
-    core->executor.init(EXECUTION_QUEUES, &core->glenv, &core->animations, &core->physenv, &core->filters);
+    core->executor.init(EXECUTION_QUEUES, &core->glenv, &core->animations, &core->box_space, &core->sphere_space, &core->filters);
 
     // set up GLFWInput
     std::cout << "Setting up GLFWInput" << std::endl;
