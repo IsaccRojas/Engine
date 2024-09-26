@@ -49,8 +49,7 @@ public:
         _Ts.erase(elem);
     }
 
-    /* Moves other ManagedList contents into this.
-    */
+    /* Moves other ManagedList contents into this. */
     void move(ManagedList &other) {
         _Ts = other._Ts;
         other._Ts.clear();

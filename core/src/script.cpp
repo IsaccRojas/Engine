@@ -5,7 +5,7 @@ Script::Script() :
     _executor(nullptr),
     _executor_id(0),
     _last_execqueue(-1),
-    _removeonkill(false),
+    _remove_on_kill(false),
     _initialized(false), 
     _killed(false), 
     _exec_enqueued(false), 
@@ -21,7 +21,7 @@ Script &Script::operator=(Script &&other) {
         _executor_id = other._executor_id;
         _this_iter = other._this_iter;
         _last_execqueue = other._last_execqueue;
-        _removeonkill = other._removeonkill;
+        _remove_on_kill = other._remove_on_kill;
         _initialized = other._initialized;
         _killed = other._killed;
         _exec_enqueued = other._exec_enqueued;
@@ -31,7 +31,7 @@ Script &Script::operator=(Script &&other) {
         other._executor = nullptr;
         other._executor_id = 0;
         other._last_execqueue = -1;
-        other._removeonkill = false;
+        other._remove_on_kill = false;
         other._initialized = false;
         other._killed = false;
         other._exec_enqueued = false;
@@ -138,7 +138,7 @@ void Executor::_setupScript(Script *script, const char *script_name, int executi
     script->_this_iter = _scripts.push_back(script);
 
     // set script fields (make copy of string passed)
-    script->_removeonkill = info._removeonkill;
+    script->_remove_on_kill = info._remove_on_kill;
     script->_script_name = script_name;
     script->_group = info._group;
     
@@ -205,9 +205,9 @@ void Executor::erase(Script *script) {
     _scripts.erase(script->_this_iter);
 }
 
-void Executor::add(AllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback) {  
+void Executor::add(AllocatorInterface *allocator, const char *name, int group, bool remove_on_kill, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback) {  
     if (!hasAdded(name))
-        _scriptinfos[name] = ScriptInfo{group, removeonkill, allocator, spawn_callback, remove_callback};
+        _scriptinfos[name] = ScriptInfo{group, remove_on_kill, allocator, spawn_callback, remove_callback};
     else
         throw std::runtime_error("Attempt to add already added Script name");
 }
@@ -300,7 +300,7 @@ void Executor::runKillQueue() {
             script->_killed = true;
 
             // remove the script after killing it
-            if (script->_removeonkill)
+            if (script->_remove_on_kill)
                 erase(script);
             else
                 script->_kill_enqueued = false;

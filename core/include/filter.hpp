@@ -10,6 +10,7 @@
 #include "json.hpp"
 #include "util.hpp"
 
+/* Returns true of the integer vector contains the integer x. */
 bool isIn(std::vector<int> &v, int x);
 
 class Filter {
@@ -25,6 +26,7 @@ public:
 
     // default copy assignment/construction are fine
 
+    /* Push integers to Filter's blacklists and whitelists, for global or correction filtering. */
     Filter& pushWhitelist(int x);
     Filter& pushBlacklist(int x);
     Filter& pushCorrectionWhitelist(int x);
@@ -49,11 +51,14 @@ public:
 
     // default copy assignment/construction are (reference is read only)
 
+    /* Sets up instance to preserve state of provided filter. */
     void setFilter(Filter *filter);
 
+    /* Attempts to pass integer through contained filter. */
     bool pass(int x);
     bool passCorrection(int x);
 
+    /* Returns whether this FilterState is set to a specific Filter. */
     bool hasFilter();
 
     int id();

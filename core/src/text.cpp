@@ -3,14 +3,37 @@
 Text::Text(GLEnv *glenv) : 
     _glenv(glenv), 
     _tc(TextConfig{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
+    _pos(glm::vec3(0.0f)),
     _scale(glm::vec3(1.0f)),
     _update(false)
 {}
+
+Text::Text(Text &&other) { operator=(std::move(other)); }
+
 Text::~Text() {
     // erase all characters from glenv
     if (_glenv)
         for (unsigned i = 0; i < _quadids.size(); i++)
             _glenv->remove(_quadids[i]);
+}
+
+Text &Text::operator=(Text &&other) {
+    if (this != &other) {
+        _glenv = other._glenv;
+        _quadids = other._quadids;
+        _tc = other._tc;
+        _textstr = other._textstr;
+        _pos = other._pos;
+        _scale = other._scale;
+        _update = other._update;
+        other._glenv = nullptr;
+        other._quadids.clear();
+        other._tc = TextConfig{};
+        other._pos = glm::vec3(0.0f);
+        other._scale = glm::vec3(0.0f);
+        other._update = false;
+    }
+    return *this;
 }
 
 /*

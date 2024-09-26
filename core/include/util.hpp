@@ -103,6 +103,8 @@ public:
     */
     IntgenVector(unsigned capacity, T t) : _data(capacity, t) {}
     IntgenVector() {}
+
+    // default copy assignment/construction are fine
     
     unsigned push(T t) {
         unsigned i = _intgen.push();

@@ -44,10 +44,12 @@ public:
     Cycle& addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 scale, unsigned duration);
     Cycle& addFrame(const Frame &frame);
 
+    /* Sets whether this cycle loops or not. */
     void setLoop(bool loop);
 
     Frame& frame(unsigned i);
 
+    /* Returns number of frames contained in this cycle. */
     unsigned count() const;
 
     bool loops() const;
@@ -71,6 +73,7 @@ public:
 
     Cycle& cycle(unsigned i);
 
+    /* Returns number of cycles contained in this animation. */
     unsigned count();
 };
 
@@ -115,14 +118,13 @@ public:
     */
     void step();
 
-    /* Gets the current frame of the cycle. Causes an error if no frames exist.
-    */
+    /* Gets the current frame of the cycle. Causes an error if no frames exist. */
     const Frame &current();
 
+    /* Returns whether this AnimationState is set to a specific Animation. */
     bool hasAnimation();
 
-    /* Returns whether the cycle has completed or not (always false if looping is set to true).
-    */
+    /* Returns whether the cycle has completed or not (always false if looping is set to true). */
     bool completed();
 };
 

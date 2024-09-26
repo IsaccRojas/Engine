@@ -11,6 +11,7 @@
 struct Transform {
    glm::vec3 pos = glm::vec3(0.0f);
    glm::vec3 scale = glm::vec3(0.0f);
+   // default copy assignment/construction are fine
 };
 
 template <class T>
@@ -29,11 +30,41 @@ class ColliderInterface {
     PhysSpace<T> *_physspace;
     typename std::list<T*>::iterator _this_iter;
 
-    unsigned _collidedcount;
+    unsigned _collided_count;
 
-    FilterState _filter_state;
+    FilterState _filterstate;
     glm::vec3 _prev_pos;
     std::function<void(T*)> _callback;
+
+protected:
+    ColliderInterface() :
+        _physspace(nullptr),
+        _collided_count(false),
+        _prev_pos(glm::vec3(0.0f)),
+        _callback(nullptr),
+        transform(Transform{glm::vec3(0.0f), glm::vec3(0.0f)}),
+        vel(glm::vec3(0.0f)),
+        mass(1.0f)
+    {}
+    ColliderInterface(ColliderInterface<T> &&other) { operator=(std::move(other)); }
+    ColliderInterface(const ColliderInterface<T> &other) = delete;
+
+    ColliderInterface<T> &operator=(ColliderInterface<T> &&other) {
+        if (this != &other) {
+            _physspace = other._physspace;
+            _this_iter = other._this_iter;
+            _collided_count = other._collided_count;
+            _filterstate = other._filterstate;
+            _prev_pos = other._prev_pos;
+            _callback = other._callback;
+            other._physspace = nullptr;
+            other._collided_count = 0;
+            other._filterstate.setFilter(nullptr);
+            other._prev_pos = glm::vec3(0.0f);
+            other._callback = nullptr;
+        }
+        return *this;
+    }
 
 public:
     // physics variables
@@ -41,25 +72,12 @@ public:
     glm::vec3 vel;
     float mass;
 
-    /* position - transform to define box's position and scale in 3D space
-        velocity - current velocity of box in 3D space
-        callback - collision callback
-    */
-    ColliderInterface() :
-        _physspace(nullptr),
-        _collidedcount(false),
-        _prev_pos(glm::vec3(0.0f)),
-        _callback(nullptr),
-        transform(Transform{glm::vec3(0.0f), glm::vec3(0.0f)}),
-        vel(glm::vec3(0.0f)),
-        mass(1.0f)
-    {}
     virtual ~ColliderInterface() {
         if (_physspace)
             _physspace->erase(this);
     }
 
-    // default copy assignment/construction are fine
+    ColliderInterface<T> &operator=(const ColliderInterface<T> &other) = delete;
 
     /* Sets the box's collision callback. */
     void setCallback(std::function<void(T*)> callback) {
@@ -80,12 +98,12 @@ public:
     
     /* Sets the box's collision filter. */
     void setFilter(Filter *filter) {
-        _filter_state.setFilter(filter);
+        _filterstate.setFilter(filter);
     }
 
     /* Gets the box's collision filter state. */
     FilterState &filterstate() {
-        return _filter_state;
+        return _filterstate;
     }
 
     /* Gets the box's previous position. */
@@ -94,7 +112,7 @@ public:
     }
 
     /* Returns whether the box was collided with or not. This is only set and unset by an owning PhysEnv. */
-    unsigned getCollidedCount() { return _collidedcount; }
+    unsigned getCollidedCount() { return _collided_count; }
 
     /* Computes and handles collision between this and the provided instance. */
     virtual bool computeCollision(T *other) = 0;
@@ -114,6 +132,8 @@ class PhysSpace {
 
 public:
     PhysSpace() {}
+    PhysSpace(PhysSpace<T> &&other) { operator=(std::move(other._Ts.clear())); }
+    PhysSpace(const PhysSpace<T> &other) = delete;
     ~PhysSpace() {
         for (auto &t : _Ts) {
             t->_physspace = nullptr;
@@ -121,7 +141,14 @@ public:
         }
     }
 
-    // default copy assignment/construction are fine
+    PhysSpace<T> &operator=(PhysSpace<T> &&other) {
+        if (this != &other) {
+            _Ts = other._Ts;
+            other._Ts.clear();
+        }
+        return *this;
+    }
+    PhysSpace<T> &operator=(const PhysSpace<T> &other) = delete;
 
     /* Generates an active instance of T in system. You must call the step() method on this or a reference 
        to the instance of T itself to move it within the physical space.
@@ -148,8 +175,7 @@ public:
         return t;
     }
 
-    /* Removes the reference from the system. This will cause the provided reference to be invalid.
-    */
+    /* Removes the reference from the system. This will cause the provided reference to be invalid. */
     void erase(ColliderInterface<T> *t) {
         if (t->_physspace != this)
             throw std::runtime_error("Attempt to erase Box from PhysEnv that does not own it");
@@ -163,12 +189,12 @@ public:
     /* Sets collided count to 0 for all contained instances. */
     void resetCollidedCount() {
         for (auto &t : _Ts)
-            t->_collidedcount = 0;
+            t->_collided_count = 0;
     }
     
     /* Detects collision between all instances within the system. This is done by iterating on all elements
-        in a pair-wise fashion. All collided instances have their collision callback invoked, and their
-        collided count incremented.
+       in a pair-wise fashion. All collided instances have their collision callback invoked, and their
+       collided count incremented.
     */
     void detectCollision() {
         // perform pair-wise collision detection
@@ -204,8 +230,8 @@ public:
                 ) {
                     // detect and handle collision
                     if (t1->computeCollision(t2)) {
-                        t1->_collidedcount++;
-                        t2->_collidedcount++;
+                        t1->_collided_count++;
+                        t2->_collided_count++;
 
                         // run collision handlers
                         t1->collide(t2);
@@ -241,6 +267,20 @@ public:
 class Box : public ColliderInterface<Box> {
 public:
     Box() {}
+    Box(Box &&other) { operator=(std::move(other)); }
+    Box(const Box &other) = delete;
+    ~Box() { /* automatic destruction is fine */ }
+
+    Box &operator=(Box &&other) {
+        if (this != &other) {
+            ColliderInterface<Box>::operator=(std::move(other));
+        }
+        return *this;
+    }
+    Box &operator=(const Box &other) = delete;
+
+    // default move assignment/construction are fine
+
     /* Performs AABB collision detection. */
     bool computeCollision(Box *other) override {
         glm::vec3 &pos1 = transform.pos;
@@ -263,12 +303,26 @@ public:
 class Sphere : public ColliderInterface<Sphere> {
 public:
     Sphere() : radius(0.0f) {}
+    Sphere(Sphere &&other) { operator=(std::move(other)); }
+    Sphere(const Sphere &other) = delete;
+    ~Sphere() { /* automatic destruction is fine */ }
+
+    Sphere &operator=(Sphere &&other) {
+        if (this != &other) {
+            ColliderInterface<Sphere>::operator=(std::move(other));
+            radius = other.radius;
+            other.radius = 0.0f;
+        }
+        return *this;
+    }
+    Sphere &operator=(const Sphere &other) = delete;
+
+    float radius;
+
     /* Ignores scale. */
     bool computeCollision(Sphere *other) override {
         return ((glm::distance(transform.pos, other->transform.pos) - (radius + other->radius)) < 0.0f);
     }
-
-    float radius;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

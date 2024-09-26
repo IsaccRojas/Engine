@@ -76,17 +76,22 @@ class EntityExecutor : public Executor {
    // struct holding Entity information mapped to a name
    struct EntityInfo {
       EntityAllocatorInterface *_allocator;
+      // default copy assignment/construction are fine
    };
 
 protected:
-// class to store enqueues and polymorphically spawn later
+   // class to store enqueues and polymorphically spawn later
    class EntityEnqueue : public ScriptEnqueue {
       friend EntityExecutor;
       EntityExecutor *_entityexecutor;
+   
    protected:
       Transform _transform;
+      
+      // invokes the containing EntityExecutor's _spawnEntity() method and returns the spawned instance's reference
       virtual Entity *spawn() override;
       EntityEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag, Transform transform);
+      // default copy assignment/construction are fine (copying implies another enqueue in the same EntityExecutor)
    };
 
 private:

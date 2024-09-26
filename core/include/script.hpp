@@ -30,7 +30,7 @@ class Script {
    unsigned _executor_id;
    std::list<Script*>::iterator _this_iter;
    int _last_execqueue;
-   bool _removeonkill;
+   bool _remove_on_kill;
    bool _initialized;
    bool _killed;
    bool _exec_enqueued;
@@ -104,6 +104,7 @@ class AllocatorInterface {
 protected:
    /* Must return a heap-allocated instance of a covariant type of Script. */
    virtual Script *_allocate(int tag) = 0;
+   // no members; no need for constructor/assignment/destructor definitions
 };
 
 /* class GenericAllocator
@@ -113,6 +114,7 @@ protected:
 template<class T>
 class GenericAllocator : public AllocatorInterface {
    Script *_allocate(int tag) override { return new T; }
+   // no members; no need for constructor/assignment/destructor definitions
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -126,10 +128,11 @@ class Executor {
    // struct holding Script information mapped to a name
    struct ScriptInfo {
       int _group;
-      bool _removeonkill;
+      bool _remove_on_kill;
       AllocatorInterface *_allocator;
       std::function<void(Script*)> _spawn_callback;
       std::function<void(Script*)> _remove_callback;
+      // default copy assignment/construction are fine
    };
 
 protected:
@@ -143,6 +146,7 @@ protected:
       int _tag;
       virtual Script *spawn();
       ScriptEnqueue(Executor *executor, std::string name, int execution_queue, int tag);
+      // default copy assignment/construction are fine (copying implies another enqueue in the same Executor)
    public:
       virtual ~ScriptEnqueue();
    };
@@ -213,7 +217,7 @@ public:
       - spawn_callback - function callback to call after Script has been spawned and setup
       - remove_callback - function callback to call before Script has been removed
    */
-   void add(AllocatorInterface *allocator, const char *name, int group, bool removeonkill, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback);
+   void add(AllocatorInterface *allocator, const char *name, int group, bool remove_on_kill, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback);
 
    /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
    void enqueueSpawn(const char *script_name, int execution_queue, int tag);
@@ -240,6 +244,7 @@ public:
    /* Returns number of execution queues in this executor. */
    int getQueueCount();
 
+   /* Returns whether or not this Executor instance has been initialized or not. */
    bool initialized();
 };
 
@@ -255,40 +260,56 @@ class Provider;
 */
 template<class T>
 class Receiver {
-    friend Provider<T>;
+   friend Provider<T>;
 
-    // reference to provider
-    Provider<T> *_r_provider;
-    int _channel;
-    bool _reception;
+   // reference to provider
+   Provider<T> *_r_provider;
+   int _channel;
+   bool _reception;
 
 protected:
-    // invoked on provider allocation if tag matches this receiver's channel
-    virtual void _receive(T *t) {};
-    Receiver() : _r_provider(nullptr), _channel(-1), _reception(false) {}
+   // invoked on provider allocation if tag matches this receiver's channel
+   virtual void _receive(T *t) {};
+
+   Receiver() : _r_provider(nullptr), _channel(-1), _reception(false) {}
+   Receiver(Receiver<T> &&other) { operator=(std::move(other)); }
+   Receiver(const Receiver<T> &other) = delete;
+
+   Receiver<T> &operator=(Receiver<T> &&other) {
+      if (this != &other) {
+         _r_provider = other._r_provider;
+         _channel = other._channel;
+         _reception = other._reception;
+         other._r_provider = nullptr;
+         other._channel = -1;
+         other._reception = false;
+      }
+      return *this;
+   }
+   Receiver<T> &operator=(const Receiver<T> &other) = delete;
 
 public:
-    virtual ~Receiver() {
-        unsubscribeFromProvider();
-    }
+   virtual ~Receiver() {
+      unsubscribeFromProvider();
+   }
 
-    void setChannel(int channel) { _channel = channel; }
-    void enableReception(bool state) { _reception = state; }
-    int getChannel() { return _channel; }
-    
-    /* Returns reference to provider's active set of T references, if it exists. */
-    const std::unordered_set<T*>* getAllProvided() { 
-        if (_r_provider)
-            return _r_provider->getAllProvided(); 
-        else
-            return nullptr;
-    }
+   void setChannel(int channel) { _channel = channel; }
+   void enableReception(bool state) { _reception = state; }
+   int getChannel() { return _channel; }
+   
+   /* Returns reference to provider's active set of T references, if it exists. */
+   const std::unordered_set<T*>* getAllProvided() { 
+      if (_r_provider)
+         return _r_provider->getAllProvided(); 
+      else
+         return nullptr;
+   }
 
-    /* Unsubscribes from subscribed provider. Does nothing if not subscribed. */
-    void unsubscribeFromProvider() {
-        if (_r_provider)
-            _r_provider->tryUnsubscribe(this);
-    }
+   /* Unsubscribes from subscribed provider. Does nothing if not subscribed. */
+   void unsubscribeFromProvider() {
+      if (_r_provider)
+         _r_provider->tryUnsubscribe(this);
+   }
 };
 
 /* class ProvidedType

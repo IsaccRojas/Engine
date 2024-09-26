@@ -27,8 +27,10 @@ public:
    GLFWState(const GLFWState &other) = delete;
    GLFWState &operator=(const GLFWState &other) = delete;
 
+   /* Initializes GLFW and instantiates a GLFWwindow, set to contained reference. */
    void init(int width, int height, const char *title, bool debug);
    void uninit();
+
    GLFWwindow *getWindowHandle();
 };
 

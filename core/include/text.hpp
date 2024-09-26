@@ -28,6 +28,7 @@ struct TextConfig {
     int text_xoff = 0;
     int text_yoff = 0;
     int spacing = 0;
+    // default copy assignment/construction are fine
 };
 
 /* collection of quads to represent text */
@@ -42,9 +43,15 @@ class Text {
     glm::vec3 _scale;
     
     bool _update;
+
 public:
     Text(GLEnv *glenv);
+    Text(Text &&other);
+    Text(const Text &other) = delete;
     ~Text();
+
+    Text &operator=(Text &&other);
+    Text &operator=(const Text &other) = delete;
 
     void setTextConfig(TextConfig textconfig);
     void setText(const char *str);

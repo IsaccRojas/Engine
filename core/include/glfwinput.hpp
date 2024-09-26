@@ -40,8 +40,15 @@ public:
 
     // default copy assignment/construction are fine (reference is read only)
 
+    /* Updates contained input state based on current inputs being made at time of this call. */
     void update();
+
+    /* Sets if internal state of a key should remain true until polled again (via update()). NOTE: Currently
+       does not actually impact how this class works, as it will store the state anyway and only unset a
+       key when it is released.
+    */
     void setsticky(bool value);
+    
     bool get_w();
     bool get_a();
     bool get_s();
@@ -60,6 +67,7 @@ public:
     /* Returns the input of WASD as a unit vector (up is in the positive y direction, right is in the positive x direction). */
     glm::vec2 inputdir();
     
+    /* Returns the current mouse position within the window, scaled to the provided pixel dimensions, with the origin at the center. */
     glm::vec2 mousepos();
 };
 
