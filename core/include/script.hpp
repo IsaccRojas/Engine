@@ -326,6 +326,19 @@ class ProvidedType {
 
 protected:
    ProvidedType() : _pt_provider(nullptr), _t_ref(nullptr) {}
+   ProvidedType(ProvidedType<T> &&other) { operator=(std::move(other)); }
+   ProvidedType(const ProvidedType<T> &other) = delete;
+
+   ProvidedType<T> &operator=(ProvidedType<T> &&other) {
+      if (this != &other) {
+         _pt_provider = other._pt_provider;
+         _t_ref = other._t_ref;
+         other._pt_provider = nullptr;
+         other._t_ref = nullptr;
+      }
+      return *this;
+   }
+   ProvidedType<T> &operator=(const ProvidedType<T> &other) = delete;
 
 public:
    virtual ~ProvidedType() {
@@ -369,6 +382,19 @@ protected:
    virtual T *_allocateProvided() = 0;
 
    ProvidedAllocator() : _a_provider(nullptr) {}
+   ProvidedAllocator(ProvidedAllocator<T> &&other) { operator=(std::move(other)); }
+   ProvidedAllocator(const ProvidedAllocator<T> &other) = delete;
+
+   ProvidedAllocator<T> &operator=(ProvidedAllocator<T> &&other) {
+      if (this != &other) {
+         _a_provider = other._a_provider;
+         _name = other._name;
+         other._a_provider = nullptr;
+         other._name = "";
+      }
+      return *this;
+   }
+   ProvidedAllocator<T> &operator=(const ProvidedAllocator<T> &other) = delete;
 
 public:
    virtual ~ProvidedAllocator() {
@@ -394,8 +420,7 @@ class Provider {
    std::unordered_set<Receiver<T>*> _receivers;
    std::unordered_set<T*> _providedtypes;
    std::unordered_map<std::string, ProvidedAllocator<T>*> _allocators;
-
-protected:
+   
    // stores and broadcasts instances of T
    void _storeType(T *t, int tag) {
       // interpret tag as channel
@@ -416,7 +441,10 @@ protected:
    }
 
 public:
-   virtual ~Provider() {
+   Provider() {}
+   Provider(Provider<T> &&other) { operator=(std::move(other)); }
+   Provider(const Provider<T> &other) = delete;
+   ~Provider() {
       for (const auto& receiver: _receivers)
          receiver->_r_provider = nullptr;
       for (const auto& providedtype: _providedtypes)
@@ -424,6 +452,19 @@ public:
       for (const auto& allocator: _allocators)
          allocator.second->_a_provider = nullptr;
    }
+
+   Provider<T> &operator=(Provider<T> &&other) {
+      if (this != &other) {
+         _receivers = other._receivers;
+         _providedtypes = other._providedtypes;
+         _allocators = other._allocators;
+         other._receivers.clear();
+         other._providedtypes.clear();
+         other._allocators.clear();
+      }
+      return *this;
+   }
+   Provider<T> &operator=(const Provider<T> &other) = delete;
 
    /* Adds the allocator to this provider's set of allocators, enabling interception of their allocations. */
    void addAllocator(ProvidedAllocator<T> *allocator, const char *name) {
