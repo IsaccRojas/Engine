@@ -13,40 +13,40 @@ contains many debugging artifacts.
 
 The core library contains a set of components which interact with one
 another to give the engine its form desired by the user. The operative
-units of the system are scripts, entities, and objects. These represent 
-graphical and physical presences in the engine, which are accessed and 
-modified by mechanisms like executors and managers.
+units of the system are scripts, quads, and colliders. These represent
+units of execution, graphical presences, and physical presences in the 
+engine, which are accessed and modified by mechanisms like executors.
 
-The software design is a mostly linear hierarchy, with the form as follows:
+The software design is a mostly polymorphic hierarchy, with the form as follows:
 
-![Software diagram.](https://i.imgur.com/q2k8koX.png)
+![Software diagram.](https://i.imgur.com/VflSj2F.png)
 
 **Scripts** and **Executors** form the bottom layer of the system, and embody 
 a scripting mechanism. The Script class is an interface modeling an execution 
 lifetime. The **AllocatorInterface** must be implemented, and an instance can be 
 provided to an **Executor** instance and mapped to a name. This enables the **Executor**
-to instantiate and manage **Script** subtypes, "executing" them through a queueing
+to instantiate and manage Script subtypes, "executing" them through a queueing
 API.
 
-**Entities** and **EntityExecutors** form the next layer. Entities are Scripts that
-contain a **Quad**, a graphical presence controlled by an existing **GLEnv**. The GLEnv 
-component encapsulates the OpenGL graphical backend for the system, managing data buffers;
-this is primarily done through wrappers defined in the ``glutil.hpp`` module.
+The **GLEnv** component encapsulates the OpenGL graphical backend for the system, 
+managing data buffers and graphical presences defined as **Quads**; this is primarily 
+done through wrappers defined in the ``glutil.hpp`` module.
 
-**Objects** and **ObjectExecutors** form the uppermost layer. Objects are Entities with a
-**Box**, a physical presence controlled by an existing **PhysEnv**. The PhysEnv component
-facilitates physics-related simulations, i.e. collision detection based on the current state 
-of all contained Boxes.
+The **PhysSpace** component facilitates basic physics-related simulations, i.e. collision 
+detection based on the current state of all contained **Colliders**.
 
-Additionally included in the library is a templated **ProvidedType**, **Provider**, and **Receiver** scheme that
-implements **AllocaterInterface** to enable simplistic runtime routing of allocated instances
-of subtypes implementing **Script**, **Entity**, or **Object**.
+Additionally included in the library is a templated **ProvidedType**, **Provider**, and **Receiver** 
+scheme that implements **AllocaterInterface** to enable simplistic runtime retrieval of allocated 
+instances of subtypes implementing the Script class.
+
+An additional layer for subtypes of Scripts that contain references to GLEnv and PhysSpace
+instances is also provided, called **Entities**.
 
 Simplistic wrappers for GLFW window and input handling are also included.
 
 ## Descriptions & Usage
 
-### Scripts, Entities, Objects, and Allocators
+### Scripts, Quads, Colliders and Allocators
 
 **Scripts** represent an interface that allows the user specify the behavior of methods
 controlled by an **Executor**, with the following exposed virtual methods:
@@ -62,18 +62,12 @@ The Scripts contain various flags that dictate this behavior set and unset by Ex
 must be provided with an instantiation of an implementation of **AllocatorInterface**, which can be
 mapped to a string name and callbacks.
 
-**Entities** are Scripts that contain a reference to a **Quad**. **EntityExecutors** must be passed a
-reference of **GLEnv** and a reference of an **Animation** map to instantiate this Quad reference, 
-which are assigned to the Entity by the EntityExecutor on allocation. `Entity::_initEntity()`, `Entity::_baseEntity()`, 
-and `Entity::_killEntity()` are instead exposed, which wrap the ``Script::_init()``, ``Script::_base()`` and ``Script::_kill()`` methods.
+**Entities** are Scripts that have access to **GLEnv** and **PhysSpace** resources. **EntityExecutors** must 
+be passed a reference of **GLEnv**, **PhysSpace**, an **Animation** map and a **Filter** map. `Entity::_initEntity()`,
+`Entity::_baseEntity()`, and `Entity::_killEntity()` are instead exposed, which wrap the ``Script::_init()``,
+``Script::_base()`` and ``Script::_kill()`` methods.
 
-**Objects** are Entities that contain a reference to a **Box**. **ObjectExecutors** must be passed a
-reference of **PhysEnv** and a reference of a **Filter** map to instantiate this Box reference, 
-which are assigned to the Object by the ObjectExecutor on allocation. `Object::_initObject()`, `Object::_baseObject()`, 
-and `Object::_killObject()` are instead exposed, which wrap the ``Entity::_initEntity()``, ``Entity::_baseEntity()`` and ``Entity::_killEntity()`` 
-methods.
-
-### Executors, GLEnvs and PhysEnvs
+### Executors, GLEnvs and PhysSpaces
 
 **Executors** represent a "scripting" mechanism. When provided with instances of **AllocatorInterface** mapped
 to a name, they can enqueue "spawns" of **Scripts** with the names added, and enqueue active Script instances
@@ -105,15 +99,21 @@ Active Scripts can be controlled via the following API:
 Projection, View, and Transformation matrices, and texture data. GLEnvs can internally instantiate **Quads** via 
 `GLEnv::genQuad()`, which the user can obtain references to and manipulate. These Quads can have their representative data
 written to the underlying OpenGL API via calls to ``GLEnv::update()`` methods either on the Quads or on the owning GLEnv instance.
-Rendering can be performed with the `GLEnv::draw()` method.
+Rendering can be performed with the `GLEnv::draw()` method. Quads can additionally be passed a reference to **Animation** data,
+which can then be used to write to its texture-related buffers based on the Animation configuration being referenced, via their
+**AnimationState** preserving per-instance state information of the Animation being used.
 
-**PhysEnvs** represent a physical environment. They embody a physical space within which **Boxes** exist, which the PhysEnv 
-can perform collision detection and other physics-related computations with. PhysEnvs can internally instantiate Boxes via 
-`PhysEnv::genBox()`. In this call, Boxes can also be given a callback to be executed on collision. Detection is done on all 
-owned Boxes with `PhysEnv::detectCollision()`.
+**PhysSpaces** represent a physical environment. They embody a physical space within which **Colliders** exist, which the PhysSpace
+can perform collision detection and other physics-related computations with. The PhysSpace class is templated, and will support collision
+between subtypes that implement the Collider interface. A PhysSpace instance can internally instantiate Colliders via
+`PhysSpace<T>::push()`. In this call, Colliders can also be given a callback to be executed on collision. Detection is done on all 
+owned Colliders with `PhysSpace<T>::detectCollision()`. Colliders can additionally be passed a reference to **Filter** data, which will be
+used by the detection method to determine if the collision should take place between a pair of contained Colliders, via their
+**FilterState** preserving per-instance state information of the Filter being used. Implementations of the Collider interface for 
+axis-aligned boxes and spheres are included.
 
-**EntityExecutors** and **ObjectExecutors** facilitate the execution of the **Entity** and **Object** subtypes, respectively,
-by extending the Executor definition with subtype getters and additional fields to map to their added AllocatorInterfaces.
+**EntityExecutors** facilitate the execution of the **Entity** subtypes, by extending the Executor definition with resources that
+its owned Entity instances will have access to.
 
 ### ProvidedTypes, Providers, ProvidedAllocators, and Receivers
 
@@ -198,8 +198,8 @@ Each frame should contain a "texpos", "texsize", "offset", and "duration" field,
 certain texture data values and values for use by Animation and AnimationState instances.
 
 The function `loadAnimations(const char*)` loads Animations from a directory and returns a
-map that an **EntityExecutor** instance can store a reference to. **Entities** contain a AnimationState member,
-which is used for writing to their assigned **Quad** reference as their `baseEntity()` method is called.
+map that an **EntityExecutor** instance can store a reference to. **Entities** can directly access
+this map via their contained reference to their owner.
 
 ### Filter Configuration
 
@@ -228,8 +228,8 @@ The "id" field is the individual value of the filter. The "whitelist" and "black
 fields are arrays of integer for the filter to use when attempting to pass values.
 
 The function `loadFilters(const char*)` loads Filters from a directory and returns a
-map that an **ObjectExecutor** instance can store a reference to. **Objects** contain FilterState
-members, which are used for filtering collisions when detection occurs.
+map that an **EntityExecutor** instance can store a reference to. **Entities** can directly access
+this map via their contained reference to their owner.
 
 ## Additional Notes
 
