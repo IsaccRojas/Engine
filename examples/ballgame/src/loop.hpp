@@ -2,7 +2,7 @@
 #define LOOP_HPP_
 
 #include "coreinit.hpp"
-#include "allocators.hpp"
+#include "implementations.hpp"
 #include "../../../core/include/text.hpp"
 
 #include <iostream>
@@ -11,22 +11,8 @@
 #include <time.h>
 #include <thread>
 
-struct Allocators {
-    BulletAllocator Bullet_allocator;
-    PlayerAllocator Player_allocator;
-    EnemyAllocator Enemy_allocator;
-    RingAllocator Ring_allocator;
-    ShrinkParticleAllocator ShrinkParticle_allocator;
-    Provider<Bullet> Bullet_provider;
-    Provider<Player> Player_provider;
-    Provider<Enemy> Enemy_provider;
-    Provider<ShrinkParticle> ShrinkParticle_provider;
-    
-    // need this to initialize some members
-    Allocators(GLFWInput *input, bool *killflag);
-};
-
-struct GlobalState : public Receiver<Enemy> {
+// receives enemies and players to initialize them
+struct GlobalState : public Receiver<Enemy>, public Receiver<Player> {
     int game_state;
     int i;
 
@@ -42,6 +28,7 @@ struct GlobalState : public Receiver<Enemy> {
     bool enter_check;
     bool enter_state;
 
+    GLFWInput *input;
     bool killflag;
 
     Text toptext;
@@ -49,26 +36,24 @@ struct GlobalState : public Receiver<Enemy> {
     Text bottomtext;
 
     // need this to initialize Text members
-    GlobalState(GLEnv *glenv);
+    GlobalState(GLEnv *glenv, GLFWInput *glfwinput);
 
     std::queue<int> size_factors;
 
     void _receive(Enemy *enemy) override;
+    void _receive(Player *player) override;
 };
 
 /* Primary program execution loop. */
 void loop(CoreResources *core);
 
-/* Adds allocators to core Executor. */
-void addAllocators(CoreResources *core, GlobalState *globalstate, Allocators *allocators);
-
 /* Handles initialization of game state. */
-void gameInitialize(CoreResources *core, GlobalState *globalstate, Allocators *allocators);
+void gameInitialize(CoreResources *core, GlobalState *globalstate);
 
 /* Handles one iteration of game state. */
-void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocators);
+void gameStep(CoreResources *core, GlobalState *globalstate, Providers *providers);
 
 /* Handles processing of core data. */
-void gameProcess(CoreResources *core, GlobalState *globalstate, Allocators *allocators);
+void gameProcess(CoreResources *core, GlobalState *globalstate);
 
 #endif

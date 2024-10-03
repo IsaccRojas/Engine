@@ -2,7 +2,7 @@
 
 void GfxBall::_initEntity() {
     // create and set quad
-    _quad_off = executor().glenv().genQuad(transform.pos, transform.scale, glm::vec4(1.0f), glm::vec3(0.0f), glm::vec2(0.0f), GLE_ELLIPSE);
+    _quad_off = executor().glenv().genQuad(transform.pos, transform.scale, glm::vec4(1.0f), 0.0f, glm::vec3(0.0f), glm::vec2(0.0f), GLE_ELLIPSE);
     _quad = executor().glenv().getQuad(_quad_off);
 
     // set animation if it is named

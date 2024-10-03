@@ -1,6 +1,8 @@
 #include "implementations.hpp"
 
 void Bullet::_initPhysBall() {
+    providers().ShrinkParticle_provider.subscribe(this);
+
     _i = 0;
     vel = _direction;
 
@@ -38,15 +40,135 @@ void Bullet::_receive(ShrinkParticle *p) {
         p->set(transform.scale, glm::vec4(1.0f), 24, _direction / 4.0f);
 };
 
-Bullet::Bullet() : PhysBall("", "Bullet"), _i(0), _lifetime(119), _direction(0.0f) {}
+Bullet::Bullet(Providers *providers) : PhysBall("", "Bullet"), ProvidersHolder(providers), _i(0), _lifetime(119), _direction(0.0f) {}
 
 void Bullet::setDirection(glm::vec3 direction) { _direction = direction; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+void Bomb::_initPhysBall() {
+    providers().ShrinkParticle_provider.subscribe(this);
+    providers().Explosion_provider.subscribe(this);
+
+    _i = 0;
+    vel = _direction * 0.5f;
+
+    // display on level with other entities
+    quad()->bv_pos.v.z = 0.0f;
+
+    // override transform scale
+    transform = Transform{transform.pos, glm::vec3(10.0f, 10.0f, 0.0f)};
+
+    Receiver<ShrinkParticle>::setChannel(getExecutorID());
+    Receiver<ShrinkParticle>::enableReception(true);
+    Receiver<Explosion>::setChannel(getExecutorID());
+    Receiver<Explosion>::enableReception(true);
+}
+
+void Bomb::_basePhysBall() {
+    _i++;
+
+    if (_i % 24 == 0)
+        executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
+
+    if (_i >= _lifetime || sphere()->getCollidedCount()) {
+        enqueueKill();
+        if (sphere()->getCollidedCount())
+            executor().enqueueSpawnEntity("Explosion", 0, getExecutorID(), transform);
+        else
+            executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
+    }
+}
+
+void Bomb::_killPhysBall() {
+    Receiver<ShrinkParticle>::enableReception(false);
+    Receiver<Explosion>::enableReception(false);
+    removeFromProvider();
+}
+
+void Bomb::_receive(ShrinkParticle *p) {
+    if (!getKillEnqueued())
+        p->set(glm::vec3(8.0f), glm::vec4(1.0f), 24, glm::vec3(0.0f));
+    else
+        p->set(transform.scale, glm::vec4(1.0f), 24, _direction / 4.0f);
+};
+
+void Bomb::_receive(Explosion *e) {
+    e->set(0.25f, 16.0f, glm::vec4(1.0f), 24, glm::vec3(0.0f), 0.029f, 0.25f, 1);
+};
+
+Bomb::Bomb(Providers *providers) : PhysBall("", "Bullet"), ProvidersHolder(providers), _i(0), _lifetime(239), _direction(0.0f) {}
+
+void Bomb::setDirection(glm::vec3 direction) { _direction = direction; }
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void Explosion::_initPhysBall() {
+    // display above other entities
+    quad()->bv_pos.v.z = 1.0f;
+    quad()->bv_color.v = _color;
+}
+
+void Explosion::_basePhysBall() {
+    if (sphere()->getCollidedCount() > 0 || _i >= _active_time)
+        sphere()->enableCollision(false);
+    
+    if (_lifetime >= 0) {
+        _i++;
+        if (_i >= _lifetime)
+            enqueueKill();
+    }
+
+    // scale quad linearly based on rate
+    if (_i % _update_rate == 0) {
+        transform.pos = transform.pos + _vel;
+        transform.scale = glm::vec3(_base_outerrad) + glm::vec3(float(_i) * _rate_outer);
+
+        quad()->bv_innerrad.v = _base_innerrad + (float(_i) * _rate_inner);
+    }
+}
+
+void Explosion::_killPhysBall() {
+    removeFromProvider();
+}
+
+Explosion::Explosion() : PhysBall("", "Bullet"), 
+    _base_innerrad(0.0f), 
+    _base_outerrad(0.0f), 
+    _color(glm::vec4(0.0f)), 
+    _vel(glm::vec3(0.0f)), 
+    _rate_inner(0.0f), 
+    _rate_outer(0.0f),
+    _lifetime(0),
+    _i(0),
+    _active_time(5),
+    _update_rate(0)
+{}
+
+void Explosion::set(float base_innerrad, float base_outerrad, glm::vec4 color, unsigned lifetime, glm::vec3 vel, float rate_inner, float rate_outer, unsigned update_rate) {
+    _base_innerrad = base_innerrad;
+    _base_outerrad = base_outerrad;
+    _color = color;
+    _lifetime = lifetime;
+    _vel = vel;
+    _rate_inner = rate_inner;
+    _rate_outer = rate_outer;
+    _update_rate = update_rate;
+
+    transform.scale = glm::vec3(_base_outerrad);
+}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 void Player::_initPhysBall() {
+    providers().Bullet_provider.subscribe(this);
+    providers().Bomb_provider.subscribe(this);
+    providers().ShrinkParticle_provider.subscribe(this);
+
     Receiver<Bullet>::setChannel(getExecutorID());
     Receiver<Bullet>::enableReception(true);
+    Receiver<Bomb>::setChannel(getExecutorID());
+    Receiver<Bomb>::enableReception(true);
     Receiver<ShrinkParticle>::setChannel(getExecutorID());
     Receiver<ShrinkParticle>::enableReception(true);
 
@@ -63,17 +185,21 @@ void Player::_basePhysBall() {
         playerDeath();
     }
 
-    playerMotion();
-    playerAction();
+    if (_input) {
+        playerMotion();
+        playerAction();
+    }
 }
 
 void Player::_killPhysBall() {
     Receiver<Bullet>::enableReception(false);
+    Receiver<Bomb>::enableReception(false);
     Receiver<ShrinkParticle>::enableReception(false);
     removeFromProvider();
 }
 
 void Player::_receive(Bullet *bullet) { bullet->setDirection(_dirvec); }
+void Player::_receive(Bomb *bomb) { bomb->setDirection(_dirvec); }
 void Player::_receive(ShrinkParticle *particle) {
     // pop direction and set particle with it
     if (!_deathparticledirs.empty()) {
@@ -83,14 +209,17 @@ void Player::_receive(ShrinkParticle *particle) {
     }
 }
 
-Player::Player(GLFWInput *input) : 
+Player::Player(Providers *providers) : 
     PhysBall("", "Player"),
-    _input(input),
+    ProvidersHolder(providers),
+    _input(nullptr),
     _accel(0.2f), 
     _deccel(0.15f), 
-    _spd_max(0.8f), 
-    _cooldown(0.0f),
-    _max_cooldown(15.0f), 
+    _spd_max(0.8f),
+    _bullet_cooldown(0.0f),
+    _bomb_cooldown(0.0f),
+    _bullet_cooldown_max(15.0f),
+    _bomb_cooldown_max(60.0f),
     _prevmovedir(0.0f),
     _dirvec(0.0f)
 {}
@@ -138,15 +267,25 @@ void Player::playerAction() {
     } else
         _dirvec = glm::vec3(_prevmovedir.x, _prevmovedir.y, 0.0f);
     
-    // spawn projectile if not on cooldown
-    if (_cooldown <= 0.0f) {
-        if (_input->get_m1() || _input->get_space()) {
+    // spawn bullet if not on cooldown
+    if (_bullet_cooldown <= 0.0f) {
+        if (_input->get_m1()) {
             // spawn projectile and set cooldown
             executor().enqueueSpawnEntity("Bullet", 0, getExecutorID(), transform);
-            _cooldown = _max_cooldown;
+            _bullet_cooldown = _bullet_cooldown_max;
         }
     } else
-        _cooldown -= 1.0f;
+        _bullet_cooldown -= 1.0f;
+
+    // spawn bomb if not on cooldown
+    if (_bomb_cooldown <= 0.0f) {
+        if (_input->get_m2()) {
+            // spawn projectile and set cooldown
+            executor().enqueueSpawnEntity("Bomb", 0, getExecutorID(), transform);
+            _bomb_cooldown = _bomb_cooldown_max;
+        }
+    } else
+        _bomb_cooldown -= 1.0f;
 }
 
 void Player::playerDeath() {
@@ -163,9 +302,13 @@ void Player::playerDeath() {
     }
 }
 
+void Player::set(GLFWInput *input) { _input = input; }
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Enemy::_initPhysBall() {
+    providers().ShrinkParticle_provider.subscribe(this);
+    
     // display on level with other entities
     quad()->bv_pos.v.z = 0.0f;
     quad()->bv_color.v = glm::vec4(0.2116f, 0.2116f, 0.2166f, 1.0f);
@@ -175,7 +318,7 @@ void Enemy::_initPhysBall() {
 }
 
 void Enemy::_basePhysBall() {
-    if (_health <= 0 || *_killflag) {
+    if (_health <= 0 || (_killflag && *_killflag)) {
         enqueueKill();
         enemyDeath();
 
@@ -190,8 +333,6 @@ void Enemy::_basePhysBall() {
 }
 
 void Enemy::_killPhysBall() {}
-
-void Enemy::_receive(Player *player) {}
 
 void Enemy::_receive(ShrinkParticle *particle) {
     // pop direction and set particle with it
@@ -210,7 +351,7 @@ void Enemy::_receive(ShrinkParticle *particle) {
 
 Entity *Enemy::_getTarget() {
     // return first ID found
-    auto players = Receiver<Player>::getAllProvided();
+    auto players = providers().Player_provider.getAllProvided();
     if (players)
         for (auto &player : *players)
             return player;
@@ -218,15 +359,16 @@ Entity *Enemy::_getTarget() {
     return nullptr;
 }
 
-Enemy::Enemy(bool *killflag) :
+Enemy::Enemy(Providers *providers) :
     PhysBall("", "Enemy"),
+    ProvidersHolder(providers),
     _accel(0.075f), 
     _deccel(0.05f), 
     _spd_max(0.15f), 
     _t(rand() % 256), 
     _prevdir(0.0f),
     _health(1.0f),
-    _killflag(killflag)
+    _killflag(nullptr)
 {}
 
 void Enemy::enemyMotion() {
@@ -306,6 +448,7 @@ void Enemy::enemyDeath() {
 }
 
 void Enemy::setHealth(float health) { _health = health; }
+void Enemy::setKillFlag(bool *killflag) { _killflag = killflag; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -322,7 +465,7 @@ void Ring::_baseGfxBall() {
 
     // get first player found
     Player *p = nullptr;
-    auto players = getAllProvided();
+    auto players = providers().Player_provider.getAllProvided();
     if (players) {
         for (auto &player : *players) {
             p = player;
@@ -338,7 +481,7 @@ void Ring::_baseGfxBall() {
 
 void Ring::_killGfxBall() {}
 
-Ring::Ring() : GfxBall("", -1) {}
+Ring::Ring(Providers *providers) : GfxBall("", -1), ProvidersHolder(providers) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -358,7 +501,7 @@ void ShrinkParticle::_killGfxBall() {
     removeFromProvider();
 }
 
-ShrinkParticle::ShrinkParticle() : GfxBall("", 0), _basescale(glm::vec3(0.0f)), _color(glm::vec4(0.0f)), _vel(0.0f) {}
+ShrinkParticle::ShrinkParticle() : GfxBall("", 0), _basescale(glm::vec3(0.0f)), _color(glm::vec4(0.0f)), _vel(glm::vec3(0.0f)) {}
 
 void ShrinkParticle::set(glm::vec3 basescale, glm::vec4 color, unsigned lifetime, glm::vec3 vel) {
     _basescale = basescale;

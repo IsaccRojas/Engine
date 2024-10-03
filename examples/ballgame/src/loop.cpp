@@ -1,16 +1,11 @@
 #include "loop.hpp"
 
-Allocators::Allocators(GLFWInput *input, bool *killflag) :
-    Bullet_allocator(&(this->ShrinkParticle_provider)),
-    Player_allocator(input, &(this->Bullet_provider), &(this->ShrinkParticle_provider)),
-    Enemy_allocator(&(this->Player_provider), &(this->ShrinkParticle_provider), killflag),
-    Ring_allocator(&(this->Player_provider))
-{}
-
 // need this to initialize Text members
-GlobalState::GlobalState(GLEnv *glenv) : toptext(glenv), subtext(glenv), bottomtext(glenv) {
-    setChannel(65536);
-    enableReception(true);
+GlobalState::GlobalState(GLEnv *glenv, GLFWInput *glfwinput) : input(glfwinput), toptext(glenv), subtext(glenv), bottomtext(glenv) {
+    Receiver<Enemy>::setChannel(65536);
+    Receiver<Enemy>::enableReception(true);
+    Receiver<Player>::setChannel(65536);
+    Receiver<Player>::enableReception(true);
 }
 
 // set health of created enemies
@@ -18,46 +13,65 @@ void GlobalState::_receive(Enemy *enemy) {
     if (!size_factors.empty()) {
         int size_factor = size_factors.front();
         enemy->setHealth(1.0f + float(size_factor));
+        enemy->setKillFlag(&killflag);
         size_factors.pop();
     }
+}
+
+// set input of created players
+void GlobalState::_receive(Player *player) {
+    player->set(input);
 }
 
 void loop(CoreResources *core) {
     srand(time(NULL));
 
-    GlobalState globalstate(&core->glenv);
-    Allocators allocators(&core->input, &globalstate.killflag);
-    
-    // store allocators into providers to intercept their allocations
-    allocators.Bullet_provider.addAllocator(&allocators.Bullet_allocator, "Bullet");
-    allocators.Player_provider.addAllocator(&allocators.Player_allocator, "Player");
-    allocators.Enemy_provider.addAllocator(&allocators.Enemy_allocator, "Enemy");
-    allocators.ShrinkParticle_provider.addAllocator(&allocators.ShrinkParticle_allocator, "ShrinkParticle");
-    allocators.Enemy_provider.subscribe(&globalstate);
+    // instantiate global state and providers
+    GlobalState globalstate(&core->glenv, &core->input);
+    Providers providers;
+
+    // instantiate allocators, and attach them to providers
+    HolderAllocator<Bullet> Bullet_allocator(&providers);
+    HolderAllocator<Bomb> Bomb_allocator(&providers);
+    ProvidedEntityAllocator<Explosion> Explosion_allocator;
+    HolderAllocator<Player> Player_allocator(&providers);
+    HolderAllocator<Enemy> Enemy_allocator(&providers);
+    HolderAllocator<Ring> Ring_allocator(&providers);
+    ProvidedEntityAllocator<ShrinkParticle> ShrinkParticle_allocator;
+    providers.Bullet_provider.addAllocator(&Bullet_allocator, "Bullet");
+    providers.Bomb_provider.addAllocator(&Bomb_allocator, "Bomb");
+    providers.Explosion_provider.addAllocator(&Explosion_allocator, "Explosion");
+    providers.Player_provider.addAllocator(&Player_allocator, "Players");
+    providers.Enemy_provider.addAllocator(&Enemy_allocator, "Enemy");
+    providers.Ring_provider.addAllocator(&Ring_allocator, "Ring");
+    providers.ShrinkParticle_provider.addAllocator(&ShrinkParticle_allocator, "ShrinkParticle");
+
+    // add allocators to executor
+    core->executor.addEntity(&Bullet_allocator, "Bullet", G_PHYSBALL_BULLET, true, nullptr, nullptr);
+    core->executor.addEntity(&Bomb_allocator, "Bomb", G_PHYSBALL_BOMB, true, nullptr, nullptr);
+    core->executor.addEntity(&Explosion_allocator, "Explosion", G_PHYSBALL_EXPLOSION, true, nullptr, nullptr);
+    core->executor.addEntity(&Player_allocator, "Player", G_PHYSBALL_PLAYER, true, nullptr, nullptr);
+    core->executor.addEntity(&Enemy_allocator, "Enemy", G_PHYSBALL_ENEMY, true, nullptr, nullptr);
+    core->executor.addEntity(&Ring_allocator, "Ring", G_GFXBALL_RING, true, nullptr, nullptr);
+    core->executor.addEntity(&ShrinkParticle_allocator, "ShrinkParticle", G_GFXBALL_SHRINKPARTICLE, true, nullptr, nullptr);
+
+    // subscribe global state to enemies and players to initialize them
+    providers.Player_provider.subscribe(&globalstate);
+    providers.Enemy_provider.subscribe(&globalstate);
 
     std::cout << "Setting up allocators and initial game state" << std::endl;
-    addAllocators(core, &globalstate, &allocators);
-    gameInitialize(core, &globalstate, &allocators);
+    gameInitialize(core, &globalstate);
 
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(core->state.getWindowHandle()) && !core->input.get_esc()) {
-        gameStep(core, &globalstate, &allocators);
-        gameProcess(core, &globalstate, &allocators);
+        gameStep(core, &globalstate, &providers);
+        gameProcess(core, &globalstate);
     };
 
     std::cout << "Ending loop" << std::endl;
 }
 
-void addAllocators(CoreResources *core, GlobalState *globalstate, Allocators *allocators) {
-    // add objects to executor
-    core->executor.addEntity(&allocators->Bullet_allocator, "Bullet", G_PHYSBALL_BULLET, true, nullptr, nullptr);
-    core->executor.addEntity(&allocators->Player_allocator, "Player", G_PHYSBALL_PLAYER, true, nullptr, nullptr);
-    core->executor.addEntity(&allocators->Enemy_allocator, "Enemy", G_PHYSBALL_ENEMY, true, nullptr, nullptr);
-    core->executor.addEntity(&allocators->Ring_allocator, "Ring", G_GFXBALL_RING, true, nullptr, nullptr);
-    core->executor.addEntity(&allocators->ShrinkParticle_allocator, "ShrinkParticle", G_GFXBALL_SHRINKPARTICLE, true, nullptr, nullptr);
-}
-
-void gameInitialize(CoreResources *core, GlobalState *globalstate, Allocators *allocators) {
+void gameInitialize(CoreResources *core, GlobalState *globalstate) {
     core->executor.enqueueSpawnEntity("Ring", 0, -1, Transform{});
 
     TextConfig largefont{0, 0, 2, 5, 19, 7, 24, 0, 0, 1};
@@ -92,7 +106,7 @@ void gameInitialize(CoreResources *core, GlobalState *globalstate, Allocators *a
     globalstate->enter_state = false;
 }
 
-void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocators) {
+void gameStep(CoreResources *core, GlobalState *globalstate, Providers *providers) {
     // force enter input state to only be true for one frame until released
     if (!globalstate->enter_check) {
         if (core->input.get_enter()) {
@@ -111,8 +125,8 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
         globalstate->killflag = true;
 
         // spawn a player if none exist
-        if (allocators->Player_provider.getProvidedCount() == 0) {
-            core->executor.enqueueSpawnEntity("Player", 0, -1, Transform{});
+        if (providers->Player_provider.getProvidedCount() == 0) {
+            core->executor.enqueueSpawnEntity("Player", 0, 65536, Transform{});
         }
 
         // check for input to start game if at least one player is spawned
@@ -129,7 +143,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
         globalstate->killflag = false;
 
         // check if there are no players
-        auto player_set = allocators->Player_provider.getAllProvided();
+        auto player_set = providers->Player_provider.getAllProvided();
         
         if (player_set->size() == 0) {
             globalstate->game_state = 3;
@@ -181,8 +195,8 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
         globalstate->killflag = true;
 
         // respawn player if somehow got here and there are no players
-        if (allocators->Player_provider.getProvidedCount() == 0) {
-            core->executor.enqueueSpawnEntity("Player", 0, -1, Transform{});
+        if (providers->Player_provider.getProvidedCount() == 0) {
+            core->executor.enqueueSpawnEntity("Player", 0, 65536, Transform{});
         } 
 
         // check for input to start next round if at least one player is spawned
@@ -238,7 +252,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Allocators *allocat
     globalstate->i++;
 }
 
-void gameProcess(CoreResources *core, GlobalState *state, Allocators *allocators) {
+void gameProcess(CoreResources *core, GlobalState *state) {
     glfwPollEvents();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

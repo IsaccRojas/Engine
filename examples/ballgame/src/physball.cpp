@@ -2,7 +2,7 @@
 
 void PhysBall::_initEntity() {
     // create and set quad and box
-    _quad_off = executor().glenv().genQuad(transform.pos, transform.scale, glm::vec4(1.0f), glm::vec3(0.0f), glm::vec2(0.0f), GLE_ELLIPSE);
+    _quad_off = executor().glenv().genQuad(transform.pos, transform.scale, glm::vec4(1.0f), 0.0f, glm::vec3(0.0f), glm::vec2(0.0f), GLE_ELLIPSE);
     _quad = executor().glenv().getQuad(_quad_off);
     _sphere = executor().spherespace().push(transform, glm::vec3(0.0f), nullptr);
     _sphere->radius = transform.scale.x / 2.0f;
@@ -20,10 +20,12 @@ void PhysBall::_initEntity() {
 void PhysBall::_baseEntity() {
     _basePhysBall();
 
-    // update transform with velocity, set sphere transform to be equal to Script, update quad to match (except for z-coordinate)
+    // update transform with velocity and set sphere transform to be equal to Script
     transform.pos += vel;
     _sphere->transform = transform;
     _sphere->radius = transform.scale.x / 2.0f;
+
+    // update quad to match (except for z-coordinate)
     _quad->bv_pos.v = glm::vec3(transform.pos.x, transform.pos.y, _quad->bv_pos.v.z);
     _quad->bv_scale.v = transform.scale;
 
