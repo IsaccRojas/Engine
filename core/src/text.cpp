@@ -105,7 +105,7 @@ void Text::update() {
     } else {
         // push new IDs to vector (TODO: assign proper values on generation)
         for (int i = l_ids; i < l_str; i++)
-            _quadids.push_back(_glenv->genQuad(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), glm::vec3(0.0f), glm::vec2(0.0f), GLE_RECT));
+            _quadids.push_back(_glenv->genQuad(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), 0.0f, glm::vec3(0.0f), glm::vec2(0.0f), GLE_RECT));
     }
     
     // set position start to be half-way leftward across complete text width, to center the text

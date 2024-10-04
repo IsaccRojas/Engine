@@ -4,6 +4,7 @@ Script::Script(Script &&other) { operator=(std::move(other)); }
 Script::Script() :
     _executor(nullptr),
     _executor_id(0),
+    _spawn_tag(-1),
     _last_execqueue(-1),
     _remove_on_kill(false),
     _initialized(false), 
@@ -20,6 +21,7 @@ Script &Script::operator=(Script &&other) {
         _executor = other._executor;
         _executor_id = other._executor_id;
         _this_iter = other._this_iter;
+        _spawn_tag = other._spawn_tag;
         _last_execqueue = other._last_execqueue;
         _remove_on_kill = other._remove_on_kill;
         _initialized = other._initialized;
@@ -30,6 +32,7 @@ Script &Script::operator=(Script &&other) {
         _group = other._group;
         other._executor = nullptr;
         other._executor_id = 0;
+        other._spawn_tag = -1;
         other._last_execqueue = -1;
         other._remove_on_kill = false;
         other._initialized = false;
@@ -86,13 +89,9 @@ void Script::enqueueKill() {
         _executor->enqueueKill(this);
 }
 
-Executor &Script::executor() {
-    return *_executor; 
-}
-
-unsigned Script::getExecutorID() {
-    return _executor_id;
-}
+Executor &Script::executor() { return *_executor; }
+unsigned Script::getExecutorID() { return _executor_id; }
+int Script::getSpawnTag() { return _spawn_tag; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -128,7 +127,7 @@ Executor &Executor::operator=(Executor &&other) {
     return *this;
 }
 
-void Executor::_setupScript(Script *script, const char *script_name, int execution_queue) {
+void Executor::_setupScript(Script *script, const char *script_name, int execution_queue, int tag) {
     // get information
     ScriptInfo &info = _scriptinfos[script_name];
 
@@ -136,6 +135,7 @@ void Executor::_setupScript(Script *script, const char *script_name, int executi
     script->_executor = this;
     script->_executor_id = _intgen.push();
     script->_this_iter = _scripts.push_back(script);
+    script->_spawn_tag = tag;
 
     // set script fields (make copy of string passed)
     script->_remove_on_kill = info._remove_on_kill;
@@ -154,7 +154,7 @@ void Executor::_setupScript(Script *script, const char *script_name, int executi
 Script *Executor::_spawnScript(const char *script_name, int execution_queue, int tag) {
     // allocate instance and set it up
     Script *script = _scriptinfos[script_name]._allocator->_allocate(tag);
-    _setupScript(script, script_name, execution_queue);
+    _setupScript(script, script_name, execution_queue, tag);
     return script;
 }
 

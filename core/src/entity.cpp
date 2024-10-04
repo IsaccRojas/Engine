@@ -53,7 +53,7 @@ void EntityExecutor::_setupEntity(Entity *entity, const char *entity_name) {
 Entity *EntityExecutor::_spawnEntity(const char *entity_name, int execution_queue, int tag, Transform transform) {
     // allocate instance and set it up
     Entity *entity = _entityinfos[entity_name]._allocator->_allocate(tag);
-    _setupScript(entity, entity_name, execution_queue);
+    _setupScript(entity, entity_name, execution_queue, tag);
     _setupEntity(entity, entity_name);
     entity->transform = transform;
 

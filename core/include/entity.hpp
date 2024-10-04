@@ -159,7 +159,7 @@ template<class T>
 class ProvidedEntityAllocator : public ProvidedAllocator<T>, public EntityAllocatorInterface {
    Entity *_allocate(int tag) override { return this->_allocateStore(tag); }
 protected:
-   virtual T *_allocateProvided() override = 0;
+   virtual T *_allocateProvided() override { return new T; }
 };
 
 #endif

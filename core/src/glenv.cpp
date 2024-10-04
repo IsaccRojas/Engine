@@ -2,11 +2,12 @@
 
 // _______________________________________ Quad _______________________________________
 
-Quad::Quad(GLUtil::BVec3 position, GLUtil::BVec3 scale, GLUtil::BVec4 color, GLUtil::BVec3 textureposition, GLUtil::BVec2 texturesize) : 
+Quad::Quad(GLUtil::BVec3 position, GLUtil::BVec3 scale, GLUtil::BVec4 color, GLUtil::BFloat innerradius, GLUtil::BVec3 textureposition, GLUtil::BVec2 texturesize) : 
     _first_step(false),
     bv_pos(position), 
     bv_scale(scale),
     bv_color(color),
+    bv_innerrad(innerradius),
     bv_texpos(textureposition), 
     bv_texsize(texturesize)
 {}
@@ -17,6 +18,7 @@ void Quad::update() {
     bv_pos.update();
     bv_scale.update();
     bv_color.update();
+    bv_innerrad.update();
     bv_texpos.update();
     bv_texsize.update();
 }
@@ -56,17 +58,19 @@ const char * const vert_shader_str = R"(
     layout(location = 1) in vec3 v_pos;
     layout(location = 2) in vec3 v_scale;
     layout(location = 3) in vec4 v_color;
-    layout(location = 4) in vec3 v_texpos;
-    layout(location = 5) in vec2 v_texsize;
-    layout(location = 6) in float v_type;
-    layout(location = 7) in float v_draw;
+    layout(location = 4) in float v_innerrad;
+    layout(location = 5) in vec3 v_texpos;
+    layout(location = 6) in vec2 v_texsize;
+    layout(location = 7) in float v_type;
+    layout(location = 8) in float v_draw;
 
-    layout(location = 8) uniform mat4 u_view;
-    layout(location = 9) uniform mat4 u_proj;
+    layout(location = 9) uniform mat4 u_view;
+    layout(location = 10) uniform mat4 u_proj;
 
     out vec3 f_pos;
     out vec3 f_scale;
     out vec4 f_color;
+    out float f_innerrad;
     out vec3 f_texcoords;
     out float f_type;
 
@@ -79,6 +83,7 @@ const char * const vert_shader_str = R"(
         f_pos = v_pos;
         f_scale = v_scale;
         f_color = v_color;
+        f_innerrad = v_innerrad;
 
         // get final texture coordinates by adding: texsize multiplied by model positions (are either 0.0 or 1.0), and flip the vertical shift
         f_texcoords = 
@@ -111,14 +116,15 @@ const char * const vert_shader_str = R"(
 const char * const frag_shader_str = R"(
     #version 460
 
-    layout(location = 10) uniform sampler2DArray texsamplerarray;
-    layout(location = 11) uniform uvec3 texarraydims;
-    layout(location = 12) uniform uvec2 windowspace;
-    layout(location = 13) uniform uvec3 pixelspace;
+    layout(location = 11) uniform sampler2DArray texsamplerarray;
+    layout(location = 12) uniform uvec3 texarraydims;
+    layout(location = 13) uniform uvec2 windowspace;
+    layout(location = 14) uniform uvec3 pixelspace;
 
     in vec3 f_pos;
     in vec3 f_scale;
     in vec4 f_color;
+    in float f_innerrad;
     in vec3 f_texcoords;
     in float f_type;
 
@@ -165,7 +171,7 @@ const char * const frag_shader_str = R"(
                 )
             );
             
-            if (dist > 0.5)
+            if (dist > 0.5 || dist < (0.5 * f_innerrad))
                 discard;
             
             fragcolor = f_color;
@@ -197,6 +203,7 @@ GLEnv& GLEnv::operator=(GLEnv &&other) {
         _glb_pos = std::move(other._glb_pos);
         _glb_scale = std::move(other._glb_scale);
         _glb_color = std::move(other._glb_color);
+        _glb_innerrad = std::move(other._glb_innerrad);
         _glb_texpos = std::move(other._glb_texpos);
         _glb_texsize = std::move(other._glb_texsize);
         _glb_type = std::move(other._glb_type);
@@ -224,6 +231,7 @@ void GLEnv::init(unsigned max_count) {
     _glb_pos = GLUtil::GLBuffer(GL_DYNAMIC_DRAW, (max_count * 3) * sizeof(GLfloat));
     _glb_scale = GLUtil::GLBuffer(GL_DYNAMIC_DRAW, (max_count * 3) * sizeof(GLfloat));
     _glb_color = GLUtil::GLBuffer(GL_DYNAMIC_DRAW, (max_count * 4) * sizeof(GLfloat));
+    _glb_innerrad = GLUtil::GLBuffer(GL_DYNAMIC_DRAW, (max_count * 1) * sizeof(GLfloat));
     _glb_texpos = GLUtil::GLBuffer(GL_DYNAMIC_DRAW, (max_count * 3) * sizeof(GLfloat));
     _glb_texsize = GLUtil::GLBuffer(GL_DYNAMIC_DRAW, (max_count * 2) * sizeof(GLfloat)); 
     _glb_type = GLUtil::GLBuffer(GL_DYNAMIC_DRAW, (max_count * 1) * sizeof(GLfloat));
@@ -262,10 +270,11 @@ void GLEnv::init(unsigned max_count) {
     _stage.setAttribFormat(1, 3, GL_FLOAT, 0, 1);
     _stage.setAttribFormat(2, 3, GL_FLOAT, 0, 1);
     _stage.setAttribFormat(3, 4, GL_FLOAT, 0, 1);
-    _stage.setAttribFormat(4, 3, GL_FLOAT, 0, 1);
-    _stage.setAttribFormat(5, 2, GL_FLOAT, 0, 1);
-    _stage.setAttribFormat(6, 1, GL_FLOAT, 0, 1);
+    _stage.setAttribFormat(4, 1, GL_FLOAT, 0, 1);
+    _stage.setAttribFormat(5, 3, GL_FLOAT, 0, 1);
+    _stage.setAttribFormat(6, 2, GL_FLOAT, 0, 1);
     _stage.setAttribFormat(7, 1, GL_FLOAT, 0, 1);
+    _stage.setAttribFormat(8, 1, GL_FLOAT, 0, 1);
 
     // set attribute buffer indices to 0-7
     _stage.setAttribBufferIndex(0, 0);
@@ -276,6 +285,7 @@ void GLEnv::init(unsigned max_count) {
     _stage.setAttribBufferIndex(5, 5);
     _stage.setAttribBufferIndex(6, 6);
     _stage.setAttribBufferIndex(7, 7);
+    _stage.setAttribBufferIndex(8, 8);
 
     /* set up buffers */
 
@@ -288,10 +298,11 @@ void GLEnv::init(unsigned max_count) {
     _stage.bindBufferToIndex(_glb_pos.handle(), 1, 0, 3 * sizeof(GLfloat));
     _stage.bindBufferToIndex(_glb_scale.handle(), 2, 0, 3 * sizeof(GLfloat));
     _stage.bindBufferToIndex(_glb_color.handle(), 3, 0, 4 * sizeof(GLfloat));
-    _stage.bindBufferToIndex(_glb_texpos.handle(), 4, 0, 3 * sizeof(GLfloat));
-    _stage.bindBufferToIndex(_glb_texsize.handle(), 5, 0, 2 * sizeof(GLfloat));
-    _stage.bindBufferToIndex(_glb_type.handle(), 6, 0, 1 * sizeof(GLfloat));
-    _stage.bindBufferToIndex(_glb_draw.handle(), 7, 0, 1 * sizeof(GLfloat));
+    _stage.bindBufferToIndex(_glb_innerrad.handle(), 4, 0, 1 * sizeof(GLfloat));
+    _stage.bindBufferToIndex(_glb_texpos.handle(), 5, 0, 3 * sizeof(GLfloat));
+    _stage.bindBufferToIndex(_glb_texsize.handle(), 6, 0, 2 * sizeof(GLfloat));
+    _stage.bindBufferToIndex(_glb_type.handle(), 7, 0, 1 * sizeof(GLfloat));
+    _stage.bindBufferToIndex(_glb_draw.handle(), 8, 0, 1 * sizeof(GLfloat));
     _stage.bindElementBuffer(_glb_elembuf.handle());
 
     // use program
@@ -324,7 +335,7 @@ void GLEnv::uninit() {
     _initialized = false;
 }
 
-unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, glm::vec3 texpos, glm::vec2 texsize, DrawType type) {
+unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, GLfloat innerrad, glm::vec3 texpos, glm::vec2 texsize, DrawType type) {
     // if number of active offsets is greater than or equal to maximum allowed count, throw
     if (_count >= _max_count)
         throw CountLimitException();
@@ -338,6 +349,7 @@ unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, glm::ve
         GLUtil::BVec3(&_glb_pos, offset * (3 * sizeof(GLfloat))),
         GLUtil::BVec3(&_glb_scale, offset * (3 * sizeof(GLfloat))),
         GLUtil::BVec4(&_glb_color, offset * (4 * sizeof(GLfloat))),
+        GLUtil::BFloat(&_glb_innerrad, offset * (1 * sizeof(GLfloat))),
         GLUtil::BVec3(&_glb_texpos, offset * (3 * sizeof(GLfloat))), 
         GLUtil::BVec2(&_glb_texsize, offset * (2 * sizeof(GLfloat)))
     );
@@ -375,7 +387,7 @@ void GLEnv::remove(unsigned offset) {
 
 void GLEnv::setTexArray(GLuint width, GLuint height, GLuint depth) {
     _texarray.alloc(1, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, width, height, depth);
-    _stage.uniform3ui(11, glm::uvec3(width, height, depth));
+    _stage.uniform3ui(12, glm::uvec3(width, height, depth));
 }
 
 void GLEnv::setTexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset) {
@@ -385,19 +397,19 @@ void GLEnv::setTexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset
 }
 
 void GLEnv::setView(glm::mat4 view) {
-    _stage.uniformmat4f(8, view);
+    _stage.uniformmat4f(9, view);
 }
 
 void GLEnv::setProj(glm::mat4 proj) {
-    _stage.uniformmat4f(9, proj);
+    _stage.uniformmat4f(10, proj);
 }
 
 void GLEnv::setWindowSpace(GLuint width, GLuint height) {
-    _stage.uniform2ui(12, glm::uvec2(width, height));
+    _stage.uniform2ui(13, glm::uvec2(width, height));
 }
 
 void GLEnv::setPixelSpace(GLuint width, GLuint height, GLuint depth) {
-    _stage.uniform3ui(13, glm::uvec3(width, height, depth));
+    _stage.uniform3ui(14, glm::uvec3(width, height, depth));
 }
 
 void GLEnv::update() {

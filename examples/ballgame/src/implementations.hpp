@@ -10,6 +10,8 @@ enum Group {
     G_GFXBALL_RING, G_GFXBALL_SHRINKPARTICLE
 };
 
+// --------------------------------------------------------------------------------------------------------------------------
+
 class Bullet;
 class Bomb;
 class Explosion; // does not hold Providers reference
@@ -46,6 +48,8 @@ public:
     HolderAllocator(Providers *providers) : _providers(providers) {}
 };
 
+// --------------------------------------------------------------------------------------------------------------------------
+
 // implements PhysBall, is a provided type, needs access to Providers, and needs to receive ShrinkParticle
 class Bullet : public PhysBall, public ProvidedType<Bullet>, public ProvidersHolder, public Receiver<ShrinkParticle> {
     int _i;
@@ -61,6 +65,8 @@ public:
     Bullet(Providers *providers = nullptr);
     void setDirection(glm::vec3 direction);
 };
+
+// --------------------------------------------------------------------------------------------------------------------------
 
 // implements PhysBall, is a provided type, needs access to Providers, and needs to receive ShrinkParticle and Explosion
 class Bomb : public PhysBall, public ProvidedType<Bomb>, public ProvidersHolder, public Receiver<ShrinkParticle>, public Receiver<Explosion> {
@@ -78,6 +84,8 @@ public:
     Bomb(Providers *providers = nullptr);
     void setDirection(glm::vec3 direction);
 };
+
+// --------------------------------------------------------------------------------------------------------------------------
 
 // implements PhysBall, and is a provided type
 class Explosion : public PhysBall, public ProvidedType<Explosion> {
@@ -101,6 +109,8 @@ public:
     Explosion();
     void set(float base_innerrad, float base_outerrad, glm::vec4 color, unsigned lifetime, glm::vec3 vel, float rate_inner, float rate_outer, unsigned update_rate);
 };
+
+// --------------------------------------------------------------------------------------------------------------------------
 
 // implements PhysBall, is a provided type, needs access to Providers, and needs to receive Bullet, Bomb, and ShrinkParticle
 class Player : public PhysBall, public ProvidedType<Player>, public ProvidersHolder, public Receiver<Bullet>, public Receiver<Bomb>, public Receiver<ShrinkParticle> {
@@ -135,6 +145,8 @@ public:
     void set(GLFWInput *input);
 };
 
+// --------------------------------------------------------------------------------------------------------------------------
+
 // implements PhysBall, is a provided type, needs access to Providers, and needs to receive ShrinkParticle
 class Enemy : public PhysBall, public ProvidedType<Enemy>, public ProvidersHolder, public Receiver<ShrinkParticle> {
     float _accel;
@@ -166,6 +178,8 @@ public:
     void setKillFlag(bool *killflag);
 };
 
+// --------------------------------------------------------------------------------------------------------------------------
+
 // implements GfxBall, is a provided type, and needs access to Providers
 class Ring : public GfxBall, public ProvidedType<Ring>, public ProvidersHolder {
     void _initGfxBall() override;
@@ -175,6 +189,8 @@ class Ring : public GfxBall, public ProvidedType<Ring>, public ProvidersHolder {
 public:
     Ring(Providers *providers = nullptr);
 };
+
+// --------------------------------------------------------------------------------------------------------------------------
 
 // implements GfxBall, and is a provided type
 class ShrinkParticle : public GfxBall, public ProvidedType<ShrinkParticle> {

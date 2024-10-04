@@ -36,12 +36,15 @@ class ColliderInterface {
     glm::vec3 _prev_pos;
     std::function<void(T*)> _callback;
 
+    bool _collision_enabled;
+
 protected:
     ColliderInterface() :
         _physspace(nullptr),
         _collided_count(false),
         _prev_pos(glm::vec3(0.0f)),
         _callback(nullptr),
+        _collision_enabled(true),
         transform(Transform{glm::vec3(0.0f), glm::vec3(0.0f)}),
         vel(glm::vec3(0.0f)),
         mass(1.0f)
@@ -57,11 +60,16 @@ protected:
             _filterstate = other._filterstate;
             _prev_pos = other._prev_pos;
             _callback = other._callback;
+            _collision_enabled = other._collision_enabled;
+            transform = other.transform;
+            vel = other.vel;
+            mass = other.mass;
             other._physspace = nullptr;
             other._collided_count = 0;
             other._filterstate.setFilter(nullptr);
             other._prev_pos = glm::vec3(0.0f);
             other._callback = nullptr;
+            other._collision_enabled = true;
         }
         return *this;
     }
@@ -79,10 +87,13 @@ public:
 
     ColliderInterface<T> &operator=(const ColliderInterface<T> &other) = delete;
 
-    /* Sets the box's collision callback. */
+    /* Sets the instance's collision callback. */
     void setCallback(std::function<void(T*)> callback) {
         _callback = callback;
     }
+
+    /* Enables or disables collision for this collider. */
+    void enableCollision(bool state) { _collision_enabled = state; }
 
     /* Applies the current velocity to the position, and internally stores the previous position. */
     void step() {
@@ -96,22 +107,22 @@ public:
             _callback(t);
     }
     
-    /* Sets the box's collision filter. */
+    /* Sets the instance's collision filter. */
     void setFilter(Filter *filter) {
         _filterstate.setFilter(filter);
     }
 
-    /* Gets the box's collision filter state. */
+    /* Gets the instance's collision filter state. */
     FilterState &filterstate() {
         return _filterstate;
     }
 
-    /* Gets the box's previous position. */
+    /* Gets the instance's previous position. */
     glm::vec3 &prevpos() {
         return _prev_pos;
     }
 
-    /* Returns whether the box was collided with or not. This is only set and unset by an owning PhysEnv. */
+    /* Returns whether the instance was collided with or not. This is only set and unset by an owning PhysSpace. */
     unsigned getCollidedCount() { return _collided_count; }
 
     /* Computes and handles collision between this and the provided instance. */
@@ -202,7 +213,7 @@ public:
 
             // get T and skip if scale is zeroed out
             T *t1 = *iter1;
-            if (t1->transform.scale == glm::vec3(0.0f))
+            if (!(t1->_collision_enabled) || (t1->transform.scale == glm::vec3(0.0f)))
                 continue;
 
             auto iter2 = iter1;
@@ -211,7 +222,7 @@ public:
 
                 // get other T and skip if scale is zeroed out
                 T *t2 = *iter2;
-                if (t2->transform.scale == glm::vec3(0.0f))
+                if (!(t2->_collision_enabled) || (t2->transform.scale == glm::vec3(0.0f)))
                     continue;
 
                 // test filters against each other's IDs

@@ -26,15 +26,17 @@ public:
    GLUtil::BVec3 bv_pos;
    GLUtil::BVec3 bv_scale;
    GLUtil::BVec4 bv_color;
+   GLUtil::BFloat bv_innerrad;
    GLUtil::BVec3 bv_texpos;
    GLUtil::BVec2 bv_texsize;
    /* position - location of quad in 3D space
       scale - scaling values for x, y, and z coordinates of quad vertices
       color - color to apply to quad
-      textureposition - UV coordinates to use in texture space
-      texturesize - width and height of texture to use, applied to UV coordinates to get rectangle 
+      innerradius - inner radius to not render for ellipses (from 0.0f to 1.0f)
+      textureposition - UV coordinates to use in texture space, only used by rects
+      texturesize - width and height of texture to use, applied to UV coordinates to get texture rectangle, only used by rects 
    */
-   Quad(GLUtil::BVec3 position, GLUtil::BVec3 scale, GLUtil::BVec4 color, GLUtil::BVec3 textureposition, GLUtil::BVec2 texturesize);
+   Quad(GLUtil::BVec3 position, GLUtil::BVec3 scale, GLUtil::BVec4 color, GLUtil::BFloat bv_innerradius, GLUtil::BVec3 textureposition, GLUtil::BVec2 texturesize);
    Quad();
    ~Quad();
 
@@ -63,6 +65,7 @@ enum DrawType { GLE_RECT, GLE_ELLIPSE };
    - Quad position (vec3)
    - Quad scale (vec3)
    - Quad color (vec4)
+   - Quad inner radius (float) (used by ellipses to determine inner radius to not render, from 0.0f to 1.0f)
    - Quad texture position (vec3) (multi-level 2D texture space)
    - Quad texture size (vec2) (added to positions to get a rectangle)
    - Quad drawtype (float) (describes to shader whether to render Quad as a rectangle or ellipse)
@@ -95,6 +98,8 @@ class GLEnv {
    GLUtil::GLBuffer _glb_scale;
    // color of instance
    GLUtil::GLBuffer _glb_color;
+   // inner radius of instance (if ellipse)
+   GLUtil::GLBuffer _glb_innerrad;
    // texture position of instance
    GLUtil::GLBuffer _glb_texpos;
    // texture size of instance
@@ -135,6 +140,7 @@ public:
       pos - GLM vec3 position of Quad
       scale - GLM vec3 scale of Quad
       color - GLM vec4 color of Quad
+      innerrad - float inner radius of Quad if rendered as ellipse, from 0.0f to 1.0f
       texpos - GLM vec3 texture position of Quad (multi-level 2D texture space)
       texsize - GLM vec2 texture size of Quad (added to positions to get a rectangle)
       type - whether to interpret this Quad data as a rectangle or ellipse
@@ -143,7 +149,7 @@ public:
       of the Quad (see the erase() method). If the maximum number of active Quads allowed is exceeded, -1 is
       returned instead.
    */
-   unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, glm::vec3 texpos, glm::vec2 texsize, DrawType type);
+   unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, GLfloat innerrad, glm::vec3 texpos, glm::vec2 texsize, DrawType type);
    /* Removes the Quad with the provided offset from the system. This will cause the provided offset to be 
       invalid until returned again by the genQuad() method. Note that this method does not actually
       free any GPU memory; it simply makes the specific offset usable again by the system. Attempting to use

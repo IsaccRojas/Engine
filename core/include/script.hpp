@@ -29,6 +29,7 @@ class Script {
    Executor *_executor;
    unsigned _executor_id;
    std::list<Script*>::iterator _this_iter;
+   int _spawn_tag;
    int _last_execqueue;
    bool _remove_on_kill;
    bool _initialized;
@@ -90,6 +91,7 @@ public:
    int getGroup();
    Executor &executor();
    unsigned getExecutorID();
+   int getSpawnTag();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -176,7 +178,7 @@ private:
 
 protected:
    // initializes Script's Executor-related fields
-   void _setupScript(Script *script, const char *script_name, int execution_queue);
+   void _setupScript(Script *script, const char *script_name, int execution_queue, int tag);
 
    // spawns a Script using a name previously added to this manager, and returns its ID
    Script *_spawnScript(const char *script_name, int execution_queue, int tag);
@@ -379,7 +381,7 @@ protected:
       return t;
    }
 
-   virtual T *_allocateProvided() = 0;
+   virtual T *_allocateProvided() { return new T; }
 
    ProvidedAllocator() : _a_provider(nullptr) {}
    ProvidedAllocator(ProvidedAllocator<T> &&other) { operator=(std::move(other)); }
