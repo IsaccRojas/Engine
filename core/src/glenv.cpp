@@ -60,6 +60,7 @@ const char * const vert_shader_str = R"(
     out float f_innerrad;
     out vec3 f_texcoords;
     out float f_type;
+    out float f_draw;
 
     vec2 halfround(vec2 v) {
 	    return floor(v) + vec2(0.5);	
@@ -83,6 +84,7 @@ const char * const vert_shader_str = R"(
         ;
 
         f_type = v_type;
+        f_draw = v_draw;
         
         // get final pos by shifting unit model to center, scaling it by attribute scale, and adding attribute pos
         vec4 final_pos = 
@@ -114,6 +116,7 @@ const char * const frag_shader_str = R"(
     in float f_innerrad;
     in vec3 f_texcoords;
     in float f_type;
+    in float f_draw;
 
     out vec4 fragcolor;
 
@@ -122,6 +125,9 @@ const char * const frag_shader_str = R"(
     }
 
     void main() {
+        if (f_draw == 0.0)
+            discard;
+        
         // render as textured rectangle
         if (f_type == 0.0) {
 

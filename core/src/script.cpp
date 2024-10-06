@@ -270,8 +270,8 @@ void Executor::runExecQueue(unsigned queue) {
         script->_last_execqueue = queue;
         script->_exec_enqueued = false;
 
-        // check if script hasn't been killed yet
-        if (!(script->_killed)) {
+        // check if script hasn't been killed yet or kill enqueued
+        if (!(script->_killed || script->_kill_enqueued)) {
             // check if script needs to be initialized
             if (!(script->_initialized)) {
                 script->runInit();

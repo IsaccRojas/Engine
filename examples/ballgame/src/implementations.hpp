@@ -1,14 +1,14 @@
 #ifndef IMPLEMENTATIONS_HPP_
 #define IMPLEMENTATIONS_HPP_
 
-#include "gfxball.hpp"
+#include "gfxentity.hpp"
 #include "physball.hpp"
 #include "../../../core/include/glfwinput.hpp"
 #include "../../../core/include/text.hpp"
 
 enum Group { 
     G_PHYSBALL_BULLET, G_PHYSBALL_BOMB, G_PHYSBALL_EXPLOSION, G_PHYSBALL_PLAYER, G_PHYSBALL_ENEMY,
-    G_GFXBALL_RING, G_GFXBALL_SHRINKPARTICLE
+    G_GFXENTITY_RING, G_GFXENTITY_SHRINKPARTICLE, G_GFXENTITY_UPGRADER
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -18,8 +18,8 @@ class Bomb;
 class Explosion; // does not hold Providers reference
 class Player;
 class Enemy;
-class Ring;
 class ShrinkParticle; // does not hold Providers reference
+class Upgrader;
 
 // struct to group providers together
 struct Providers {
@@ -28,14 +28,17 @@ struct Providers {
     Provider<Explosion> Explosion_provider;
     Provider<Player> Player_provider;
     Provider<Enemy> Enemy_provider;
-    Provider<Ring> Ring_provider;
     Provider<ShrinkParticle> ShrinkParticle_provider;
+    Provider<Upgrader> Upgrader_provider;
 };
 
-// holds global state, and receives enemies and players to initialize them
-class GlobalState : public Receiver<Enemy> {
+// holds global state, and receives enemies and upgraders to initialize them
+class GlobalState : public Receiver<Enemy>, public Receiver<Upgrader> {
     // set health
     void _receive(Enemy *enemy) override;
+
+    // set upgrade
+    void _receive(Upgrader *upgrader) override;
 
 public:
     Providers providers;
@@ -57,15 +60,21 @@ public:
     bool enter_state;
 
     GLFWInput *input;
-    bool killflag;
+    bool killenemyflag;
+    bool killupgraderflag;
 
     Text toptext;
     Text subtext;
     Text bottomtext;
+    Text pointstext;
 
     std::queue<int> size_factors;
     std::vector<int> upgrade_counts;
     std::vector<Text> upgrade_texts;
+
+    int points;
+
+    std::queue<int> upgrade_indices;
 
     // need this to initialize Text members
     GlobalState(GLEnv *glenv, GLFWInput *glfwinput);
@@ -224,11 +233,11 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-// implements GfxBall, is a provided type, and needs access to Providers
-class Ring : public GfxBall, public ProvidedType<Ring>, public StateReferrer {
-    void _initGfxBall() override;
-    void _baseGfxBall() override;
-    void _killGfxBall() override;
+// implements GfxEntity, is a provided type, and needs access to Providers
+class Ring : public GfxEntity, public ProvidedType<Ring>, public StateReferrer {
+    void _initGfxEntity() override;
+    void _baseGfxEntity() override;
+    void _killGfxEntity() override;
 
 public:
     Ring(GlobalState *globalstate = nullptr);
@@ -237,18 +246,34 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 // implements GfxBall, and is a provided type
-class ShrinkParticle : public GfxBall, public ProvidedType<ShrinkParticle> {
+class ShrinkParticle : public GfxEntity, public ProvidedType<ShrinkParticle> {
     glm::vec3 _basescale;
     glm::vec4 _color;
     glm::vec3 _vel;
     
-    void _initGfxBall() override;
-    void _baseGfxBall() override;
-    void _killGfxBall() override;
+    void _initGfxEntity() override;
+    void _baseGfxEntity() override;
+    void _killGfxEntity() override;
 
 public:
     ShrinkParticle();
     void set(glm::vec3 basescale, glm::vec4 color, unsigned lifetime, glm::vec3 vel);
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+// ...
+class Upgrader : public GfxEntity, public ProvidedType<Upgrader>, public StateReferrer {
+    int _upgrade_index;
+    
+    void _initGfxEntity() override;
+    void _baseGfxEntity() override;
+    void _killGfxEntity() override;
+
+public:
+    Upgrader(GlobalState *globalstate = nullptr);
+
+    void set(int upgrade_index);
 };
 
 #endif

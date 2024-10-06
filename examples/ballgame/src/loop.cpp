@@ -14,13 +14,14 @@ void loop(CoreResources *core) {
     ReferrerAllocator<Enemy> Enemy_allocator(&globalstate);
     ReferrerAllocator<Ring> Ring_allocator(&globalstate);
     ProvidedEntityAllocator<ShrinkParticle> ShrinkParticle_allocator;
+    ReferrerAllocator<Upgrader> Upgrader_allocator(&globalstate);
     globalstate.providers.Bullet_provider.addAllocator(&Bullet_allocator, "Bullet");
     globalstate.providers.Bomb_provider.addAllocator(&Bomb_allocator, "Bomb");
     globalstate.providers.Explosion_provider.addAllocator(&Explosion_allocator, "Explosion");
     globalstate.providers.Player_provider.addAllocator(&Player_allocator, "Players");
     globalstate.providers.Enemy_provider.addAllocator(&Enemy_allocator, "Enemy");
-    globalstate.providers.Ring_provider.addAllocator(&Ring_allocator, "Ring");
     globalstate.providers.ShrinkParticle_provider.addAllocator(&ShrinkParticle_allocator, "ShrinkParticle");
+    globalstate.providers.Upgrader_provider.addAllocator(&Upgrader_allocator, "Upgrader");
 
     // add allocators to executor
     core->executor.addEntity(&Bullet_allocator, "Bullet", G_PHYSBALL_BULLET, true, nullptr, nullptr);
@@ -28,11 +29,13 @@ void loop(CoreResources *core) {
     core->executor.addEntity(&Explosion_allocator, "Explosion", G_PHYSBALL_EXPLOSION, true, nullptr, nullptr);
     core->executor.addEntity(&Player_allocator, "Player", G_PHYSBALL_PLAYER, true, nullptr, nullptr);
     core->executor.addEntity(&Enemy_allocator, "Enemy", G_PHYSBALL_ENEMY, true, nullptr, nullptr);
-    core->executor.addEntity(&Ring_allocator, "Ring", G_GFXBALL_RING, true, nullptr, nullptr);
-    core->executor.addEntity(&ShrinkParticle_allocator, "ShrinkParticle", G_GFXBALL_SHRINKPARTICLE, true, nullptr, nullptr);
+    core->executor.addEntity(&Ring_allocator, "Ring", G_GFXENTITY_RING, true, nullptr, nullptr);
+    core->executor.addEntity(&ShrinkParticle_allocator, "ShrinkParticle", G_GFXENTITY_SHRINKPARTICLE, true, nullptr, nullptr);
+    core->executor.addEntity(&Upgrader_allocator, "Upgrader", G_GFXENTITY_UPGRADER, true, nullptr, nullptr);
 
     // subscribe global state to enemies to initialize them
     globalstate.providers.Enemy_provider.subscribe(&globalstate);
+    globalstate.providers.Upgrader_provider.subscribe(&globalstate);
 
     std::cout << "Setting up initial game state" << std::endl;
     gameInitialize(core, &globalstate);
@@ -60,6 +63,9 @@ void gameInitialize(CoreResources *core, GlobalState *globalstate) {
 
     globalstate->bottomtext.setTextConfig(smallfont);
     globalstate->bottomtext.setPos(glm::vec3(0.0f, -80.0f, 1.0f));
+
+    globalstate->pointstext.setTextConfig(smallfont);
+    globalstate->pointstext.setPos(glm::vec3(-86.0f, 112.0f, 1.0f));
 
     int size = globalstate->upgrade_counts.size();
     float unit_width = 14.0f;
@@ -168,6 +174,14 @@ void gameStep(CoreResources *core, GlobalState *globalstate) {
         if (globalstate->providers.Player_provider.getProvidedCount() == 0) {
             core->executor.enqueueSpawnEntity("Player", 0, 65536, Transform{});
         } 
+        
+        // spawn three upgraders if none present
+        if (globalstate->providers.Upgrader_provider.getProvidedCount() == 0) {
+            for (int i = 0; i < 3; i++) {
+                core->executor.enqueueSpawnEntity("Upgrader", 0, 65536, Transform{glm::vec3(96.0f, -32.0f + (float(i) * 32.0f), 1.0f), glm::vec3(0.0f)});
+                globalstate->upgrade_indices.push(rand() % globalstate->upgrade_counts.size());
+            }
+        }
 
         // check for input to start next round if at least one player is spawned
         else if (globalstate->enter_state) {
@@ -212,6 +226,8 @@ void gameStep(CoreResources *core, GlobalState *globalstate) {
             break;
     }
 
+    globalstate->pointstext.setText((std::string("Points: ") + std::to_string(globalstate->points)).c_str());
+
     for (int i = 0; i < globalstate->upgrade_texts.size(); i++)
         globalstate->upgrade_texts[i].setText((std::string("x") + std::to_string(globalstate->upgrade_counts[i])).c_str());
 
@@ -249,6 +265,7 @@ void gameProcess(CoreResources *core, GlobalState *globalstate) {
     globalstate->toptext.writeText();
     globalstate->subtext.writeText();
     globalstate->bottomtext.writeText();
+    globalstate->pointstext.writeText();
 
     for (int i = 0; i < globalstate->upgrade_texts.size(); i++)
         globalstate->upgrade_texts[i].writeText();

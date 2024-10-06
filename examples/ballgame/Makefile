@@ -17,7 +17,7 @@ LIBDIR = -L./../../core -LC:/dev/lib
 SRCS = src/main.cpp
 SRCS += src/loop.cpp
 SRCS += src/coreinit.cpp
-SRCS += src/gfxball.cpp
+SRCS += src/gfxentity.cpp
 SRCS += src/physball.cpp
 SRCS += src/implementations.cpp
 

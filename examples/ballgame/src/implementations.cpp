@@ -9,10 +9,21 @@ void GlobalState::_receive(Enemy *enemy) {
     }
 }
 
-GlobalState::GlobalState(GLEnv *glenv, GLFWInput *glfwinput) : input(glfwinput), toptext(glenv), subtext(glenv), bottomtext(glenv) {
+// set upgrade for upgraders
+void GlobalState::_receive(Upgrader *upgrader) {
+    if (!upgrade_indices.empty()) {
+        int upgrade_index = upgrade_indices.front();
+        upgrader->set(upgrade_index);
+        upgrade_indices.pop();
+    }
+}
+
+GlobalState::GlobalState(GLEnv *glenv, GLFWInput *glfwinput) : input(glfwinput), toptext(glenv), subtext(glenv), bottomtext(glenv), pointstext(glenv) {
     reset();
     Receiver<Enemy>::setChannel(65536);
     Receiver<Enemy>::enableReception(true);
+    Receiver<Upgrader>::setChannel(65536);
+    Receiver<Upgrader>::enableReception(true);
 }
 
 GlobalState::~GlobalState() {
@@ -38,7 +49,8 @@ void GlobalState::reset() {
     spawn_rate = glm::clamp(int(80.0f - (25.0f * std::log10(float(round)))), 5, 60);
     enter_check = false;
     enter_state = false;
-    killflag = true;
+    killenemyflag = true;
+    killupgraderflag = true;
     /*
         0 - primary fire rate up
         1 - primary damage up
@@ -48,32 +60,36 @@ void GlobalState::reset() {
         5 - bomb radius up
     */
     upgrade_counts = std::vector<int>(6, 0);
+    points = 0;
 }
 
 void GlobalState::transition(int state) {
     // from start to active
     if (game_state == 0 && state == 1) {
-        // disable killflag
-        killflag = false;
+        killenemyflag = false;
+        killupgraderflag = true;
     }
 
     // from active to complete
     else if (game_state == 1 && state == 2) {
-        // enable killflag, reset rate
         rate = 0.0f;
-        killflag = true;
+        killenemyflag = true;
+        killupgraderflag = false;
     }
 
     // from active to fail
     else if (game_state == 1 && state == 3) {
-        // reset rate
         rate = 0.0f;
+        killenemyflag = false;
+        killupgraderflag = true;
     }
 
     // from complete to active
     else if (game_state == 2 && state == 1) {
         // disable killflag, reset number and rate, increase round count and spawn rate
-        killflag = false;
+        killenemyflag = false;
+        killupgraderflag = true;
+
         number = 0.0f;
         rate = 0.0f;
         round += 1;
@@ -83,7 +99,8 @@ void GlobalState::transition(int state) {
     // from fail to start
     else if (game_state == 3 && state == 0) {
         // enable killflag, reset all values
-        killflag = true;
+        killenemyflag = true;
+        killupgraderflag = true;
         reset();
     }
 
@@ -412,7 +429,10 @@ void Enemy::_initPhysBall() {
 }
 
 void Enemy::_basePhysBall() {
-    if (_health <= 0 || (globalstate().killflag)) {
+    if (_health <= 0 || (globalstate().killenemyflag)) {
+        if (_health <= 0)
+            globalstate().points += _max_health;
+        
         enqueueKill();
         enemyDeath();
 
@@ -426,7 +446,10 @@ void Enemy::_basePhysBall() {
     _t++;
 }
 
-void Enemy::_killPhysBall() {}
+void Enemy::_killPhysBall() {
+    Receiver<ShrinkParticle>::enableReception(false);
+    removeFromProvider();
+}
 
 void Enemy::_receive(ShrinkParticle *particle) {
     // pop direction and set particle with it
@@ -548,7 +571,7 @@ void Enemy::set(float health) {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Ring::_initGfxBall() {
+void Ring::_initGfxEntity() {
     // display beneath other entities
     quad()->bv_pos.v.z = -1.0f;
 
@@ -556,7 +579,7 @@ void Ring::_initGfxBall() {
     transform = Transform{transform.pos, glm::vec3(128.0f, 128.0f, 0.0f)};
 }
 
-void Ring::_baseGfxBall() {
+void Ring::_baseGfxEntity() {
     quad()->bv_color.v = glm::vec4(0.4941f, 0.4941f, 0.4941f, 1.0f);
 
     // get first player found
@@ -575,29 +598,29 @@ void Ring::_baseGfxBall() {
             quad()->bv_color.v = glm::vec4(0.6039f, 0.6039f, 0.6039f, 1.0f);
 }
 
-void Ring::_killGfxBall() {}
+void Ring::_killGfxEntity() {}
 
-Ring::Ring(GlobalState *globalstate) : GfxBall("", -1), StateReferrer(globalstate) {}
+Ring::Ring(GlobalState *globalstate) : GfxEntity("", -1, GLE_ELLIPSE), StateReferrer(globalstate) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ShrinkParticle::_initGfxBall() {
+void ShrinkParticle::_initGfxEntity() {
     // display on level with other entities
     quad()->bv_pos.v.z = 0.0f;
     quad()->bv_color.v = _color;
 }
 
-void ShrinkParticle::_baseGfxBall() {
+void ShrinkParticle::_baseGfxEntity() {
     // scale quad linearly with lifetime
     transform.pos = transform.pos + _vel;
     transform.scale = _basescale * ((_lifetime - float(_i)) / _lifetime);
 }
 
-void ShrinkParticle::_killGfxBall() {
+void ShrinkParticle::_killGfxEntity() {
     removeFromProvider();
 }
 
-ShrinkParticle::ShrinkParticle() : GfxBall("", 0), _basescale(glm::vec3(0.0f)), _color(glm::vec4(0.0f)), _vel(glm::vec3(0.0f)) {}
+ShrinkParticle::ShrinkParticle() : GfxEntity("", 0, GLE_ELLIPSE), _basescale(glm::vec3(0.0f)), _color(glm::vec4(0.0f)), _vel(glm::vec3(0.0f)) {}
 
 void ShrinkParticle::set(glm::vec3 basescale, glm::vec4 color, unsigned lifetime, glm::vec3 vel) {
     _basescale = basescale;
@@ -607,3 +630,42 @@ void ShrinkParticle::set(glm::vec3 basescale, glm::vec4 color, unsigned lifetime
 
     transform.scale = _basescale;
 }
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void Upgrader::_initGfxEntity() {
+    // display above other entities
+    quad()->bv_pos.v.z = 1.0f;
+    quad()->animationstate().setCycleState(_upgrade_index);
+
+    // override transform scale
+    transform = Transform{transform.pos, glm::vec3(14.0f, 14.0f, 0.0f)};
+}
+
+void Upgrader::_baseGfxEntity() {
+    // get first player found
+    Player *p = nullptr;
+    auto players = globalstate().providers.Player_provider.getAllProvided();
+    if (players) {
+        for (auto &player : *players) {
+            p = player;
+            break;
+        }
+    }
+
+    // check player's distance from this instance's center
+    if (p)
+        if (glm::length(p->transform.pos - transform.pos) < 64.0f)
+            0; // do nothing at the moment
+
+    if (globalstate().killupgraderflag)
+        enqueueKill();
+}
+
+void Upgrader::_killGfxEntity() {
+    removeFromProvider();
+}
+
+Upgrader::Upgrader(GlobalState *globalstate) : GfxEntity("Upgrade", -1, GLE_RECT), StateReferrer(globalstate), _upgrade_index(0) {}
+
+void Upgrader::set(int upgrade_index) { _upgrade_index = upgrade_index; }

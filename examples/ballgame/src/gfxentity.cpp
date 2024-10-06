@@ -1,8 +1,8 @@
-#include "gfxball.hpp"
+#include "gfxentity.hpp"
 
-void GfxBall::_initEntity() {
+void GfxEntity::_initEntity() {
     // create and set quad
-    _quad_off = executor().glenv().genQuad(transform.pos, transform.scale, glm::vec4(1.0f), 0.0f, glm::vec3(0.0f), glm::vec2(0.0f), GLE_ELLIPSE);
+    _quad_off = executor().glenv().genQuad(transform.pos, transform.scale, glm::vec4(1.0f), 0.0f, glm::vec3(0.0f), glm::vec2(0.0f), _quad_type);
     _quad = executor().glenv().getQuad(_quad_off);
 
     // set animation if it is named
@@ -10,11 +10,11 @@ void GfxBall::_initEntity() {
         _quad->animationstate().setAnimation(&executor().animations()[_animation_name]);
 
     _i = 0;
-    _initGfxBall();
+    _initGfxEntity();
 }
 
-void GfxBall::_baseEntity() {
-    _baseGfxBall();
+void GfxEntity::_baseEntity() {
+    _baseGfxEntity();
 
     // update quad to match Script transform (except for z-coordinate), and step animation
     _quad->bv_pos.v = glm::vec3(transform.pos.x, transform.pos.y, _quad->bv_pos.v.z);
@@ -36,18 +36,19 @@ void GfxBall::_baseEntity() {
         enqueueExec(getLastExecQueue());
 }
 
-void GfxBall::_killEntity() {
+void GfxEntity::_killEntity() {
     executor().glenv().remove(_quad_off);
 
-    _killGfxBall();
+    _killGfxEntity();
 }
 
-void GfxBall::_initGfxBall() {}
-void GfxBall::_baseGfxBall() {}
-void GfxBall::_killGfxBall() {}
+void GfxEntity::_initGfxEntity() {}
+void GfxEntity::_baseGfxEntity() {}
+void GfxEntity::_killGfxEntity() {}
 
-GfxBall::GfxBall(std::string animation_name, int lifetime) : 
-    Entity(), 
+GfxEntity::GfxEntity(std::string animation_name, int lifetime, DrawType type) : 
+    Entity(),
+    _quad_type(type),
     _quad(nullptr),
     _quad_off(0),
     _animation_name(animation_name),
@@ -55,4 +56,4 @@ GfxBall::GfxBall(std::string animation_name, int lifetime) :
     _i(0)
 {}
 
-Quad *GfxBall::quad() { return _quad; }
+Quad *GfxEntity::quad() { return _quad; }
