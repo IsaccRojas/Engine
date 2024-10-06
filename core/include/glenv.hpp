@@ -16,8 +16,6 @@
    - texture size - width and height of texture to use, applied to UV coordinates to get rectangle
 */
 class Quad {
-   bool _first_step;
-
    // controllable variables
    AnimationState _animationstate;
 
@@ -45,14 +43,11 @@ public:
    /* Calls update() on all internal BVec instances, writing their respective data into their respective buffers. */
    void update();
 
-   /* Sets internal Animation state to use provided Animation, to write to texpos and texsize BVecs. */
-   void setAnim(Animation *animation);
-
    /* Returns reference to contained Animation state. */
    AnimationState &animationstate();
 
-   /* Steps animation, if one is contained */
-   void stepAnim();
+   /* Writes animation data to related buffers, if an animation is stored. */
+   void writeAnimation();
 };
 
 enum DrawType { GLE_RECT, GLE_ELLIPSE };

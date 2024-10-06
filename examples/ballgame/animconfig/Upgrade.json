@@ -1,0 +1,71 @@
+{
+	"name" : "Upgrade",
+	"cycles" : {
+		"cycle1" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 0.0, 0.0],
+					"texsize" : [14.0, 14.0],
+					"scale" : [14.0, 14.0, 0.0],
+					"duration" : 0
+				}
+			},
+			"loop" : false
+		},
+		"cycle2" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [14.0, 0.0, 0.0],
+					"texsize" : [14.0, 14.0],
+					"scale" : [14.0, 14.0, 0.0],
+					"duration" : 0
+				}
+			},
+			"loop" : false
+		},
+		"cycle3" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [28.0, 0.0, 0.0],
+					"texsize" : [14.0, 14.0],
+					"scale" : [14.0, 14.0, 0.0],
+					"duration" : 0
+				}
+			},
+			"loop" : false
+		},
+		"cycle4" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [42.0, 0.0, 0.0],
+					"texsize" : [14.0, 14.0],
+					"scale" : [14.0, 14.0, 0.0],
+					"duration" : 0
+				}
+			},
+			"loop" : false
+		},
+		"cycle5" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [56.0, 0.0, 0.0],
+					"texsize" : [14.0, 14.0],
+					"scale" : [14.0, 14.0, 0.0],
+					"duration" : 0
+				}
+			},
+			"loop" : false
+		},
+		"cycle6" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [70.0, 0.0, 0.0],
+					"texsize" : [14.0, 14.0],
+					"scale" : [14.0, 14.0, 0.0],
+					"duration" : 0
+				}
+			},
+			"loop" : false
+		}
+	}
+}

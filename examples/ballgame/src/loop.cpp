@@ -1,50 +1,26 @@
 #include "loop.hpp"
 
-// need this to initialize Text members
-GlobalState::GlobalState(GLEnv *glenv, GLFWInput *glfwinput) : input(glfwinput), toptext(glenv), subtext(glenv), bottomtext(glenv) {
-    Receiver<Enemy>::setChannel(65536);
-    Receiver<Enemy>::enableReception(true);
-    Receiver<Player>::setChannel(65536);
-    Receiver<Player>::enableReception(true);
-}
-
-// set health of created enemies
-void GlobalState::_receive(Enemy *enemy) {
-    if (!size_factors.empty()) {
-        int size_factor = size_factors.front();
-        enemy->setHealth(1.0f + float(size_factor));
-        enemy->setKillFlag(&killflag);
-        size_factors.pop();
-    }
-}
-
-// set input of created players
-void GlobalState::_receive(Player *player) {
-    player->set(input);
-}
-
 void loop(CoreResources *core) {
     srand(time(NULL));
 
     // instantiate global state and providers
     GlobalState globalstate(&core->glenv, &core->input);
-    Providers providers;
 
     // instantiate allocators, and attach them to providers
-    HolderAllocator<Bullet> Bullet_allocator(&providers);
-    HolderAllocator<Bomb> Bomb_allocator(&providers);
+    ReferrerAllocator<Bullet> Bullet_allocator(&globalstate);
+    ReferrerAllocator<Bomb> Bomb_allocator(&globalstate);
     ProvidedEntityAllocator<Explosion> Explosion_allocator;
-    HolderAllocator<Player> Player_allocator(&providers);
-    HolderAllocator<Enemy> Enemy_allocator(&providers);
-    HolderAllocator<Ring> Ring_allocator(&providers);
+    ReferrerAllocator<Player> Player_allocator(&globalstate);
+    ReferrerAllocator<Enemy> Enemy_allocator(&globalstate);
+    ReferrerAllocator<Ring> Ring_allocator(&globalstate);
     ProvidedEntityAllocator<ShrinkParticle> ShrinkParticle_allocator;
-    providers.Bullet_provider.addAllocator(&Bullet_allocator, "Bullet");
-    providers.Bomb_provider.addAllocator(&Bomb_allocator, "Bomb");
-    providers.Explosion_provider.addAllocator(&Explosion_allocator, "Explosion");
-    providers.Player_provider.addAllocator(&Player_allocator, "Players");
-    providers.Enemy_provider.addAllocator(&Enemy_allocator, "Enemy");
-    providers.Ring_provider.addAllocator(&Ring_allocator, "Ring");
-    providers.ShrinkParticle_provider.addAllocator(&ShrinkParticle_allocator, "ShrinkParticle");
+    globalstate.providers.Bullet_provider.addAllocator(&Bullet_allocator, "Bullet");
+    globalstate.providers.Bomb_provider.addAllocator(&Bomb_allocator, "Bomb");
+    globalstate.providers.Explosion_provider.addAllocator(&Explosion_allocator, "Explosion");
+    globalstate.providers.Player_provider.addAllocator(&Player_allocator, "Players");
+    globalstate.providers.Enemy_provider.addAllocator(&Enemy_allocator, "Enemy");
+    globalstate.providers.Ring_provider.addAllocator(&Ring_allocator, "Ring");
+    globalstate.providers.ShrinkParticle_provider.addAllocator(&ShrinkParticle_allocator, "ShrinkParticle");
 
     // add allocators to executor
     core->executor.addEntity(&Bullet_allocator, "Bullet", G_PHYSBALL_BULLET, true, nullptr, nullptr);
@@ -55,16 +31,15 @@ void loop(CoreResources *core) {
     core->executor.addEntity(&Ring_allocator, "Ring", G_GFXBALL_RING, true, nullptr, nullptr);
     core->executor.addEntity(&ShrinkParticle_allocator, "ShrinkParticle", G_GFXBALL_SHRINKPARTICLE, true, nullptr, nullptr);
 
-    // subscribe global state to enemies and players to initialize them
-    providers.Player_provider.subscribe(&globalstate);
-    providers.Enemy_provider.subscribe(&globalstate);
+    // subscribe global state to enemies to initialize them
+    globalstate.providers.Enemy_provider.subscribe(&globalstate);
 
-    std::cout << "Setting up allocators and initial game state" << std::endl;
+    std::cout << "Setting up initial game state" << std::endl;
     gameInitialize(core, &globalstate);
 
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(core->state.getWindowHandle()) && !core->input.get_esc()) {
-        gameStep(core, &globalstate, &providers);
+        gameStep(core, &globalstate);
         gameProcess(core, &globalstate);
     };
 
@@ -74,8 +49,8 @@ void loop(CoreResources *core) {
 void gameInitialize(CoreResources *core, GlobalState *globalstate) {
     core->executor.enqueueSpawnEntity("Ring", 0, -1, Transform{});
 
-    TextConfig largefont{0, 0, 2, 5, 19, 7, 24, 0, 0, 1};
-    TextConfig smallfont{0, 0, 3, 5, 19, 5, 10, 0, 0, 1};
+    TextConfig largefont{0, 0, 1, 5, 19, 7, 24, 0, 0, 1};
+    TextConfig smallfont{0, 0, 2, 5, 19, 5, 10, 0, 0, 1};
     
     globalstate->toptext.setTextConfig(largefont);
     globalstate->toptext.setPos(glm::vec3(0.0f, 96.0f, 1.0f));
@@ -85,28 +60,36 @@ void gameInitialize(CoreResources *core, GlobalState *globalstate) {
 
     globalstate->bottomtext.setTextConfig(smallfont);
     globalstate->bottomtext.setPos(glm::vec3(0.0f, -80.0f, 1.0f));
-    
-    /* 
-    0: game start
-    1: round active
-    2: round inactive (complete)
-    3: round inactive (failed)
-    */
-    globalstate->game_state = 0;
-    globalstate->i = 0;
-    globalstate->number = 0.0f;
-    globalstate->rate = 0.0f;
-    globalstate->target_number = 325.0f;
-    globalstate->max_rate = 0.09375f;
-    globalstate->rate_increase = 0.00035f;
-    globalstate->rate_decrease = -0.0007f;
-    globalstate->spawn_rate = 60;
-    globalstate->round = 0;
-    globalstate->enter_check = false;
-    globalstate->enter_state = false;
+
+    int size = globalstate->upgrade_counts.size();
+    float unit_width = 14.0f;
+    float unit_height = 14.0f;
+    float spacing = 2.0f;
+    float set_height = (float(size) * unit_height) + (float(size - 1) * spacing);
+
+    for (int i = 0; i < size; i++) {
+        // generate quad
+        float x_coord = -126.0f + (unit_width / 2.0f);
+        float y_coord = (0.5f * (set_height - unit_height)) - (float(i) * (unit_height + spacing));
+        int id = core->glenv.genQuad(glm::vec3(x_coord, y_coord, 1.0f), glm::vec3(14.0f), glm::vec4(1.0f), 0.0f, glm::vec3(0.0f), glm::vec2(0.0f), GLE_RECT);
+        Quad *quad = core->glenv.getQuad(id);
+
+        // set animation and cycle state
+        quad->animationstate().setAnimation(&(core->animations["Upgrade"]));
+        quad->animationstate().setCycleState(i);
+        
+        // write animation data and update buffers
+        quad->writeAnimation();
+        quad->update();
+
+        // push text and set it up
+        globalstate->upgrade_texts.push_back(Text(&(core->glenv)));
+        globalstate->upgrade_texts.back().setTextConfig(smallfont);
+        globalstate->upgrade_texts.back().setPos(glm::vec3(x_coord + unit_width + 6.0f, y_coord, 1.0f));
+    }
 }
 
-void gameStep(CoreResources *core, GlobalState *globalstate, Providers *providers) {
+void gameStep(CoreResources *core, GlobalState *globalstate) {
     // force enter input state to only be true for one frame until released
     if (!globalstate->enter_check) {
         if (core->input.get_enter()) {
@@ -122,31 +105,21 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Providers *provider
     }
     
     if (globalstate->game_state == 0) {
-        globalstate->killflag = true;
-
         // spawn a player if none exist
-        if (providers->Player_provider.getProvidedCount() == 0) {
+        if (globalstate->providers.Player_provider.getProvidedCount() == 0) {
             core->executor.enqueueSpawnEntity("Player", 0, 65536, Transform{});
         }
 
         // check for input to start game if at least one player is spawned
-        else if (globalstate->enter_state) {
-            globalstate->round = 1;
-            globalstate->number = 0.0f;
-            globalstate->rate = 0.0f;
-            globalstate->spawn_rate = glm::clamp(int(80.0f - (25.0f * std::log10(float(globalstate->round)))), 5, 60);
-
-            globalstate->game_state = 1;
-        }
+        else if (globalstate->enter_state)
+            globalstate->transition(1);
     
     } else if (globalstate->game_state == 1) {
-        globalstate->killflag = false;
-
         // check if there are no players
-        auto player_set = providers->Player_provider.getAllProvided();
+        auto player_set = globalstate->providers.Player_provider.getAllProvided();
         
         if (player_set->size() == 0) {
-            globalstate->game_state = 3;
+            globalstate->transition(3);
 
         } else {
             // use first player's position
@@ -185,37 +158,27 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Providers *provider
             }
 
             // check if round completed
-            if (globalstate->number == globalstate->target_number) {
-                globalstate->game_state = 2;
-            }
+            if (globalstate->number == globalstate->target_number)
+                globalstate->transition(2);
         }
     }
 
     else if (globalstate->game_state == 2) {
-        globalstate->killflag = true;
-
         // respawn player if somehow got here and there are no players
-        if (providers->Player_provider.getProvidedCount() == 0) {
+        if (globalstate->providers.Player_provider.getProvidedCount() == 0) {
             core->executor.enqueueSpawnEntity("Player", 0, 65536, Transform{});
         } 
 
         // check for input to start next round if at least one player is spawned
         else if (globalstate->enter_state) {
-            globalstate->round += 1;
-            globalstate->number = 0.0f;
-            globalstate->rate = 0.0f;
-            globalstate->spawn_rate = glm::clamp(int(80.0f - (25.0f * std::log10(float(globalstate->round)))), 5, 60);
-
-            globalstate->game_state = 1;
+            globalstate->transition(1);
         }
     }
 
     else if (globalstate->game_state == 3) {
-        globalstate->killflag = false;
-
         // check for input to return to start
         if (globalstate->enter_state) {
-            globalstate->game_state = 0;
+            globalstate->transition(0);
         }
     }
 
@@ -249,10 +212,13 @@ void gameStep(CoreResources *core, GlobalState *globalstate, Providers *provider
             break;
     }
 
+    for (int i = 0; i < globalstate->upgrade_texts.size(); i++)
+        globalstate->upgrade_texts[i].setText((std::string("x") + std::to_string(globalstate->upgrade_counts[i])).c_str());
+
     globalstate->i++;
 }
 
-void gameProcess(CoreResources *core, GlobalState *state) {
+void gameProcess(CoreResources *core, GlobalState *globalstate) {
     glfwPollEvents();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -280,9 +246,12 @@ void gameProcess(CoreResources *core, GlobalState *state) {
     core->executor.runKillQueue();
     
     // text updates
-    state->toptext.update();
-    state->subtext.update();
-    state->bottomtext.update();
+    globalstate->toptext.writeText();
+    globalstate->subtext.writeText();
+    globalstate->bottomtext.writeText();
+
+    for (int i = 0; i < globalstate->upgrade_texts.size(); i++)
+        globalstate->upgrade_texts[i].writeText();
     
     // graphics updates and draw
     core->glenv.update();

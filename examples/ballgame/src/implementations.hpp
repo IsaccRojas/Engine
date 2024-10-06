@@ -4,6 +4,7 @@
 #include "gfxball.hpp"
 #include "physball.hpp"
 #include "../../../core/include/glfwinput.hpp"
+#include "../../../core/include/text.hpp"
 
 enum Group { 
     G_PHYSBALL_BULLET, G_PHYSBALL_BOMB, G_PHYSBALL_EXPLOSION, G_PHYSBALL_PLAYER, G_PHYSBALL_ENEMY,
@@ -31,30 +32,78 @@ struct Providers {
     Provider<ShrinkParticle> ShrinkParticle_provider;
 };
 
-// small interface to implement obtaining the providers struct
-class ProvidersHolder {
-    Providers *_providers;
+// holds global state, and receives enemies and players to initialize them
+class GlobalState : public Receiver<Enemy> {
+    // set health
+    void _receive(Enemy *enemy) override;
+
 public:
-    ProvidersHolder(Providers *providers) : _providers(providers) {}
-    Providers &providers() { return *_providers; }
+    Providers providers;
+
+    int game_state;
+    int i;
+
+    float number;
+    float rate;
+    float target_number;
+    float max_rate;
+    float rate_increase;
+    float rate_decrease;
+    
+    int round;
+    int spawn_rate;
+
+    bool enter_check;
+    bool enter_state;
+
+    GLFWInput *input;
+    bool killflag;
+
+    Text toptext;
+    Text subtext;
+    Text bottomtext;
+
+    std::queue<int> size_factors;
+    std::vector<int> upgrade_counts;
+    std::vector<Text> upgrade_texts;
+
+    // need this to initialize Text members
+    GlobalState(GLEnv *glenv, GLFWInput *glfwinput);
+    ~GlobalState();
+    
+    /* Resets all state. */
+    void reset();
+    
+    /* Transitions from one state to another. */
+    void transition(int state);
 };
 
-// generic template for ProvidedEntityAllocators that need a reference to a Providers struct
-template<class T>
-class HolderAllocator : public ProvidedEntityAllocator<T> {
-    Providers *_providers;
-    T *_allocateProvided() override { return new T(_providers); }
+// small interface to implement obtaining the global state reference
+class StateReferrer {
+    GlobalState *_globalstate;
 public:
-    HolderAllocator(Providers *providers) : _providers(providers) {}
+    StateReferrer(GlobalState *globalstate) : _globalstate(globalstate) {}
+    GlobalState &globalstate() { return *_globalstate; }
+};
+
+// generic template for ProvidedEntityAllocators that need a reference to a GlobalState instance
+template<class T>
+class ReferrerAllocator : public ProvidedEntityAllocator<T> {
+    GlobalState *_globalstate;
+    T *_allocateProvided() override { return new T(_globalstate); }
+public:
+    ReferrerAllocator(GlobalState *globalstate) : _globalstate(globalstate) {}
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 // implements PhysBall, is a provided type, needs access to Providers, and needs to receive ShrinkParticle
-class Bullet : public PhysBall, public ProvidedType<Bullet>, public ProvidersHolder, public Receiver<ShrinkParticle> {
+class Bullet : public PhysBall, public ProvidedType<Bullet>, public StateReferrer, public Receiver<ShrinkParticle> {
     int _i;
     int _lifetime;
     glm::vec3 _direction;
+
+    float _health;
 
     void _initPhysBall() override;
     void _basePhysBall() override;
@@ -62,14 +111,14 @@ class Bullet : public PhysBall, public ProvidedType<Bullet>, public ProvidersHol
     void _receive(ShrinkParticle *p) override;
 
 public:
-    Bullet(Providers *providers = nullptr);
-    void setDirection(glm::vec3 direction);
+    Bullet(GlobalState *globalstate = nullptr);
+    void set(glm::vec3 direction, float health);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 // implements PhysBall, is a provided type, needs access to Providers, and needs to receive ShrinkParticle and Explosion
-class Bomb : public PhysBall, public ProvidedType<Bomb>, public ProvidersHolder, public Receiver<ShrinkParticle>, public Receiver<Explosion> {
+class Bomb : public PhysBall, public ProvidedType<Bomb>, public StateReferrer, public Receiver<ShrinkParticle>, public Receiver<Explosion> {
     int _i;
     int _lifetime;
     glm::vec3 _direction;
@@ -81,7 +130,7 @@ class Bomb : public PhysBall, public ProvidedType<Bomb>, public ProvidersHolder,
     void _receive(Explosion *e) override;
 
 public:
-    Bomb(Providers *providers = nullptr);
+    Bomb(GlobalState *globalstate = nullptr);
     void setDirection(glm::vec3 direction);
 };
 
@@ -113,9 +162,7 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 // implements PhysBall, is a provided type, needs access to Providers, and needs to receive Bullet, Bomb, and ShrinkParticle
-class Player : public PhysBall, public ProvidedType<Player>, public ProvidersHolder, public Receiver<Bullet>, public Receiver<Bomb>, public Receiver<ShrinkParticle> {
-    GLFWInput *_input;
-
+class Player : public PhysBall, public ProvidedType<Player>, public StateReferrer, public Receiver<Bullet>, public Receiver<Bomb>, public Receiver<ShrinkParticle> {
     float _accel;
     float _deccel;
     float _spd_max;
@@ -136,19 +183,17 @@ class Player : public PhysBall, public ProvidedType<Player>, public ProvidersHol
     void _receive(ShrinkParticle *particle) override;
 
 public:
-    Player(Providers *providers = nullptr);
+    Player(GlobalState *globalstate = nullptr);
 
     void playerMotion();
     void playerAction();
     void playerDeath();
-
-    void set(GLFWInput *input);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 // implements PhysBall, is a provided type, needs access to Providers, and needs to receive ShrinkParticle
-class Enemy : public PhysBall, public ProvidedType<Enemy>, public ProvidersHolder, public Receiver<ShrinkParticle> {
+class Enemy : public PhysBall, public ProvidedType<Enemy>, public StateReferrer, public Receiver<ShrinkParticle> {
     float _accel;
     float _deccel;
     float _spd_max;
@@ -156,7 +201,7 @@ class Enemy : public PhysBall, public ProvidedType<Enemy>, public ProvidersHolde
     glm::vec3 _prevdir;
 
     float _health;
-    bool *_killflag;
+    float _max_health;
 
     std::queue<glm::vec3> _deathparticledirs;
 
@@ -168,26 +213,25 @@ class Enemy : public PhysBall, public ProvidedType<Enemy>, public ProvidersHolde
     Entity *_getTarget();
 
 public:
-    Enemy(Providers *providers = nullptr);
+    Enemy(GlobalState *globalstate = nullptr);
 
     void enemyMotion();
     void enemyCollision();
     void enemyDeath();
 
-    void setHealth(float health);
-    void setKillFlag(bool *killflag);
+    void set(float health);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 // implements GfxBall, is a provided type, and needs access to Providers
-class Ring : public GfxBall, public ProvidedType<Ring>, public ProvidersHolder {
+class Ring : public GfxBall, public ProvidedType<Ring>, public StateReferrer {
     void _initGfxBall() override;
     void _baseGfxBall() override;
     void _killGfxBall() override;
 
 public:
-    Ring(Providers *providers = nullptr);
+    Ring(GlobalState *globalstate = nullptr);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

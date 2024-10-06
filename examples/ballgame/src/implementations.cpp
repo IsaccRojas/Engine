@@ -1,7 +1,101 @@
 #include "implementations.hpp"
 
+// set health of created enemies
+void GlobalState::_receive(Enemy *enemy) {
+    if (!size_factors.empty()) {
+        int size_factor = size_factors.front();
+        enemy->set(1.0f + float(size_factor));
+        size_factors.pop();
+    }
+}
+
+GlobalState::GlobalState(GLEnv *glenv, GLFWInput *glfwinput) : input(glfwinput), toptext(glenv), subtext(glenv), bottomtext(glenv) {
+    reset();
+    Receiver<Enemy>::setChannel(65536);
+    Receiver<Enemy>::enableReception(true);
+}
+
+GlobalState::~GlobalState() {
+    upgrade_texts.clear();
+}
+
+void GlobalState::reset() {
+    /* 
+    0: game start
+    1: round active
+    2: round inactive (complete)
+    3: round inactive (failed)
+    */
+    game_state = 0;
+    i = 0;
+    number = 0.0f;
+    rate = 0.0f;
+    target_number = 325.0f;
+    max_rate = 0.09375f;
+    rate_increase = 0.00035f;
+    rate_decrease = -0.0007f;
+    round = 1;
+    spawn_rate = glm::clamp(int(80.0f - (25.0f * std::log10(float(round)))), 5, 60);
+    enter_check = false;
+    enter_state = false;
+    killflag = true;
+    /*
+        0 - primary fire rate up
+        1 - primary damage up
+        2 - primary count up
+        3 - bomb fire rate up
+        4 - bomb damage up
+        5 - bomb radius up
+    */
+    upgrade_counts = std::vector<int>(6, 0);
+}
+
+void GlobalState::transition(int state) {
+    // from start to active
+    if (game_state == 0 && state == 1) {
+        // disable killflag
+        killflag = false;
+    }
+
+    // from active to complete
+    else if (game_state == 1 && state == 2) {
+        // enable killflag, reset rate
+        rate = 0.0f;
+        killflag = true;
+    }
+
+    // from active to fail
+    else if (game_state == 1 && state == 3) {
+        // reset rate
+        rate = 0.0f;
+    }
+
+    // from complete to active
+    else if (game_state == 2 && state == 1) {
+        // disable killflag, reset number and rate, increase round count and spawn rate
+        killflag = false;
+        number = 0.0f;
+        rate = 0.0f;
+        round += 1;
+        spawn_rate = glm::clamp(int(80.0f - (25.0f * std::log10(float(round)))), 5, 60);
+    }
+
+    // from fail to start
+    else if (game_state == 3 && state == 0) {
+        // enable killflag, reset all values
+        killflag = true;
+        reset();
+    }
+
+    // any other transition is undefined behavior
+
+    game_state = state;
+}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 void Bullet::_initPhysBall() {
-    providers().ShrinkParticle_provider.subscribe(this);
+    globalstate().providers.ShrinkParticle_provider.subscribe(this);
 
     _i = 0;
     vel = _direction;
@@ -40,15 +134,18 @@ void Bullet::_receive(ShrinkParticle *p) {
         p->set(transform.scale, glm::vec4(1.0f), 24, _direction / 4.0f);
 };
 
-Bullet::Bullet(Providers *providers) : PhysBall("", "Bullet"), ProvidersHolder(providers), _i(0), _lifetime(119), _direction(0.0f) {}
+Bullet::Bullet(GlobalState *globalstate) : PhysBall("", "Bullet"), StateReferrer(globalstate), _i(0), _lifetime(119), _direction(0.0f), _health(0.0f) {}
 
-void Bullet::setDirection(glm::vec3 direction) { _direction = direction; }
+void Bullet::set(glm::vec3 direction, float health) { 
+    _direction = direction;
+    _health = health;
+}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Bomb::_initPhysBall() {
-    providers().ShrinkParticle_provider.subscribe(this);
-    providers().Explosion_provider.subscribe(this);
+    globalstate().providers.ShrinkParticle_provider.subscribe(this);
+    globalstate().providers.Explosion_provider.subscribe(this);
 
     _i = 0;
     vel = _direction * 0.5f;
@@ -94,10 +191,10 @@ void Bomb::_receive(ShrinkParticle *p) {
 };
 
 void Bomb::_receive(Explosion *e) {
-    e->set(0.25f, 16.0f, glm::vec4(1.0f), 24, glm::vec3(0.0f), 0.029f, 0.25f, 1);
+    e->set(0.25f, 16.0f, glm::vec4(1.0f), 16, glm::vec3(0.0f), 0.045f, 0.25f, 2);
 };
 
-Bomb::Bomb(Providers *providers) : PhysBall("", "Bullet"), ProvidersHolder(providers), _i(0), _lifetime(239), _direction(0.0f) {}
+Bomb::Bomb(GlobalState *globalstate) : PhysBall("", "Bullet"), StateReferrer(globalstate), _i(0), _lifetime(239), _direction(0.0f) {}
 
 void Bomb::setDirection(glm::vec3 direction) { _direction = direction; }
 
@@ -141,7 +238,7 @@ Explosion::Explosion() : PhysBall("", "Bullet"),
     _rate_outer(0.0f),
     _lifetime(0),
     _i(0),
-    _active_time(5),
+    _active_time(8),
     _update_rate(0)
 {}
 
@@ -161,9 +258,9 @@ void Explosion::set(float base_innerrad, float base_outerrad, glm::vec4 color, u
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Player::_initPhysBall() {
-    providers().Bullet_provider.subscribe(this);
-    providers().Bomb_provider.subscribe(this);
-    providers().ShrinkParticle_provider.subscribe(this);
+    globalstate().providers.Bullet_provider.subscribe(this);
+    globalstate().providers.Bomb_provider.subscribe(this);
+    globalstate().providers.ShrinkParticle_provider.subscribe(this);
 
     Receiver<Bullet>::setChannel(getExecutorID());
     Receiver<Bullet>::enableReception(true);
@@ -185,7 +282,7 @@ void Player::_basePhysBall() {
         playerDeath();
     }
 
-    if (_input) {
+    if (globalstate().input) {
         playerMotion();
         playerAction();
     }
@@ -198,7 +295,7 @@ void Player::_killPhysBall() {
     removeFromProvider();
 }
 
-void Player::_receive(Bullet *bullet) { bullet->setDirection(_dirvec); }
+void Player::_receive(Bullet *bullet) { bullet->set(_dirvec, 1.0f); }
 void Player::_receive(Bomb *bomb) { bomb->setDirection(_dirvec); }
 void Player::_receive(ShrinkParticle *particle) {
     // pop direction and set particle with it
@@ -209,10 +306,9 @@ void Player::_receive(ShrinkParticle *particle) {
     }
 }
 
-Player::Player(Providers *providers) : 
+Player::Player(GlobalState *globalstate) : 
     PhysBall("", "Player"),
-    ProvidersHolder(providers),
-    _input(nullptr),
+    StateReferrer(globalstate),
     _accel(0.2f), 
     _deccel(0.15f), 
     _spd_max(0.8f),
@@ -243,7 +339,7 @@ void Player::playerMotion() {
         vel.y = 0.0f;
 
     //accelerate based on input
-    glm::vec2 dir = _input->inputdir();
+    glm::vec2 dir = globalstate().input->inputdir();
     vel += glm::vec3(dir.x * _accel, dir.y * _accel, 0.0f);
 
     //reduce velocity to max if speed exceeds max
@@ -256,7 +352,7 @@ void Player::playerMotion() {
 
 void Player::playerAction() {
     // get mouse position
-    glm::vec2 mousepos = _input->mousepos();
+    glm::vec2 mousepos = globalstate().input->mousepos();
 
     if (glm::abs(mousepos.x) <= 128 && glm::abs(mousepos.y) <= 128) {
         glm::vec3 mousepos3d = glm::vec3(mousepos.x, mousepos.y, 0.0f);
@@ -269,7 +365,7 @@ void Player::playerAction() {
     
     // spawn bullet if not on cooldown
     if (_bullet_cooldown <= 0.0f) {
-        if (_input->get_m1()) {
+        if (globalstate().input->get_m1()) {
             // spawn projectile and set cooldown
             executor().enqueueSpawnEntity("Bullet", 0, getExecutorID(), transform);
             _bullet_cooldown = _bullet_cooldown_max;
@@ -279,7 +375,7 @@ void Player::playerAction() {
 
     // spawn bomb if not on cooldown
     if (_bomb_cooldown <= 0.0f) {
-        if (_input->get_m2()) {
+        if (globalstate().input->get_m2()) {
             // spawn projectile and set cooldown
             executor().enqueueSpawnEntity("Bomb", 0, getExecutorID(), transform);
             _bomb_cooldown = _bomb_cooldown_max;
@@ -302,12 +398,10 @@ void Player::playerDeath() {
     }
 }
 
-void Player::set(GLFWInput *input) { _input = input; }
-
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Enemy::_initPhysBall() {
-    providers().ShrinkParticle_provider.subscribe(this);
+    globalstate().providers.ShrinkParticle_provider.subscribe(this);
     
     // display on level with other entities
     quad()->bv_pos.v.z = 0.0f;
@@ -318,7 +412,7 @@ void Enemy::_initPhysBall() {
 }
 
 void Enemy::_basePhysBall() {
-    if (_health <= 0 || (_killflag && *_killflag)) {
+    if (_health <= 0 || (globalstate().killflag)) {
         enqueueKill();
         enemyDeath();
 
@@ -351,7 +445,7 @@ void Enemy::_receive(ShrinkParticle *particle) {
 
 Entity *Enemy::_getTarget() {
     // return first ID found
-    auto players = providers().Player_provider.getAllProvided();
+    auto players = globalstate().providers.Player_provider.getAllProvided();
     if (players)
         for (auto &player : *players)
             return player;
@@ -359,16 +453,16 @@ Entity *Enemy::_getTarget() {
     return nullptr;
 }
 
-Enemy::Enemy(Providers *providers) :
+Enemy::Enemy(GlobalState *globalstate) :
     PhysBall("", "Enemy"),
-    ProvidersHolder(providers),
+    StateReferrer(globalstate),
     _accel(0.075f), 
     _deccel(0.05f), 
     _spd_max(0.15f), 
     _t(rand() % 256), 
     _prevdir(0.0f),
     _health(1.0f),
-    _killflag(nullptr)
+    _max_health(1.0f)
 {}
 
 void Enemy::enemyMotion() {
@@ -447,8 +541,10 @@ void Enemy::enemyDeath() {
     }
 }
 
-void Enemy::setHealth(float health) { _health = health; }
-void Enemy::setKillFlag(bool *killflag) { _killflag = killflag; }
+void Enemy::set(float health) {
+    _health = health;
+    _max_health = health;
+}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -465,7 +561,7 @@ void Ring::_baseGfxBall() {
 
     // get first player found
     Player *p = nullptr;
-    auto players = providers().Player_provider.getAllProvided();
+    auto players = globalstate().providers.Player_provider.getAllProvided();
     if (players) {
         for (auto &player : *players) {
             p = player;
@@ -481,7 +577,7 @@ void Ring::_baseGfxBall() {
 
 void Ring::_killGfxBall() {}
 
-Ring::Ring(Providers *providers) : GfxBall("", -1), ProvidersHolder(providers) {}
+Ring::Ring(GlobalState *globalstate) : GfxBall("", -1), StateReferrer(globalstate) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 

@@ -4,5 +4,5 @@
     "whitelist" : [],
     "blacklist" : [2, 3],
     "correctionWhitelist" : [],
-    "correctionBlacklist" : [1, 2, 3, 4, 5]
+    "correctionBlacklist" : [1, 2, 3, 5]
 }

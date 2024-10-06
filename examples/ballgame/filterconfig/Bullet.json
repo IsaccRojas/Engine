@@ -2,7 +2,7 @@
 	"name" : "Bullet",
     "id" : 3,
     "whitelist" : [],
-    "blacklist" : [2, 3, 4],
+    "blacklist" : [2, 3],
     "correctionWhitelist" : [],
     "correctionBlacklist" : []
 }

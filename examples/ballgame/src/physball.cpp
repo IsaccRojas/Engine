@@ -9,10 +9,9 @@ void PhysBall::_initEntity() {
 
     // set animation and filter if they are named
     if (_animation_name != "")
-        _quad->setAnim(&executor().animations()[_animation_name]);
+        _quad->animationstate().setAnimation(&executor().animations()[_animation_name]);
     if (_filter_name != "")
-        _sphere->setFilter(&executor().filters()[_filter_name]);
-
+        _sphere->filterstate().setFilter(&executor().filters()[_filter_name]);
 
     _initPhysBall();
 }
@@ -29,7 +28,10 @@ void PhysBall::_baseEntity() {
     _quad->bv_pos.v = glm::vec3(transform.pos.x, transform.pos.y, _quad->bv_pos.v.z);
     _quad->bv_scale.v = transform.scale;
 
-    _quad->stepAnim();
+    if (_quad->animationstate().hasAnimation()) {
+        _quad->animationstate().step();
+        _quad->writeAnimation();
+    }
 
     // only queue if not set to be killed
     if (!getKillEnqueued())

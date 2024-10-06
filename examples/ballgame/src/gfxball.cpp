@@ -7,7 +7,7 @@ void GfxBall::_initEntity() {
 
     // set animation if it is named
     if (_animation_name != "")
-        _quad->setAnim(&executor().animations()[_animation_name]);
+        _quad->animationstate().setAnimation(&executor().animations()[_animation_name]);
 
     _i = 0;
     _initGfxBall();
@@ -20,7 +20,10 @@ void GfxBall::_baseEntity() {
     _quad->bv_pos.v = glm::vec3(transform.pos.x, transform.pos.y, _quad->bv_pos.v.z);
     _quad->bv_scale.v = transform.scale;
 
-    _quad->stepAnim();
+    if (_quad->animationstate().hasAnimation()) {
+        _quad->animationstate().step();
+        _quad->writeAnimation();
+    }
 
     if (_lifetime >= 0) {
         _i++;

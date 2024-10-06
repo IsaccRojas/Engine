@@ -79,7 +79,7 @@ void Text::setScale(glm::vec3 scale) {
     _update = true;
 }
 
-void Text::update() {
+void Text::writeText() {
     // do nothing if no changes were made to text, position or configuration
     if (!_update)
         return;

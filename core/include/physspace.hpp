@@ -106,11 +106,6 @@ public:
         if (_callback)
             _callback(t);
     }
-    
-    /* Sets the instance's collision filter. */
-    void setFilter(Filter *filter) {
-        _filterstate.setFilter(filter);
-    }
 
     /* Gets the instance's collision filter state. */
     FilterState &filterstate() {
@@ -220,9 +215,9 @@ public:
             iter2++;
             for (;iter2 != _Ts.end(); iter2++) {
 
-                // get other T and skip if scale is zeroed out
+                // get other T and skip if scale is zeroed out (check t1's enable flag again in case it was unset this outer loop iteration)
                 T *t2 = *iter2;
-                if (!(t2->_collision_enabled) || (t2->transform.scale == glm::vec3(0.0f)))
+                if (!(t1->_collision_enabled) || !(t2->_collision_enabled) || (t2->transform.scale == glm::vec3(0.0f)))
                     continue;
 
                 // test filters against each other's IDs

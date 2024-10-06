@@ -57,7 +57,9 @@ public:
     void setText(const char *str);
     void setPos(glm::vec3 pos);
     void setScale(glm::vec3 scale);
-    void update();
+
+    /* Writes to internal Quad data with current configuration, text, position and scale data. */
+    void writeText();
 };
 
 #endif

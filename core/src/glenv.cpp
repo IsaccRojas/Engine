@@ -2,8 +2,7 @@
 
 // _______________________________________ Quad _______________________________________
 
-Quad::Quad(GLUtil::BVec3 position, GLUtil::BVec3 scale, GLUtil::BVec4 color, GLUtil::BFloat innerradius, GLUtil::BVec3 textureposition, GLUtil::BVec2 texturesize) : 
-    _first_step(false),
+Quad::Quad(GLUtil::BVec3 position, GLUtil::BVec3 scale, GLUtil::BVec4 color, GLUtil::BFloat innerradius, GLUtil::BVec3 textureposition, GLUtil::BVec2 texturesize) :
     bv_pos(position), 
     bv_scale(scale),
     bv_color(color),
@@ -23,25 +22,13 @@ void Quad::update() {
     bv_texsize.update();
 }
 
-void Quad::setAnim(Animation *animation) {
-    _animationstate.setAnimation(animation);
-    _first_step = true;
-}
-
 AnimationState &Quad::animationstate() {
     return _animationstate;
 }
 
-void Quad::stepAnim() {
+void Quad::writeAnimation() {
     if (!_animationstate.hasAnimation())
         return;
-    
-    if (!_first_step) {
-        // step animation and retrieve current frame
-        _animationstate.step();
-    } else {
-        _first_step = false;
-    }
 
     // write frame data to quad
     bv_texpos.v = _animationstate.current().texpos;
@@ -308,9 +295,12 @@ void GLEnv::init(unsigned max_count) {
     // use program
     _stage.use();
 
-    // initialize texture array
+    // initialize texture array, bind it, set sampler to texture image unit and make that unit active
     _texarray.init();
     _texarray.bind(GL_TEXTURE_2D_ARRAY);
+    _stage.uniform1i(11, 0);
+    glActiveTexture(GL_TEXTURE0);
+
     
     _initialized = true;
 }
@@ -358,6 +348,7 @@ unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, GLfloat
     _quads[offset].bv_pos.v = pos;
     _quads[offset].bv_scale.v = scale;
     _quads[offset].bv_color.v = color;
+    _quads[offset].bv_innerrad.v = innerrad;
     _quads[offset].bv_texpos.v = texpos;
     _quads[offset].bv_texsize.v = texsize;
 
