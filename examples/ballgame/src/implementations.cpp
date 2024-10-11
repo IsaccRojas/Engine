@@ -18,7 +18,7 @@ void GlobalState::_receive(Upgrader *upgrader) {
     }
 }
 
-GlobalState::GlobalState(GLEnv *glenv, GLFWInput *glfwinput) : input(glfwinput), toptext(glenv), subtext(glenv), bottomtext(glenv), pointstext(glenv) {
+GlobalState::GlobalState(GLEnv *glenv, GLFWInput *glfwinput) : input(glfwinput), toptext(glenv), subtext(glenv), bottomtext(glenv), pointstext(glenv), timetext(glenv) {
     reset();
     Receiver<Enemy>::setChannel(65536);
     Receiver<Enemy>::enableReception(true);
@@ -31,6 +31,8 @@ GlobalState::~GlobalState() {
 }
 
 void GlobalState::reset() {
+    prev_time = std::chrono::steady_clock::now();
+
     /* 
     0: game start
     1: round active
@@ -39,6 +41,7 @@ void GlobalState::reset() {
     */
     game_state = 0;
     i = 0;
+    time = 0;
     number = 0.0f;
     rate = 0.0f;
     target_number = 325.0f;
@@ -46,7 +49,8 @@ void GlobalState::reset() {
     rate_increase = 0.00035f;
     rate_decrease = -0.0007f;
     round = 1;
-    spawn_rate = glm::clamp(int(80.0f - (25.0f * std::log10(float(round)))), 5, 60);
+    difficulty = 1;
+    spawn_rate = 1;
     enter_check = false;
     enter_state = false;
     killenemyflag = true;
@@ -104,7 +108,7 @@ void GlobalState::transition(int state) {
         reset();
     }
 
-    // any other transition is undefined behavior
+    /* any other transition is undefined behavior */
 
     game_state = state;
 }
@@ -125,6 +129,9 @@ void Bullet::_initPhysBall() {
 
     setChannel(getExecutorID());
     enableReception(true);
+
+    // set weight
+    sphere()->attributes["weight"] = 1.0f;
 }
 
 void Bullet::_basePhysBall() {
@@ -133,9 +140,9 @@ void Bullet::_basePhysBall() {
     if (_i % 6 == 0)
         executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
 
-    if (_i >= _lifetime || sphere()->getCollidedCount()) {
-        enqueueKill();
+    if (_i >= _lifetime || health <= 0.0f) {     
         executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
+        enqueueKill();
     }
 }
 
@@ -144,6 +151,12 @@ void Bullet::_killPhysBall() {
     removeFromProvider();
 }
 
+void Bullet::_onCollision(Sphere *other) {
+    health--;
+    if (health <= 0.0f)
+        sphere()->enableCollision(false);
+};
+
 void Bullet::_receive(ShrinkParticle *p) {
     if (!getKillEnqueued())
         p->set(glm::vec3(4.0f), glm::vec4(1.0f), 24, glm::vec3(0.0f));
@@ -151,11 +164,11 @@ void Bullet::_receive(ShrinkParticle *p) {
         p->set(transform.scale, glm::vec4(1.0f), 24, _direction / 4.0f);
 };
 
-Bullet::Bullet(GlobalState *globalstate) : PhysBall("", "Bullet"), StateReferrer(globalstate), _i(0), _lifetime(119), _direction(0.0f), _health(0.0f) {}
+Bullet::Bullet(GlobalState *globalstate) : PhysBall("", "Bullet"), StateReferrer(globalstate), _i(0), _lifetime(119), _direction(0.0f) {}
 
 void Bullet::set(glm::vec3 direction, float health) { 
     _direction = direction;
-    _health = health;
+    PhysBall::health = health;
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -177,6 +190,9 @@ void Bomb::_initPhysBall() {
     Receiver<ShrinkParticle>::enableReception(true);
     Receiver<Explosion>::setChannel(getExecutorID());
     Receiver<Explosion>::enableReception(true);
+
+    // set weight
+    sphere()->attributes["weight"] = 1.0f;
 }
 
 void Bomb::_basePhysBall() {
@@ -185,12 +201,13 @@ void Bomb::_basePhysBall() {
     if (_i % 24 == 0)
         executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
 
-    if (_i >= _lifetime || sphere()->getCollidedCount()) {
+    if (sphere()->getCollidedCount()) {
+        executor().enqueueSpawnEntity("Explosion", 0, getExecutorID(), transform);
         enqueueKill();
-        if (sphere()->getCollidedCount())
-            executor().enqueueSpawnEntity("Explosion", 0, getExecutorID(), transform);
-        else
-            executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
+
+    } else if (_i >= _lifetime) {
+        executor().enqueueSpawnEntity("ShrinkParticle", 1, getExecutorID(), transform);
+        enqueueKill();
     }
 }
 
@@ -200,6 +217,10 @@ void Bomb::_killPhysBall() {
     removeFromProvider();
 }
 
+void Bomb::_onCollision(Sphere *other) {
+    sphere()->enableCollision(false);
+};
+
 void Bomb::_receive(ShrinkParticle *p) {
     if (!getKillEnqueued())
         p->set(glm::vec3(8.0f), glm::vec4(1.0f), 24, glm::vec3(0.0f));
@@ -208,12 +229,12 @@ void Bomb::_receive(ShrinkParticle *p) {
 };
 
 void Bomb::_receive(Explosion *e) {
-    e->set(0.25f, 16.0f, glm::vec4(1.0f), 16, glm::vec3(0.0f), 0.045f, 0.25f, 2);
+    e->set(0.25f, 16.0f + (4.0f * globalstate().upgrade_counts[5]), glm::vec4(1.0f), 16, glm::vec3(0.0f), 0.045f, 0.25f, 2, 1 + globalstate().upgrade_counts[4]);
 };
 
 Bomb::Bomb(GlobalState *globalstate) : PhysBall("", "Bullet"), StateReferrer(globalstate), _i(0), _lifetime(239), _direction(0.0f) {}
 
-void Bomb::setDirection(glm::vec3 direction) { _direction = direction; }
+void Bomb::set(glm::vec3 direction) { _direction = direction; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -221,17 +242,15 @@ void Explosion::_initPhysBall() {
     // display above other entities
     quad()->bv_pos.v.z = 1.0f;
     quad()->bv_color.v = _color;
+
+    // set weight
+    sphere()->attributes["weight"] = _damage;
 }
 
 void Explosion::_basePhysBall() {
-    if (sphere()->getCollidedCount() > 0 || _i >= _active_time)
+    // only allow collision for one frame
+    if (_i > 0)
         sphere()->enableCollision(false);
-    
-    if (_lifetime >= 0) {
-        _i++;
-        if (_i >= _lifetime)
-            enqueueKill();
-    }
 
     // scale quad linearly based on rate
     if (_i % _update_rate == 0) {
@@ -240,11 +259,17 @@ void Explosion::_basePhysBall() {
 
         quad()->bv_innerrad.v = _base_innerrad + (float(_i) * _rate_inner);
     }
+
+    _i++;
+    if (_i >= _lifetime)
+        enqueueKill();
 }
 
 void Explosion::_killPhysBall() {
     removeFromProvider();
 }
+
+void Explosion::_onCollision(Sphere *other) {}
 
 Explosion::Explosion() : PhysBall("", "Bullet"), 
     _base_innerrad(0.0f), 
@@ -253,13 +278,13 @@ Explosion::Explosion() : PhysBall("", "Bullet"),
     _vel(glm::vec3(0.0f)), 
     _rate_inner(0.0f), 
     _rate_outer(0.0f),
-    _lifetime(0),
+    _lifetime(1),
     _i(0),
-    _active_time(8),
-    _update_rate(0)
+    _update_rate(0),
+    _damage(0.0f)
 {}
 
-void Explosion::set(float base_innerrad, float base_outerrad, glm::vec4 color, unsigned lifetime, glm::vec3 vel, float rate_inner, float rate_outer, unsigned update_rate) {
+void Explosion::set(float base_innerrad, float base_outerrad, glm::vec4 color, unsigned lifetime, glm::vec3 vel, float rate_inner, float rate_outer, unsigned update_rate, float damage) {
     _base_innerrad = base_innerrad;
     _base_outerrad = base_outerrad;
     _color = color;
@@ -268,6 +293,7 @@ void Explosion::set(float base_innerrad, float base_outerrad, glm::vec4 color, u
     _rate_inner = rate_inner;
     _rate_outer = rate_outer;
     _update_rate = update_rate;
+    _damage = damage;
 
     transform.scale = glm::vec3(_base_outerrad);
 }
@@ -291,12 +317,15 @@ void Player::_initPhysBall() {
     
     // override transform scale
     transform = Transform{transform.pos, glm::vec3(12.0f, 12.0f, 0.0f)};
+
+    // set weight
+    sphere()->attributes["weight"] = 1.0f;
 }
 
 void Player::_basePhysBall() {
     if (sphere()->getCollidedCount()) {
-        enqueueKill();
         playerDeath();
+        enqueueKill();
     }
 
     if (globalstate().input) {
@@ -312,8 +341,19 @@ void Player::_killPhysBall() {
     removeFromProvider();
 }
 
-void Player::_receive(Bullet *bullet) { bullet->set(_dirvec, 1.0f); }
-void Player::_receive(Bomb *bomb) { bomb->setDirection(_dirvec); }
+void Player::_onCollision(Sphere *other) {
+    sphere()->enableCollision(false);
+}
+
+void Player::_receive(Bullet *bullet) {
+    // pop direction and set particle with it
+    if (!_bulletdirs.empty()) {
+        glm::vec3 &dir = _bulletdirs.front();
+        bullet->set(dir, 1.0f + globalstate().upgrade_counts[1]);
+        _bulletdirs.pop();
+    }    
+}
+void Player::_receive(Bomb *bomb) { bomb->set(_dirvec); }
 void Player::_receive(ShrinkParticle *particle) {
     // pop direction and set particle with it
     if (!_deathparticledirs.empty()) {
@@ -331,8 +371,8 @@ Player::Player(GlobalState *globalstate) :
     _spd_max(0.8f),
     _bullet_cooldown(0.0f),
     _bomb_cooldown(0.0f),
-    _bullet_cooldown_max(15.0f),
-    _bomb_cooldown_max(60.0f),
+    _bullet_cooldown_max(30.0f),
+    _bomb_cooldown_max(75.0f),
     _prevmovedir(0.0f),
     _dirvec(0.0f)
 {}
@@ -383,9 +423,21 @@ void Player::playerAction() {
     // spawn bullet if not on cooldown
     if (_bullet_cooldown <= 0.0f) {
         if (globalstate().input->get_m1()) {
-            // spawn projectile and set cooldown
-            executor().enqueueSpawnEntity("Bullet", 0, getExecutorID(), transform);
-            _bullet_cooldown = _bullet_cooldown_max;
+            float additional_count = globalstate().upgrade_counts[2];
+            float arc_segment = 4.0f;
+            float arc_length = 45.0f;
+            if (arc_segment * additional_count >= arc_length)
+                arc_segment = arc_length / additional_count;
+            float arc_start = -0.5f * (additional_count * arc_segment);
+
+            for (int i = 0; i < 1 + additional_count; i++) {
+                // spawn projectile
+                executor().enqueueSpawnEntity("Bullet", 0, getExecutorID(), transform);
+                _bulletdirs.push(glm::rotate(_dirvec, glm::radians(arc_start + (arc_segment * i)), glm::vec3(0.0f, 0.0f, 1.0f)));
+            }
+
+            // set cooldown
+            _bullet_cooldown = _bullet_cooldown_max * pow(0.95, globalstate().upgrade_counts[0]);
         }
     } else
         _bullet_cooldown -= 1.0f;
@@ -395,7 +447,7 @@ void Player::playerAction() {
         if (globalstate().input->get_m2()) {
             // spawn projectile and set cooldown
             executor().enqueueSpawnEntity("Bomb", 0, getExecutorID(), transform);
-            _bomb_cooldown = _bomb_cooldown_max;
+            _bomb_cooldown = _bomb_cooldown_max * pow(0.95, globalstate().upgrade_counts[3]);
         }
     } else
         _bomb_cooldown -= 1.0f;
@@ -429,17 +481,14 @@ void Enemy::_initPhysBall() {
 }
 
 void Enemy::_basePhysBall() {
-    if (_health <= 0 || (globalstate().killenemyflag)) {
-        if (_health <= 0)
-            globalstate().points += _max_health;
-        
-        enqueueKill();
+    if (globalstate().killenemyflag || health <= 0.0f) {
         enemyDeath();
-
+        enqueueKill();
+    
     } else {
         if (sphere()->getCollidedCount())
             enemyCollision();
-    
+        
         enemyMotion();
     }
 
@@ -449,6 +498,14 @@ void Enemy::_basePhysBall() {
 void Enemy::_killPhysBall() {
     Receiver<ShrinkParticle>::enableReception(false);
     removeFromProvider();
+}
+
+void Enemy::_onCollision(Sphere *other) {
+    health -= other->attributes["weight"];
+    if (health <= 0.0f) {
+        globalstate().points += _max_health;
+        sphere()->enableCollision(false);
+    }
 }
 
 void Enemy::_receive(ShrinkParticle *particle) {
@@ -484,7 +541,6 @@ Enemy::Enemy(GlobalState *globalstate) :
     _spd_max(0.15f), 
     _t(rand() % 256), 
     _prevdir(0.0f),
-    _health(1.0f),
     _max_health(1.0f)
 {}
 
@@ -532,10 +588,8 @@ void Enemy::enemyMotion() {
 }
 
 void Enemy::enemyCollision() {
-    _health--;
-
     // only spawn damage particles if you're not going to die afterward
-    if (_health > 0) {
+    if (health > 0) {
         // get random count of 2-3, and random starting angle
         int count = (rand() % 2) + 2;
         glm::vec3 angle = random_angle(glm::vec3(1.0f, 0.0f, 0.0f), 180);
@@ -565,7 +619,7 @@ void Enemy::enemyDeath() {
 }
 
 void Enemy::set(float health) {
-    _health = health;
+    PhysBall::health = health;
     _max_health = health;
 }
 
@@ -643,20 +697,33 @@ void Upgrader::_initGfxEntity() {
 }
 
 void Upgrader::_baseGfxEntity() {
-    // get first player found
-    Player *p = nullptr;
-    auto players = globalstate().providers.Player_provider.getAllProvided();
-    if (players) {
-        for (auto &player : *players) {
-            p = player;
-            break;
+    if (_cooldown <= 0) {
+        // get first player found
+        Player *p = nullptr;
+        auto players = globalstate().providers.Player_provider.getAllProvided();
+        if (players) {
+            for (auto &player : *players) {
+                p = player;
+                break;
+            }
+        }
+
+        // check player's distance from this instance's center (if not on cooldown)
+        if (p) {
+            if (glm::length(p->transform.pos - transform.pos) < 20.0f) {
+                if (globalstate().input->get_e() && globalstate().points >= 50) {
+                    globalstate().upgrade_counts[_upgrade_index]++;
+                    _cooldown = _max_cooldown;
+                    globalstate().points -= 50;
+
+                    enqueueKill();
+                }
+            }
         }
     }
 
-    // check player's distance from this instance's center
-    if (p)
-        if (glm::length(p->transform.pos - transform.pos) < 64.0f)
-            0; // do nothing at the moment
+    if (_cooldown > 0)
+        _cooldown--;
 
     if (globalstate().killupgraderflag)
         enqueueKill();
@@ -666,6 +733,6 @@ void Upgrader::_killGfxEntity() {
     removeFromProvider();
 }
 
-Upgrader::Upgrader(GlobalState *globalstate) : GfxEntity("Upgrade", -1, GLE_RECT), StateReferrer(globalstate), _upgrade_index(0) {}
+Upgrader::Upgrader(GlobalState *globalstate) : GfxEntity("Upgrade", -1, GLE_RECT), StateReferrer(globalstate), _upgrade_index(0), _cooldown(0), _max_cooldown(45) {}
 
 void Upgrader::set(int upgrade_index) { _upgrade_index = upgrade_index; }

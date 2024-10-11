@@ -17,6 +17,7 @@ class GLFWInput {
     bool _a_p;
     bool _s_p;
     bool _d_p;
+    bool _e_p;
     bool _up_p;
     bool _left_p;
     bool _down_p;
@@ -53,6 +54,7 @@ public:
     bool get_a();
     bool get_s();
     bool get_d();
+    bool get_e();
     bool get_up();
     bool get_left();
     bool get_down();

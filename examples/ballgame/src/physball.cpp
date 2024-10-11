@@ -12,6 +12,10 @@ void PhysBall::_initEntity() {
         _quad->animationstate().setAnimation(&executor().animations()[_animation_name]);
     if (_filter_name != "")
         _sphere->filterstate().setFilter(&executor().filters()[_filter_name]);
+    
+    // bind and set collision handler, and set default physball weight
+    sphere()->setCallback(std::bind(&PhysBall::_onCollision, this, std::placeholders::_1));
+    _sphere->attributes["weight"] = 0.0f;
 
     _initPhysBall();
 }
@@ -19,8 +23,10 @@ void PhysBall::_initEntity() {
 void PhysBall::_baseEntity() {
     _basePhysBall();
 
-    // update transform with velocity and set sphere transform to be equal to Script
+    // update transform with velocity
     transform.pos += vel;
+
+    // set sphere transform to be equal to Script
     _sphere->transform = transform;
     _sphere->radius = transform.scale.x / 2.0f;
 
@@ -48,6 +54,7 @@ void PhysBall::_killEntity() {
 void PhysBall::_initPhysBall() {}
 void PhysBall::_basePhysBall() {}
 void PhysBall::_killPhysBall() {}
+void PhysBall::_onCollision(Sphere *other) {}
 
 PhysBall::PhysBall(std::string animation_name, std::string filter_name) : 
     Entity(), 
@@ -55,7 +62,8 @@ PhysBall::PhysBall(std::string animation_name, std::string filter_name) :
     _sphere(nullptr),
     _animation_name(animation_name),
     _filter_name(filter_name),
-    vel(glm::vec3(0.0f))
+    vel(glm::vec3(0.0f)),
+    health(0.0f)
 {}
 
 Quad *PhysBall::quad() { return _quad; }

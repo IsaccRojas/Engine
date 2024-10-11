@@ -42,9 +42,11 @@ class GlobalState : public Receiver<Enemy>, public Receiver<Upgrader> {
 
 public:
     Providers providers;
+    std::chrono::steady_clock::time_point prev_time;
 
     int game_state;
     int i;
+    float time;
 
     float number;
     float rate;
@@ -54,6 +56,7 @@ public:
     float rate_decrease;
     
     int round;
+    float difficulty;
     int spawn_rate;
 
     bool enter_check;
@@ -67,6 +70,7 @@ public:
     Text subtext;
     Text bottomtext;
     Text pointstext;
+    Text timetext;
 
     std::queue<int> size_factors;
     std::vector<int> upgrade_counts;
@@ -112,11 +116,10 @@ class Bullet : public PhysBall, public ProvidedType<Bullet>, public StateReferre
     int _lifetime;
     glm::vec3 _direction;
 
-    float _health;
-
     void _initPhysBall() override;
     void _basePhysBall() override;
     void _killPhysBall() override;
+    void _onCollision(Sphere *other) override;
     void _receive(ShrinkParticle *p) override;
 
 public:
@@ -135,12 +138,13 @@ class Bomb : public PhysBall, public ProvidedType<Bomb>, public StateReferrer, p
     void _initPhysBall() override;
     void _basePhysBall() override;
     void _killPhysBall() override;
+    void _onCollision(Sphere *other) override;
     void _receive(ShrinkParticle *p) override;
     void _receive(Explosion *e) override;
 
 public:
     Bomb(GlobalState *globalstate = nullptr);
-    void setDirection(glm::vec3 direction);
+    void set(glm::vec3 direction);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -155,17 +159,17 @@ class Explosion : public PhysBall, public ProvidedType<Explosion> {
     float _rate_outer;
     unsigned _lifetime;
     unsigned _i;
-    unsigned _active_time;
     unsigned _update_rate;
-
+    float _damage;
 
     void _initPhysBall() override;
     void _basePhysBall() override;
     void _killPhysBall() override;
+    void _onCollision(Sphere *other) override;
 
 public:
     Explosion();
-    void set(float base_innerrad, float base_outerrad, glm::vec4 color, unsigned lifetime, glm::vec3 vel, float rate_inner, float rate_outer, unsigned update_rate);
+    void set(float base_innerrad, float base_outerrad, glm::vec4 color, unsigned lifetime, glm::vec3 vel, float rate_inner, float rate_outer, unsigned update_rate, float damage);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -182,11 +186,13 @@ class Player : public PhysBall, public ProvidedType<Player>, public StateReferre
     glm::vec2 _prevmovedir;
     glm::vec3 _dirvec;
 
+    std::queue<glm::vec3> _bulletdirs;
     std::queue<glm::vec3> _deathparticledirs;
 
     void _initPhysBall() override;
     void _basePhysBall() override;
     void _killPhysBall() override;
+    void _onCollision(Sphere *other) override;
     void _receive(Bullet *bullet) override;
     void _receive(Bomb *bomb) override;
     void _receive(ShrinkParticle *particle) override;
@@ -208,8 +214,6 @@ class Enemy : public PhysBall, public ProvidedType<Enemy>, public StateReferrer,
     float _spd_max;
     float _t;
     glm::vec3 _prevdir;
-
-    float _health;
     float _max_health;
 
     std::queue<glm::vec3> _deathparticledirs;
@@ -217,6 +221,7 @@ class Enemy : public PhysBall, public ProvidedType<Enemy>, public StateReferrer,
     void _initPhysBall() override;
     void _basePhysBall() override;
     void _killPhysBall() override;
+    void _onCollision(Sphere *other) override;
     void _receive(ShrinkParticle *p) override;
 
     Entity *_getTarget();
@@ -265,6 +270,8 @@ public:
 // ...
 class Upgrader : public GfxEntity, public ProvidedType<Upgrader>, public StateReferrer {
     int _upgrade_index;
+    int _cooldown;
+    int _max_cooldown;
     
     void _initGfxEntity() override;
     void _baseGfxEntity() override;

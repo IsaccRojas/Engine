@@ -30,6 +30,7 @@ void GLFWState::init(int width, int height, const char *title, bool debug) {
     
     _win_h = glfwCreateWindow(width, height, title, NULL, NULL);
     glfwMakeContextCurrent(_win_h);
+    glfwSwapInterval(1);
 
     _width = width;
     _height = height;

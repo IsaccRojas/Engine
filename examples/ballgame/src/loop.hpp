@@ -9,6 +9,7 @@
 #include <chrono>
 #include <stdlib.h>
 #include <time.h>
+#include <chrono>
 #include <thread>
 
 /* Primary program execution loop. */

@@ -64,12 +64,14 @@ protected:
             transform = other.transform;
             vel = other.vel;
             mass = other.mass;
+            attributes = other.attributes;
             other._physspace = nullptr;
             other._collided_count = 0;
             other._filterstate.setFilter(nullptr);
             other._prev_pos = glm::vec3(0.0f);
             other._callback = nullptr;
             other._collision_enabled = true;
+            other.attributes.clear();
         }
         return *this;
     }
@@ -79,6 +81,9 @@ public:
     Transform transform;
     glm::vec3 vel;
     float mass;
+
+    // general data
+    std::unordered_map<std::string, float> attributes;
 
     virtual ~ColliderInterface() {
         if (_physspace)
@@ -335,5 +340,8 @@ public:
 
 /* Rotates the vector with respect to the Z axis, within a range of [-deg, deg]. */
 glm::vec3 random_angle(glm::vec3 v, float deg);
+
+/* Returns whether the provided integer is even or not. */
+bool is_even(int x);
 
 #endif

@@ -67,6 +67,9 @@ void gameInitialize(CoreResources *core, GlobalState *globalstate) {
     globalstate->pointstext.setTextConfig(smallfont);
     globalstate->pointstext.setPos(glm::vec3(-86.0f, 112.0f, 1.0f));
 
+    globalstate->timetext.setTextConfig(smallfont);
+    globalstate->timetext.setPos(glm::vec3(86.0f, 112.0f, 1.0f));
+
     int size = globalstate->upgrade_counts.size();
     float unit_width = 14.0f;
     float unit_height = 14.0f;
@@ -96,6 +99,12 @@ void gameInitialize(CoreResources *core, GlobalState *globalstate) {
 }
 
 void gameStep(CoreResources *core, GlobalState *globalstate) {
+    // update difficulty
+    globalstate->difficulty = 1 + (globalstate->time / 3600.0f);
+
+    globalstate->spawn_rate = glm::clamp(int(80.0f - (25.0f * std::log10(globalstate->difficulty))), 5, 60);
+
+
     // force enter input state to only be true for one frame until released
     if (!globalstate->enter_check) {
         if (core->input.get_enter()) {
@@ -150,14 +159,14 @@ void gameStep(CoreResources *core, GlobalState *globalstate) {
                 spawn_vec1 = random_angle(spawn_vec1, 180.0f);
 
                 // get second random spawn vector with random magnitude
-                int spawn_amount = int(float(rand() % globalstate->round) / 4.0f) + 1;
+                int spawn_amount = int(float(rand() % int(globalstate->difficulty)) / 4.0f) + 1;
                 for (int j = 0; j < spawn_amount; j++) {
                     float spawn_radius2 = float(rand() % 32);
                     glm::vec3 spawn_vec2(spawn_radius2, 0.0f, 0.0f);
                     spawn_vec2 = random_angle(spawn_vec2, 180.0f);
 
                     // get random size factor, and store factor
-                    int size_factor = int(float(rand() % globalstate->round) / 4.0f);
+                    int size_factor = int(float(rand() % int(globalstate->difficulty)) / 4.0f);
                     core->executor.enqueueSpawnEntity("Enemy", 0, 65536, Transform{spawn_vec1 + spawn_vec2, glm::vec3(12.0f + (2.0f * float(size_factor)))});
                     globalstate->size_factors.push(size_factor);
                 }
@@ -167,6 +176,8 @@ void gameStep(CoreResources *core, GlobalState *globalstate) {
             if (globalstate->number == globalstate->target_number)
                 globalstate->transition(2);
         }
+
+        globalstate->time++;
     }
 
     else if (globalstate->game_state == 2) {
@@ -175,10 +186,14 @@ void gameStep(CoreResources *core, GlobalState *globalstate) {
             core->executor.enqueueSpawnEntity("Player", 0, 65536, Transform{});
         } 
         
-        // spawn three upgraders if none present
+        // spawn upgraders if none present
         if (globalstate->providers.Upgrader_provider.getProvidedCount() == 0) {
+            // spawn 2-3 upgrades
+            int amount = (rand() % 2) + 2;
+            float height = (amount <= 1) ? 0 : (14.0f * amount) + (32.0f * (amount - 1));
+            
             for (int i = 0; i < 3; i++) {
-                core->executor.enqueueSpawnEntity("Upgrader", 0, 65536, Transform{glm::vec3(96.0f, -32.0f + (float(i) * 32.0f), 1.0f), glm::vec3(0.0f)});
+                core->executor.enqueueSpawnEntity("Upgrader", 0, 65536, Transform{glm::vec3(96.0f, (0.5f * height) - (float(i) * 32.0f), 1.0f), glm::vec3(0.0f)});
                 globalstate->upgrade_indices.push(rand() % globalstate->upgrade_counts.size());
             }
         }
@@ -227,6 +242,7 @@ void gameStep(CoreResources *core, GlobalState *globalstate) {
     }
 
     globalstate->pointstext.setText((std::string("Points: ") + std::to_string(globalstate->points)).c_str());
+    globalstate->timetext.setText((std::string("Time: ") + std::to_string(int(globalstate->time / 60.0f)) + std::string("t")).c_str());
 
     for (int i = 0; i < globalstate->upgrade_texts.size(); i++)
         globalstate->upgrade_texts[i].setText((std::string("x") + std::to_string(globalstate->upgrade_counts[i])).c_str());
@@ -266,6 +282,7 @@ void gameProcess(CoreResources *core, GlobalState *globalstate) {
     globalstate->subtext.writeText();
     globalstate->bottomtext.writeText();
     globalstate->pointstext.writeText();
+    globalstate->timetext.writeText();
 
     for (int i = 0; i < globalstate->upgrade_texts.size(); i++)
         globalstate->upgrade_texts[i].writeText();
@@ -273,6 +290,15 @@ void gameProcess(CoreResources *core, GlobalState *globalstate) {
     // graphics updates and draw
     core->glenv.update();
     core->glenv.drawQuads();
-
+    
+    // force 60 fps (sleep for difference between time up to now and 16666 microseconds)
+    /*
+    auto cur_time = std::chrono::steady_clock::now();
+    auto dur = std::chrono::duration_cast<std::chrono::microseconds>(cur_time - globalstate->prev_time);
+    if (dur.count() < 16666)
+        std::this_thread::sleep_for(std::chrono::microseconds(16666) - dur);
+    globalstate->prev_time = std::chrono::steady_clock::now();
+    */
+    
     glfwSwapBuffers(core->state.getWindowHandle());
 }

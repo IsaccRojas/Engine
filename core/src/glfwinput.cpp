@@ -45,6 +45,12 @@ void GLFWInput::update() {
     else if (state == GLFW_RELEASE)
         _d_p = false;
 
+    state = glfwGetKey(_win_h, GLFW_KEY_E);
+    if (state == GLFW_PRESS)
+        _e_p = true;
+    else if (state == GLFW_RELEASE)
+        _e_p = false;
+
     state = glfwGetKey(_win_h, GLFW_KEY_UP);
     if (state == GLFW_PRESS)
         _up_p = true;
@@ -124,6 +130,7 @@ bool GLFWInput::get_w() { return _w_p; }
 bool GLFWInput::get_a() { return _a_p; }
 bool GLFWInput::get_s() { return _s_p; }
 bool GLFWInput::get_d() { return _d_p; }
+bool GLFWInput::get_e() { return _e_p; }
 bool GLFWInput::get_up() { return _up_p; }
 bool GLFWInput::get_left() { return _left_p; }
 bool GLFWInput::get_down() { return _down_p; }
