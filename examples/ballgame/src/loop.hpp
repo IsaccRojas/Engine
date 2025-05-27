@@ -6,7 +6,6 @@
 #include "../../../core/include/text.hpp"
 
 #include <iostream>
-#include <chrono>
 #include <stdlib.h>
 #include <time.h>
 #include <chrono>

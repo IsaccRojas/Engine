@@ -92,9 +92,10 @@ void gameInitialize(CoreResources *core, GlobalState *globalstate) {
         quad->update();
 
         // push text and set it up
-        globalstate->upgrade_texts.push_back(Text(&(core->glenv)));
+        globalstate->upgrade_texts.push_back(Text());
+        globalstate->upgrade_texts.back().setEnv(&(core->glenv));
         globalstate->upgrade_texts.back().setTextConfig(smallfont);
-        globalstate->upgrade_texts.back().setPos(glm::vec3(x_coord + unit_width + 6.0f, y_coord, 1.0f));
+        globalstate->upgrade_texts.back().setPos(glm::vec3(x_coord + unit_width + 3.0f, y_coord, 1.0f));
     }
 }
 
@@ -107,14 +108,14 @@ void gameStep(CoreResources *core, GlobalState *globalstate) {
 
     // force enter input state to only be true for one frame until released
     if (!globalstate->enter_check) {
-        if (core->input.get_enter()) {
+        if (core->input.get_enter() || core->input.get_start()) {
             globalstate->enter_state = true;
             globalstate->enter_check = true;
         } else
             globalstate->enter_state = false;
     } else {
         globalstate->enter_state = false;
-        if (!core->input.get_enter()) {
+        if (!(core->input.get_enter() || core->input.get_start())) {
             globalstate->enter_check = false;
         }
     }
@@ -184,18 +185,26 @@ void gameStep(CoreResources *core, GlobalState *globalstate) {
         // respawn player if somehow got here and there are no players
         if (globalstate->providers.Player_provider.getProvidedCount() == 0) {
             core->executor.enqueueSpawnEntity("Player", 0, 65536, Transform{});
-        } 
+        }
         
         // spawn upgraders if none present
-        if (globalstate->providers.Upgrader_provider.getProvidedCount() == 0) {
+        if ((globalstate->round % 3 == 0) && !(globalstate->upgrades_spawned) && globalstate->providers.Upgrader_provider.getProvidedCount() == 0) {
             // spawn 2-3 upgrades
-            int amount = (rand() % 2) + 2;
-            float height = (amount <= 1) ? 0 : (14.0f * amount) + (32.0f * (amount - 1));
-            
-            for (int i = 0; i < 3; i++) {
-                core->executor.enqueueSpawnEntity("Upgrader", 0, 65536, Transform{glm::vec3(96.0f, (0.5f * height) - (float(i) * 32.0f), 1.0f), glm::vec3(0.0f)});
+            int base_count = 2;
+            int additional_count = rand() % 2;
+            float vertical_segment = 32.0f;
+            float vertical_length = 106.0f;
+            if (vertical_segment * float(additional_count) >= vertical_length)
+                vertical_segment = vertical_length / float(additional_count);
+            float pos_start = -0.5f * (float((base_count - 1) + additional_count) * vertical_segment);
+
+            for (int i = 0; i < base_count + additional_count; i++) {
+                float final_pos = pos_start + (vertical_segment * float(i));
+                core->executor.enqueueSpawnEntity("Upgrader", 0, 65536, Transform{glm::vec3(96.0f, final_pos, 1.0f), glm::vec3(0.0f)});
                 globalstate->upgrade_indices.push(rand() % globalstate->upgrade_counts.size());
             }
+
+            globalstate->upgrades_spawned = true;
         }
 
         // check for input to start next round if at least one player is spawned

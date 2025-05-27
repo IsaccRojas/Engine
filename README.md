@@ -19,7 +19,7 @@ engine, which are accessed and modified by mechanisms like executors.
 
 The software design is a mostly polymorphic hierarchy, with the form as follows:
 
-![Software diagram.](https://i.imgur.com/VflSj2F.png)
+![Software diagram.](https://i.imgur.com/IPDadZn.png)
 
 **Scripts** and **Executors** form the bottom layer of the system, and embody 
 a scripting mechanism. The Script class is an interface modeling an execution 

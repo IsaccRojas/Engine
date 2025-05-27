@@ -9,10 +9,12 @@
 
 class GLFWInput {
     GLFWwindow *_win_h;
+
     int _win_width;
     int _win_height;
     int _pixel_width;
     int _pixel_height;
+
     bool _w_p;
     bool _a_p;
     bool _s_p;
@@ -28,10 +30,26 @@ class GLFWInput {
     bool _esc_p;
     bool _m1_p;
     bool _m2_p;
+
     double _win_mouse_x;
     double _win_mouse_y;
     double _pixel_mouse_x;
     double _pixel_mouse_y;
+    
+    GLFWgamepadstate _state;
+    bool _has_joystick;
+    bool _leftbumper_p;
+    bool _rightbumper_p;
+    bool _start_p;
+    bool _button_a_p;
+    double _leftstick_x;
+    double _leftstick_y;
+    double _rightstick_x;
+    double _rightstick_y;
+
+    bool _checkKey(int jid);
+    bool _checkMouseButton(int jid);
+
 public:
     GLFWInput(GLFWwindow *window, int pixelwidth, int pixelheight);
     GLFWInput();
@@ -40,6 +58,9 @@ public:
     void setWindow(GLFWwindow *window, int pixelwidth, int pixelheight);
 
     // default copy assignment/construction are fine (reference is read only)
+
+    /* Resets all input values (false for booleans, 0.0f for doubles). */
+    void reset();
 
     /* Updates contained input state based on current inputs being made at time of this call. */
     void update();
@@ -65,12 +86,25 @@ public:
     bool get_esc();
     bool get_m1();
     bool get_m2();
+    bool get_leftbumper();
+    bool get_rightbumper();
+    bool get_start();
+    bool get_button_a();
 
     /* Returns the input of WASD as a unit vector (up is in the positive y direction, right is in the positive x direction). */
     glm::vec2 inputdir();
     
     /* Returns the current mouse position within the window, scaled to the provided pixel dimensions, with the origin at the center. */
     glm::vec2 mousepos();
+
+    /* Returns whether a joystick has been detected or not. */
+    bool has_joystick();
+
+    /* Returns the current state of the left stick of the first gamepad found; assumes two axes, from -1 to 1. */
+    glm::vec2 leftstick();
+
+    /* Returns the current state of the right stick of the first gamepad found; assumes two axes, from -1 to 1. */
+    glm::vec2 rightstick();
 };
 
 #endif

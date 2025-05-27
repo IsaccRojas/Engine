@@ -73,8 +73,10 @@ public:
     Text timetext;
 
     std::queue<int> size_factors;
+    std::vector<int> upgrade_prices;
     std::vector<int> upgrade_counts;
     std::vector<Text> upgrade_texts;
+    bool upgrades_spawned;
 
     int points;
 
@@ -270,6 +272,9 @@ public:
 // ...
 class Upgrader : public GfxEntity, public ProvidedType<Upgrader>, public StateReferrer {
     int _upgrade_index;
+    int _upgrade_price;
+    Text _pricetext;
+    
     int _cooldown;
     int _max_cooldown;
     

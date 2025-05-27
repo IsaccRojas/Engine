@@ -18,7 +18,13 @@ void GlobalState::_receive(Upgrader *upgrader) {
     }
 }
 
-GlobalState::GlobalState(GLEnv *glenv, GLFWInput *glfwinput) : input(glfwinput), toptext(glenv), subtext(glenv), bottomtext(glenv), pointstext(glenv), timetext(glenv) {
+GlobalState::GlobalState(GLEnv *glenv, GLFWInput *glfwinput) : input(glfwinput) {
+    toptext.setEnv(glenv);
+    subtext.setEnv(glenv);
+    bottomtext.setEnv(glenv);
+    pointstext.setEnv(glenv);
+    timetext.setEnv(glenv);
+
     reset();
     Receiver<Enemy>::setChannel(65536);
     Receiver<Enemy>::enableReception(true);
@@ -63,7 +69,15 @@ void GlobalState::reset() {
         4 - bomb damage up
         5 - bomb radius up
     */
+    upgrade_prices = std::vector<int>(6, 0);
+    upgrade_prices[0] = 35;
+    upgrade_prices[1] = 87;
+    upgrade_prices[2] = 105;
+    upgrade_prices[3] = 35;
+    upgrade_prices[4] = 87;
+    upgrade_prices[5] = 52;
     upgrade_counts = std::vector<int>(6, 0);
+    upgrades_spawned = false;
     points = 0;
 }
 
@@ -93,6 +107,8 @@ void GlobalState::transition(int state) {
         // disable killflag, reset number and rate, increase round count and spawn rate
         killenemyflag = false;
         killupgraderflag = true;
+
+        upgrades_spawned = false;
 
         number = 0.0f;
         rate = 0.0f;
@@ -316,13 +332,17 @@ void Player::_initPhysBall() {
     quad()->bv_pos.v.z = 0.0f;
     
     // override transform scale
-    transform = Transform{transform.pos, glm::vec3(12.0f, 12.0f, 0.0f)};
+    transform = Transform{transform.pos, glm::vec3(1.0f, 1.0f, 0.0f)};
 
     // set weight
     sphere()->attributes["weight"] = 1.0f;
 }
 
 void Player::_basePhysBall() {
+    // "growing" animation when first spawned
+    if (transform.scale.x < 12.0f)
+        transform.scale = transform.scale + glm::vec3(1.0f, 1.0f, 0.0f);
+
     if (sphere()->getCollidedCount()) {
         playerDeath();
         enqueueKill();
@@ -374,7 +394,7 @@ Player::Player(GlobalState *globalstate) :
     _bullet_cooldown_max(30.0f),
     _bomb_cooldown_max(75.0f),
     _prevmovedir(0.0f),
-    _dirvec(0.0f)
+    _dirvec(0.0f, -1.0f, 0.0f)
 {}
 
 void Player::playerMotion() {
@@ -382,24 +402,31 @@ void Player::playerMotion() {
     float spd_i = glm::length(vel);
     float dec_factor;
 
-    //get decceleration based on current speed and apply
+    // get decceleration based on current speed and apply
     if (spd_i != 0.0f)
         dec_factor = _deccel / glm::length(vel);
     else
         dec_factor = 0.0f;
     vel -= vel * dec_factor;
 
-    //determine if deccelerated completely ("passed" 0)
+    // determine if deccelerated completely ("passed" 0)
     if ((vel_i.x > 0 && vel.x < 0) || (vel_i.x < 0 && vel.x > 0))
         vel.x = 0.0f;
     if ((vel_i.y > 0 && vel.y < 0) || (vel_i.y < 0 && vel.y > 0))
         vel.y = 0.0f;
 
-    //accelerate based on input
+    // get WASD and left stick input
     glm::vec2 dir = globalstate().input->inputdir();
+    glm::vec2 leftstick = globalstate().input->leftstick();
+    if (glm::length(leftstick) > 0.25f)
+        dir += leftstick;
+
+    // normalize and accelerate
+    if (glm::length(dir) > 1.0f)
+        dir = glm::normalize(dir);
     vel += glm::vec3(dir.x * _accel, dir.y * _accel, 0.0f);
 
-    //reduce velocity to max if speed exceeds max
+    // reduce velocity to max if speed exceeds max
     if (glm::length(vel) > _spd_max)
         vel = glm::normalize(vel) * _spd_max;
     
@@ -408,21 +435,31 @@ void Player::playerMotion() {
 }
 
 void Player::playerAction() {
-    // get mouse position
-    glm::vec2 mousepos = globalstate().input->mousepos();
+    if (globalstate().input->has_joystick()) {
+        // get right stick
+        glm::vec2 rightstick = globalstate().input->rightstick();
+        glm::vec3 rightstick_3d = glm::vec3(rightstick.x, rightstick.y, 0.0f);
 
-    if (glm::abs(mousepos.x) <= 128 && glm::abs(mousepos.y) <= 128) {
-        glm::vec3 mousepos3d = glm::vec3(mousepos.x, mousepos.y, 0.0f);
+        if (glm::length(rightstick_3d) > 0.25f)
+            _dirvec = glm::normalize(rightstick_3d);
 
-        // get normalized and scaled direction
-        _dirvec = mousepos3d - sphere()->transform.pos;
-        _dirvec /= glm::length(_dirvec);
-    } else
-        _dirvec = glm::vec3(_prevmovedir.x, _prevmovedir.y, 0.0f);
+    } else {
+        // get mouse position relative to player position
+        glm::vec2 mousepos = globalstate().input->mousepos();
+        glm::vec3 mousepos_3d = glm::vec3(mousepos.x, mousepos.y, 0.0f);
+        glm::vec3 final_pos = mousepos_3d - sphere()->transform.pos;
+
+        if (glm::length(final_pos) > 0.0f)
+            _dirvec = glm::normalize(final_pos);
+    }
     
+    // normalize
+    if (glm::length(_dirvec) > 1.0f)
+        _dirvec = glm::normalize(_dirvec);
+
     // spawn bullet if not on cooldown
     if (_bullet_cooldown <= 0.0f) {
-        if (globalstate().input->get_m1()) {
+        if (globalstate().input->get_m1() || globalstate().input->get_rightbumper()) {
             float additional_count = globalstate().upgrade_counts[2];
             float arc_segment = 4.0f;
             float arc_length = 45.0f;
@@ -444,7 +481,7 @@ void Player::playerAction() {
 
     // spawn bomb if not on cooldown
     if (_bomb_cooldown <= 0.0f) {
-        if (globalstate().input->get_m2()) {
+        if (globalstate().input->get_m2() || globalstate().input->get_leftbumper()) {
             // spawn projectile and set cooldown
             executor().enqueueSpawnEntity("Bomb", 0, getExecutorID(), transform);
             _bomb_cooldown = _bomb_cooldown_max * pow(0.95, globalstate().upgrade_counts[3]);
@@ -694,6 +731,12 @@ void Upgrader::_initGfxEntity() {
 
     // override transform scale
     transform = Transform{transform.pos, glm::vec3(14.0f, 14.0f, 0.0f)};
+
+    _pricetext.setEnv(&(executor().glenv()));
+    _pricetext.setTextConfig(TextConfig{0, 0, 2, 5, 19, 5, 10, 0, 0, 1});
+    _pricetext.setText(std::to_string(_upgrade_price).c_str());
+    _pricetext.setPos(transform.pos - glm::vec3(0.0f, 13.0f, 0.0f));
+    _pricetext.writeText();
 }
 
 void Upgrader::_baseGfxEntity() {
@@ -711,10 +754,10 @@ void Upgrader::_baseGfxEntity() {
         // check player's distance from this instance's center (if not on cooldown)
         if (p) {
             if (glm::length(p->transform.pos - transform.pos) < 20.0f) {
-                if (globalstate().input->get_e() && globalstate().points >= 50) {
+                if ((globalstate().input->get_e() || globalstate().input->get_button_a()) && globalstate().points >= _upgrade_price) {
                     globalstate().upgrade_counts[_upgrade_index]++;
                     _cooldown = _max_cooldown;
-                    globalstate().points -= 50;
+                    globalstate().points -= _upgrade_price;
 
                     enqueueKill();
                 }
@@ -733,6 +776,9 @@ void Upgrader::_killGfxEntity() {
     removeFromProvider();
 }
 
-Upgrader::Upgrader(GlobalState *globalstate) : GfxEntity("Upgrade", -1, GLE_RECT), StateReferrer(globalstate), _upgrade_index(0), _cooldown(0), _max_cooldown(45) {}
+Upgrader::Upgrader(GlobalState *globalstate) : GfxEntity("Upgrade", -1, GLE_RECT), StateReferrer(globalstate), _upgrade_index(0), _upgrade_price(0), _cooldown(0), _max_cooldown(45) {}
 
-void Upgrader::set(int upgrade_index) { _upgrade_index = upgrade_index; }
+void Upgrader::set(int upgrade_index) {
+    _upgrade_index = upgrade_index;
+    _upgrade_price = globalstate().upgrade_prices[upgrade_index] + int(globalstate().time / 300.0f);
+}

@@ -1,9 +1,22 @@
 #include "../include/glfwinput.hpp"
 
+bool GLFWInput::_checkKey(int jid) { return (GLFW_PRESS == glfwGetKey(_win_h, jid)); }
+
+bool GLFWInput::_checkMouseButton(int jid) { return (GLFW_PRESS == glfwGetMouseButton(_win_h, jid)); }
+
 GLFWInput::GLFWInput(GLFWwindow *window, int pixel_width, int pixel_height) {
     setWindow(window, pixel_width, pixel_height);
+    reset();
 }
-GLFWInput::GLFWInput() : _win_h(nullptr), _pixel_width(0), _pixel_height() {}
+GLFWInput::GLFWInput() : 
+    _win_h(nullptr),
+    _win_width(0),
+    _win_height(0),
+    _pixel_width(0), 
+    _pixel_height(0)
+{
+    reset();
+}
 GLFWInput::~GLFWInput() { /* automatic destruction is fine */ }
 
 void GLFWInput::setWindow(GLFWwindow *window, int pixel_width, int pixel_height) {
@@ -17,103 +30,82 @@ void GLFWInput::setWindow(GLFWwindow *window, int pixel_width, int pixel_height)
         throw std::runtime_error("Attempt to get window size with invalid GLFWwindow reference");
 }
 
+void GLFWInput::reset() {
+    _w_p = false;
+    _a_p = false;
+    _s_p = false;
+    _d_p = false;
+    _e_p = false;
+    _up_p = false;
+    _left_p = false;
+    _down_p = false;
+    _right_p = false;
+    _space_p = false;
+    _enter_p = false;
+    _tab_p = false;
+    _esc_p = false;
+    _m1_p = false;
+    _m2_p = false;
+
+    _win_mouse_x = 0.0f;
+    _win_mouse_y = 0.0f;
+    _pixel_mouse_x = 0.0f;
+    _pixel_mouse_y = 0.0f;
+    
+    _has_joystick = false;
+    _leftbumper_p = false;
+    _rightbumper_p = false;
+    _start_p = false;
+    _button_a_p = false;
+    _leftstick_x = 0.0f;
+    _leftstick_y = 0.0f;
+    _rightstick_x = 0.0f;
+    _rightstick_y = 0.0f;
+}
+
 void GLFWInput::update() {
     if (!_win_h)
         throw std::runtime_error("Attempt to call on Input instance with invalid GLFWwindow reference");
 
-    int state = glfwGetKey(_win_h, GLFW_KEY_W);
-    if (state == GLFW_PRESS)
-        _w_p = true;
-    else if (state == GLFW_RELEASE)
-        _w_p = false;
-    
-    state = glfwGetKey(_win_h, GLFW_KEY_A);
-    if (state == GLFW_PRESS)
-        _a_p = true;
-    else if (state == GLFW_RELEASE)
-        _a_p = false;
-
-    state = glfwGetKey(_win_h, GLFW_KEY_S);
-    if (state == GLFW_PRESS)
-        _s_p = true;
-    else if (state == GLFW_RELEASE)
-        _s_p = false;
-    
-    state = glfwGetKey(_win_h, GLFW_KEY_D);
-    if (state == GLFW_PRESS)
-        _d_p = true;
-    else if (state == GLFW_RELEASE)
-        _d_p = false;
-
-    state = glfwGetKey(_win_h, GLFW_KEY_E);
-    if (state == GLFW_PRESS)
-        _e_p = true;
-    else if (state == GLFW_RELEASE)
-        _e_p = false;
-
-    state = glfwGetKey(_win_h, GLFW_KEY_UP);
-    if (state == GLFW_PRESS)
-        _up_p = true;
-    else if (state == GLFW_RELEASE)
-        _up_p = false;
-
-    state = glfwGetKey(_win_h, GLFW_KEY_LEFT);
-    if (state == GLFW_PRESS)
-        _left_p = true;
-    else if (state == GLFW_RELEASE)
-        _left_p = false;
-    
-    state = glfwGetKey(_win_h, GLFW_KEY_DOWN);
-    if (state == GLFW_PRESS)
-        _down_p = true;
-    else if (state == GLFW_RELEASE)
-        _down_p = false;
-
-    state = glfwGetKey(_win_h, GLFW_KEY_RIGHT);
-    if (state == GLFW_PRESS)
-        _right_p = true;
-    else if (state == GLFW_RELEASE)
-        _right_p = false;
-
-    state = glfwGetKey(_win_h, GLFW_KEY_SPACE);
-    if (state == GLFW_PRESS)
-        _space_p = true;
-    else if (state == GLFW_RELEASE)
-        _space_p = false;
-
-    state = glfwGetKey(_win_h, GLFW_KEY_ENTER);
-    if (state == GLFW_PRESS)
-        _enter_p = true;
-    else if (state == GLFW_RELEASE)
-        _enter_p = false;
-    
-    state = glfwGetKey(_win_h, GLFW_KEY_TAB);
-    if (state == GLFW_PRESS)
-        _tab_p = true;
-    else if (state == GLFW_RELEASE)
-        _tab_p = false;
-
-    state = glfwGetKey(_win_h, GLFW_KEY_ESCAPE);
-    if (state == GLFW_PRESS)
-        _esc_p = true;
-    else if (state == GLFW_RELEASE)
-        _esc_p = false;
-
-    state = glfwGetMouseButton(_win_h, GLFW_MOUSE_BUTTON_LEFT);
-    if (state == GLFW_PRESS)
-        _m1_p = true;
-    else if (state == GLFW_RELEASE)
-        _m1_p = false;
-
-    state = glfwGetMouseButton(_win_h, GLFW_MOUSE_BUTTON_RIGHT);
-    if (state == GLFW_PRESS)
-        _m2_p = true;
-    else if (state == GLFW_RELEASE)
-        _m2_p = false;
+    _w_p = _checkKey(GLFW_KEY_W);
+    _a_p = _checkKey(GLFW_KEY_A);
+    _s_p = _checkKey(GLFW_KEY_S);
+    _d_p = _checkKey(GLFW_KEY_D);
+    _e_p = _checkKey(GLFW_KEY_E);
+    _up_p = _checkKey(GLFW_KEY_UP);
+    _left_p = _checkKey(GLFW_KEY_LEFT);
+    _down_p = _checkKey(GLFW_KEY_DOWN);
+    _right_p = _checkKey(GLFW_KEY_RIGHT);
+    _space_p = _checkKey(GLFW_KEY_SPACE);
+    _enter_p = _checkKey(GLFW_KEY_ENTER);
+    _tab_p = _checkKey(GLFW_KEY_TAB);
+    _esc_p = _checkKey(GLFW_KEY_ESCAPE);
+    _m1_p = _checkMouseButton(GLFW_MOUSE_BUTTON_LEFT);
+    _m2_p = _checkMouseButton(GLFW_MOUSE_BUTTON_RIGHT);
 
     glfwGetCursorPos(_win_h, &_win_mouse_x, &_win_mouse_y);
     _pixel_mouse_x = (_pixel_width * (_win_mouse_x / _win_width)) - (_pixel_width / 2.0f);
     _pixel_mouse_y = (_pixel_height - (_pixel_height * (_win_mouse_y / _win_height))) - (_pixel_height / 2.0f);
+
+    _has_joystick = glfwJoystickIsGamepad(GLFW_JOYSTICK_1);
+    if (_has_joystick) {
+        glfwGetGamepadState(GLFW_JOYSTICK_1, &_state);
+        _leftbumper_p = GLFW_PRESS == _state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER];
+        _rightbumper_p = GLFW_PRESS == _state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER];
+        _start_p = GLFW_PRESS == _state.buttons[GLFW_GAMEPAD_BUTTON_START];
+        _button_a_p = GLFW_PRESS == _state.buttons[GLFW_GAMEPAD_BUTTON_A];
+        _leftstick_x = _state.axes[GLFW_GAMEPAD_AXIS_LEFT_X];
+        _leftstick_y = -1.0f * _state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y];
+        _rightstick_x = _state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X];
+        _rightstick_y = -1.0f * _state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y];
+    } else {
+        _leftbumper_p = false;
+        _rightbumper_p = false;
+        _leftstick_x = 0.0f;
+        _leftstick_y = 0.0f;
+        _rightstick_x = 0.0f;
+        _rightstick_y = 0.0f;
+    }
 };
 
 void GLFWInput::setsticky(bool value) {
@@ -141,6 +133,10 @@ bool GLFWInput::get_tab() { return _tab_p; }
 bool GLFWInput::get_esc() { return _esc_p; }
 bool GLFWInput::get_m1() { return _m1_p; }
 bool GLFWInput::get_m2() { return _m2_p; }
+bool GLFWInput::get_leftbumper() { return _leftbumper_p; }
+bool GLFWInput::get_rightbumper() { return _rightbumper_p; }
+bool GLFWInput::get_start() { return _start_p; }
+bool GLFWInput::get_button_a() { return _button_a_p; }
 
 glm::vec2 GLFWInput::inputdir() {
     float vertical = float(_w_p | _up_p) + (-1.0f * float(_s_p | _down_p));
@@ -154,4 +150,16 @@ glm::vec2 GLFWInput::inputdir() {
 
 glm::vec2 GLFWInput::mousepos() {
     return glm::vec2(_pixel_mouse_x, _pixel_mouse_y);
+}
+
+bool GLFWInput::has_joystick() {
+    return _has_joystick;
+}
+
+glm::vec2 GLFWInput::leftstick() {
+    return glm::vec2(_leftstick_x, _leftstick_y);
+}
+
+glm::vec2 GLFWInput::rightstick() {
+    return glm::vec2(_rightstick_x, _rightstick_y);
 }

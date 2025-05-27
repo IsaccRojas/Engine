@@ -1,7 +1,7 @@
 #include "../include/text.hpp"
 
-Text::Text(GLEnv *glenv) : 
-    _glenv(glenv), 
+Text::Text() : 
+    _glenv(nullptr),
     _tc(TextConfig{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
     _pos(glm::vec3(0.0f)),
     _scale(glm::vec3(1.0f)),
@@ -34,6 +34,13 @@ Text &Text::operator=(Text &&other) {
         other._update = false;
     }
     return *this;
+}
+
+void Text::setEnv(GLEnv *glenv) {
+    if (_glenv)
+        throw std::runtime_error("Attempt to set GLEnv reference in Text instance with existing reference");
+    
+    _glenv = glenv;
 }
 
 /*
@@ -85,7 +92,7 @@ void Text::writeText() {
         return;
     
     if (!_glenv)
-        throw std::runtime_error("WARN: attempt to update Text with null GLEnv reference");
+        throw std::runtime_error("Attempt to update Text with null GLEnv reference");
 
     int l_ids = _quadids.size();
     int l_str = _textstr.size();
@@ -108,18 +115,20 @@ void Text::writeText() {
             _quadids.push_back(_glenv->genQuad(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), 0.0f, glm::vec3(0.0f), glm::vec2(0.0f), GLE_RECT));
     }
     
-    // set position start to be half-way leftward across complete text width, to center the text
+    // set position offset to be half-way leftward across complete text width, to center the text
     Quad *quad;
-    int shift = (_tc.text_width * _scale.x) + _tc.spacing;
-    float pos_start = ((l_str * (_tc.text_width * _scale.x)) + ((l_str - 1) * _tc.spacing)) * -0.5f;
-    
+    float scaled_text_width = _tc.text_width * _scale.x;
+    float total_width = (l_str * scaled_text_width) + ((l_str - 1) * _tc.spacing);
+    float pos_offset = glm::floor((total_width * -0.5f) + (scaled_text_width * 0.5f)) + 0.5f;
+    float shift = glm::floor(scaled_text_width + _tc.spacing);
+
     // update IDs with new character information
     for (int i = 0; i < l_str; i++) {
         quad = _glenv->getQuad(_quadids[i]);
         int charpos = int(_textstr[i]) - 32;
 
         // set values according to configuration and string
-        quad->bv_pos.v = _pos + glm::vec3(pos_start + float(shift * i), 0.0f, 0.0f);
+        quad->bv_pos.v = _pos + glm::vec3(pos_offset + (shift * float(i)), 0.0f, 0.0f);
         quad->bv_scale.v = glm::vec3(_tc.text_width, _tc.text_height, 0.0f) * _scale;
         quad->bv_texpos.v = glm::vec3(
             _tc.tex_x + ((_tc.text_width + _tc.text_xoff) * (charpos % _tc.tex_columns)),
