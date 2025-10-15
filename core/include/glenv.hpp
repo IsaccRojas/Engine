@@ -141,8 +141,8 @@ public:
       type - whether to interpret this Quad data as a rectangle or ellipse
       Returns the integer offset of Quad. This number can be used to index into the internal Quad container and
       obtain a reference (see the get() method). This offset is unique and will be valid for the lifetime 
-      of the Quad (see the erase() method). If the maximum number of active Quads allowed is exceeded, -1 is
-      returned instead.
+      of the Quad (see the remove() method). If the maximum number of active Quads allowed is exceeded, a
+      CountLimitException is thrown.
    */
    unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, GLfloat innerrad, glm::vec3 texpos, glm::vec2 texsize, DrawType type);
    /* Removes the Quad with the provided offset from the system. This will cause the provided offset to be 

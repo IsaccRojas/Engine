@@ -10,6 +10,8 @@
 #include <chrono>
 #include <thread>
 
+#include "implementations.hpp"
+
 /* Primary program execution loop. */
 void loop(CoreResources *core);
 

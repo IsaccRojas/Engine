@@ -128,12 +128,12 @@ public:
    void init(unsigned queues, GLEnv *glenv, unordered_map_string_Animation_t *animations, PhysSpace<Box> *box_space, PhysSpace<Sphere> *sphere_space, unordered_map_string_Filter_t *filters);
    void uninit();
 
-   /* Adds a Entity allocator with initialization information to this manager, allowing its given
+   /* Adds a Entity allocator with initialization information to this executor, allowing its given
       name to be used for future spawns.
       - allocator - Reference to instance of class implementing EntityAllocatorInterface.
       - name - name to associate with the allocator
       - group - value to associate with all instances of this Entity
-      - removeonkill - removes this Entity from this manager when it is killed
+      - removeonkill - removes this Entity from this executor when it is killed
       - spawn_callback - function callback to call after Entity has been spawned and setup
       - remove_callback - function callback to call before Entity has been removed
    */

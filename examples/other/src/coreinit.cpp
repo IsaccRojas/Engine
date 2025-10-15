@@ -12,7 +12,7 @@ const unsigned PIXEL_WIDTH = WINDOW_WIDTH / 2;
 const unsigned PIXEL_HEIGHT = WINDOW_HEIGHT / 2;
 const unsigned PIXEL_LEVELS = 16;
 
-const unsigned TEX_SPACE_WIDTH = 133;
+const unsigned TEX_SPACE_WIDTH = 208;
 const unsigned TEX_SPACE_HEIGHT = 120;
 const unsigned TEX_SPACE_LEVELS = 3;
 
@@ -38,7 +38,7 @@ void initializeCore(CoreResources *core) {
     std::cout << "Setting up GLEnv" << std::endl;
     core->glenv.init(MAX_COUNT);
     core->glenv.setTexArray(TEX_SPACE_WIDTH, TEX_SPACE_HEIGHT, TEX_SPACE_LEVELS);
-    core->glenv.setTexture(Image("gfx/sprites.png"), 0, 0, 0);
+    core->glenv.setTexture(Image("gfx/tiles.png"), 0, 0, 0);
     core->glenv.setTexture(Image("gfx/characters1.png"), 0, 0, 1); // each character is 7x24 pixels
     core->glenv.setTexture(Image("gfx/characters2.png"), 0, 0, 2); // each character is 5x10 pixels
     

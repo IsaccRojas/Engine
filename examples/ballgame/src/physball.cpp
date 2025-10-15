@@ -14,7 +14,7 @@ void PhysBall::_initEntity() {
         _sphere->filterstate().setFilter(&executor().filters()[_filter_name]);
     
     // bind and set collision handler, and set default physball weight
-    sphere()->setCallback(std::bind(&PhysBall::_onCollision, this, std::placeholders::_1));
+    _sphere->setCallback(std::bind(&PhysBall::_onCollision, this, std::placeholders::_1));
     _sphere->attributes["weight"] = 0.0f;
 
     _initPhysBall();

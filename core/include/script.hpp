@@ -239,7 +239,7 @@ public:
 
    /* Returns true if the provided Script reference is owned by this instance. */
    bool has(Script *script);
-   /* Returns true if the provided Script name has been previously added to this manager. */
+   /* Returns true if the provided Script name has been previously added to this executor. */
    bool hasAdded(const char *script_name);
    /* Returns the number of Scripts in this executor. */
    unsigned getCount();
