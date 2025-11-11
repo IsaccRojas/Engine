@@ -17,6 +17,11 @@
 // prototype
 class Executor;
 
+/* class ScriptKey
+   Used to lock-out a Script, determining whether it can be removed or not.
+*/
+class ScriptKey {};
+
 /* class Script
    Represents a runnable script by an owning Executor instance.
    The owning Executor will call runInit(), runBase(), and runKill() as needed, and
@@ -31,7 +36,6 @@ class Script {
    std::list<Script*>::iterator _this_iter;
    int _spawn_tag;
    int _last_execqueue;
-   bool _remove_on_kill;
    bool _initialized;
    bool _killed;
    bool _exec_enqueued;
@@ -40,6 +44,10 @@ class Script {
 
    // settable integer usable for identification
    int _group;
+
+   // lockout variables
+    std::unordered_set<ScriptKey*> _keys;
+    unsigned _keys_count;
 
    // removes the Script from its owning Executor
    void _scriptErase();
@@ -92,6 +100,10 @@ public:
    Executor &executor();
    unsigned getExecutorID();
    int getSpawnTag();
+
+   void lockout(ScriptKey *k);
+   void unlock(ScriptKey *k);
+   unsigned lockout_count();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -130,7 +142,6 @@ class Executor {
    // struct holding Script information mapped to a name
    struct ScriptInfo {
       int _group;
-      bool _remove_on_kill;
       AllocatorInterface *_allocator;
       std::function<void(Script*)> _spawn_callback;
       std::function<void(Script*)> _remove_callback;
@@ -180,9 +191,6 @@ protected:
    // initializes Script's Executor-related fields
    void _setupScript(Script *script, const char *script_name, int execution_queue, int tag);
 
-   // spawns a Script using a name previously added to this manager, and returns its ID
-   Script *_spawnScript(const char *script_name, int execution_queue, int tag);
-
    // pushes an enqueue
    void _pushSpawnEnqueue(ScriptEnqueue *enqueue);
 
@@ -215,11 +223,13 @@ public:
       - allocator - Reference to instance of class implementing AllocatorInterface.
       - name - name to associate with the allocator
       - group - value to associate with all instances of this Script
-      - removeonkill - removes this Script from this manager when it is killed
       - spawn_callback - function callback to call after Script has been spawned and setup
       - remove_callback - function callback to call before Script has been removed
    */
-   void add(AllocatorInterface *allocator, const char *name, int group, bool remove_on_kill, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback);
+   void add(AllocatorInterface *allocator, const char *name, int group, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback);
+
+   /* Spawns a Script using a name previously added to this manager, and returns its ID. */
+   Script *spawnScript(const char *script_name, int execution_queue, int tag);
 
    /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
    void enqueueSpawn(const char *script_name, int execution_queue, int tag);

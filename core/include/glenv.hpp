@@ -5,6 +5,8 @@
 #include "glutil.hpp"
 #include "animation.hpp"
 
+typedef std::unordered_map<std::string, Animation> unordered_map_string_Animation_t;
+
 /* class Quad
    Encapsulates Quad-like data for OpenGL environments.
    Uses BVec instances to store basic parameters of quads:
@@ -105,7 +107,7 @@ class GLEnv {
    GLUtil::GLBuffer _glb_draw;
 
    /* environment system variables */
-   // Offsets to distribute to Quads, and Quads
+   // offsets to distribute to Quads, and Quads
    IntGenerator _quad_offsets;
    std::vector<Quad> _quads;
 
@@ -113,11 +115,15 @@ class GLEnv {
    unsigned _max_count;
    unsigned _count;
 
-   // flag to prevent moved GLEnv instances from doing anything
+   // reference to map of animations
+   unordered_map_string_Animation_t *_animations;
+
+   // flag to store if instance was initialized or not
    bool _initialized;
+
 public:
    /* Calls init() with the provided arguments. */
-   GLEnv(unsigned max_count);
+   GLEnv(unsigned max_count, unordered_map_string_Animation_t *animations);
    GLEnv(GLEnv &&other);
    GLEnv();
    GLEnv(const GLEnv &Other) = delete;
@@ -126,8 +132,8 @@ public:
    GLEnv& operator=(GLEnv &&other);
    GLEnv& operator=(const GLEnv&) = delete;
 
-   /* Initializes GLBuffers, GLStage, and GLTexture2DArray, allowing the provided maximum amount of Quads. */
-   void init(unsigned max_count);
+   /* Initializes GLBuffers, GLStage, and GLTexture2DArray, allowing the provided maximum amount of Quads and a map of animations. */
+   void init(unsigned max_count, unordered_map_string_Animation_t *animations);
    void uninit();
 
    /* Generates an active Quad in system. This call does not write the new Quad into graphic memory. You 
@@ -135,16 +141,17 @@ public:
       pos - GLM vec3 position of Quad
       scale - GLM vec3 scale of Quad
       color - GLM vec4 color of Quad
-      innerrad - float inner radius of Quad if rendered as ellipse, from 0.0f to 1.0f
+      type - whether to interpret this Quad data as a rectangle or ellipse
+      animation_name - name of animation data to use with this Quad ("" if none)
       texpos - GLM vec3 texture position of Quad (multi-level 2D texture space)
       texsize - GLM vec2 texture size of Quad (added to positions to get a rectangle)
-      type - whether to interpret this Quad data as a rectangle or ellipse
+      innerrad - float inner radius of Quad if rendered as ellipse, from 0.0f to 1.0f
       Returns the integer offset of Quad. This number can be used to index into the internal Quad container and
       obtain a reference (see the get() method). This offset is unique and will be valid for the lifetime 
       of the Quad (see the remove() method). If the maximum number of active Quads allowed is exceeded, a
       CountLimitException is thrown.
    */
-   unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, GLfloat innerrad, glm::vec3 texpos, glm::vec2 texsize, DrawType type);
+   unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, DrawType type, const char *animation_name, glm::vec3 texpos, glm::vec2 texsize, GLfloat innerrad);
    /* Removes the Quad with the provided offset from the system. This will cause the provided offset to be 
       invalid until returned again by the genQuad() method. Note that this method does not actually
       free any GPU memory; it simply makes the specific offset usable again by the system. Attempting to use

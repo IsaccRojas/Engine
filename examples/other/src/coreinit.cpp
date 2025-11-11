@@ -34,9 +34,13 @@ void initializeCore(CoreResources *core) {
     core->animations = loadAnimations(ANIMATION_DIR);
     core->filters = loadFilters(FILTER_DIR);
 
+    // set up Executor
+    std::cout << "Setting up Executor" << std::endl;
+    core->executor.init(EXECUTION_QUEUES);
+
     // set up GLEnv
     std::cout << "Setting up GLEnv" << std::endl;
-    core->glenv.init(MAX_COUNT);
+    core->glenv.init(MAX_COUNT, &core->animations);
     core->glenv.setTexArray(TEX_SPACE_WIDTH, TEX_SPACE_HEIGHT, TEX_SPACE_LEVELS);
     core->glenv.setTexture(Image("gfx/tiles.png"), 0, 0, 0);
     core->glenv.setTexture(Image("gfx/characters1.png"), 0, 0, 1); // each character is 7x24 pixels
@@ -49,13 +53,13 @@ void initializeCore(CoreResources *core) {
     core->glenv.setWindowSpace(WINDOW_WIDTH, WINDOW_HEIGHT);
     core->glenv.setPixelSpace(PIXEL_WIDTH, PIXEL_HEIGHT, PIXEL_LEVELS);
 
-    // set up Executor
-    std::cout << "Setting up Executor" << std::endl;
-    core->executor.init(EXECUTION_QUEUES, &core->glenv, &core->animations, &core->box_space, &core->sphere_space, &core->filters);
+    // set up PhysSpace
+    std::cout << "Setting up PhysSpace" << std::endl;
+    core->physspace_box.init(&core->filters);
 
-    // set up GLFWInput
-    std::cout << "Setting up GLFWInput" << std::endl;
-    core->input.setWindow(core->state.getWindowHandle(), PIXEL_WIDTH, PIXEL_HEIGHT);
+    // set up Manager
+    std::cout << "Setting up Manager" << std::endl;
+    core->manager.init(&core->executor, &core->glenv, &core->physspace_box);
 
     std::cout << "Setting some OpenGL parameters" << std::endl;
     glfwSwapInterval(1);

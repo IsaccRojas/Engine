@@ -1,20 +1,23 @@
 #ifndef COREINIT_HPP_
 #define COREINIT_HPP_
 
-#include "../../../core/include/entity.hpp"
-#include "../../../core/include/text.hpp"
+#include "gl/glew.h"
 #include "../../../core/include/glfwstate.hpp"
 #include "../../../core/include/glfwinput.hpp"
+#include "../../../core/include/manager.hpp"
 
 struct CoreResources {
     GLFWState state;
     GLFWInput input;
-    GLEnv glenv;
+
     unordered_map_string_Animation_t animations;
     unordered_map_string_Filter_t filters;
-    PhysSpace<Box> box_space;
-    PhysSpace<Sphere> sphere_space;
-    EntityExecutor executor;
+
+    Executor executor;
+    GLEnv glenv;
+    PhysSpace<Box> physspace_box;
+
+    Manager manager;
 };
 
 /* Initializes core library data structures.

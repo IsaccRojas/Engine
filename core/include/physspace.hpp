@@ -8,6 +8,8 @@
 #include <functional>
 #include <list>
 
+typedef std::unordered_map<std::string, Filter> unordered_map_string_Filter_t;
+
 struct Transform {
    glm::vec3 pos = glm::vec3(0.0f);
    glm::vec3 scale = glm::vec3(0.0f);
@@ -141,34 +143,59 @@ class PhysSpace {
     // Collider storage
     std::list<T*> _Ts;
 
+   // reference to map of filters
+   unordered_map_string_Filter_t *_filters;
+
+   // flag to store if instance was initialized or not
+   bool _initialized;
 public:
-    PhysSpace() {}
-    PhysSpace(PhysSpace<T> &&other) { operator=(std::move(other._Ts.clear())); }
+    PhysSpace(unordered_map_string_Filter_t *filters) : _initialized(false) { init(filters); }
+    PhysSpace(PhysSpace<T> &&other) { operator=(std::move(other)); }
+    PhysSpace() : _filters(nullptr), _initialized(false) {}
     PhysSpace(const PhysSpace<T> &other) = delete;
-    ~PhysSpace() {
-        for (auto &t : _Ts) {
-            t->_physspace = nullptr;
-            delete t;
-        }
-    }
+    ~PhysSpace() { uninit(); }
 
     PhysSpace<T> &operator=(PhysSpace<T> &&other) {
         if (this != &other) {
             _Ts = other._Ts;
+            _filters = other._filters;
+            _initialized = other._initialized;
             other._Ts.clear();
+            other._filters = nullptr;
+            other._initialized = false;
         }
         return *this;
     }
     PhysSpace<T> &operator=(const PhysSpace<T> &other) = delete;
+
+    /* Initializes state of PhysSpace. */
+    void init(unordered_map_string_Filter_t *filters) {
+        if (_initialized)
+            throw InitializedException();
+
+        _initialized = true;
+    }
+    void uninit() {
+        if (!_initialized)
+            return;
+        
+        for (auto &t : _Ts) {
+            t->_physspace = nullptr;
+            delete t;
+        }
+        _filters = nullptr;
+        _initialized = false;
+    }
 
     /* Generates an active instance of T in system. You must call the step() method on this or a reference 
        to the instance of T itself to move it within the physical space.
        transf - Transform of T
        vel - GLM vec3 velocity of T
        callback - void(T*) function pointer to callback of T
+       filter_name - filter to use with T ("" if none)
        Returns a reference to the instance of T that is valid until it is erased from the environment.
     */
-    T *push(Transform transf, glm::vec3 vel, std::function<void(T*)> callback) {
+    T *push(Transform transf, glm::vec3 vel, std::function<void(T*)> callback, const char *filter_name) {
         _Ts.push_back(new T);
         auto iter = _Ts.end();
         iter--;
@@ -182,6 +209,8 @@ public:
         t->transform = transf;
         t->vel = vel;
         t->_callback = callback;
+        if (strcmp(filter_name, "") != 0)
+            t->_filterstate.setFilter(&((*_filters)[filter_name]));
 
         return t;
     }

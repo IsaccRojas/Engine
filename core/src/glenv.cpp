@@ -174,15 +174,15 @@ const char * const frag_shader_str = R"(
 
 // _______________________________________ GLEnv _______________________________________
 
-GLEnv::GLEnv(unsigned maxcount) : _initialized(false) {
-    init(maxcount);
+GLEnv::GLEnv(unsigned maxcount, unordered_map_string_Animation_t *animations) : _initialized(false) {
+    init(maxcount, animations);
 }
 
 GLEnv::GLEnv(GLEnv &&other) {
     operator=(std::move(other));
 }
 
-GLEnv::GLEnv() : _max_count(0), _initialized(false) {}
+GLEnv::GLEnv() : _max_count(0), _animations(nullptr), _initialized(false) {}
 GLEnv::~GLEnv() {
     uninit();
 }
@@ -205,16 +205,18 @@ GLEnv& GLEnv::operator=(GLEnv &&other) {
         _quads = other._quads;
         _max_count = other._max_count;
         _count = other._count;
+        _animations = other._animations;
         _initialized = other._initialized;
         other._quad_offsets.clear();
         other._quads.clear();
         other._max_count = 0;
+        other._animations = nullptr;
         other._initialized = false;
     }
     return *this;
 }
 
-void GLEnv::init(unsigned max_count) {
+void GLEnv::init(unsigned max_count, unordered_map_string_Animation_t *animations) {
     if (_initialized)
         throw InitializedException();
     
@@ -307,7 +309,8 @@ void GLEnv::init(unsigned max_count) {
     _stage.uniform1i(11, 0);
     glActiveTexture(GL_TEXTURE0);
 
-    
+    _animations = animations;
+
     _initialized = true;
 }
 
@@ -328,10 +331,11 @@ void GLEnv::uninit() {
     _quad_offsets.clear();
     _quads.clear();
     _max_count = 0;
+    _animations = nullptr;
     _initialized = false;
 }
 
-unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, GLfloat innerrad, glm::vec3 texpos, glm::vec2 texsize, DrawType type) {
+unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, DrawType type, const char *animation_name, glm::vec3 texpos, glm::vec2 texsize, GLfloat innerrad) {
     // if number of active offsets is greater than or equal to maximum allowed count, throw
     if (_count >= _max_count)
         throw CountLimitException();
@@ -363,6 +367,9 @@ unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, GLfloat
     _glb_type.subData(sizeof(GLfloat), &ftype, offset * (1 * sizeof(GLfloat)));
     GLfloat draw = 1.0f;
     _glb_draw.subData(sizeof(GLfloat), &draw, offset * (1 * sizeof(GLfloat)));
+
+    if (strcmp(animation_name, "") != 0)
+        _quads[offset].animationstate().setAnimation(&((*_animations)[animation_name]));
 
     _count++;
     return offset;
