@@ -48,9 +48,6 @@ class Script {
    // lockout variables
     std::unordered_set<ScriptKey*> _keys;
     unsigned _keys_count;
-
-   // removes the Script from its owning Executor
-   void _scriptErase();
 protected:
    /* Functions to be overridden by children.
       - _init() is called by runInit(). _runInit() is called on execution, only for the first time the Script is queued.
@@ -157,7 +154,7 @@ protected:
       std::string _name;
       int _execution_queue;
       int _tag;
-      virtual Script *spawn();
+      virtual unsigned spawn();
       ScriptEnqueue(Executor *executor, std::string name, int execution_queue, int tag);
       // default copy assignment/construction are fine (copying implies another enqueue in the same Executor)
    public:
@@ -169,6 +166,7 @@ private:
    // memory-managed list of Script references and IntGenerator to provide Scripts with unique identifiers
    ManagedList<Script> _scripts;
    IntGenerator _intgen;
+   std::unordered_map<unsigned, Script*> _scripts_id;
 
    // internal variables for added script information and active scripts
    std::unordered_map<std::string, ScriptInfo> _scriptinfos;
@@ -214,9 +212,9 @@ public:
    void init(unsigned queues);
    void uninit();
 
-   /* Erases the passed Script. The reference becomes invalid after this is called.
+   /* Erases the passed Script ID. The reference becomes invalid after this is called; it is undefined behavior to use the ID after this call.
    */
-   void erase(Script *script);
+   void erase(unsigned id);
 
    /* Adds an Script allocator with initialization information to this manager, allowing its given
       name to be used for future spawns.
@@ -229,14 +227,14 @@ public:
    void add(AllocatorInterface *allocator, const char *name, int group, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback);
 
    /* Spawns a Script using a name previously added to this manager, and returns its ID. */
-   Script *spawnScript(const char *script_name, int execution_queue, int tag);
+   unsigned spawnScript(const char *script_name, int execution_queue, int tag);
 
    /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
    void enqueueSpawn(const char *script_name, int execution_queue, int tag);
    /* Enqueues a Script instance to be executed when runExecQueue() is called. */
-   void enqueueExec(Script *script, unsigned queue);
+   void enqueueExec(unsigned id, unsigned queue);
    /* Enqueues a Script instance to be killed when runKillQueue() is called. */
-   void enqueueKill(Script *script);
+   void enqueueKill(unsigned id);
 
    /* Executes all currently enqueued Scripts in the specified queue, and dequeues them. This will call the 
       (init() method if it has not yet been called, and the) base() method on every active Script.
@@ -245,10 +243,8 @@ public:
    /* Calls the kill() method on all erasure-queued Scripts if it has not been called yet. */
    void runKillQueue();
    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(). */
-   std::vector<Script*> runSpawnQueue();
+   std::vector<unsigned> runSpawnQueue();
 
-   /* Returns true if the provided Script reference is owned by this instance. */
-   bool has(Script *script);
    /* Returns true if the provided Script name has been previously added to this executor. */
    bool hasAdded(const char *script_name);
    /* Returns the number of Scripts in this executor. */
