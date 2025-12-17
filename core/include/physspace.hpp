@@ -31,6 +31,7 @@ class ColliderInterface {
     // used to check ownership and for erasure
     PhysSpace<T> *_physspace;
     typename std::list<T*>::iterator _this_iter;
+    unsigned _id;
 
     unsigned _collided_count;
 
@@ -43,6 +44,7 @@ class ColliderInterface {
 protected:
     ColliderInterface() :
         _physspace(nullptr),
+        _id(0),
         _collided_count(false),
         _prev_pos(glm::vec3(0.0f)),
         _callback(nullptr),
@@ -58,6 +60,7 @@ protected:
         if (this != &other) {
             _physspace = other._physspace;
             _this_iter = other._this_iter;
+            _id = other._id;
             _collided_count = other._collided_count;
             _filterstate = other._filterstate;
             _prev_pos = other._prev_pos;
@@ -68,6 +71,7 @@ protected:
             mass = other.mass;
             attributes = other.attributes;
             other._physspace = nullptr;
+            other._id = 0;
             other._collided_count = 0;
             other._filterstate.setFilter(nullptr);
             other._prev_pos = glm::vec3(0.0f);
@@ -89,7 +93,7 @@ public:
 
     virtual ~ColliderInterface() {
         if (_physspace)
-            _physspace->erase(this);
+            _physspace->erase(_id);
     }
 
     ColliderInterface<T> &operator=(const ColliderInterface<T> &other) = delete;
@@ -142,6 +146,8 @@ template <class T>
 class PhysSpace {
     // Collider storage
     std::list<T*> _Ts;
+    IntGenerator _intgen;
+    std::unordered_map<unsigned, T*> _Ts_id;
 
    // reference to map of filters
    unordered_map_string_Filter_t *_filters;
@@ -158,9 +164,13 @@ public:
     PhysSpace<T> &operator=(PhysSpace<T> &&other) {
         if (this != &other) {
             _Ts = other._Ts;
+            _intgen = other._intgen;
+            _Ts_id = other._Ts_id;
             _filters = other._filters;
             _initialized = other._initialized;
             other._Ts.clear();
+            other._intgen.clear();
+            other._Ts_id.clear();
             other._filters = nullptr;
             other._initialized = false;
         }
@@ -193,9 +203,9 @@ public:
        vel - GLM vec3 velocity of T
        callback - void(T*) function pointer to callback of T
        filter_name - filter to use with T ("" if none)
-       Returns a reference to the instance of T that is valid until it is erased from the environment.
+       Returns the ID of the instance of T that is valid until it is erased from the environment.
     */
-    T *push(Transform transf, glm::vec3 vel, std::function<void(T*)> callback, const char *filter_name) {
+    unsigned push(Transform transf, glm::vec3 vel, std::function<void(T*)> callback, const char *filter_name) {
         _Ts.push_back(new T);
         auto iter = _Ts.end();
         iter--;
@@ -205,6 +215,10 @@ public:
         t->_physspace = this;
         t->_this_iter = iter;
 
+        // store ID
+        t->_id = _intgen.push();
+        _Ts_id[t->_id] = t;
+
         // initialize fields
         t->transform = transf;
         t->vel = vel;
@@ -212,15 +226,24 @@ public:
         if (strcmp(filter_name, "") != 0)
             t->_filterstate.setFilter(&((*_filters)[filter_name]));
 
-        return t;
+        return t->_id;
     }
 
     /* Removes the reference from the system. This will cause the provided reference to be invalid. */
-    void erase(ColliderInterface<T> *t) {
-        if (t->_physspace != this)
-            throw std::runtime_error("Attempt to erase Box from PhysEnv that does not own it");
+    void erase(unsigned id) {
+        if (id >= _intgen.size())
+            throw std::runtime_error("Attempt to erase Collider from PhysSpace with ID that exceeds maximum");
+
+        if (!_Ts_id[id])
+            throw std::runtime_error("Attempt to erase Collider from PhysSpace with invalid ID");
         
+        ColliderInterface<T> *t = _Ts_id[id];
+        if (t->_physspace != this)
+            throw std::runtime_error("Attempt to erase Collider from PhysSpace that does not own it");
+
         _Ts.erase(t->_this_iter);
+        _intgen.remove(id);
+        _Ts_id[id] = nullptr;
 
         t->_physspace = nullptr;
         delete t;
