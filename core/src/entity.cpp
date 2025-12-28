@@ -66,9 +66,9 @@ void EntityExecutor::uninit() {
     _entityscriptinfos.clear();
 }
 
-void EntityExecutor::addEntityScript(EntityScriptAllocatorInterface *allocator, const char *name, int group, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback) {
+void EntityExecutor::addEntityScript(EntityScriptAllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback) {
     if (!hasAdded(name)) {
-        Executor::add(nullptr, name, group, spawn_callback, remove_callback);
+        Executor::add(nullptr, name, spawn_callback, remove_callback);
         _entityscriptinfos[name] = EntityScriptInfo{allocator};
     } else
         throw std::runtime_error("Attempt to add already added name");

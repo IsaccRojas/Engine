@@ -11,7 +11,6 @@ Script::Script() :
     _exec_enqueued(false), 
     _kill_enqueued(false),
     _script_name(""),
-    _group(-1),
     _keys_count(0)
 {}
 Script::~Script() { /* automatic destruction is fine */ }
@@ -28,7 +27,6 @@ Script &Script::operator=(Script &&other) {
         _exec_enqueued = other._exec_enqueued;
         _kill_enqueued = other._exec_enqueued;
         _script_name = other._script_name;
-        _group = other._group;
         _keys = other._keys;
         _keys_count = other._keys_count;
         other._executor = nullptr;
@@ -40,7 +38,6 @@ Script &Script::operator=(Script &&other) {
         other._exec_enqueued = false;
         other._exec_enqueued = false;
         other._script_name = "";
-        other._group = -1;
         other._keys.clear();
         other._keys_count = 0;
     }
@@ -68,7 +65,6 @@ bool Script::getKilled() { return _killed; }
 bool Script::getExecEnqueued() { return _exec_enqueued; }
 bool Script::getKillEnqueued() { return _kill_enqueued; }
 const char *Script::getName() { return _script_name.c_str(); }
-int Script::getGroup() { return _group; }
 
 void Script::enqueueExec(unsigned queue) {
     if (!_executor)
@@ -84,7 +80,6 @@ void Script::enqueueKill() {
         _executor->enqueueKill(_executor_id);
 }
 
-Executor &Script::executor() { return *_executor; }
 unsigned Script::getExecutorID() { return _executor_id; }
 int Script::getSpawnTag() { return _spawn_tag; }
 
@@ -150,7 +145,6 @@ void Executor::_setupScript(Script *script, const char *script_name, int executi
 
     // set script fields (make copy of string passed)
     script->_script_name = script_name;
-    script->_group = info._group;
     
     // enqueue if non-negative queue provided
     if (execution_queue >= 0)
@@ -213,9 +207,9 @@ void Executor::erase(unsigned id) {
     _scripts.erase(script->_this_iter);
 }
 
-void Executor::add(AllocatorInterface *allocator, const char *name, int group, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback) {  
+void Executor::add(AllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback) {  
     if (!hasAdded(name))
-        _scriptinfos[name] = ScriptInfo{group, allocator, spawn_callback, remove_callback};
+        _scriptinfos[name] = ScriptInfo{allocator, spawn_callback, remove_callback};
     else
         throw std::runtime_error("Attempt to add already added Script name");
 }

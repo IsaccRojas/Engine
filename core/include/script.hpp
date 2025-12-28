@@ -42,12 +42,10 @@ class Script {
    bool _kill_enqueued; 
    std::string _script_name;
 
-   // settable integer usable for identification
-   int _group;
-
    // lockout variables
-    std::unordered_set<ScriptKey*> _keys;
-    unsigned _keys_count;
+   std::unordered_set<ScriptKey*> _keys;
+   unsigned _keys_count;
+   
 protected:
    /* Functions to be overridden by children.
       - _init() is called by runInit(). _runInit() is called on execution, only for the first time the Script is queued.
@@ -93,8 +91,6 @@ public:
    bool getExecEnqueued();
    bool getKillEnqueued();
    const char *getName();
-   int getGroup();
-   Executor &executor();
    unsigned getExecutorID();
    int getSpawnTag();
 
@@ -138,7 +134,6 @@ class GenericAllocator : public AllocatorInterface {
 class Executor {
    // struct holding Script information mapped to a name
    struct ScriptInfo {
-      int _group;
       AllocatorInterface *_allocator;
       std::function<void(Script*)> _spawn_callback;
       std::function<void(Script*)> _remove_callback;
@@ -220,11 +215,10 @@ public:
       name to be used for future spawns.
       - allocator - Reference to instance of class implementing AllocatorInterface.
       - name - name to associate with the allocator
-      - group - value to associate with all instances of this Script
       - spawn_callback - function callback to call after Script has been spawned and setup
       - remove_callback - function callback to call before Script has been removed
    */
-   void add(AllocatorInterface *allocator, const char *name, int group, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback);
+   void add(AllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback);
 
    /* Spawns a Script using a name previously added to this manager, and returns its ID. */
    unsigned spawnScript(const char *script_name, int execution_queue, int tag);

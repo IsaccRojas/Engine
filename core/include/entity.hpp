@@ -113,12 +113,11 @@ public:
       name to be used for future spawns.
       - allocator - Reference to instance of class implementing EntityScriptAllocatorInterface.
       - name - name to associate with the allocator
-      - group - value to associate with all instances of this EntityScript
       - removeonkill - removes this EntityScript from this executor when it is killed
       - spawn_callback - function callback to call after EntityScript has been spawned and setup
       - remove_callback - function callback to call before EntityScript has been removed
    */
-   void addEntityScript(EntityScriptAllocatorInterface *allocator, const char *name, int group, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback);
+   void addEntityScript(EntityScriptAllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback);
 
    /* Spawns a EntityScript using a name previously added to this manager, and returns its ID. */
    unsigned spawnEntityScript(const char *entityscript_name, int execution_queue, int tag, Transform transform);
@@ -155,8 +154,6 @@ public:
 /*
 struct Scheme;
 typedef std::unordered_map<std::string, Scheme> unordered_map_string_Scheme_t;
-
-
 
 struct ScriptArgs {
     const char *script_name;
