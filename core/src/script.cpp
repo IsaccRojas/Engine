@@ -224,7 +224,7 @@ unsigned Executor::spawnScript(const char *script_name, int execution_queue, int
     // allocate instance and set it up
     Script *script = _scriptinfos[script_name]._allocator->_allocate(tag);
     _setupScript(script, script_name, execution_queue, tag);
-    return script->_executor_id;
+    return script->getExecutorID();
 }
 
 void Executor::enqueueSpawn(const char *script_name, int execution_queue, int tag) {
