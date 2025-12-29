@@ -6,12 +6,17 @@
 #include "physspace.hpp"
 
 class EntityExecutor;
+class Entity;
+class EntityManager;
 
 /* class EntityScript
    Represents a Script that belongs to an Entity.
 */
 class EntityScript : public Script {
    friend EntityExecutor;
+   friend EntityManager;
+
+   Entity *_entity;
 
    // called by execution environment
    void _init() override;
@@ -36,6 +41,8 @@ public:
 
    EntityScript& operator=(EntityScript &&other);
    EntityScript& operator=(const EntityScript &other) = delete;
+
+   Entity &entity();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -141,63 +148,76 @@ protected:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-struct Entity {
-    unsigned _group;
-    unsigned _entity_manager_id;
-    std::unordered_map<const char*, float> _data_values;
-    std::vector<unsigned> _script_ids;
-public:
-    std::vector<Quad*> _quad_ids;
-    std::vector<Box*> _box_ids;
-};
+class Entity {
+   friend EntityManager;
 
-/*
-struct Scheme;
-typedef std::unordered_map<std::string, Scheme> unordered_map_string_Scheme_t;
+   EntityManager *_entitymanager;
+   std::list<Entity*>::iterator _this_iter;
+   unsigned _group;
+   std::unordered_map<const char*, float> _data_values;
+   std::vector<unsigned> _script_ids;
+   std::vector<unsigned> _quad_ids;
+   std::vector<unsigned> _box_ids;
+
+   std::vector<Quad*> _quads;
+   std::vector<Box*> _boxes;
+public:
+   Entity();
+   ~Entity();
+
+   EntityManager &manager();
+   std::vector<Quad*> &quads();
+   std::vector<Box*> &boxes();
+};
 
 struct ScriptArgs {
-    const char *script_name;
-    int execution_queue;
-    int tag;
+   const char *script_name;
+   int execution_queue;
+   int tag;
 };
 struct QuadArgs {
-    glm::vec3 pos;
-    glm::vec3 scale;
-    glm::vec4 color;
-    DrawType type;
-    const char *animation_name;
-    glm::vec3 texpos;
-    glm::vec2 texsize;
-    GLfloat innerrad;
+   glm::vec3 pos;
+   glm::vec3 scale;
+   glm::vec4 color;
+   DrawType type;
+   const char *animation_name;
+   glm::vec3 texpos;
+   glm::vec2 texsize;
+   GLfloat innerrad;
 };
 struct BoxArgs {
-    Transform transf;
-    glm::vec3 vel;
-    std::function<void(Box*)> callback;
-    const char *filter_name;
-};
-struct Scheme {
-    std::list<ScriptArgs> _script_args;
-    std::list<QuadArgs> _quad_args;
-    std::list<BoxArgs> _box_args;
+   Transform transf;
+   glm::vec3 vel;
+   std::function<void(Box*)> callback;
+   const char *filter_name;
 };
 
-class Manager {
-    Executor *_executor;
-    GLEnv * _glenv;
-    PhysSpace<Box> *_physspace_box;
+struct EntityInfo {
+   std::list<ScriptArgs> _script_args;
+   std::list<QuadArgs> _quad_args;
+   std::list<BoxArgs> _box_args;
+   unsigned _group;
+};
 
-    unordered_map_string_Scheme_t _schemes;
+class EntityManager {
+   std::unordered_map<const char*, EntityInfo> _entityinfos;
+   // memory-managed list of Entity references
+   ManagedList<Entity> _entities;
 
-    bool _initialized = false;
+   EntityExecutor *_entityexecutor;
+   GLEnv * _glenv;
+   PhysSpace<Box> *_physspace_box;
+
+   bool _initialized = false;
 public:
-    Manager(Executor *executor, GLEnv *glenv, PhysSpace<Box> *physspace_box);
-    Manager();
-    void init(Executor *executor, GLEnv *glenv, PhysSpace<Box> *physspace_box);
-    void uninit();
-    void addScheme(Scheme s, const char *name);
-    void instScheme(const char *name);
+   EntityManager(EntityExecutor *entityexecutor, GLEnv *glenv, PhysSpace<Box> *physspace_box);
+   EntityManager();
+   void init(EntityExecutor *entityexecutor, GLEnv *glenv, PhysSpace<Box> *physspace_box);
+   void uninit();
+
+   void addEntity(EntityInfo info, const char *name);
+   Entity *spawnEntity(const char *name);
+   void removeEntity(Entity *entity);
 };
-*/
 
 #endif

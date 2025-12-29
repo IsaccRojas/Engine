@@ -2,15 +2,19 @@
 
 EntityScript::EntityScript(EntityScript &&other) {
     operator=(std::move(other));
+    _entity = other._entity;
+    other._entity = nullptr;
 }
 EntityScript::EntityScript() : 
-    Script()
+    Script(), _entity(nullptr)
 {}
 EntityScript::~EntityScript() { /* automatic destruction is fine */ }
 
 EntityScript &EntityScript::operator=(EntityScript &&other) {
     if (this != &other) {
         Script::operator=(std::move(other));
+        _entity = other._entity;
+        other._entity = nullptr;
     }
     return *this;
 }
@@ -26,6 +30,10 @@ void EntityScript::_base() {
 void EntityScript::_kill() {
     _killEntity();
 }
+
+Entity &EntityScript::entity() {
+    return *_entity;
+};
 
 // --------------------------------------------------------------------------------------------------------------------------
 
