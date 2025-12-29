@@ -87,7 +87,7 @@ protected:
       
       // invokes the containing EntityExecutor's _spawnEntity() method and returns the spawned instance's reference
       virtual unsigned spawn() override;
-      EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag, Transform transform);
+      EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag);
       // default copy assignment/construction are fine (copying implies another enqueue in the same EntityExecutor)
    };
 
@@ -126,11 +126,11 @@ public:
    */
    void addEntityScript(EntityScriptAllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback);
 
-   /* Spawns a EntityScript using a name previously added to this manager, and returns its ID. */
-   unsigned spawnEntityScript(const char *entityscript_name, int execution_queue, int tag, Transform transform);
+   /* Spawns a EntityScript using a name previously added to this executor, and returns its ID. */
+   unsigned spawnEntityScript(const char *entityscript_name, int execution_queue, int tag);
 
    /* Enqueues an EntityScript to be spawned when calling runSpawnQueue(). */
-   void enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, int tag, Transform transform);
+   void enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, int tag);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -141,7 +141,7 @@ public:
 */
 template<class T>
 class ProvidedEntityScriptAllocator : public ProvidedAllocator<T>, public EntityScriptAllocatorInterface {
-   Entity *_allocate(int tag) override { return this->_allocateStore(tag); }
+   EntityScript *_allocate(int tag) override { return this->_allocateStore(tag); }
 protected:
    virtual T *_allocateProvided() override { return new T; }
 };
@@ -153,7 +153,7 @@ class Entity {
 
    EntityManager *_entitymanager;
    std::list<Entity*>::iterator _this_iter;
-   unsigned _group;
+   std::string _group;
    std::unordered_map<const char*, float> _data_values;
    std::vector<unsigned> _script_ids;
    std::vector<unsigned> _quad_ids;
@@ -170,8 +170,8 @@ public:
    std::vector<Box*> &boxes();
 };
 
-struct ScriptArgs {
-   const char *script_name;
+struct EntityScriptArgs {
+   const char *entityscript_name;
    int execution_queue;
    int tag;
 };
@@ -193,16 +193,18 @@ struct BoxArgs {
 };
 
 struct EntityInfo {
-   std::list<ScriptArgs> _script_args;
+   std::list<EntityScriptArgs> _entityscript_args;
    std::list<QuadArgs> _quad_args;
    std::list<BoxArgs> _box_args;
-   unsigned _group;
+   std::string _group;
 };
 
 class EntityManager {
+   // storage of entity info, mapped to names
    std::unordered_map<const char*, EntityInfo> _entityinfos;
-   // memory-managed list of Entity references
-   ManagedList<Entity> _entities;
+
+   // storage of entities, mapped to group names
+   std::unordered_map<const char*, ManagedList<Entity>> _entities;
 
    EntityExecutor *_entityexecutor;
    GLEnv * _glenv;
@@ -211,13 +213,22 @@ class EntityManager {
    bool _initialized = false;
 public:
    EntityManager(EntityExecutor *entityexecutor, GLEnv *glenv, PhysSpace<Box> *physspace_box);
+   EntityManager(EntityManager &&other);
    EntityManager();
+   EntityManager(const EntityManager &other) = delete;
+   ~EntityManager();
+
+   EntityManager &operator=(EntityManager &&other);
+   EntityManager &operator=(const EntityManager &other) = delete;
+
    void init(EntityExecutor *entityexecutor, GLEnv *glenv, PhysSpace<Box> *physspace_box);
    void uninit();
 
    void addEntity(EntityInfo info, const char *name);
    Entity *spawnEntity(const char *name);
    void removeEntity(Entity *entity);
+
+   // TODO: add getter for groups
 };
 
 #endif

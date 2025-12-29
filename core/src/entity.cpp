@@ -38,11 +38,11 @@ Entity &EntityScript::entity() {
 // --------------------------------------------------------------------------------------------------------------------------
 
 unsigned EntityExecutor::EntityScriptEnqueue::spawn() {
-    return _entityexecutor->spawnEntityScript(_name.c_str(), _execution_queue, _tag, _transform);
+    return _entityexecutor->spawnEntityScript(_name.c_str(), _execution_queue, _tag);
 }
 
-EntityExecutor::EntityScriptEnqueue::EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag, Transform transform) :
-    ScriptEnqueue(nullptr, name, execution_queue, tag), _entityexecutor(entityexecutor), _transform(transform)
+EntityExecutor::EntityScriptEnqueue::EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag) :
+    ScriptEnqueue(nullptr, name, execution_queue, tag), _entityexecutor(entityexecutor)
 {}
 
 void EntityExecutor::_setupEntityScript(EntityScript *entityscript) {
@@ -82,7 +82,7 @@ void EntityExecutor::addEntityScript(EntityScriptAllocatorInterface *allocator, 
         throw std::runtime_error("Attempt to add already added name");
 }
 
-unsigned EntityExecutor::spawnEntityScript(const char *entityscript_name, int execution_queue, int tag, Transform transform) {
+unsigned EntityExecutor::spawnEntityScript(const char *entityscript_name, int execution_queue, int tag) {
     // allocate instance and set it up
     EntityScript *entityscript = _entityscriptinfos[entityscript_name]._allocator->_allocate(tag);
     _setupScript(entityscript, entityscript_name, execution_queue, tag);
@@ -91,49 +91,121 @@ unsigned EntityExecutor::spawnEntityScript(const char *entityscript_name, int ex
     return entityscript->getExecutorID();
 }
 
-void EntityExecutor::enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, int tag, Transform transform) {
-    _pushSpawnEnqueue(new EntityScriptEnqueue(this, entityscript_name, execution_queue, tag, transform));
+void EntityExecutor::enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, int tag) {
+    _pushSpawnEnqueue(new EntityScriptEnqueue(this, entityscript_name, execution_queue, tag));
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 /*
-Manager::Manager(Executor *executor, GLEnv *glenv, PhysSpace<Box> *physspace_box) : _initialized(false) { init(executor, glenv, physspace_box); }
-Manager::Manager() : _executor(nullptr), _glenv(nullptr), _physspace_box(nullptr), _initialized(false) {}
 
-void Manager::init(Executor *executor, GLEnv *glenv, PhysSpace<Box> *physspace_box) {
+class Entity {
+   friend EntityManager;
+
+   EntityManager *_entitymanager;
+   std::list<Entity*>::iterator _this_iter;
+   std::string _group;
+   std::unordered_map<const char*, float> _data_values;
+   std::vector<unsigned> _script_ids;
+   std::vector<unsigned> _quad_ids;
+   std::vector<unsigned> _box_ids;
+
+   std::vector<Quad*> _quads;
+   std::vector<Box*> _boxes;
+public:
+   Entity();
+   ~Entity();
+
+   EntityManager &manager();
+   std::vector<Quad*> &quads();
+   std::vector<Box*> &boxes();
+};
+
+*/
+
+EntityManager::EntityManager(EntityExecutor *entityexecutor, GLEnv *glenv, PhysSpace<Box> *physspace_box) : _initialized(false) { init(entityexecutor, glenv, physspace_box); }
+EntityManager::EntityManager(EntityManager &&other) { operator=(std::move(other)); }
+EntityManager::EntityManager() : _entityexecutor(nullptr), _glenv(nullptr), _physspace_box(nullptr), _initialized(false) {}
+EntityManager::~EntityManager() { /* automatic destruction is fine */ }
+
+EntityManager &EntityManager::operator=(EntityManager &&other) {
+    if (this != &other) {
+        _entityinfos = other._entityinfos;
+
+        // clear all lists
+        std::vector<const char*> keys;
+        for (std::unordered_map<const char *, ManagedList<Entity>>::iterator i = _entities.begin(); i != _entities.end(); ++i)
+            keys.push_back(i->first);
+        for (const char *s : keys)
+            _entities.erase(s);
+
+        // move all lists
+        for (std::unordered_map<const char *, ManagedList<Entity>>::iterator i = other._entities.begin(); i != other._entities.end(); ++i)
+            _entities[i->first] = std::move(i->second);
+
+        _entityexecutor = other._entityexecutor;
+        _glenv = other._glenv;
+        _physspace_box = other._physspace_box;
+
+        // safe as structures owning memory are already moved
+        other.uninit();
+    }
+    return *this;
+}
+
+void EntityManager::init(EntityExecutor *entityexecutor, GLEnv *glenv, PhysSpace<Box> *physspace_box) {
     if (_initialized)
         throw InitializedException();
     
-    _executor = executor;
+    _entityexecutor = entityexecutor;
     _glenv = glenv;
     _physspace_box = physspace_box;
     _initialized = true;
 }
 
-void Manager::uninit() {
+void EntityManager::uninit() {
     if (!_initialized)
         return;
     
-    _executor = nullptr;
+    _entityinfos.clear();
+    _entities.clear();
+    _entityexecutor = nullptr;
     _glenv = nullptr;
     _physspace_box = nullptr;
-    _schemes.clear();
     _initialized = false;
 }
 
-void Manager::addScheme(Scheme s, const char *name) {
-    _schemes[name] = s;
+void EntityManager::addEntity(EntityInfo info, const char *name) {
+    _entityinfos[name] = info;
 }
 
-void Manager::instScheme(const char *name) {
-    Scheme &s = _schemes[name];
+Entity *EntityManager::spawnEntity(const char *name) {
+    EntityInfo &ei = _entityinfos[name];
+    Entity *entity = new Entity();
 
-    for (const ScriptArgs &a : s._script_args)
-        _executor->spawnScript(a.script_name, a.execution_queue, a.tag);
-    for (const QuadArgs &a : s._quad_args)
-        _glenv->genQuad(a.pos, a.scale, a.color, a.type, a.animation_name, a.texpos, a.texsize, a.innerrad);
-    for (const BoxArgs &a : s._box_args)
-        _physspace_box->push(a.transf, a.vel, a.callback, a.filter_name);
+    // instantiate each EntityScript in info and push to entity's storage
+    for (const EntityScriptArgs &a : ei._entityscript_args) {
+        entity->_script_ids.push_back(_entityexecutor->spawnEntityScript(a.entityscript_name, a.execution_queue, a.tag));
+    }
+
+    // instantiate each Quad in info and push to entity's storage
+    for (const QuadArgs &a : ei._quad_args) {
+        entity->_quad_ids.push_back(_glenv->genQuad(a.pos, a.scale, a.color, a.type, a.animation_name, a.texpos, a.texsize, a.innerrad));
+        entity->_quads.push_back(_glenv->getQuad(entity->_quad_ids.back()));
+    }
+
+    // instantiate each Box in info and push to entity's storage
+    for (const BoxArgs &a : ei._box_args) {
+        entity->_box_ids.push_back(_physspace_box->push(a.transf, a.vel, a.callback, a.filter_name));
+        entity->_boxes.push_back(_physspace_box->get(entity->_box_ids.back()));
+    }
+
+    _entities[ei._group.c_str()].push_back(entity);
+    return entity;
 }
-*/
+
+void EntityManager::removeEntity(Entity *entity) {
+    // TODO: properly handle removal with respect to Executor
+
+    _entities[entity->_group.c_str()].erase(entity->_this_iter);
+}

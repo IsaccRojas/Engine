@@ -115,11 +115,11 @@ Executor &Executor::operator=(Executor &&other) {
         std::queue<Script*> empty1;
         std::queue<Script*> empty2;
 
-        _scripts.move(other._scripts);
+        _scripts = std::move(other._scripts);
         _intgen = other._intgen;
         _scripts_id = other._scripts_id;
         _scriptinfos = other._scriptinfos;
-        _scriptenqueues.move(other._scriptenqueues);
+        _scriptenqueues = std::move(other._scriptenqueues);
         _queuepairs = other._queuepairs;
         _push_killqueue = other._push_killqueue;
         _run_killqueue = other._run_killqueue;

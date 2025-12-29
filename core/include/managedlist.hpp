@@ -4,7 +4,7 @@
 #include <list>
 
 /* class ManagedList
-   Wraps an STL list references of T, and assumes ownership of all inserted
+   Wraps a non-const STL list references of T, and assumes ownership of all inserted
    addresses.
 */
 template<typename T>
@@ -19,8 +19,10 @@ public:
     ~ManagedList() { clear(); }
     
     ManagedList &operator=(ManagedList &&other) {
+        clear();
         _Ts = other._Ts;
         other._Ts.clear();
+        return *this;
     }
     ManagedList &operator=(const ManagedList &other) = delete;
 
@@ -49,10 +51,14 @@ public:
         _Ts.erase(elem);
     }
 
-    /* Moves other ManagedList contents into this. */
-    void move(ManagedList &other) {
-        _Ts = other._Ts;
-        other._Ts.clear();
+    /* Returns internal list begin() iterator. */
+    typename std::list<T>::iterator begin() {
+        return _Ts.begin();
+    }
+
+    /* Returns internal list end() iterator. */
+    typename std::list<T>::iterator end() {
+        return _Ts.end();
     }
 
     unsigned size() { return _Ts.size(); }

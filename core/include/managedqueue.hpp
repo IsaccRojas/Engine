@@ -19,9 +19,11 @@ public:
     ~ManagedQueue() { clear(); }
     
     ManagedQueue &operator=(ManagedQueue &&other) {
+        clear();
         _Ts = other._Ts;
         std::queue<T*> empty;
         other._Ts.swap(empty);
+        return *this;
     }
     ManagedQueue &operator=(const ManagedQueue &other) = delete;
 
@@ -46,13 +48,6 @@ public:
     /* Returns the oldest reference stored. */
     T *front() {
         return _Ts.front();
-    }
-
-    /* Moves other ManagedQueue contents into this. */
-    void move(ManagedQueue &other) {
-        _Ts = other._Ts;
-        std::queue<T*> empty;
-        other._Ts.swap(empty);
     }
 
     unsigned size() { return _Ts.size(); }

@@ -33,10 +33,8 @@ filter.o: ${SRCDIR}/filter.cpp
 physspace.o: ${SRCDIR}/physspace.cpp
 	clang++ ${CXXFLAGS} -c ${SRCDIR}/physspace.cpp -o physspace.o
 
-manager.o: ${SRCDIR}/manager.cpp
-	clang++ ${CXXFLAGS} -c ${SRCDIR}/manager.cpp -o manager.o
-# entity.o: ${SRCDIR}/entity.cpp
-#	clang++ ${CXXFLAGS} -c ${SRCDIR}/entity.cpp -o entity.o
+entity.o: ${SRCDIR}/entity.cpp
+	clang++ ${CXXFLAGS} -c ${SRCDIR}/entity.cpp -o entity.o
 
 glfwinput.o: ${SRCDIR}/glfwinput.cpp
 	clang++ ${CXXFLAGS} -c ${SRCDIR}/glfwinput.cpp -o glfwinput.o
@@ -44,7 +42,7 @@ glfwinput.o: ${SRCDIR}/glfwinput.cpp
 glfwstate.o: ${SRCDIR}/glfwstate.cpp
 	clang++ ${CXXFLAGS} -c ${SRCDIR}/glfwstate.cpp -o glfwstate.o
 
-libcore.a: commonexcept.o util.o script.o glutil.o glenv.o text.o animation.o filter.o physspace.o manager.o glfwinput.o glfwstate.o
+libcore.a: commonexcept.o util.o script.o glutil.o glenv.o text.o animation.o filter.o physspace.o entity.o glfwinput.o glfwstate.o
 	llvm-ar rcs core.lib *.o
 
 # windows syntax

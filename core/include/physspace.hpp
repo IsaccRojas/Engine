@@ -145,6 +145,7 @@ public:
 template <class T>
 class PhysSpace {
     // Collider storage
+    // TODO: use managed storage
     std::list<T*> _Ts;
     IntGenerator _intgen;
     std::unordered_map<unsigned, T*> _Ts_id;
@@ -163,11 +164,16 @@ public:
 
     PhysSpace<T> &operator=(PhysSpace<T> &&other) {
         if (this != &other) {
+            for (auto &t : _Ts) {
+                t->_physspace = nullptr;
+                delete t;
+            }
             _Ts = other._Ts;
             _intgen = other._intgen;
             _Ts_id = other._Ts_id;
             _filters = other._filters;
             _initialized = other._initialized;
+
             other._Ts.clear();
             other._intgen.clear();
             other._Ts_id.clear();
@@ -229,6 +235,16 @@ public:
         return t->_id;
     }
 
+    T *get(unsigned int id) {
+        if (id >= _intgen.size())
+            throw std::runtime_error("Attempt to get Collider with ID that exceeds maximum");
+
+        if (!_Ts_id[id])
+            throw std::runtime_error("Attempt to get Collider with invalid ID");
+        
+        return _Ts_id[id];
+    }
+
     /* Removes the reference from the system. This will cause the provided reference to be invalid. */
     void erase(unsigned id) {
         if (id >= _intgen.size())
@@ -237,7 +253,7 @@ public:
         if (!_Ts_id[id])
             throw std::runtime_error("Attempt to erase Collider from PhysSpace with invalid ID");
         
-        ColliderInterface<T> *t = _Ts_id[id];
+        T *t = _Ts_id[id];
         if (t->_physspace != this)
             throw std::runtime_error("Attempt to erase Collider from PhysSpace that does not own it");
 
