@@ -190,6 +190,9 @@ protected:
    // checks if the provided Script belongs to this Executor; throws if not
    void _checkOwned(Script *script);
 
+   // erases the passed Script ID; it is undefined behavior to use the ID after this call
+   void _erase(unsigned id);
+
 public:
    /* Calls init() with the provided arguments. */
    Executor(unsigned queues);
@@ -207,10 +210,6 @@ public:
    void init(unsigned queues);
    void uninit();
 
-   /* Erases the passed Script ID. The reference becomes invalid after this is called; it is undefined behavior to use the ID after this call.
-   */
-   void erase(unsigned id);
-
    /* Adds an Script allocator with initialization information to this manager, allowing its given
       name to be used for future spawns.
       - allocator - Reference to instance of class implementing AllocatorInterface.
@@ -227,14 +226,14 @@ public:
    void enqueueSpawn(const char *script_name, int execution_queue, int tag);
    /* Enqueues a Script instance to be executed when runExecQueue() is called. */
    void enqueueExec(unsigned id, unsigned queue);
-   /* Enqueues a Script instance to be killed when runKillQueue() is called. */
+   /* Enqueues a Script instance to be killed and removed when runKillQueue() is called. */
    void enqueueKill(unsigned id);
 
    /* Executes all currently enqueued Scripts in the specified queue, and dequeues them. This will call the 
       (init() method if it has not yet been called, and the) base() method on every active Script.
    */
    void runExecQueue(unsigned queue);
-   /* Calls the kill() method on all erasure-queued Scripts if it has not been called yet. */
+   /* Calls the kill() method on all kill-queued Scripts if it has not been called yet, and erases the Scripts. */
    void runKillQueue();
    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(). */
    std::vector<unsigned> runSpawnQueue();

@@ -165,6 +165,24 @@ void Executor::_checkOwned(Script *script) {
         std::runtime_error("Attempt to use Script reference that is not contained by this Executor");
 }
 
+void Executor::_erase(unsigned id) {
+    Script *script = _scripts_id[id];
+    _checkOwned(script);
+
+    // get values and info
+    ScriptInfo &scriptinfo = _scriptinfos[script->_script_name];
+
+    // try removal callback if it exists
+    if (scriptinfo._remove_callback)
+        scriptinfo._remove_callback(script);
+
+    _intgen.remove(script->_executor_id);
+    _scripts_id[script->_executor_id] = nullptr;
+
+    _scripts.erase(script->_this_iter);
+}
+
+
 void Executor::init(unsigned queues) {
     if (_initialized)
         throw InitializedException();
@@ -188,23 +206,6 @@ void Executor::uninit() {
     _queuepairs.clear();
     _push_killqueue.swap(empty1);
     _run_killqueue.swap(empty2);
-}
-
-void Executor::erase(unsigned id) {
-    Script *script = _scripts_id[id];
-    _checkOwned(script);
-
-    // get values and info
-    ScriptInfo &scriptinfo = _scriptinfos[script->_script_name];
-
-    // try removal callback if it exists
-    if (scriptinfo._remove_callback)
-        scriptinfo._remove_callback(script);
-
-    _intgen.remove(script->_executor_id);
-    _scripts_id[script->_executor_id] = nullptr;
-
-    _scripts.erase(script->_this_iter);
 }
 
 void Executor::add(AllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback) {  
@@ -314,7 +315,7 @@ void Executor::runKillQueue() {
                 script->_kill_enqueued = false;
 
                 // remove the script after killing it
-                erase(script->_executor_id);
+                _erase(script->_executor_id);
             }
             
         } else {
