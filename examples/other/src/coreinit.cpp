@@ -35,8 +35,8 @@ void initializeCore(CoreResources *core) {
     core->filters = loadFilters(FILTER_DIR);
 
     // set up Executor
-    std::cout << "Setting up Executor" << std::endl;
-    core->executor.init(EXECUTION_QUEUES);
+    std::cout << "Setting up EntityExecutor" << std::endl;
+    core->entityexecutor.init(EXECUTION_QUEUES);
 
     // set up GLEnv
     std::cout << "Setting up GLEnv" << std::endl;
@@ -58,8 +58,8 @@ void initializeCore(CoreResources *core) {
     core->physspace_box.init(&core->filters);
 
     // set up Manager
-    std::cout << "Setting up Manager" << std::endl;
-    core->manager.init(&core->executor, &core->glenv, &core->physspace_box);
+    std::cout << "Setting up EntityManager" << std::endl;
+    core->entitymanager.init(&core->entityexecutor, &core->glenv, &core->physspace_box);
 
     std::cout << "Setting some OpenGL parameters" << std::endl;
     glfwSwapInterval(1);

@@ -1,38 +1,31 @@
 #include "implementations.hpp"
 
-void Player::_initObject() {
-    transform.pos = glm::vec3(0.0f);
-    transform.scale = glm::vec3(16.0f, 16.0f, 0.0f);
+void ES_Player::_initEntity() {
+    _transform.pos = glm::vec3(0.0f);
+    _transform.scale = glm::vec3(16.0f);
 }
-void Player::_baseObject() {
+void ES_Player::_baseEntity() {
     float speed = 0.25f;
     if (_input_state->get_w())
-        transform.pos += glm::vec3(0.0f, speed, 0.0f);
+        _transform.pos += glm::vec3(0.0f, speed, 0.0f);
     if (_input_state->get_a())
-        transform.pos -= glm::vec3(speed, 0.0f, 0.0f);
+        _transform.pos -= glm::vec3(speed, 0.0f, 0.0f);
     if (_input_state->get_s())
-        transform.pos -= glm::vec3(0.0f, speed, 0.0f);
+        _transform.pos -= glm::vec3(0.0f, speed, 0.0f);
     if (_input_state->get_d())
-        transform.pos += glm::vec3(speed, 0.0f, 0.0f);
+        _transform.pos += glm::vec3(speed, 0.0f, 0.0f);
+
+    Quad *quad = entity().quads()[0];
+    quad->bv_pos.v = _transform.pos;
+    quad->bv_scale.v = _transform.scale;
+
+    entity().boxes()[0]->transform = _transform;
+
+    if (_input_state->get_space())
+        entity().manager().removeEntity(&entity());
+    
+    enqueueExec(0);
 }
-void Player::_killObject() {}
-void Player::_onCollision(Box *other) {}
+void ES_Player::_killEntity() {}
 
-Player::Player(std::string animation_name, std::string filter_name, GLFWInput *input_state) : 
-    Object(animation_name, filter_name),
-    _input_state(input_state)
-{}
-
-// ======================================================================================================
-
-void ProjectileBasic::_initObject() {
-    transform.pos = glm::vec3(0.0f);
-    transform.scale = glm::vec3(16.0f, 16.0f, 0.0f);
-}
-void ProjectileBasic::_baseObject() {}
-void ProjectileBasic::_killObject() {}
-void ProjectileBasic::_onCollision(Box *other) {}
-
-ProjectileBasic::ProjectileBasic(std::string animation_name, std::string filter_name) : 
-    Object(animation_name, filter_name)
-{}
+ES_Player::ES_Player(GLFWInput *input_state) : EntityScript(), _input_state(input_state) {}

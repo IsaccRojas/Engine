@@ -14,6 +14,7 @@ Quad::Quad() {}
 Quad::~Quad() { /* automatic destruction is fine */ }
 
 void Quad::update() {
+    writeAnimation();
     bv_pos.update();
     bv_scale.update();
     bv_color.update();

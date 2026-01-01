@@ -189,6 +189,7 @@ public:
         if (_initialized)
             throw InitializedException();
 
+        _filters = filters;
         _initialized = true;
     }
     void uninit() {

@@ -1,37 +1,32 @@
 #include "loop.hpp"
 
-/*
-// Player allocator that holds reference to input state
-class PlayerAllocator : public EntityAllocatorInterface {
+// ES_Player allocator that holds reference to input state
+class ES_PlayerAllocator : public EntityScriptAllocatorInterface {
     GLFWInput *_input_state;
-    Entity *_allocate(int tag) override { return new Player("Player", "Player", _input_state); }
+    EntityScript *_allocate(int tag) override { return new ES_Player(_input_state); }
 public:
-    PlayerAllocator(GLFWInput *input_state) : _input_state(input_state) {}
+    ES_PlayerAllocator(GLFWInput *input_state) : _input_state(input_state) {}
 };
-*/
 
 void loop(CoreResources *core) {
+    std::cout << "Setting up loop" << std::endl;
+    
     srand(time(NULL));
 
-    //PlayerAllocator alloc_Player(&(core->input));
-    //core->executor.addEntity(&alloc_Player, "Player", 0, true, nullptr, nullptr);
-
-    //core->glenv.genQuad(glm::vec3(0.0f), glm::vec3(16.0f), glm::vec4(1.0f), 0.0f, glm::vec3(160.0f, 0.0f, 0.0f), glm::vec2(16.0f, 16.0f), GLE_RECT);
-    //core->executor.enqueueSpawnEntity("Player", 0, -1, Transform{});
-
-    //core->glenv.genQuad(glm::vec3(0.0f), glm::vec3(16.0f), glm::vec4(1.0f), GLE_RECT, "", glm::vec3(160.0f, 0.0f, 0.0f), glm::vec2(16.0f, 16.0f), 0.0f);
-
-    core->manager.addScheme(
-        Scheme{
-            {},
-            {QuadArgs{glm::vec3(0.0f), glm::vec3(16.0f), glm::vec4(1.0f), GLE_RECT, "", glm::vec3(160.0f, 0.0f, 0.0f), glm::vec2(16.0f, 16.0f), 0.0f}},
-            {}
+    ES_PlayerAllocator alloc_ES_Player(&(core->input));
+    core->entityexecutor.addEntityScript(&alloc_ES_Player, "ES_Player", nullptr, nullptr);
+    
+    core->entitymanager.addEntity(
+        EntityInfo{
+            {{"ES_Player", 0, 0}},
+            {{glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), GLE_RECT, "Player", glm::vec3(0.0f), glm::vec2(0.0f), 0.0f}},
+            {{Transform(), glm::vec3(0.0f), nullptr, "Player"}},
+            "Group_Player"
         },
-        "test"
+        "Player"
     );
-
-    core->manager.instScheme("test");
-
+    Entity *player = core->entitymanager.spawnEntity("Player");
+    
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(core->state.getWindowHandle()) && !core->input.get_esc()) {
         glfwPollEvents();
@@ -44,9 +39,9 @@ void loop(CoreResources *core) {
 
         core->physspace_box.step();
 
-        core->executor.runExecQueue(0);
-        core->executor.runSpawnQueue();
-        core->executor.runKillQueue();
+        core->entityexecutor.runExecQueue(0);
+        core->entityexecutor.runSpawnQueue();
+        core->entityexecutor.runKillQueue();
 
         glfwSwapBuffers(core->state.getWindowHandle());
     };

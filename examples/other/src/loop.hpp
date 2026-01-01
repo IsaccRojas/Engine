@@ -2,6 +2,7 @@
 #define LOOP_HPP_
 
 #include "coreinit.hpp"
+#include "implementations.hpp"
 
 #include <iostream>
 #include <stdlib.h>
