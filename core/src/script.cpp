@@ -69,15 +69,15 @@ const char *Script::getName() { return _script_name.c_str(); }
 void Script::enqueueExec(unsigned queue) {
     if (!_executor)
         throw std::runtime_error("Attempt to enqueue for execution with null Executor owner");
-    if (!_killed)
-        _executor->enqueueExec(_executor_id, queue);
+
+    _executor->enqueueExec(_executor_id, queue);
 }
 
 void Script::enqueueKill() {
     if (!_executor)
         throw std::runtime_error("Attempt to enqueue for kill with null Executor owner");
-    if (!_killed)
-        _executor->enqueueKill(_executor_id);
+
+    _executor->enqueueKill(_executor_id);
 }
 
 unsigned Script::getExecutorID() { return _executor_id; }
@@ -233,7 +233,7 @@ void Executor::enqueueExec(unsigned id, unsigned queue) {
     if (queue >= _queuepairs.size())
         throw std::out_of_range("Execution queue index out of range");
 
-    if (!(script->_exec_enqueued)) {
+    if (!(script->_exec_enqueued || script->_kill_enqueued)) {
         // push to specified pair
         _queuepairs[queue]._push_execqueue.push(script);
         script->_exec_enqueued = true;
@@ -244,7 +244,7 @@ void Executor::enqueueKill(unsigned id) {
     Script *script = _scripts_id[id];
     _checkOwned(script);
 
-    if (!(script->_kill_enqueued)) {
+    if (!(script->_exec_enqueued || script->_kill_enqueued)) {
         // push to kill queue
         _push_killqueue.push(script);
         script->_kill_enqueued = true;
@@ -283,7 +283,7 @@ void Executor::runExecQueue(unsigned queue) {
         script->_exec_enqueued = false;
 
         // check if script hasn't been killed yet or kill enqueued
-        if (!(script->_killed || script->_kill_enqueued)) {
+        if (!(script->_killed)) {
             // check if script needs to be initialized
             if (!(script->_initialized)) {
                 script->runInit();
@@ -306,13 +306,14 @@ void Executor::runKillQueue() {
         script = _run_killqueue.front();
         _checkOwned(script);
 
+        script->_kill_enqueued = false;
+
         // check if script can be killed
         if (script->lockout_count() == 0) {
             // check if script needs to be killed
             if (!(script->_killed)) {
                 script->runKill();
                 script->_killed = true;
-                script->_kill_enqueued = false;
 
                 // remove the script after killing it
                 _erase(script->_executor_id);

@@ -18,14 +18,14 @@ void loop(CoreResources *core) {
     
     core->entitymanager.addEntity(
         EntityInfo{
-            {{"ES_Player", 0, 0}},
+            "ES_Player",
             {{glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), GLE_RECT, "Player", glm::vec3(0.0f), glm::vec2(0.0f), 0.0f}},
             {{Transform(), glm::vec3(0.0f), nullptr, "Player"}},
             "Group_Player"
         },
         "Player"
     );
-    Entity *player = core->entitymanager.spawnEntity("Player");
+    Entity *player = core->entitymanager.spawnEntity("Player", 0, -1);
     
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(core->state.getWindowHandle()) && !core->input.get_esc()) {
@@ -42,6 +42,8 @@ void loop(CoreResources *core) {
         core->entityexecutor.runExecQueue(0);
         core->entityexecutor.runSpawnQueue();
         core->entityexecutor.runKillQueue();
+
+        core->entitymanager.checkEntities();
 
         glfwSwapBuffers(core->state.getWindowHandle());
     };

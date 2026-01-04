@@ -22,7 +22,7 @@ void ES_Player::_baseEntity() {
     entity().boxes()[0]->transform = _transform;
 
     if (_input_state->get_space())
-        entity().manager().removeEntity(&entity());
+        enqueueKill();
     
     enqueueExec(0);
 }
