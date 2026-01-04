@@ -5,7 +5,6 @@
 #include "../../../core/include/glfwinput.hpp"
 
 class ES_Player : public EntityScript {
-    Transform _transform;
     GLFWInput *_input_state;
     void _initEntity() override;
     void _baseEntity() override;

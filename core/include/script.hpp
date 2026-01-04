@@ -36,7 +36,6 @@ class Script {
    std::list<Script*>::iterator _this_iter;
    int _spawn_tag;
    int _last_execqueue;
-   bool _initialized;
    bool _killed;
    bool _exec_enqueued;
    bool _kill_enqueued; 
@@ -86,7 +85,6 @@ public:
       execution behavior.
    */
    int getLastExecQueue();
-   bool getInitialized();
    bool getKilled();
    bool getExecEnqueued();
    bool getKillEnqueued();

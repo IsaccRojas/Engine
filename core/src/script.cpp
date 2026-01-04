@@ -6,7 +6,6 @@ Script::Script() :
     _executor_id(0),
     _spawn_tag(-1),
     _last_execqueue(-1),
-    _initialized(false), 
     _killed(false), 
     _exec_enqueued(false), 
     _kill_enqueued(false),
@@ -22,7 +21,6 @@ Script &Script::operator=(Script &&other) {
         _this_iter = other._this_iter;
         _spawn_tag = other._spawn_tag;
         _last_execqueue = other._last_execqueue;
-        _initialized = other._initialized;
         _killed = other._killed;
         _exec_enqueued = other._exec_enqueued;
         _kill_enqueued = other._exec_enqueued;
@@ -33,7 +31,6 @@ Script &Script::operator=(Script &&other) {
         other._executor_id = 0;
         other._spawn_tag = -1;
         other._last_execqueue = -1;
-        other._initialized = false;
         other._killed = false;
         other._exec_enqueued = false;
         other._exec_enqueued = false;
@@ -60,7 +57,6 @@ void Script::runKill() {
 }
 
 int Script::getLastExecQueue() { return _last_execqueue; }
-bool Script::getInitialized() { return _initialized; }
 bool Script::getKilled() { return _killed; }
 bool Script::getExecEnqueued() { return _exec_enqueued; }
 bool Script::getKillEnqueued() { return _kill_enqueued; }
@@ -213,6 +209,10 @@ unsigned Executor::spawnScript(const char *script_name, int execution_queue, int
     // allocate instance and set it up
     Script *script = _scriptinfos[script_name]._allocator->_allocate(tag);
     _setupScript(script, script_name, execution_queue, tag);
+
+    // run initialization method
+    script->runInit();
+
     return script->getExecutorID();
 }
 
@@ -274,17 +274,7 @@ void Executor::runExecQueue(unsigned queue) {
 
         script->_last_execqueue = queue;
         script->_exec_enqueued = false;
-
-        // check if script hasn't been killed yet or kill enqueued
-        if (!(script->_killed)) {
-            // check if script needs to be initialized
-            if (!(script->_initialized)) {
-                script->runInit();
-                script->_initialized = true;
-            }
-
-            script->runBase();
-        }
+        script->runBase();
         
         run_execqueue.pop();
     }

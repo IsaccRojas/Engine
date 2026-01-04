@@ -26,18 +26,16 @@ void loop(CoreResources *core) {
         "Player"
     );
     Entity *player = core->entitymanager.spawnEntity("Player", 0, -1);
+    player->attributes3f()["pos"] = glm::vec3(0.0f, 32.0f, 0.0f);
     
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(core->state.getWindowHandle()) && !core->input.get_esc()) {
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        core->input.update();
-
-        core->glenv.update();
-        core->glenv.drawQuads();
-
         core->physspace_box.step();
+
+        core->input.update();
 
         core->entityexecutor.runExecQueue(0);
         core->entityexecutor.runSpawnQueue();
@@ -45,6 +43,8 @@ void loop(CoreResources *core) {
 
         core->entitymanager.checkEntities();
 
+        core->glenv.update();
+        core->glenv.drawQuads();
         glfwSwapBuffers(core->state.getWindowHandle());
     };
 

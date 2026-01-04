@@ -93,6 +93,10 @@ unsigned EntityExecutor::spawnEntityScript(const char *entityscript_name, int ex
     EntityScript *entityscript = _entityscriptinfos[entityscript_name]._allocator->_allocate(tag);
     _setupScript(entityscript, entityscript_name, execution_queue, tag);
     _setupEntityScript(entityscript, entity);
+
+    // run initialization method
+    entityscript->runInit();
+
     return entityscript->getExecutorID();
 }
 
