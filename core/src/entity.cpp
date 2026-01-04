@@ -105,17 +105,12 @@ void EntityExecutor::enqueueSpawnEntityScript(const char *entityscript_name, int
 Entity::Entity() : _entitymanager(nullptr), _entityscript_id(0), _script_killed(false) {}
 Entity::~Entity() {}
 
-EntityManager &Entity::manager() {
-    return *_entitymanager;
-}
-
-std::vector<Quad*> &Entity::quads() {
-    return _quads;
-}
-
-std::vector<Box*> &Entity::boxes() {
-    return _boxes;
-}
+EntityManager &Entity::manager() { return *_entitymanager; }
+std::vector<Quad*> &Entity::quads() { return _quads; }
+std::vector<Box*> &Entity::boxes() { return _boxes; }
+std::unordered_map<const char*, float> &Entity::attributes1f() { return _attributes1f; }
+std::unordered_map<const char*, glm::vec2> &Entity::attributes2f() { return _attributes2f; }
+std::unordered_map<const char*, glm::vec3> &Entity::attributes3f() { return _attributes3f; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -221,4 +216,12 @@ void EntityManager::checkEntities() {
         _removeEntity(remove_queue.front());
         remove_queue.pop();
     }
+}
+
+std::list<Entity*>::iterator EntityManager::groupBegin(const char *group) {
+    return _entities[group].begin();
+}
+
+std::list<Entity*>::iterator EntityManager::groupEnd(const char *group) {
+    return _entities[group].end();
 }

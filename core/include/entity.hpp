@@ -157,13 +157,16 @@ class Entity {
    EntityManager *_entitymanager;
    std::list<Entity*>::iterator _this_iter;
    std::string _group;
-   std::unordered_map<const char*, float> _data_values;
+   
    unsigned _entityscript_id;
    std::vector<unsigned> _quad_ids;
    std::vector<unsigned> _box_ids;
 
    std::vector<Quad*> _quads;
    std::vector<Box*> _boxes;
+   std::unordered_map<const char*, float> _attributes1f;
+   std::unordered_map<const char*, glm::vec2> _attributes2f;
+   std::unordered_map<const char*, glm::vec3> _attributes3f;
 
    bool _script_killed;
 
@@ -176,6 +179,9 @@ public:
    EntityManager &manager();
    std::vector<Quad*> &quads();
    std::vector<Box*> &boxes();
+   std::unordered_map<const char*, float> &attributes1f();
+   std::unordered_map<const char*, glm::vec2> &attributes2f();
+   std::unordered_map<const char*, glm::vec3> &attributes3f();
 };
 
 struct QuadArgs {
@@ -235,7 +241,9 @@ public:
    
    void checkEntities();
 
-   // TODO: add getter for groups
+   std::list<Entity*>::iterator groupBegin(const char *group);
+
+   std::list<Entity*>::iterator groupEnd(const char *group);
 };
 
 #endif
