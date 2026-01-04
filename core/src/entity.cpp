@@ -215,12 +215,11 @@ void EntityManager::checkEntities() {
     std::queue<Entity*> remove_queue;
 
     // check every script status of every entity in each group list
-    for (auto &[name, mlist] : _entities) {
+    for (auto &[name, mlist] : _entities)
         for (auto iter = mlist.begin(); iter != mlist.end(); ++iter)
             if ((*iter)->_script_killed)
                 remove_queue.push(*iter);
-    }
-    
+
     while (!remove_queue.empty()) {
         _removeEntity(remove_queue.front());
         remove_queue.pop();
