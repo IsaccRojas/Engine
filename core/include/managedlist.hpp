@@ -52,12 +52,12 @@ public:
     }
 
     /* Returns internal list begin() iterator. */
-    typename std::list<T>::iterator begin() {
+    typename std::list<T*>::iterator begin() {
         return _Ts.begin();
     }
 
     /* Returns internal list end() iterator. */
-    typename std::list<T>::iterator end() {
+    typename std::list<T*>::iterator end() {
         return _Ts.end();
     }
 

@@ -14,6 +14,7 @@ class EntityManager;
 */
 class EntityScript : public Script {
    friend EntityExecutor;
+   friend Entity;
    friend EntityManager;
 
    Entity *_entity;
@@ -43,6 +44,7 @@ public:
    EntityScript& operator=(const EntityScript &other) = delete;
 
    Entity &entity();
+   bool hasEntity();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -81,14 +83,13 @@ protected:
    class EntityScriptEnqueue : public ScriptEnqueue {
       friend EntityExecutor;
       EntityExecutor *_entityexecutor;
-      Entity *_entity;
    
    protected:
       Transform _transform;
       
       // invokes the containing EntityExecutor's _spawnEntityScript() method and returns the spawned instance's reference
       virtual unsigned spawn() override;
-      EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag, Entity *entity);
+      EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag);
       // default copy assignment/construction are fine (copying implies another enqueue in the same EntityExecutor)
    };
 
@@ -98,7 +99,7 @@ private:
 
 protected:
    // initializes EntityScript's EntityExecutor-related fields
-   void _setupEntityScript(EntityScript *entityscript, Entity *entity);
+   void _setupEntityScript(EntityScript *entityscript);
     
 public:
    /* Calls init() with the provided arguments. */
@@ -128,10 +129,10 @@ public:
    void addEntityScript(EntityScriptAllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback);
 
    /* Spawns a EntityScript using a name previously added to this executor, and returns its ID. */
-   unsigned spawnEntityScript(const char *entityscript_name, int execution_queue, int tag, Entity *entity);
+   unsigned spawnEntityScript(const char *entityscript_name, int execution_queue, int tag);
 
    /* Enqueues an EntityScript to be spawned when calling runSpawnQueue(). */
-   void enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, int tag, Entity *entity);
+   void enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, int tag);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -150,18 +151,22 @@ protected:
 // --------------------------------------------------------------------------------------------------------------------------
 
 class Entity {
+   friend EntityScript;
+   friend EntityExecutor;
    friend EntityManager;
 
    EntityManager *_entitymanager;
    std::list<Entity*>::iterator _this_iter;
    std::string _group;
    std::unordered_map<const char*, float> _data_values;
-   std::vector<unsigned> _script_ids;
+   unsigned _script_id;
    std::vector<unsigned> _quad_ids;
    std::vector<unsigned> _box_ids;
 
    std::vector<Quad*> _quads;
    std::vector<Box*> _boxes;
+
+   bool _script_killed;
 
 public:
    Entity();
@@ -174,11 +179,6 @@ public:
    std::vector<Box*> &boxes();
 };
 
-struct EntityScriptArgs {
-   const char *entityscript_name;
-   int execution_queue;
-   int tag;
-};
 struct QuadArgs {
    glm::vec3 pos;
    glm::vec3 scale;
@@ -197,7 +197,7 @@ struct BoxArgs {
 };
 
 struct EntityInfo {
-   std::list<EntityScriptArgs> _entityscript_args;
+   const char *entityscript_name;
    std::list<QuadArgs> _quad_args;
    std::list<BoxArgs> _box_args;
    std::string _group;
@@ -215,6 +215,8 @@ class EntityManager {
    PhysSpace<Box> *_physspace_box;
 
    bool _initialized = false;
+
+   void _removeEntity(Entity *entity);
 public:
    EntityManager(EntityExecutor *entityexecutor, GLEnv *glenv, PhysSpace<Box> *physspace_box);
    EntityManager(EntityManager &&other);
@@ -229,8 +231,9 @@ public:
    void uninit();
 
    void addEntity(EntityInfo info, const char *name);
-   Entity *spawnEntity(const char *name);
-   void removeEntity(Entity *entity);
+   Entity *spawnEntity(const char *name, int execution_queue, int tag);
+   
+   void checkEntities();
 
    // TODO: add getter for groups
 };
