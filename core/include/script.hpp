@@ -187,9 +187,6 @@ protected:
    // pushes an enqueue
    void _pushSpawnEnqueue(ScriptEnqueue *enqueue);
 
-   // checks if the provided Script belongs to this Executor; throws if not
-   void _checkOwned(Script *script);
-
    // erases the passed Script ID; it is undefined behavior to use the ID after this call
    void _erase(unsigned id);
 

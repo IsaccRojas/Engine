@@ -44,15 +44,15 @@ bool EntityScript::hasEntity() {
 // --------------------------------------------------------------------------------------------------------------------------
 
 unsigned EntityExecutor::EntityScriptEnqueue::spawn() {
-    return _entityexecutor->spawnEntityScript(_name.c_str(), _execution_queue, _tag);
+    return _entityexecutor->spawnEntityScript(_name.c_str(), _execution_queue, _tag, _entity);
 }
 
-EntityExecutor::EntityScriptEnqueue::EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag) :
-    ScriptEnqueue(nullptr, name, execution_queue, tag), _entityexecutor(entityexecutor)
+EntityExecutor::EntityScriptEnqueue::EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag, Entity *entity) :
+    ScriptEnqueue(nullptr, name, execution_queue, tag), _entityexecutor(entityexecutor), _entity(entity)
 {}
 
-void EntityExecutor::_setupEntityScript(EntityScript *entityscript) {
-    // nothing to do
+void EntityExecutor::_setupEntityScript(EntityScript *entityscript, Entity *entity) {
+    entityscript->_entity = entity;
 }
 
 EntityExecutor::EntityExecutor(unsigned queues) : Executor() { 
@@ -88,22 +88,21 @@ void EntityExecutor::addEntityScript(EntityScriptAllocatorInterface *allocator, 
         throw std::runtime_error("Attempt to add already added name");
 }
 
-unsigned EntityExecutor::spawnEntityScript(const char *entityscript_name, int execution_queue, int tag) {
+unsigned EntityExecutor::spawnEntityScript(const char *entityscript_name, int execution_queue, int tag, Entity *entity) {
     // allocate instance and set it up
     EntityScript *entityscript = _entityscriptinfos[entityscript_name]._allocator->_allocate(tag);
     _setupScript(entityscript, entityscript_name, execution_queue, tag);
-    _setupEntityScript(entityscript);
-
+    _setupEntityScript(entityscript, entity);
     return entityscript->getExecutorID();
 }
 
-void EntityExecutor::enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, int tag) {
-    _pushSpawnEnqueue(new EntityScriptEnqueue(this, entityscript_name, execution_queue, tag));
+void EntityExecutor::enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, int tag, Entity *entity) {
+    _pushSpawnEnqueue(new EntityScriptEnqueue(this, entityscript_name, execution_queue, tag, entity));
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-Entity::Entity() : _entitymanager(nullptr), _script_id(0), _script_killed(false) {}
+Entity::Entity() : _entitymanager(nullptr), _entityscript_id(0), _script_killed(false) {}
 Entity::~Entity() {}
 
 EntityManager &Entity::manager() {
@@ -121,9 +120,6 @@ std::vector<Box*> &Entity::boxes() {
 // --------------------------------------------------------------------------------------------------------------------------
 
 void EntityManager::_removeEntity(Entity *entity) {
-    if (entity->_script_killed)
-        _entityexecutor->enqueueKill(entity->_script_id);
-    
     for (const unsigned &id : entity->_quad_ids)
         _glenv->remove(id);
     for (const unsigned &id : entity->_box_ids)
@@ -205,9 +201,10 @@ Entity *EntityManager::spawnEntity(const char *name, int execution_queue, int ta
     }
 
     // instantiate each EntityScript in info and push to entity's storage
-    entity->_script_id = _entityexecutor->spawnEntityScript(ei.entityscript_name, execution_queue, tag);
+    entity->_entityscript_id = _entityexecutor->spawnEntityScript(ei.entityscript_name, execution_queue, tag, entity);
 
-    _entities[ei._group.c_str()].push_back(entity);
+    entity->_this_iter = _entities[ei._group.c_str()].push_back(entity);
+    
     return entity;
 }
 

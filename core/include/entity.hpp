@@ -83,13 +83,12 @@ protected:
    class EntityScriptEnqueue : public ScriptEnqueue {
       friend EntityExecutor;
       EntityExecutor *_entityexecutor;
+      Entity *_entity;
    
    protected:
-      Transform _transform;
-      
       // invokes the containing EntityExecutor's _spawnEntityScript() method and returns the spawned instance's reference
       virtual unsigned spawn() override;
-      EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag);
+      EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag, Entity *entity);
       // default copy assignment/construction are fine (copying implies another enqueue in the same EntityExecutor)
    };
 
@@ -99,7 +98,7 @@ private:
 
 protected:
    // initializes EntityScript's EntityExecutor-related fields
-   void _setupEntityScript(EntityScript *entityscript);
+   void _setupEntityScript(EntityScript *entityscript, Entity *entity);
     
 public:
    /* Calls init() with the provided arguments. */
@@ -129,10 +128,10 @@ public:
    void addEntityScript(EntityScriptAllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback);
 
    /* Spawns a EntityScript using a name previously added to this executor, and returns its ID. */
-   unsigned spawnEntityScript(const char *entityscript_name, int execution_queue, int tag);
+   unsigned spawnEntityScript(const char *entityscript_name, int execution_queue, int tag, Entity *entity);
 
    /* Enqueues an EntityScript to be spawned when calling runSpawnQueue(). */
-   void enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, int tag);
+   void enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, int tag, Entity *entity);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -159,7 +158,7 @@ class Entity {
    std::list<Entity*>::iterator _this_iter;
    std::string _group;
    std::unordered_map<const char*, float> _data_values;
-   unsigned _script_id;
+   unsigned _entityscript_id;
    std::vector<unsigned> _quad_ids;
    std::vector<unsigned> _box_ids;
 
@@ -216,6 +215,7 @@ class EntityManager {
 
    bool _initialized = false;
 
+   // can only be called from checkEntities() if entity's entityscript is killed
    void _removeEntity(Entity *entity);
 public:
    EntityManager(EntityExecutor *entityexecutor, GLEnv *glenv, PhysSpace<Box> *physspace_box);

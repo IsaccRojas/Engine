@@ -3,6 +3,7 @@
 void ES_Player::_initEntity() {
     _transform.pos = glm::vec3(0.0f);
     _transform.scale = glm::vec3(16.0f);
+    std::cout << getExecutorID() << std::endl;
 }
 void ES_Player::_baseEntity() {
     float speed = 0.25f;

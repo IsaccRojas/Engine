@@ -159,15 +159,9 @@ void Executor::_pushSpawnEnqueue(ScriptEnqueue *enqueue) {
     _scriptenqueues.push(enqueue);
 }
 
-// TODO: check if ID is valid
-void Executor::_checkOwned(Script *script) {
-    if (script->_executor != this)
-        std::runtime_error("Attempt to use Script reference that is not contained by this Executor");
-}
-
 void Executor::_erase(unsigned id) {
+    // TODO: check if ID is valid
     Script *script = _scripts_id[id];
-    _checkOwned(script);
 
     // get values and info
     ScriptInfo &scriptinfo = _scriptinfos[script->_script_name];
@@ -227,8 +221,8 @@ void Executor::enqueueSpawn(const char *script_name, int execution_queue, int ta
 }
 
 void Executor::enqueueExec(unsigned id, unsigned queue) {
+    // TODO: check if ID is valid
     Script *script = _scripts_id[id];
-    _checkOwned(script);
 
     if (queue >= _queuepairs.size())
         throw std::out_of_range("Execution queue index out of range");
@@ -241,8 +235,8 @@ void Executor::enqueueExec(unsigned id, unsigned queue) {
 }
 
 void Executor::enqueueKill(unsigned id) {
+    // TODO: check if ID is valid
     Script *script = _scripts_id[id];
-    _checkOwned(script);
 
     if (!(script->_exec_enqueued || script->_kill_enqueued)) {
         // push to kill queue
@@ -277,7 +271,6 @@ void Executor::runExecQueue(unsigned queue) {
     Script *script;
     while (!(run_execqueue.empty())) {
         script = run_execqueue.front();
-        _checkOwned(script);
 
         script->_last_execqueue = queue;
         script->_exec_enqueued = false;
@@ -304,7 +297,6 @@ void Executor::runKillQueue() {
     Script *script;
     while (!(_run_killqueue.empty())) {
         script = _run_killqueue.front();
-        _checkOwned(script);
 
         script->_kill_enqueued = false;
 
