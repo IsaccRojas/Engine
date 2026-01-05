@@ -3,7 +3,7 @@
 // ES_Player allocator that holds reference to input state
 class ES_PlayerAllocator : public EntityScriptAllocatorInterface {
     GLFWInput *_input_state;
-    EntityScript *_allocate(int tag) override { return new ES_Player(_input_state); }
+    EntityScript *_allocate() override { return new ES_Player(_input_state); }
 public:
     ES_PlayerAllocator(GLFWInput *input_state) : _input_state(input_state) {}
 };
@@ -18,14 +18,14 @@ void loop(CoreResources *core) {
     
     core->entitymanager.addEntity(
         EntityInfo{
-            "ES_Player",
+            {"ES_Player", 0},
             {{glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), GLE_RECT, "Player", glm::vec3(0.0f), glm::vec2(0.0f), 0.0f}},
             {{Transform(), glm::vec3(0.0f), nullptr, "Player"}},
             "Group_Player"
         },
         "Player"
     );
-    Entity *player = core->entitymanager.spawnEntity("Player", 0, -1);
+    Entity *player = core->entitymanager.spawnEntity("Player");
     player->attributes3f()["pos"] = glm::vec3(0.0f, 32.0f, 0.0f);
     
     std::cout << "Running loop" << std::endl;
@@ -40,6 +40,7 @@ void loop(CoreResources *core) {
         core->entityexecutor.runExecQueue(0);
         core->entityexecutor.runSpawnQueue();
         core->entityexecutor.runKillQueue();
+        core->entityexecutor.runUpdate();
 
         core->entitymanager.checkEntities();
 

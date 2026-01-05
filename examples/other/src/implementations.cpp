@@ -4,7 +4,7 @@ void ES_Player::_initEntity() {
     entity().attributes3f()["pos"] = glm::vec3(0.0f);
 }
 
-void ES_Player::_baseEntity() {
+void ES_Player::_execEntity() {
     glm::vec3 &pos = entity().attributes3f()["pos"];
 
     float speed = 0.25f;
@@ -27,5 +27,7 @@ void ES_Player::_baseEntity() {
 }
 
 void ES_Player::_killEntity() {}
+
+void ES_Player::_updateEntity() {}
 
 ES_Player::ES_Player(GLFWInput *input_state) : EntityScript(), _input_state(input_state) {}
