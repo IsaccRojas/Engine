@@ -184,6 +184,10 @@ public:
    std::unordered_map<const char*, glm::vec3> &attributes3f();
 };
 
+struct EntityScriptArgs{
+   const char *entityscript_name;
+   int execution_queue;
+};
 struct QuadArgs {
    glm::vec3 pos;
    glm::vec3 scale;
@@ -202,7 +206,7 @@ struct BoxArgs {
 };
 
 struct EntityInfo {
-   const char *entityscript_name;
+   EntityScriptArgs _entityscript_args;
    std::list<QuadArgs> _quad_args;
    std::list<BoxArgs> _box_args;
    std::string _group;
@@ -237,7 +241,7 @@ public:
    void uninit();
 
    void addEntity(EntityInfo info, const char *name);
-   Entity *spawnEntity(const char *name, int execution_queue);
+   Entity *spawnEntity(const char *name);
    
    void checkEntities();
 

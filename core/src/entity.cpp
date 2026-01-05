@@ -183,7 +183,7 @@ void EntityManager::addEntity(EntityInfo info, const char *name) {
     _entityinfos[name] = info;
 }
 
-Entity *EntityManager::spawnEntity(const char *name, int execution_queue) {
+Entity *EntityManager::spawnEntity(const char *name) {
     EntityInfo &ei = _entityinfos[name];
     Entity *entity = new Entity();
 
@@ -200,7 +200,7 @@ Entity *EntityManager::spawnEntity(const char *name, int execution_queue) {
     }
 
     // instantiate each EntityScript in info and push to entity's storage
-    entity->_entityscript_id = _entityexecutor->spawnEntityScript(ei.entityscript_name, execution_queue, entity);
+    entity->_entityscript_id = _entityexecutor->spawnEntityScript(ei._entityscript_args.entityscript_name, ei._entityscript_args.execution_queue, entity);
 
     entity->_this_iter = _entities[ei._group.c_str()].push_back(entity);
     
