@@ -4,7 +4,6 @@ Script::Script(Script &&other) { operator=(std::move(other)); }
 Script::Script() :
     _executor(nullptr),
     _executor_id(0),
-    _spawn_tag(-1),
     _last_execqueue(-1),
     _killed(false), 
     _exec_enqueued(false), 
@@ -19,7 +18,6 @@ Script &Script::operator=(Script &&other) {
         _executor = other._executor;
         _executor_id = other._executor_id;
         _this_iter = other._this_iter;
-        _spawn_tag = other._spawn_tag;
         _last_execqueue = other._last_execqueue;
         _killed = other._killed;
         _exec_enqueued = other._exec_enqueued;
@@ -29,7 +27,6 @@ Script &Script::operator=(Script &&other) {
         _keys_count = other._keys_count;
         other._executor = nullptr;
         other._executor_id = 0;
-        other._spawn_tag = -1;
         other._last_execqueue = -1;
         other._killed = false;
         other._exec_enqueued = false;
@@ -77,7 +74,6 @@ void Script::enqueueKill() {
 }
 
 unsigned Script::getExecutorID() { return _executor_id; }
-int Script::getSpawnTag() { return _spawn_tag; }
 
 void Script::lockout(ScriptKey *k) {
     _keys.insert(k);
@@ -94,10 +90,10 @@ unsigned Script::lockout_count() {
 // --------------------------------------------------------------------------------------------------------------------------
 
 unsigned Executor::ScriptEnqueue::spawn() {
-    return _executor->spawnScript(_name.c_str(), _execution_queue, _tag);
+    return _executor->spawnScript(_name.c_str(), _execution_queue);
 }
-Executor::ScriptEnqueue::ScriptEnqueue(Executor *executor, std::string name, int execution_queue, int tag) :
-    _executor(executor), _name(name), _execution_queue(execution_queue), _tag(tag)
+Executor::ScriptEnqueue::ScriptEnqueue(Executor *executor, std::string name, int execution_queue) :
+    _executor(executor), _name(name), _execution_queue(execution_queue)
 {}
 Executor::ScriptEnqueue::~ScriptEnqueue() { /* automatic destruction is fine */ }
 
@@ -126,7 +122,7 @@ Executor &Executor::operator=(Executor &&other) {
     return *this;
 }
 
-void Executor::_setupScript(Script *script, const char *script_name, int execution_queue, int tag) {
+void Executor::_setupScript(Script *script, const char *script_name, int execution_queue) {
     // get information
     ScriptInfo &info = _scriptinfos[script_name];
 
@@ -134,7 +130,6 @@ void Executor::_setupScript(Script *script, const char *script_name, int executi
     script->_executor = this;
     script->_executor_id = _intgen.push();
     script->_this_iter = _scripts.push_back(script);
-    script->_spawn_tag = tag;
 
     // store script in map with ID for future referencing
     _scripts_id[script->_executor_id] = script;
@@ -205,10 +200,10 @@ void Executor::add(AllocatorInterface *allocator, const char *name, std::functio
         throw std::runtime_error("Attempt to add already added Script name");
 }
 
-unsigned Executor::spawnScript(const char *script_name, int execution_queue, int tag) {
+unsigned Executor::spawnScript(const char *script_name, int execution_queue) {
     // allocate instance and set it up
-    Script *script = _scriptinfos[script_name]._allocator->_allocate(tag);
-    _setupScript(script, script_name, execution_queue, tag);
+    Script *script = _scriptinfos[script_name]._allocator->_allocate();
+    _setupScript(script, script_name, execution_queue);
 
     // run initialization method
     script->runInit();
@@ -216,8 +211,8 @@ unsigned Executor::spawnScript(const char *script_name, int execution_queue, int
     return script->getExecutorID();
 }
 
-void Executor::enqueueSpawn(const char *script_name, int execution_queue, int tag) {
-    _pushSpawnEnqueue(new ScriptEnqueue(this, script_name, execution_queue, tag));
+void Executor::enqueueSpawn(const char *script_name, int execution_queue) {
+    _pushSpawnEnqueue(new ScriptEnqueue(this, script_name, execution_queue));
 }
 
 void Executor::enqueueExec(unsigned id, unsigned queue) {

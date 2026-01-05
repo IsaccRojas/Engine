@@ -57,7 +57,7 @@ class EntityScriptAllocatorInterface : public AllocatorInterface {
    friend EntityExecutor;
 protected:
    /* Must return a heap-allocated instance of a covariant type of EntityScript. */
-   virtual EntityScript *_allocate(int tag) = 0;
+   virtual EntityScript *_allocate() = 0;
 };
 
 /* class GenericEntityAllocator
@@ -66,7 +66,7 @@ protected:
 */
 template<class T>
 class GenericEntityScriptAllocator : public EntityScriptAllocatorInterface {
-   EntityScript *_allocate(int tag) override { return new T; } 
+   EntityScript *_allocate() override { return new T; } 
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -88,7 +88,7 @@ protected:
    protected:
       // invokes the containing EntityExecutor's _spawnEntityScript() method and returns the spawned instance's reference
       virtual unsigned spawn() override;
-      EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, int tag, Entity *entity);
+      EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, Entity *entity);
       // default copy assignment/construction are fine (copying implies another enqueue in the same EntityExecutor)
    };
 
@@ -128,10 +128,10 @@ public:
    void addEntityScript(EntityScriptAllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback);
 
    /* Spawns a EntityScript using a name previously added to this executor, and returns its ID. */
-   unsigned spawnEntityScript(const char *entityscript_name, int execution_queue, int tag, Entity *entity);
+   unsigned spawnEntityScript(const char *entityscript_name, int execution_queue, Entity *entity);
 
    /* Enqueues an EntityScript to be spawned when calling runSpawnQueue(). */
-   void enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, int tag, Entity *entity);
+   void enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, Entity *entity);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -142,7 +142,7 @@ public:
 */
 template<class T>
 class ProvidedEntityScriptAllocator : public ProvidedAllocator<T>, public EntityScriptAllocatorInterface {
-   EntityScript *_allocate(int tag) override { return this->_allocateStore(tag); }
+   EntityScript *_allocate() override { return this->_allocateStore(); }
 protected:
    virtual T *_allocateProvided() override { return new T; }
 };
@@ -237,7 +237,7 @@ public:
    void uninit();
 
    void addEntity(EntityInfo info, const char *name);
-   Entity *spawnEntity(const char *name, int execution_queue, int tag);
+   Entity *spawnEntity(const char *name, int execution_queue);
    
    void checkEntities();
 

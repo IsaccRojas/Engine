@@ -34,7 +34,6 @@ class Script {
    Executor *_executor;
    unsigned _executor_id;
    std::list<Script*>::iterator _this_iter;
-   int _spawn_tag;
    int _last_execqueue;
    bool _killed;
    bool _exec_enqueued;
@@ -90,7 +89,6 @@ public:
    bool getKillEnqueued();
    const char *getName();
    unsigned getExecutorID();
-   int getSpawnTag();
 
    void lockout(ScriptKey *k);
    void unlock(ScriptKey *k);
@@ -108,7 +106,7 @@ class AllocatorInterface {
    friend Executor;
 protected:
    /* Must return a heap-allocated instance of a covariant type of Script. */
-   virtual Script *_allocate(int tag) = 0;
+   virtual Script *_allocate() = 0;
    // no members; no need for constructor/assignment/destructor definitions
 };
 
@@ -118,7 +116,7 @@ protected:
 */
 template<class T>
 class GenericAllocator : public AllocatorInterface {
-   Script *_allocate(int tag) override { return new T; }
+   Script *_allocate() override { return new T; }
    // no members; no need for constructor/assignment/destructor definitions
 };
 
@@ -146,9 +144,8 @@ protected:
    protected:
       std::string _name;
       int _execution_queue;
-      int _tag;
       virtual unsigned spawn();
-      ScriptEnqueue(Executor *executor, std::string name, int execution_queue, int tag);
+      ScriptEnqueue(Executor *executor, std::string name, int execution_queue);
       // default copy assignment/construction are fine (copying implies another enqueue in the same Executor)
    public:
       virtual ~ScriptEnqueue();
@@ -180,7 +177,7 @@ private:
 
 protected:
    // initializes Script's Executor-related fields
-   void _setupScript(Script *script, const char *script_name, int execution_queue, int tag);
+   void _setupScript(Script *script, const char *script_name, int execution_queue);
 
    // pushes an enqueue
    void _pushSpawnEnqueue(ScriptEnqueue *enqueue);
@@ -215,10 +212,10 @@ public:
    void add(AllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback);
 
    /* Spawns a Script using a name previously added to this manager, and returns its ID. */
-   unsigned spawnScript(const char *script_name, int execution_queue, int tag);
+   unsigned spawnScript(const char *script_name, int execution_queue);
 
    /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
-   void enqueueSpawn(const char *script_name, int execution_queue, int tag);
+   void enqueueSpawn(const char *script_name, int execution_queue);
    /* Enqueues a Script instance to be executed when runExecQueue() is called. */
    void enqueueExec(unsigned id, unsigned queue);
    /* Enqueues a Script instance to be killed and removed when runKillQueue() is called. */
@@ -264,7 +261,7 @@ class Receiver {
    bool _reception;
 
 protected:
-   // invoked on provider allocation if tag matches this receiver's channel
+   // invoked on provider allocation
    virtual void _receive(T *t) {};
 
    Receiver() : _r_provider(nullptr), _channel(-1), _reception(false) {}
@@ -360,17 +357,17 @@ class ProvidedAllocator : public AllocatorInterface {
    Provider<T> *_a_provider;
    std::string _name;
    
-   Script *_allocate(int tag) override {
-      return _allocateStore(tag);
+   Script *_allocate() override {
+      return _allocateStore();
    }
 
 protected:
-   T * _allocateStore(int tag) {
+   T * _allocateStore() {
       T *t = _allocateProvided();
 
       // if in a provider, give it this T
       if (_a_provider)
-            _a_provider->_storeType(t, tag);
+            _a_provider->_storeType(t);
       
       return t;
    }
@@ -418,22 +415,16 @@ class Provider {
    std::unordered_map<std::string, ProvidedAllocator<T>*> _allocators;
    
    // stores and broadcasts instances of T
-   void _storeType(T *t, int tag) {
-      // interpret tag as channel
-
+   void _storeType(T *t) {l
       // set fields of providedtype and store it
       _providedtypes.insert(t);
       t->_pt_provider = this;
       t->_t_ref = t;
 
-      // if channel is non-negative, deliver instance
-      if (tag >= 0) {
-         // if channel matches, deliver
-         for (const auto& receiver: _receivers)
-               if (receiver->_reception)
-                  if (receiver->_channel == tag)
-                           receiver->_receive(t);
-      }
+      // deliver instance
+      for (const auto& receiver: _receivers)
+         if (receiver->_reception)
+            receiver->_receive(t);
    }
 
 public:
