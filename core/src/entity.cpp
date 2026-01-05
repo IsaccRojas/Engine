@@ -23,14 +23,18 @@ void EntityScript::_init() {
     _initEntity();
 }
 
-void EntityScript::_base() {
-    _baseEntity();
+void EntityScript::_exec() {
+    _execEntity();
 }
 
 void EntityScript::_kill() {
     _killEntity();
     if (_entity)
         _entity->_script_killed = true;
+}
+
+void EntityScript::_update() {
+    _updateEntity();
 }
 
 Entity &EntityScript::entity() {

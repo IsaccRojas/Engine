@@ -21,18 +21,21 @@ class EntityScript : public Script {
 
    // called by execution environment
    void _init() override;
-   void _base() override;
+   void _exec() override;
    void _kill() override;
+   void _update() override;
 
 protected:
    /* Functions to be overridden by children.
-      - _initEntity() is called by _init(). _init() is called on execution, only for the first time the EntityScript is queued.
-      - _baseEntity() is called by _base(). _base() is called on execution, each time the EntityScript is queued.
-      - _killEntity() is called by _kill(). _kill() is called on erasure.
+      - _init() is called by runInit(). runInit() is called on spawn.
+      - _exec() is called by runExec(). runExec() is called on execution, each time the Script is queued.
+      - _kill() is called by runKill(). runKill() is called on erasure.
+      - _update() is called by runUpdate(). runUpdate() is called when update() is called by the owning Executor.
    */
    virtual void _initEntity() = 0;
-   virtual void _baseEntity() = 0;
+   virtual void _execEntity() = 0;
    virtual void _killEntity() = 0;
+   virtual void _updateEntity() = 0;
 
 public:
    EntityScript(EntityScript &&other);

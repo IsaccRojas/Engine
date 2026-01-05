@@ -43,14 +43,19 @@ void Script::runInit() {
         _init();
 
 }
-void Script::runBase() {
+void Script::runExec() {
     if (_executor)
-        _base();
+        _exec();
 }
 
 void Script::runKill() {
     if (_executor)
         _kill();
+}
+
+void Script::runUpdate() {
+    if (_executor)
+        _update();
 }
 
 int Script::getLastExecQueue() { return _last_execqueue; }
@@ -269,7 +274,7 @@ void Executor::runExecQueue(unsigned queue) {
 
         script->_last_execqueue = queue;
         script->_exec_enqueued = false;
-        script->runBase();
+        script->runExec();
         
         run_execqueue.pop();
     }
@@ -303,6 +308,11 @@ void Executor::runKillQueue() {
 
         _run_killqueue.pop();
     }
+}
+
+void Executor::runUpdate() {
+    for (auto iter = _scripts.begin(); iter != _scripts.end(); ++iter)
+        (*iter)->runUpdate();
 }
 
 bool Executor::hasAdded(const char *scriptname) { return !(_scriptinfos.find(scriptname) == _scriptinfos.end()); }

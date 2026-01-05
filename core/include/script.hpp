@@ -46,13 +46,15 @@ class Script {
    
 protected:
    /* Functions to be overridden by children.
-      - _init() is called by runInit(). _runInit() is called on execution, only for the first time the Script is queued.
-      - _base() is called by runBase(). _runBase() is called on execution, each time the Script is queued.
-      - _kill() is called by runKill(). _runKill() is called on erasure.
+      - _init() is called by runInit(). runInit() is called on spawn.
+      - _exec() is called by runExec(). runExec() is called on execution, each time the Script is queued.
+      - _kill() is called by runKill(). runKill() is called on erasure.
+      - _update() is called by runUpdate(). runUpdate() is called when update() is called by the owning Executor.
    */
    virtual void _init() = 0;
-   virtual void _base() = 0;
+   virtual void _exec() = 0;
    virtual void _kill() = 0;
+   virtual void _update() = 0;
 
 public:
    Script(Script &&other);
@@ -64,13 +66,15 @@ public:
    Script& operator=(const Script&) = delete;
 
 /* Functions wrapping the virtual versions of the same method, which are directly called by the Executor.
-      - runInit() is called on execution, only for the first time the Script is queued.
-      - runBase() is called on execution, each time the Script is queued.
+      - runInit() is called on spawn.
+      - runExec() is called on execution, each time the Script is queued.
       - runKill() is called on erasure.
+      - runUpdate() is called when update() is called by the owning Executor.
    */
    void runInit();
-   void runBase();
+   void runExec();
    void runKill();
+   void runUpdate();
 
    /* Enqueues the Script for execution.
       - queue - queue to enqueue into
@@ -221,14 +225,16 @@ public:
    /* Enqueues a Script instance to be killed and removed when runKillQueue() is called. */
    void enqueueKill(unsigned id);
 
+   /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(). */
+   std::vector<unsigned> runSpawnQueue();
    /* Executes all currently enqueued Scripts in the specified queue, and dequeues them. This will call the 
       (init() method if it has not yet been called, and the) base() method on every active Script.
    */
    void runExecQueue(unsigned queue);
    /* Calls the kill() method on all kill-queued Scripts if it has not been called yet, and erases the Scripts. */
    void runKillQueue();
-   /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(). */
-   std::vector<unsigned> runSpawnQueue();
+   /* Calls runUpdate() method on all Scripts. */
+   void runUpdate();
 
    /* Returns true if the provided Script name has been previously added to this executor. */
    bool hasAdded(const char *script_name);
