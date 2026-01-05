@@ -215,7 +215,7 @@ public:
    */
    void add(AllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback);
 
-   /* Spawns a Script using a name previously added to this manager, and returns its ID. */
+   /* Spawns a Script using a name previously added to this manager, calls its runInit() method, and returns its ID. */
    unsigned spawnScript(const char *script_name, int execution_queue);
 
    /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
@@ -228,10 +228,10 @@ public:
    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(). */
    std::vector<unsigned> runSpawnQueue();
    /* Executes all currently enqueued Scripts in the specified queue, and dequeues them. This will call the 
-      (init() method if it has not yet been called, and the) base() method on every active Script.
+      runExec() method on every active Script.
    */
    void runExecQueue(unsigned queue);
-   /* Calls the kill() method on all kill-queued Scripts if it has not been called yet, and erases the Scripts. */
+   /* Calls the runKill() method on all kill-queued Scripts if it has not been called yet, and erases the Scripts. */
    void runKillQueue();
    /* Calls runUpdate() method on all Scripts. */
    void runUpdate();
