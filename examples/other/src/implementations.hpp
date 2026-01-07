@@ -10,6 +10,8 @@ class ES_Player : public EntityScript {
     void _execEntity() override;
     void _killEntity() override;
     void _updateEntity() override;
+
+    void _receive(Entity *entity, std::string message) override;
 public:
     ES_Player(GLFWInput *input_state);
 };

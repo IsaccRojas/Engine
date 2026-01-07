@@ -30,4 +30,6 @@ void ES_Player::_updateEntity() {
     entity().boxes()[0]->transform.pos = pos;
 }
 
+void ES_Player::_receive(Entity *entity, std::string message) {}
+
 ES_Player::ES_Player(GLFWInput *input_state) : EntityScript(), _input_state(input_state) {}

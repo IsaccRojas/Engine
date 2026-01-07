@@ -45,6 +45,10 @@ bool EntityScript::hasEntity() {
     return !(_entity == nullptr);
 }
 
+void EntityScript::receive(Entity *entity, std::string message) {
+    _receive(entity, message);
+}
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 unsigned EntityExecutor::EntityScriptEnqueue::spawn() {

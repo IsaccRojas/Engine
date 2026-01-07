@@ -37,6 +37,9 @@ protected:
    virtual void _killEntity() = 0;
    virtual void _updateEntity() = 0;
 
+   /* Call to handle a passed Entity and message. */
+   virtual void _receive(Entity *entity, std::string message) = 0;
+
 public:
    EntityScript(EntityScript &&other);
    EntityScript();
@@ -48,6 +51,7 @@ public:
 
    Entity &entity();
    bool hasEntity();
+   void receive(Entity *entity, std::string message);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
