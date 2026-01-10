@@ -21,7 +21,6 @@ public:
     ManagedList &operator=(ManagedList &&other) {
         clear();
         _Ts = other._Ts;
-        other._Ts.clear();
         return *this;
     }
     ManagedList &operator=(const ManagedList &other) = delete;

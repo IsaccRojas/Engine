@@ -42,9 +42,35 @@ void ES_Chaser::_initEntity() {
 void ES_Chaser::_execEntity() {
     glm::vec3 &pos = entity().attributes3f()["pos"];
 
-    auto group_player_iter = entity().manager().groupBegin("Group_Player");
-    if (group_player_iter != entity().manager().groupEnd("Group_Player")) {
-        glm::vec3 player_pos = (*group_player_iter)->attributes3f()["pos"];
+    // find target if one is not stored
+    if (!_target) {
+        // iterate on all players
+        for (
+            auto group_player_iter = entity().manager().groupBegin("Group_Player");
+            group_player_iter != entity().manager().groupEnd("Group_Player");
+            ++group_player_iter
+        ) {
+            // store and lockout player if it is not kill enqueued
+            if (!((*group_player_iter)->entityscriptview().getKillEnqueued())) {
+                _target = (*group_player_iter);
+                _target->entityscriptview().lockout(&this->key());
+                break;
+            }
+        }
+    }
+
+    // chase target if one is stored
+    if (_target) {
+        float speed = 0.25f;
+        glm::vec3 dir = _target->attributes3f()["pos"] - pos;
+        if (glm::length(dir))
+            pos += speed * glm::normalize(dir);
+        
+        // lose reference and unlock player if it is kill enqueued
+        if (_target->entityscriptview().getKillEnqueued()) {
+            _target->entityscriptview().unlock(&this->key());
+            _target = nullptr;
+        }
     }
     
     enqueueExec(0);
@@ -60,4 +86,4 @@ void ES_Chaser::_updateEntity() {
 
 void ES_Chaser::_receive(Entity *entity, std::string message) {}
 
-ES_Chaser::ES_Chaser() : EntityScript() {}
+ES_Chaser::ES_Chaser() : EntityScript(), _target(nullptr) {}

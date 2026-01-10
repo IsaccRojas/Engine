@@ -8,7 +8,6 @@ Script::Script(Script &&other) { operator=(std::move(other)); }
 Script::Script() :
     _executor(nullptr),
     _last_execqueue(-1),
-    _killed(false), 
     _exec_enqueued(false), 
     _kill_enqueued(false),
     _script_name(""),
@@ -21,7 +20,6 @@ Script &Script::operator=(Script &&other) {
         _executor = other._executor;
         _this_iter = other._this_iter;
         _last_execqueue = other._last_execqueue;
-        _killed = other._killed;
         _exec_enqueued = other._exec_enqueued;
         _kill_enqueued = other._exec_enqueued;
         _script_name = other._script_name;
@@ -29,7 +27,6 @@ Script &Script::operator=(Script &&other) {
         _keys_count = other._keys_count;
         other._executor = nullptr;
         other._last_execqueue = -1;
-        other._killed = false;
         other._exec_enqueued = false;
         other._exec_enqueued = false;
         other._script_name = "";
@@ -60,7 +57,6 @@ void Script::runUpdate() {
 }
 
 int Script::getLastExecQueue() { return _last_execqueue; }
-bool Script::getKilled() { return _killed; }
 bool Script::getExecEnqueued() { return _exec_enqueued; }
 bool Script::getKillEnqueued() { return _kill_enqueued; }
 const char *Script::getName() { return _script_name.c_str(); }
@@ -79,31 +75,28 @@ void Script::enqueueKill() {
     _executor->enqueueKill(ScriptView(this));
 }
 
-ScriptKey Script::key() { return _key; };
+ScriptKey &Script::key() { return _key; };
 void Script::lockout(ScriptKey *k) {
     _keys.insert(k);
-    _keys_count++;
 }
 void Script::unlock(ScriptKey *k) {
     _keys.erase(k);
-    _keys_count--;
 }
 unsigned Script::lockout_count() {
-    return _keys_count;
+    return _keys.size();
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 ScriptView::ScriptView(Script *script) : _script(script) {};
-ScriptKey ScriptView::key() {
-    return _script->key();
-}
-void ScriptView::lockout(ScriptKey *k) {
-    _script->lockout(k);
-}
-void ScriptView::unlock(ScriptKey *k) {
-    _script->unlock(k);
-}
+
+int ScriptView::getLastExecQueue() { return _script->getLastExecQueue(); }
+bool ScriptView::getExecEnqueued() { return _script->getExecEnqueued(); }
+bool ScriptView::getKillEnqueued() { return _script->getKillEnqueued(); }
+const char *ScriptView::getName() { return _script->getName(); }
+ScriptKey ScriptView::key() { return _script->key(); }
+void ScriptView::lockout(ScriptKey *k) { _script->lockout(k); }
+void ScriptView::unlock(ScriptKey *k) { _script->unlock(k); }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -290,15 +283,10 @@ void Executor::runKillQueue() {
 
         // check if script can be killed
         if (script->lockout_count() == 0) {
-            // check if script needs to be killed
-            if (!(script->_killed)) {
-                script->runKill();
-                script->_killed = true;
+            script->runKill();
 
-                // remove the script after killing it
-                _erase(script);
-            }
-            
+            // remove the script after killing it
+            _erase(script);
         } else {
             // put script back into queue
             _push_killqueue.push(script);

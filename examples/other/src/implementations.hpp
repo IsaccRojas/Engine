@@ -18,6 +18,7 @@ public:
 };
 
 class ES_Chaser : public EntityScript {
+    Entity *_target;
     void _initEntity() override;
     void _execEntity() override;
     void _killEntity() override;

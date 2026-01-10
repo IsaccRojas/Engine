@@ -38,7 +38,6 @@ class Script {
    Executor *_executor;
    std::list<Script*>::iterator _this_iter;
    int _last_execqueue;
-   bool _killed;
    bool _exec_enqueued;
    bool _kill_enqueued; 
    std::string _script_name;
@@ -88,17 +87,13 @@ public:
    /* Kills the Script. */
    void enqueueKill();
 
-   /* Sets various internal flags used by Executors to control state. Can be set manually to manipulate
-      execution behavior.
+   /* Gets various internal flags used by Executors to control state.
    */
    int getLastExecQueue();
-   bool getKilled();
    bool getExecEnqueued();
    bool getKillEnqueued();
    const char *getName();
-   unsigned getExecutorID();
-
-   ScriptKey key();
+   ScriptKey &key();
    void lockout(ScriptKey *k);
    void unlock(ScriptKey *k);
    unsigned lockout_count();
@@ -114,6 +109,10 @@ class ScriptView {
    Script *_script;
 public:
    ScriptView(Script *script);
+   int getLastExecQueue();
+   bool getExecEnqueued();
+   bool getKillEnqueued();
+   const char *getName();
    ScriptKey key();
    void lockout(ScriptKey *k);
    void unlock(ScriptKey *k);
