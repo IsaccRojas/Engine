@@ -1,10 +1,10 @@
 {
-	"name" : "Tile",
+	"name" : "Animation_RedSquare",
 	"cycles" : {
 		"cycle1" : {
 			"frames" : {
 				"frame1" : {
-					"texpos" : [160.0, 0.0, 0.0],
+					"texpos" : [16.0, 0.0, 0.0],
 					"texsize" : [16.0, 16.0],
 					"scale" : [16.0, 16.0, 0.0],
 					"duration" : 0

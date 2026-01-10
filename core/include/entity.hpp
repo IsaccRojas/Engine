@@ -56,6 +56,19 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+/* class EntityScriptView
+   Contains a EntityScript reference and wraps access to EntityScript data without owning it. Invalid if the viewed Script is destroyed.
+*/
+class EntityScriptView : public ScriptView {
+   EntityScript *_entityscript;
+public:
+   EntityScriptView(EntityScript *entityscript);
+   void receive(Entity *entity, std::string message);
+
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 /* abstract class EntityAllocatorInterface
    Is used to invoke allocate(), which must return heap-allocated memory to be owned
    by the invoking EntityExecutor instance.
@@ -85,6 +98,8 @@ class EntityExecutor : public Executor {
       // default copy assignment/construction are fine
    };
 
+   std::unordered_map<unsigned, EntityScript*> _entityscripts_id;
+
 protected:
    // class to store enqueues and polymorphically spawn later
    class EntityScriptEnqueue : public ScriptEnqueue {
@@ -94,7 +109,7 @@ protected:
    
    protected:
       // invokes the containing EntityExecutor's _spawnEntityScript() method and returns the spawned instance's reference
-      virtual unsigned spawn() override;
+      virtual ScriptView spawn() override;
       EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, Entity *entity);
       // default copy assignment/construction are fine (copying implies another enqueue in the same EntityExecutor)
    };
@@ -132,10 +147,10 @@ public:
       - spawn_callback - function callback to call after EntityScript has been spawned and setup
       - remove_callback - function callback to call before EntityScript has been removed
    */
-   void addEntityScript(EntityScriptAllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)>  remove_callback);
+   void addEntityScript(EntityScriptAllocatorInterface *allocator, const char *name, std::function<void(ScriptView)> spawn_callback, std::function<void(ScriptView)>  remove_callback);
 
    /* Spawns a EntityScript using a name previously added to this executor, and returns its ID. */
-   unsigned spawnEntityScript(const char *entityscript_name, int execution_queue, Entity *entity);
+   EntityScriptView spawnEntityScript(const char *entityscript_name, int execution_queue, Entity *entity);
 
    /* Enqueues an EntityScript to be spawned when calling runSpawnQueue(). */
    void enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, Entity *entity);
@@ -164,8 +179,8 @@ class Entity {
    EntityManager *_entitymanager;
    std::list<Entity*>::iterator _this_iter;
    std::string _group;
-   
-   unsigned _entityscript_id;
+
+   EntityScriptView _entityscriptview;
    std::vector<unsigned> _quad_ids;
    std::vector<unsigned> _box_ids;
 
@@ -184,6 +199,7 @@ public:
    //TODO: revise copy/move semantics
 
    EntityManager &manager();
+   EntityScriptView &entityscriptview();
    std::vector<Quad*> &quads();
    std::vector<Box*> &boxes();
    std::unordered_map<const char*, float> &attributes1f();

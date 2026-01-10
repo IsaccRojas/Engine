@@ -1,9 +1,12 @@
 #include "../include/script.hpp"
 
+ScriptKey::ScriptKey() {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 Script::Script(Script &&other) { operator=(std::move(other)); }
 Script::Script() :
     _executor(nullptr),
-    _executor_id(0),
     _last_execqueue(-1),
     _killed(false), 
     _exec_enqueued(false), 
@@ -16,7 +19,6 @@ Script::~Script() { /* automatic destruction is fine */ }
 Script &Script::operator=(Script &&other) {
     if (this != &other) {
         _executor = other._executor;
-        _executor_id = other._executor_id;
         _this_iter = other._this_iter;
         _last_execqueue = other._last_execqueue;
         _killed = other._killed;
@@ -26,7 +28,6 @@ Script &Script::operator=(Script &&other) {
         _keys = other._keys;
         _keys_count = other._keys_count;
         other._executor = nullptr;
-        other._executor_id = 0;
         other._last_execqueue = -1;
         other._killed = false;
         other._exec_enqueued = false;
@@ -68,18 +69,17 @@ void Script::enqueueExec(unsigned queue) {
     if (!_executor)
         throw std::runtime_error("Attempt to enqueue for execution with null Executor owner");
 
-    _executor->enqueueExec(_executor_id, queue);
+    _executor->enqueueExec(ScriptView(this), queue);
 }
 
 void Script::enqueueKill() {
     if (!_executor)
         throw std::runtime_error("Attempt to enqueue for kill with null Executor owner");
 
-    _executor->enqueueKill(_executor_id);
+    _executor->enqueueKill(ScriptView(this));
 }
 
-unsigned Script::getExecutorID() { return _executor_id; }
-
+ScriptKey Script::key() { return _key; };
 void Script::lockout(ScriptKey *k) {
     _keys.insert(k);
     _keys_count++;
@@ -94,7 +94,20 @@ unsigned Script::lockout_count() {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-unsigned Executor::ScriptEnqueue::spawn() {
+ScriptView::ScriptView(Script *script) : _script(script) {};
+ScriptKey ScriptView::key() {
+    return _script->key();
+}
+void ScriptView::lockout(ScriptKey *k) {
+    _script->lockout(k);
+}
+void ScriptView::unlock(ScriptKey *k) {
+    _script->unlock(k);
+}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+ScriptView Executor::ScriptEnqueue::spawn() {
     return _executor->spawnScript(_name.c_str(), _execution_queue);
 }
 Executor::ScriptEnqueue::ScriptEnqueue(Executor *executor, std::string name, int execution_queue) :
@@ -113,8 +126,6 @@ Executor &Executor::operator=(Executor &&other) {
         std::queue<Script*> empty2;
 
         _scripts = std::move(other._scripts);
-        _intgen = other._intgen;
-        _scripts_id = other._scripts_id;
         _scriptinfos = other._scriptinfos;
         _scriptenqueues = std::move(other._scriptenqueues);
         _queuepairs = other._queuepairs;
@@ -133,18 +144,14 @@ void Executor::_setupScript(Script *script, const char *script_name, int executi
 
     // store data
     script->_executor = this;
-    script->_executor_id = _intgen.push();
     script->_this_iter = _scripts.push_back(script);
-
-    // store script in map with ID for future referencing
-    _scripts_id[script->_executor_id] = script;
 
     // set script fields (make copy of string passed)
     script->_script_name = script_name;
     
     // enqueue if non-negative queue provided
     if (execution_queue >= 0)
-        enqueueExec(script->_executor_id, execution_queue);
+        enqueueExec(ScriptView(script), execution_queue);
     
     // try spawn callback if it exists
     if (info._spawn_callback)
@@ -155,19 +162,13 @@ void Executor::_pushSpawnEnqueue(ScriptEnqueue *enqueue) {
     _scriptenqueues.push(enqueue);
 }
 
-void Executor::_erase(unsigned id) {
-    // TODO: check if ID is valid
-    Script *script = _scripts_id[id];
-
+void Executor::_erase(Script *script) {
     // get values and info
     ScriptInfo &scriptinfo = _scriptinfos[script->_script_name];
 
     // try removal callback if it exists
     if (scriptinfo._remove_callback)
         scriptinfo._remove_callback(script);
-
-    _intgen.remove(script->_executor_id);
-    _scripts_id[script->_executor_id] = nullptr;
 
     _scripts.erase(script->_this_iter);
 }
@@ -189,8 +190,6 @@ void Executor::uninit() {
     std::queue<Script*> empty2;
 
     _scripts.clear();
-    _intgen.clear();
-    _scripts_id.clear();
     _scriptinfos.clear();
     _scriptenqueues.clear();
     _queuepairs.clear();
@@ -198,14 +197,14 @@ void Executor::uninit() {
     _run_killqueue.swap(empty2);
 }
 
-void Executor::add(AllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback) {  
+void Executor::add(AllocatorInterface *allocator, const char *name, std::function<void(ScriptView)> spawn_callback, std::function<void(ScriptView)> remove_callback) {  
     if (!hasAdded(name))
         _scriptinfos[name] = ScriptInfo{allocator, spawn_callback, remove_callback};
     else
         throw std::runtime_error("Attempt to add already added Script name");
 }
 
-unsigned Executor::spawnScript(const char *script_name, int execution_queue) {
+ScriptView Executor::spawnScript(const char *script_name, int execution_queue) {
     // allocate instance and set it up
     Script *script = _scriptinfos[script_name]._allocator->_allocate();
     _setupScript(script, script_name, execution_queue);
@@ -213,16 +212,15 @@ unsigned Executor::spawnScript(const char *script_name, int execution_queue) {
     // run initialization method
     script->runInit();
 
-    return script->getExecutorID();
+    return ScriptView(script);
 }
 
 void Executor::enqueueSpawn(const char *script_name, int execution_queue) {
     _pushSpawnEnqueue(new ScriptEnqueue(this, script_name, execution_queue));
 }
 
-void Executor::enqueueExec(unsigned id, unsigned queue) {
-    // TODO: check if ID is valid
-    Script *script = _scripts_id[id];
+void Executor::enqueueExec(ScriptView scriptview, unsigned queue) {
+    Script *script = scriptview._script;
 
     if (queue >= _queuepairs.size())
         throw std::out_of_range("Execution queue index out of range");
@@ -234,9 +232,9 @@ void Executor::enqueueExec(unsigned id, unsigned queue) {
     }
 }
 
-void Executor::enqueueKill(unsigned id) {
+void Executor::enqueueKill(ScriptView scriptview) {
     // TODO: check if ID is valid
-    Script *script = _scripts_id[id];
+    Script *script = scriptview._script;
 
     if (!(script->_exec_enqueued || script->_kill_enqueued)) {
         // push to kill queue
@@ -245,16 +243,16 @@ void Executor::enqueueKill(unsigned id) {
     }
 }
 
-std::vector<unsigned> Executor::runSpawnQueue() {
-    std::vector<unsigned> scripts;
+std::vector<ScriptView> Executor::runSpawnQueue() {
+    std::vector<ScriptView> scriptviews;
 
     while (!(_scriptenqueues.empty())) {
         ScriptEnqueue *scriptenqueue = _scriptenqueues.front();
-        scripts.push_back(scriptenqueue->spawn());
+        scriptviews.push_back(scriptenqueue->spawn());
         _scriptenqueues.pop();
     }
 
-    return scripts;
+    return scriptviews;
 }
 
 void Executor::runExecQueue(unsigned queue) {
@@ -298,7 +296,7 @@ void Executor::runKillQueue() {
                 script->_killed = true;
 
                 // remove the script after killing it
-                _erase(script->_executor_id);
+                _erase(script);
             }
             
         } else {

@@ -42,9 +42,7 @@ void initializeCore(CoreResources *core) {
     std::cout << "Setting up GLEnv" << std::endl;
     core->glenv.init(MAX_COUNT, &core->animations);
     core->glenv.setTexArray(TEX_SPACE_WIDTH, TEX_SPACE_HEIGHT, TEX_SPACE_LEVELS);
-    core->glenv.setTexture(Image("gfx/tiles.png"), 0, 0, 0);
-    core->glenv.setTexture(Image("gfx/characters1.png"), 0, 0, 1); // each character is 7x24 pixels
-    core->glenv.setTexture(Image("gfx/characters2.png"), 0, 0, 2); // each character is 5x10 pixels
+    core->glenv.setTexture(Image("gfx/sprites.png"), 0, 0, 0);
     
     float halfwidth = float(PIXEL_WIDTH) / 2.0f;
     float halfheight = float(PIXEL_HEIGHT) / 2.0f;

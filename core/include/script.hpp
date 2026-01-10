@@ -15,12 +15,16 @@
 #include "util.hpp"
 
 // prototype
+class Script;
 class Executor;
 
 /* class ScriptKey
-   Used to lock-out a Script, determining whether it can be removed or not.
+   Used to lock-out a Script, determining whether it can be removed or not. Held by Scripts.
 */
-class ScriptKey {};
+class ScriptKey {
+   friend Script;
+   ScriptKey();
+};
 
 /* class Script
    Represents a runnable script by an owning Executor instance.
@@ -32,7 +36,6 @@ class Script {
 
    // fields maintained by owning Executor
    Executor *_executor;
-   unsigned _executor_id;
    std::list<Script*>::iterator _this_iter;
    int _last_execqueue;
    bool _killed;
@@ -41,6 +44,7 @@ class Script {
    std::string _script_name;
 
    // lockout variables
+   ScriptKey _key;
    std::unordered_set<ScriptKey*> _keys;
    unsigned _keys_count;
    
@@ -94,9 +98,25 @@ public:
    const char *getName();
    unsigned getExecutorID();
 
+   ScriptKey key();
    void lockout(ScriptKey *k);
    void unlock(ScriptKey *k);
    unsigned lockout_count();
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+/* class ScriptView
+   Contains a Script reference and wraps access to Script data without owning it. Invalid if the viewed Script is destroyed.
+*/
+class ScriptView {
+   friend Executor;
+   Script *_script;
+public:
+   ScriptView(Script *script);
+   ScriptKey key();
+   void lockout(ScriptKey *k);
+   void unlock(ScriptKey *k);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -135,8 +155,8 @@ class Executor {
    // struct holding Script information mapped to a name
    struct ScriptInfo {
       AllocatorInterface *_allocator;
-      std::function<void(Script*)> _spawn_callback;
-      std::function<void(Script*)> _remove_callback;
+      std::function<void(ScriptView)> _spawn_callback;
+      std::function<void(ScriptView)> _remove_callback;
       // default copy assignment/construction are fine
    };
 
@@ -148,7 +168,7 @@ protected:
    protected:
       std::string _name;
       int _execution_queue;
-      virtual unsigned spawn();
+      virtual ScriptView spawn();
       ScriptEnqueue(Executor *executor, std::string name, int execution_queue);
       // default copy assignment/construction are fine (copying implies another enqueue in the same Executor)
    public:
@@ -157,10 +177,8 @@ protected:
 
 private:
    /* Script data structures */
-   // memory-managed list of Script references and IntGenerator to provide Scripts with unique identifiers
+   // memory-managed list of Script references
    ManagedList<Script> _scripts;
-   IntGenerator _intgen;
-   std::unordered_map<unsigned, Script*> _scripts_id;
 
    // internal variables for added script information and active scripts
    std::unordered_map<std::string, ScriptInfo> _scriptinfos;
@@ -186,8 +204,8 @@ protected:
    // pushes an enqueue
    void _pushSpawnEnqueue(ScriptEnqueue *enqueue);
 
-   // erases the passed Script ID; it is undefined behavior to use the ID after this call
-   void _erase(unsigned id);
+   // erases the passed Script; it is undefined behavior to use the ScriptView after this call
+   void _erase(Script *script);
 
 public:
    /* Calls init() with the provided arguments. */
@@ -213,20 +231,20 @@ public:
       - spawn_callback - function callback to call after Script has been spawned and setup
       - remove_callback - function callback to call before Script has been removed
    */
-   void add(AllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback);
+   void add(AllocatorInterface *allocator, const char *name, std::function<void(ScriptView)> spawn_callback, std::function<void(ScriptView)> remove_callback);
 
-   /* Spawns a Script using a name previously added to this manager, calls its runInit() method, and returns its ID. */
-   unsigned spawnScript(const char *script_name, int execution_queue);
+   /* Spawns a Script using a name previously added to this manager, calls its runInit() method, and returns a ScriptView of it. */
+   ScriptView spawnScript(const char *script_name, int execution_queue);
 
    /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
    void enqueueSpawn(const char *script_name, int execution_queue);
    /* Enqueues a Script instance to be executed when runExecQueue() is called. */
-   void enqueueExec(unsigned id, unsigned queue);
+   void enqueueExec(ScriptView scriptview, unsigned queue);
    /* Enqueues a Script instance to be killed and removed when runKillQueue() is called. */
-   void enqueueKill(unsigned id);
+   void enqueueKill(ScriptView scriptview);
 
    /* Spawns all Scripts (or sub classes) queued for spawning with spawnScriptEnqueue(). */
-   std::vector<unsigned> runSpawnQueue();
+   std::vector<ScriptView> runSpawnQueue();
    /* Executes all currently enqueued Scripts in the specified queue, and dequeues them. This will call the 
       runExec() method on every active Script.
    */

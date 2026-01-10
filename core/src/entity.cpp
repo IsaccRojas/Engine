@@ -51,7 +51,14 @@ void EntityScript::receive(Entity *entity, std::string message) {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-unsigned EntityExecutor::EntityScriptEnqueue::spawn() {
+EntityScriptView::EntityScriptView(EntityScript *entityscript) : ScriptView(entityscript), _entityscript(entityscript) {}
+void EntityScriptView::receive(Entity *entity, std::string message) {
+    _entityscript->receive(entity, message);
+}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+ScriptView EntityExecutor::EntityScriptEnqueue::spawn() {
     return _entityexecutor->spawnEntityScript(_name.c_str(), _execution_queue, _entity);
 }
 
@@ -88,7 +95,7 @@ void EntityExecutor::uninit() {
     _entityscriptinfos.clear();
 }
 
-void EntityExecutor::addEntityScript(EntityScriptAllocatorInterface *allocator, const char *name, std::function<void(Script*)> spawn_callback, std::function<void(Script*)> remove_callback) {
+void EntityExecutor::addEntityScript(EntityScriptAllocatorInterface *allocator, const char *name, std::function<void(ScriptView)> spawn_callback, std::function<void(ScriptView)> remove_callback) {
     if (!hasAdded(name)) {
         Executor::add(nullptr, name, spawn_callback, remove_callback);
         _entityscriptinfos[name] = EntityScriptInfo{allocator};
@@ -96,7 +103,7 @@ void EntityExecutor::addEntityScript(EntityScriptAllocatorInterface *allocator, 
         throw std::runtime_error("Attempt to add already added name");
 }
 
-unsigned EntityExecutor::spawnEntityScript(const char *entityscript_name, int execution_queue, Entity *entity) {
+EntityScriptView EntityExecutor::spawnEntityScript(const char *entityscript_name, int execution_queue, Entity *entity) {
     // allocate instance and set it up
     EntityScript *entityscript = _entityscriptinfos[entityscript_name]._allocator->_allocate();
     _setupScript(entityscript, entityscript_name, execution_queue);
@@ -105,7 +112,7 @@ unsigned EntityExecutor::spawnEntityScript(const char *entityscript_name, int ex
     // run initialization method
     entityscript->runInit();
 
-    return entityscript->getExecutorID();
+    return EntityScriptView(entityscript);
 }
 
 void EntityExecutor::enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, Entity *entity) {
@@ -114,7 +121,7 @@ void EntityExecutor::enqueueSpawnEntityScript(const char *entityscript_name, int
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-Entity::Entity() : _entitymanager(nullptr), _entityscript_id(0), _script_killed(false) {}
+Entity::Entity() : _entitymanager(nullptr), _entityscriptview(nullptr), _script_killed(false) {}
 Entity::~Entity() {}
 
 EntityManager &Entity::manager() { return *_entitymanager; }
@@ -123,6 +130,7 @@ std::vector<Box*> &Entity::boxes() { return _boxes; }
 std::unordered_map<const char*, float> &Entity::attributes1f() { return _attributes1f; }
 std::unordered_map<const char*, glm::vec2> &Entity::attributes2f() { return _attributes2f; }
 std::unordered_map<const char*, glm::vec3> &Entity::attributes3f() { return _attributes3f; }
+EntityScriptView &Entity::entityscriptview() { return _entityscriptview; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -208,9 +216,10 @@ Entity *EntityManager::spawnEntity(const char *name) {
     }
 
     // instantiate each EntityScript in info and push to entity's storage
-    entity->_entityscript_id = _entityexecutor->spawnEntityScript(ei._entityscript_args.entityscript_name, ei._entityscript_args.execution_queue, entity);
+    entity->_entityscriptview = _entityexecutor->spawnEntityScript(ei._entityscript_args.entityscript_name, ei._entityscript_args.execution_queue, entity);
 
     entity->_this_iter = _entities[ei._group.c_str()].push_back(entity);
+    entity->_entitymanager = this;
     
     return entity;
 }

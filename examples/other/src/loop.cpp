@@ -14,19 +14,35 @@ void loop(CoreResources *core) {
     srand(time(NULL));
 
     ES_PlayerAllocator alloc_ES_Player(&(core->input));
+    GenericEntityScriptAllocator<ES_Chaser> alloc_ES_Chaser;
+
     core->entityexecutor.addEntityScript(&alloc_ES_Player, "ES_Player", nullptr, nullptr);
+    core->entityexecutor.addEntityScript(&alloc_ES_Chaser, "ES_Chaser", nullptr, nullptr);
     
     core->entitymanager.addEntity(
         EntityInfo{
             {"ES_Player", 0},
-            {{glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), GLE_RECT, "Player", glm::vec3(0.0f), glm::vec2(0.0f), 0.0f}},
-            {{Transform(), glm::vec3(0.0f), nullptr, "Player"}},
+            {{glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), GLE_RECT, "Animation_Player", glm::vec3(0.0f), glm::vec2(0.0f), 0.0f}},
+            {{Transform(), glm::vec3(0.0f), nullptr, "Filter_Player"}},
             "Group_Player"
         },
-        "Player"
+        "Entity_Player"
     );
-    Entity *player = core->entitymanager.spawnEntity("Player");
+    core->entitymanager.addEntity(
+        EntityInfo{
+            {"ES_Chaser", 0},
+            {{glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), GLE_RECT, "Animation_RedSquare", glm::vec3(0.0f), glm::vec2(0.0f), 0.0f}},
+            {{Transform(), glm::vec3(0.0f), nullptr, ""}},
+            "Group_Enemy"
+        },
+        "Entity_Dummy"
+    );
+
+    Entity *player = core->entitymanager.spawnEntity("Entity_Player");
     player->attributes3f()["pos"] = glm::vec3(0.0f, 32.0f, 0.0f);
+
+    Entity *dummy = core->entitymanager.spawnEntity("Entity_Dummy");
+    dummy->attributes3f()["pos"] = glm::vec3(32.0f, 0.0f, 0.0f);
     
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(core->state.getWindowHandle()) && !core->input.get_esc()) {
