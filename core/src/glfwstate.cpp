@@ -11,7 +11,7 @@ GLFWErrorException::GLFWErrorException() : std::runtime_error("GLFW error") {}
 GLFWState::GLFWState(int width, int height, const char *title, bool debug) {
     init(width, height, title, debug);
 }
-GLFWState::GLFWState() : _win_h(nullptr), _width(0), _height(0), _title(nullptr) {}
+GLFWState::GLFWState() : _win_h(nullptr), _width(0), _height(0), _title("") {}
 GLFWState::~GLFWState() {
     uninit();
 }
@@ -47,6 +47,6 @@ void GLFWState::uninit() {
     _win_h = nullptr;
     _width = 0;
     _height = 0;
-    _title = nullptr;
+    _title = "";
 }
 GLFWwindow *GLFWState::getWindowHandle() { return _win_h; }

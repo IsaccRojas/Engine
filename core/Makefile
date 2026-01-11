@@ -47,4 +47,4 @@ libcore.a: commonexcept.o util.o script.o glutil.o glenv.o text.o animation.o fi
 
 # windows syntax
 clean:
-	rd *.o
+	rm *.o *.lib

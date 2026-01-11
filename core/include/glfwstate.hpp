@@ -19,7 +19,7 @@ class GLFWState {
    GLFWwindow *_win_h;
    int _width;
    int _height;
-   const char *_title;
+   std::string _title;
 public:
    GLFWState(int width, int height, const char *title, bool debug);
    GLFWState();

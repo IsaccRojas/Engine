@@ -127,9 +127,9 @@ Entity::~Entity() {}
 EntityManager &Entity::manager() { return *_entitymanager; }
 std::vector<Quad*> &Entity::quads() { return _quads; }
 std::vector<Box*> &Entity::boxes() { return _boxes; }
-std::unordered_map<const char*, float> &Entity::attributes1f() { return _attributes1f; }
-std::unordered_map<const char*, glm::vec2> &Entity::attributes2f() { return _attributes2f; }
-std::unordered_map<const char*, glm::vec3> &Entity::attributes3f() { return _attributes3f; }
+std::unordered_map<std::string, float> &Entity::attributes1f() { return _attributes1f; }
+std::unordered_map<std::string, glm::vec2> &Entity::attributes2f() { return _attributes2f; }
+std::unordered_map<std::string, glm::vec3> &Entity::attributes3f() { return _attributes3f; }
 EntityScriptView &Entity::entityscriptview() { return _entityscriptview; }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -153,14 +153,14 @@ EntityManager &EntityManager::operator=(EntityManager &&other) {
         _entityinfos = other._entityinfos;
 
         // clear all lists
-        std::vector<const char*> keys;
-        for (std::unordered_map<const char *, ManagedList<Entity>>::iterator i = _entities.begin(); i != _entities.end(); ++i)
+        std::vector<std::string> keys;
+        for (std::unordered_map<std::string, ManagedList<Entity>>::iterator i = _entities.begin(); i != _entities.end(); ++i)
             keys.push_back(i->first);
-        for (const char *s : keys)
+        for (std::string s : keys)
             _entities.erase(s);
 
         // move all lists
-        for (std::unordered_map<const char *, ManagedList<Entity>>::iterator i = other._entities.begin(); i != other._entities.end(); ++i)
+        for (std::unordered_map<std::string, ManagedList<Entity>>::iterator i = other._entities.begin(); i != other._entities.end(); ++i)
             _entities[i->first] = std::move(i->second);
 
         _entityexecutor = other._entityexecutor;
@@ -205,18 +205,18 @@ Entity *EntityManager::spawnEntity(const char *name) {
 
     // instantiate each Quad in info and push to entity's storage
     for (const QuadArgs &a : ei._quad_args) {
-        entity->_quad_ids.push_back(_glenv->genQuad(a.pos, a.scale, a.color, a.type, a.animation_name, a.texpos, a.texsize, a.innerrad));
+        entity->_quad_ids.push_back(_glenv->genQuad(a.pos, a.scale, a.color, a.type, a.animation_name.c_str(), a.texpos, a.texsize, a.innerrad));
         entity->_quads.push_back(_glenv->getQuad(entity->_quad_ids.back()));
     }
 
     // instantiate each Box in info and push to entity's storage
     for (const BoxArgs &a : ei._box_args) {
-        entity->_box_ids.push_back(_physspace_box->push(a.transf, a.vel, a.callback, a.filter_name));
+        entity->_box_ids.push_back(_physspace_box->push(a.transf, a.vel, a.callback, a.filter_name.c_str()));
         entity->_boxes.push_back(_physspace_box->get(entity->_box_ids.back()));
     }
 
     // instantiate each EntityScript in info and push to entity's storage
-    entity->_entityscriptview = _entityexecutor->spawnEntityScript(ei._entityscript_args.entityscript_name, ei._entityscript_args.execution_queue, entity);
+    entity->_entityscriptview = _entityexecutor->spawnEntityScript(ei._entityscript_args.entityscript_name.c_str(), ei._entityscript_args.execution_queue, entity);
 
     entity->_this_iter = _entities[ei._group.c_str()].push_back(entity);
     entity->_entitymanager = this;
@@ -240,9 +240,13 @@ void EntityManager::checkEntities() {
 }
 
 std::list<Entity*>::iterator EntityManager::groupBegin(const char *group) {
+    if (_entities.find(group) == _entities.end())
+        throw std::runtime_error(std::string("Attempt to get begin iterator of nonexistent group ") + group);
     return _entities[group].begin();
 }
 
 std::list<Entity*>::iterator EntityManager::groupEnd(const char *group) {
+    if (_entities.find(group) == _entities.end())
+        throw std::runtime_error(std::string("Attempt to get end iterator of nonexistent group ") + group);
     return _entities[group].end();
 }

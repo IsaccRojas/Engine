@@ -186,9 +186,9 @@ class Entity {
 
    std::vector<Quad*> _quads;
    std::vector<Box*> _boxes;
-   std::unordered_map<const char*, float> _attributes1f;
-   std::unordered_map<const char*, glm::vec2> _attributes2f;
-   std::unordered_map<const char*, glm::vec3> _attributes3f;
+   std::unordered_map<std::string, float> _attributes1f;
+   std::unordered_map<std::string, glm::vec2> _attributes2f;
+   std::unordered_map<std::string, glm::vec3> _attributes3f;
 
    bool _script_killed;
 
@@ -202,13 +202,13 @@ public:
    EntityScriptView &entityscriptview();
    std::vector<Quad*> &quads();
    std::vector<Box*> &boxes();
-   std::unordered_map<const char*, float> &attributes1f();
-   std::unordered_map<const char*, glm::vec2> &attributes2f();
-   std::unordered_map<const char*, glm::vec3> &attributes3f();
+   std::unordered_map<std::string, float> &attributes1f();
+   std::unordered_map<std::string, glm::vec2> &attributes2f();
+   std::unordered_map<std::string, glm::vec3> &attributes3f();
 };
 
 struct EntityScriptArgs{
-   const char *entityscript_name;
+   std::string entityscript_name;
    int execution_queue;
 };
 struct QuadArgs {
@@ -216,7 +216,7 @@ struct QuadArgs {
    glm::vec3 scale;
    glm::vec4 color;
    DrawType type;
-   const char *animation_name;
+   std::string animation_name;
    glm::vec3 texpos;
    glm::vec2 texsize;
    GLfloat innerrad;
@@ -225,7 +225,7 @@ struct BoxArgs {
    Transform transf;
    glm::vec3 vel;
    std::function<void(Box*)> callback;
-   const char *filter_name;
+   std::string filter_name;
 };
 
 struct EntityInfo {
@@ -237,10 +237,10 @@ struct EntityInfo {
 
 class EntityManager {
    // storage of entity info, mapped to names
-   std::unordered_map<const char*, EntityInfo> _entityinfos;
+   std::unordered_map<std::string, EntityInfo> _entityinfos;
 
    // storage of entities, mapped to group names
-   std::unordered_map<const char*, ManagedList<Entity>> _entities;
+   std::unordered_map<std::string, ManagedList<Entity>> _entities;
 
    EntityExecutor *_entityexecutor;
    GLEnv * _glenv;

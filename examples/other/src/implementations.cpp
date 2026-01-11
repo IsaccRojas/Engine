@@ -43,7 +43,7 @@ void ES_Chaser::_execEntity() {
     glm::vec3 &pos = entity().attributes3f()["pos"];
 
     // find target if one is not stored
-    if (!_target) {
+    if (!_target)
         // iterate on all players
         for (
             auto group_player_iter = entity().manager().groupBegin("Group_Player");
@@ -57,7 +57,6 @@ void ES_Chaser::_execEntity() {
                 break;
             }
         }
-    }
 
     // chase target if one is stored
     if (_target) {
@@ -76,7 +75,11 @@ void ES_Chaser::_execEntity() {
     enqueueExec(0);
 }
 
-void ES_Chaser::_killEntity() {}
+void ES_Chaser::_killEntity() {
+    // unlock target in case it is stored
+    if (_target)
+        _target->entityscriptview().unlock(&this->key());
+}
 
 void ES_Chaser::_updateEntity() {
     glm::vec3 &pos = entity().attributes3f()["pos"];
