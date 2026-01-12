@@ -197,6 +197,7 @@ void EntityManager::uninit() {
 
 void EntityManager::addEntity(EntityInfo info, const char *name) {
     _entityinfos[name] = info;
+    _entities[name] = ManagedList<Entity>();
 }
 
 Entity *EntityManager::spawnEntity(const char *name) {
