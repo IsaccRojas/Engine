@@ -30,6 +30,8 @@ class Collider {
     std::list<Collider>::iterator _this_iter;
     FilterState _filterstate;
 
+    bool _collision_enabled;
+    
 public:
     Collider(Collider &&other);
     Collider();
@@ -63,25 +65,15 @@ public:
    Encapsulates a physical space for contained Colliders to interact.
 */
 class CollisionSpace {
+    // memory-managed list of Collider references
+    ManagedList<Collider> _colliders;
+
     // reference to map of filters
     unordered_map_string_Filter_t *_filters;
 
     // flag to store if instance was initialized or not
     bool _initialized;
-
-    /* Script data structures */
-    // memory-managed list of Collider references
-    ManagedList<Collider> _boxes;
-
-    bool _initialized;
-
-protected:
-    // initializes Collider's CollisionSpace-related fields
-    void _setupCollider(Collider *collider, const char *filter);
-
-    // erases the passed Collider; it is undefined behavior to use the ColliderView after this call
-    void _erase(Collider *collider);
-
+    
 public:
     /* Calls init() with the provided arguments. */
     CollisionSpace(unordered_map_string_Filter_t *filters);
@@ -108,11 +100,10 @@ public:
     /* Sets collided count to 0 for all contained instances. */
     void resetCollidedCount();
 
-    /* Detects collision between all instances within the system. This is done by iterating on all elements
-        in a pair-wise fashion. All collided instances have their collision callback invoked, and their
-        collided count incremented.
+    /* Detects collision between all instances within the system via AABB method. This is done by iterating on all elements
+       in a pair-wise fashion. All collided instances have their collided count incremented.
     */
-    void detectCollision();
+    void detectCollisionAABB();
 
     /* Advances every internal instance one step in time. */
     void step();
@@ -123,5 +114,7 @@ public:
     /* Returns whether or not this CollisionSpace instance has been initialized or not. */
     bool initialized();
 };
+
+bool computeCollisionAABB(Transform transf1, Transform transf2);
 
 #endif

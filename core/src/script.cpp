@@ -100,13 +100,15 @@ void ScriptView::unlock(ScriptKey *k) { _script->unlock(k); }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-ScriptView Executor::ScriptEnqueue::spawn() {
-    return _executor->spawnScript(_name.c_str(), _execution_queue);
-}
 Executor::ScriptEnqueue::ScriptEnqueue(Executor *executor, std::string name, int execution_queue) :
     _executor(executor), _name(name), _execution_queue(execution_queue)
 {}
 Executor::ScriptEnqueue::~ScriptEnqueue() { /* automatic destruction is fine */ }
+ScriptView Executor::ScriptEnqueue::spawn() {
+    return _executor->spawnScript(_name.c_str(), _execution_queue);
+}
+
+// --------------------------------------------------------------------------------------------------------------------------
 
 Executor::Executor(unsigned queues) { init(queues); }
 Executor::Executor() : _initialized(false) {}
@@ -188,6 +190,7 @@ void Executor::uninit() {
     _queuepairs.clear();
     _push_killqueue.swap(empty1);
     _run_killqueue.swap(empty2);
+    _initialized = false;
 }
 
 void Executor::add(AllocatorInterface *allocator, const char *name, std::function<void(ScriptView)> spawn_callback, std::function<void(ScriptView)> remove_callback) {  
