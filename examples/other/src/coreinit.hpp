@@ -15,7 +15,7 @@ struct CoreResources {
 
     EntityExecutor entityexecutor;
     GLEnv glenv;
-    PhysSpace<Box> physspace_box;
+    CollisionSpace collisionspace;
 
     EntityManager entitymanager;
 };

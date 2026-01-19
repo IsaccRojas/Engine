@@ -51,13 +51,13 @@ void initializeCore(CoreResources *core) {
     core->glenv.setWindowSpace(WINDOW_WIDTH, WINDOW_HEIGHT);
     core->glenv.setPixelSpace(PIXEL_WIDTH, PIXEL_HEIGHT, PIXEL_LEVELS);
 
-    // set up PhysSpace
-    std::cout << "Setting up PhysSpace" << std::endl;
-    core->physspace_box.init(&core->filters);
+    // set up CollisionSpace
+    std::cout << "Setting up CollisionSpace" << std::endl;
+    core->collisionspace.init(&core->filters);
 
     // set up Manager
     std::cout << "Setting up EntityManager" << std::endl;
-    core->entitymanager.init(&core->entityexecutor, &core->glenv, &core->physspace_box);
+    core->entitymanager.init(&core->entityexecutor, &core->glenv, &core->collisionspace);
 
     std::cout << "Setting some OpenGL parameters" << std::endl;
     glfwSwapInterval(1);

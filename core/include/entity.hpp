@@ -3,8 +3,13 @@
 
 #include "script.hpp"
 #include "glenv.hpp"
-#include "physspace.hpp"
+#include "filter.hpp"
+#include "glm/glm.hpp"
+#include "glm\gtx\rotate_vector.hpp"
 
+typedef std::unordered_map<std::string, Filter> unordered_map_string_Filter_t;
+
+class EntityColliderView;
 class EntityExecutor;
 class Entity;
 class EntityManager;
@@ -182,10 +187,9 @@ class Entity {
 
    EntityScriptView _entityscriptview;
    std::vector<unsigned> _quad_ids;
-   std::vector<unsigned> _box_ids;
-
    std::vector<Quad*> _quads;
-   std::vector<Box*> _boxes;
+   std::vector<EntityColliderView> _entitycolliderviews;
+
    std::unordered_map<std::string, float> _attributes1f;
    std::unordered_map<std::string, glm::vec2> _attributes2f;
    std::unordered_map<std::string, glm::vec3> _attributes3f;
@@ -201,11 +205,124 @@ public:
    EntityManager &manager();
    EntityScriptView &entityscriptview();
    std::vector<Quad*> &quads();
-   std::vector<Box*> &boxes();
+   std::vector<EntityColliderView> &entitycolliderviews();
    std::unordered_map<std::string, float> &attributes1f();
    std::unordered_map<std::string, glm::vec2> &attributes2f();
    std::unordered_map<std::string, glm::vec3> &attributes3f();
 };
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+struct Transform {
+    glm::vec3 pos = glm::vec3(0.0f);
+    glm::vec3 scale = glm::vec3(0.0f);
+    // default copy assignment/construction are fine
+};
+
+// prototype
+class CollisionSpace;
+
+/* class EntityCollider
+   Represents a physical presence capable of collision within a CollisionSpace.
+*/
+class EntityCollider {
+    friend CollisionSpace;
+
+    // fields maintained by owning CollisionSpace
+    CollisionSpace *_collisionspace;
+    std::list<EntityCollider*>::iterator _this_iter;
+    FilterState _filterstate;
+
+    bool _collision_enabled;
+    
+public:
+    EntityCollider(EntityCollider &&other);
+    EntityCollider();
+    EntityCollider(const EntityCollider&) = delete;
+    virtual ~EntityCollider();
+
+    EntityCollider& operator=(EntityCollider &&other);
+    EntityCollider& operator=(const EntityCollider&) = delete;
+
+    // physics variables
+    Transform transform;
+    glm::vec3 vel;
+    float mass;
+    FilterState& filterstate();
+    
+    void step();
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+/* class EntityColliderView
+   Contains a EntityCollider reference and wraps access to EntityCollider data without owning it. Invalid if the viewed EntityCollider is destroyed.
+*/
+class EntityColliderView {
+    friend CollisionSpace;
+    EntityCollider *_collider;
+public:
+    EntityColliderView(EntityCollider *collider);
+    Transform &transform();
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+/* class CollisionSpace
+   Encapsulates a physical space for contained Colliders to interact.
+*/
+class CollisionSpace {
+    // memory-managed list of Collider references
+    ManagedList<EntityCollider> _colliders;
+
+    // reference to map of filters
+    unordered_map_string_Filter_t *_filters;
+
+    // flag to store if instance was initialized or not
+    bool _initialized;
+    
+public:
+    /* Calls init() with the provided arguments. */
+    CollisionSpace(unordered_map_string_Filter_t *filters);
+    CollisionSpace();
+    CollisionSpace(CollisionSpace &&other);
+    CollisionSpace(const CollisionSpace &other) = delete;
+    virtual ~CollisionSpace();
+
+    CollisionSpace &operator=(CollisionSpace &&other);
+    CollisionSpace &operator=(const CollisionSpace &other) = delete;
+
+    /* Initializes internal CollisionSpace data. It is undefined behavior to make calls on this instance
+        before calling this and after uninit().
+    */
+    void init(unordered_map_string_Filter_t *filters);
+    void uninit();
+
+    /* Spawns a Collider and returns a ColliderView. */
+    EntityColliderView spawnCollider(Transform transform, glm::vec3 vel, const char *filter_name);
+
+    /* Erases the Collider referenced by the provided ColliderView. */
+    void erase(EntityColliderView colliderview);
+
+    /* Sets collided count to 0 for all contained instances. */
+    void resetCollidedCount();
+
+    /* Detects collision between all instances within the system via AABB method. This is done by iterating on all elements
+       in a pair-wise fashion. All collided instances have their collided count incremented.
+    */
+    void detectCollisionAABB();
+
+    /* Advances every internal instance one step in time. */
+    void step();
+
+    /* Returns the number of Colliders in this CollisionSpace. */
+    unsigned getCount();
+
+    /* Returns whether or not this CollisionSpace instance has been initialized or not. */
+    bool initialized();
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
 
 struct EntityScriptArgs{
    std::string entityscript_name;
@@ -221,17 +338,16 @@ struct QuadArgs {
    glm::vec2 texsize;
    GLfloat innerrad;
 };
-struct BoxArgs {
+struct EntityColliderArgs {
    Transform transf;
    glm::vec3 vel;
-   std::function<void(Box*)> callback;
    std::string filter_name;
 };
 
 struct EntityInfo {
    EntityScriptArgs _entityscript_args;
    std::list<QuadArgs> _quad_args;
-   std::list<BoxArgs> _box_args;
+   std::list<EntityColliderArgs> _entitycollider_args;
    std::string _group;
 };
 
@@ -244,14 +360,14 @@ class EntityManager {
 
    EntityExecutor *_entityexecutor;
    GLEnv * _glenv;
-   PhysSpace<Box> *_physspace_box;
+   CollisionSpace *_collisionspace;
 
    bool _initialized = false;
 
    // can only be called from checkEntities() if entity's entityscript is killed
    void _removeEntity(Entity *entity);
 public:
-   EntityManager(EntityExecutor *entityexecutor, GLEnv *glenv, PhysSpace<Box> *physspace_box);
+   EntityManager(EntityExecutor *entityexecutor, GLEnv *glenv, CollisionSpace *physspace_box);
    EntityManager(EntityManager &&other);
    EntityManager();
    EntityManager(const EntityManager &other) = delete;
@@ -260,7 +376,7 @@ public:
    EntityManager &operator=(EntityManager &&other);
    EntityManager &operator=(const EntityManager &other) = delete;
 
-   void init(EntityExecutor *entityexecutor, GLEnv *glenv, PhysSpace<Box> *physspace_box);
+   void init(EntityExecutor *entityexecutor, GLEnv *glenv, CollisionSpace *physspace_box);
    void uninit();
 
    void addEntity(EntityInfo info, const char *name);
@@ -272,5 +388,11 @@ public:
 
    std::list<Entity*>::iterator groupEnd(const char *group);
 };
+
+bool computeCollisionAABB(Transform transf1, Transform transf2);
+
+glm::vec3 random_angle(glm::vec3 v, float deg_range);
+
+bool is_even(int x);
 
 #endif

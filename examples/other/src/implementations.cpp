@@ -26,7 +26,7 @@ void ES_Player::_killEntity() {}
 void ES_Player::_updateEntity() {
     glm::vec3 &pos = entity().attributes3f()["pos"];
     entity().quads()[0]->bv_pos.v = pos;
-    entity().boxes()[0]->transform.pos = pos;
+    entity().entitycolliderviews()[0].transform().pos = pos;
 }
 
 void ES_Player::_receive(Entity *entity, std::string message) {}
@@ -84,7 +84,7 @@ void ES_Chaser::_killEntity() {
 void ES_Chaser::_updateEntity() {
     glm::vec3 &pos = entity().attributes3f()["pos"];
     entity().quads()[0]->bv_pos.v = pos;
-    entity().boxes()[0]->transform.pos = pos;
+    entity().entitycolliderviews()[0].transform().pos = pos;
 }
 
 void ES_Chaser::_receive(Entity *entity, std::string message) {}
