@@ -13,6 +13,7 @@ class ES_Player : public EntityScript {
     void _killEntity() override;
     void _updateEntity() override;
     void _receive(Entity *entity, std::string message) override;
+    void _collide(Entity *entity) override;
 public:
     ES_Player(GLFWInput *input_state);
 };
@@ -24,6 +25,7 @@ class ES_Chaser : public EntityScript {
     void _killEntity() override;
     void _updateEntity() override;
     void _receive(Entity *entity, std::string message) override;
+    void _collide(Entity *entity) override;
 public:
     ES_Chaser();
 };

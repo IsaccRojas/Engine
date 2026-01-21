@@ -45,6 +45,9 @@ protected:
    /* Call to handle a passed Entity and message. */
    virtual void _receive(Entity *entity, std::string message) = 0;
 
+   /* Call invoked by EntityColliders. */
+   virtual void _collide(Entity *entity) = 0;
+
 public:
    EntityScript(EntityScript &&other);
    EntityScript();
@@ -55,8 +58,8 @@ public:
    EntityScript& operator=(const EntityScript &other) = delete;
 
    Entity &entity();
-   bool hasEntity();
    void receive(Entity *entity, std::string message);
+   void collide(Entity *entity);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -69,7 +72,7 @@ class EntityScriptView : public ScriptView {
 public:
    EntityScriptView(EntityScript *entityscript);
    void receive(Entity *entity, std::string message);
-
+   void collide(Entity *entity);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -235,21 +238,22 @@ class EntityCollider {
 
     bool _collision_enabled;
     
+    Entity *_entity;
 public:
     EntityCollider(EntityCollider &&other);
     EntityCollider();
     EntityCollider(const EntityCollider&) = delete;
     virtual ~EntityCollider();
 
-    EntityCollider& operator=(EntityCollider &&other);
-    EntityCollider& operator=(const EntityCollider&) = delete;
+    EntityCollider &operator=(EntityCollider &&other);
+    EntityCollider &operator=(const EntityCollider&) = delete;
 
     // physics variables
     Transform transform;
     glm::vec3 vel;
-    float mass;
-    FilterState& filterstate();
-    
+
+    FilterState &filterstate();
+    Entity &entity();
     void step();
 };
 
@@ -264,6 +268,7 @@ class EntityColliderView {
 public:
     EntityColliderView(EntityCollider *collider);
     Transform &transform();
+    glm::vec3 &vel();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -299,13 +304,10 @@ public:
     void uninit();
 
     /* Spawns a Collider and returns a ColliderView. */
-    EntityColliderView spawnCollider(Transform transform, glm::vec3 vel, const char *filter_name);
+    EntityColliderView spawnCollider(Transform transform, glm::vec3 vel, const char *filter_name, Entity *entity);
 
     /* Erases the Collider referenced by the provided ColliderView. */
     void erase(EntityColliderView colliderview);
-
-    /* Sets collided count to 0 for all contained instances. */
-    void resetCollidedCount();
 
     /* Detects collision between all instances within the system via AABB method. This is done by iterating on all elements
        in a pair-wise fashion. All collided instances have their collided count incremented.

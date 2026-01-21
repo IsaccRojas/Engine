@@ -41,19 +41,24 @@ Entity &EntityScript::entity() {
     return *_entity;
 };
 
-bool EntityScript::hasEntity() {
-    return !(_entity == nullptr);
-}
-
 void EntityScript::receive(Entity *entity, std::string message) {
     _receive(entity, message);
+}
+
+void EntityScript::collide(Entity *entity) {
+    _collide(entity);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 EntityScriptView::EntityScriptView(EntityScript *entityscript) : ScriptView(entityscript), _entityscript(entityscript) {}
+
 void EntityScriptView::receive(Entity *entity, std::string message) {
     _entityscript->receive(entity, message);
+}
+
+void EntityScriptView::collide(Entity *entity) {
+    _entityscript->collide(entity);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -137,7 +142,9 @@ EntityScriptView &Entity::entityscriptview() { return _entityscriptview; }
 EntityCollider::EntityCollider(EntityCollider &&other) { operator=(std::move(other)); }
 EntityCollider::EntityCollider() :
     _collisionspace(nullptr),
-    _collision_enabled(false)
+    _collision_enabled(false),
+    _entity(nullptr),
+    vel(glm::vec3(0.0f))
 {}
 EntityCollider::~EntityCollider() {}
 
@@ -147,13 +154,19 @@ EntityCollider& EntityCollider::operator=(EntityCollider &&other) {
         _this_iter = other._this_iter;
         _filterstate = other._filterstate;
         _collision_enabled = other._collision_enabled;
+        _entity = other._entity;
+        vel = other.vel;
         other._collisionspace = nullptr;
         other._collision_enabled = false;
+        other._entity = nullptr;
+        other.vel = glm::vec3(0.0f);
     }
     return *this;
 }
 
 FilterState& EntityCollider::filterstate() { return _filterstate; }
+
+Entity& EntityCollider::entity() {return *_entity; }
 
 void EntityCollider::step() { transform.pos += vel; }
 
@@ -162,6 +175,8 @@ void EntityCollider::step() { transform.pos += vel; }
 EntityColliderView::EntityColliderView(EntityCollider *collider) : _collider(collider) {}
 
 Transform& EntityColliderView::transform() { return _collider->transform; }
+
+glm::vec3& EntityColliderView::vel() { return _collider->vel; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -197,13 +212,17 @@ void CollisionSpace::uninit() {
     _initialized = false;
 }
 
-EntityColliderView CollisionSpace::spawnCollider(Transform transform, glm::vec3 vel, const char *filter_name) {
+EntityColliderView CollisionSpace::spawnCollider(Transform transform, glm::vec3 vel, const char *filter_name, Entity *entity) {
+    if (!entity)
+        throw std::runtime_error("Attempt to spawn EntityCollider with null Entity reference");
+
     EntityCollider *collider = new EntityCollider;
     
     collider->_collisionspace = this;
     collider->_this_iter = _colliders.push_back(collider);
     collider->_filterstate.setFilter(&(*_filters)[filter_name]);
     collider->_collision_enabled = true;
+    collider->_entity = entity;
 
     return EntityColliderView(collider);
 }
@@ -244,7 +263,8 @@ void CollisionSpace::detectCollisionAABB() {
             ) {
                 // detect and handle collision
                 if (computeCollisionAABB(c1->transform, c2->transform)) {
-                    // TODO: do something
+                    c1->entity().entityscriptview().collide(&(c2->entity()));
+                    c2->entity().entityscriptview().collide(&(c1->entity()));
                 }
             }
 
@@ -342,7 +362,7 @@ Entity *EntityManager::spawnEntity(const char *name) {
 
     // instantiate each Box in info and push to entity's storage
     for (const EntityColliderArgs &a : ei._entitycollider_args)
-        entity->_entitycolliderviews.push_back(_collisionspace->spawnCollider(a.transf, a.vel, a.filter_name.c_str()));
+        entity->_entitycolliderviews.push_back(_collisionspace->spawnCollider(a.transf, a.vel, a.filter_name.c_str(), entity));
 
     // instantiate each EntityScript in info and push to entity's storage
     entity->_entityscriptview = _entityexecutor->spawnEntityScript(ei._entityscript_args.entityscript_name.c_str(), ei._entityscript_args.execution_queue, entity);

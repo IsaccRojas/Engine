@@ -31,6 +31,10 @@ void ES_Player::_updateEntity() {
 
 void ES_Player::_receive(Entity *entity, std::string message) {}
 
+void ES_Player::_collide(Entity *entity) {
+    std::cout << "Player colliding with something" << std::endl;
+}
+
 ES_Player::ES_Player(GLFWInput *input_state) : EntityScript(), _input_state(input_state) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -88,5 +92,7 @@ void ES_Chaser::_updateEntity() {
 }
 
 void ES_Chaser::_receive(Entity *entity, std::string message) {}
+
+void ES_Chaser::_collide(Entity *entity) {}
 
 ES_Chaser::ES_Chaser() : EntityScript(), _target(nullptr) {}
