@@ -224,6 +224,9 @@ EntityColliderView CollisionSpace::spawnCollider(Transform transform, glm::vec3 
     collider->_collision_enabled = true;
     collider->_entity = entity;
 
+    collider->transform = transform;
+    collider->vel = vel;
+
     return EntityColliderView(collider);
 }
 

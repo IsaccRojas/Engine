@@ -79,7 +79,7 @@ bool FilterState::pass(int x) {
             return false;
     }
     
-    // only blacklist exists and x is not in it
+    // filter is empty, or only blacklist exists and x is not in it
     return true;
 }
 

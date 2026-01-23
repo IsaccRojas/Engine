@@ -13,6 +13,11 @@
 /* Returns true of the integer vector contains the integer x. */
 bool isIn(std::vector<int> &v, int x);
 
+/* Container for generic filtering information.
+
+    Passed integer only passes if it is not contained in the blacklist, and then is contained in the whitelist.
+    Blacklist is ignored if it is empty, and whitelist is ignored if it is empty.
+*/
 class Filter {
     int _id;
     std::vector<int> _whitelist;
