@@ -2,9 +2,22 @@
 
 void ES_Player::_initEntity() {
     entity().attributes3f()["pos"] = glm::vec3(0.0f);
+    entity().attributes1f()["hurt_cooldown_max"] = 120.0f;
+    entity().attributes1f()["hurt_cooldown"] = 0.0f;
+    entity().quads()[0]->animationstate().setCycleState(0);
 }
 
 void ES_Player::_execEntity() {
+    // check if hurt and set appropriate animation state and collision state
+    if (entity().attributes1f()["hurt_cooldown"] > 0.0f) {
+        entity().attributes1f()["hurt_cooldown"] -= 1.0f;
+        entity().entitycolliderviews()[0].collision_enabled() = false;
+        entity().quads()[0]->animationstate().setCycleState(0);
+    } else {
+        entity().entitycolliderviews()[0].collision_enabled() = true;
+        entity().quads()[0]->animationstate().setCycleState(1);
+    }
+
     glm::vec3 &pos = entity().attributes3f()["pos"];
 
     float speed = 0.5f;
@@ -29,10 +42,11 @@ void ES_Player::_updateEntity() {
     entity().entitycolliderviews()[0].transform().pos = pos;
 }
 
-void ES_Player::_receive(Entity *entity, std::string message) {}
+void ES_Player::_receive(Entity *other, std::string message) {}
 
-void ES_Player::_collide(Entity *entity) {
-    std::cout << "Player colliding with something" << std::endl;
+void ES_Player::_collide(Entity *other) {
+    std::cout << "TEST" << std::endl;
+    entity().attributes1f()["hurt_cooldown"] = entity().attributes1f()["hurt_cooldown_max"];
 }
 
 ES_Player::ES_Player(GLFWInput *input_state) : EntityScript(), _input_state(input_state) {}

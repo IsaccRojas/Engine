@@ -142,8 +142,8 @@ EntityScriptView &Entity::entityscriptview() { return _entityscriptview; }
 EntityCollider::EntityCollider(EntityCollider &&other) { operator=(std::move(other)); }
 EntityCollider::EntityCollider() :
     _collisionspace(nullptr),
-    _collision_enabled(false),
     _entity(nullptr),
+    collision_enabled(false),
     vel(glm::vec3(0.0f))
 {}
 EntityCollider::~EntityCollider() {}
@@ -153,12 +153,12 @@ EntityCollider& EntityCollider::operator=(EntityCollider &&other) {
         _collisionspace = other._collisionspace;
         _this_iter = other._this_iter;
         _filterstate = other._filterstate;
-        _collision_enabled = other._collision_enabled;
         _entity = other._entity;
+        collision_enabled = other.collision_enabled;
         vel = other.vel;
         other._collisionspace = nullptr;
-        other._collision_enabled = false;
         other._entity = nullptr;
+        other.collision_enabled = false;
         other.vel = glm::vec3(0.0f);
     }
     return *this;
@@ -173,6 +173,8 @@ void EntityCollider::step() { transform.pos += vel; }
 // --------------------------------------------------------------------------------------------------------------------------
 
 EntityColliderView::EntityColliderView(EntityCollider *collider) : _collider(collider) {}
+
+bool &EntityColliderView::collision_enabled() { return _collider->collision_enabled; }
 
 Transform& EntityColliderView::transform() { return _collider->transform; }
 
@@ -221,9 +223,9 @@ EntityColliderView CollisionSpace::spawnCollider(Transform transform, glm::vec3 
     collider->_collisionspace = this;
     collider->_this_iter = _colliders.push_back(collider);
     collider->_filterstate.setFilter(&(*_filters)[filter_name]);
-    collider->_collision_enabled = true;
     collider->_entity = entity;
 
+    collider->collision_enabled = true;
     collider->transform = transform;
     collider->vel = vel;
 
@@ -238,7 +240,7 @@ void CollisionSpace::detectCollisionAABB() {
 
         // get Collider and skip if scale is zeroed out
         EntityCollider *c1 = *iter1;
-        if (!(c1->_collision_enabled) || (c1->transform.scale == glm::vec3(0.0f)))
+        if (!(c1->collision_enabled) || (c1->transform.scale == glm::vec3(0.0f)))
             continue;
 
         auto iter2 = iter1;
@@ -247,7 +249,7 @@ void CollisionSpace::detectCollisionAABB() {
 
             // get other T and skip if scale is zeroed out (check t1's enable flag again in case it was unset this outer loop iteration)
             EntityCollider *c2 = *iter2;
-            if (!(c1->_collision_enabled) || !(c2->_collision_enabled) || (c2->transform.scale == glm::vec3(0.0f)))
+            if (!(c1->collision_enabled) || !(c2->collision_enabled) || (c2->transform.scale == glm::vec3(0.0f)))
                 continue;
 
             // test filters against each other's IDs

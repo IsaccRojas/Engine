@@ -24,8 +24,8 @@ class ES_Chaser : public EntityScript {
     void _execEntity() override;
     void _killEntity() override;
     void _updateEntity() override;
-    void _receive(Entity *entity, std::string message) override;
-    void _collide(Entity *entity) override;
+    void _receive(Entity *other, std::string message) override;
+    void _collide(Entity *other) override;
 public:
     ES_Chaser();
 };

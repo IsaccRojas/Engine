@@ -12,8 +12,8 @@ const unsigned PIXEL_WIDTH = WINDOW_WIDTH / 2;
 const unsigned PIXEL_HEIGHT = WINDOW_HEIGHT / 2;
 const unsigned PIXEL_LEVELS = 16;
 
-const unsigned TEX_SPACE_WIDTH = 208;
-const unsigned TEX_SPACE_HEIGHT = 120;
+const unsigned TEX_SPACE_WIDTH = 32;
+const unsigned TEX_SPACE_HEIGHT = 32;
 const unsigned TEX_SPACE_LEVELS = 3;
 
 const float CLEAR_COLOR_GRAY = 0.0f;

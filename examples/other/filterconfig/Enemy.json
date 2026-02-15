@@ -1,7 +1,7 @@
 {
-	"name" : "Filter_Player",
-    "id" : 0,
-    "whitelist" : [1],
+	"name" : "Filter_Enemy",
+    "id" : 1,
+    "whitelist" : [0],
     "blacklist" : [],
     "correctionWhitelist" : [],
     "correctionBlacklist" : []
