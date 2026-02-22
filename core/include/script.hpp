@@ -6,7 +6,7 @@
 #include <queue>
 #include <unordered_map>
 #include <functional>
-#include <glm\glm.hpp>
+#include "C:\dev\include\glm\glm.hpp"
 #include <unordered_set>
 
 #include "commonexcept.hpp"
@@ -438,7 +438,7 @@ class Provider {
    std::unordered_map<std::string, ProvidedAllocator<T>*> _allocators;
    
    // stores and broadcasts instances of T
-   void _storeType(T *t) {l
+   void _storeType(T *t) {
       // set fields of providedtype and store it
       _providedtypes.insert(t);
       t->_pt_provider = this;

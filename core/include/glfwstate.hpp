@@ -1,7 +1,7 @@
 #ifndef GLFWSTATE_HPP_
 #define GLFWSTATE_HPP_
 
-#include <GLFW/glfw3.h>
+#include "C:\dev\include\GLFW\glfw3.h"
 #include <iostream>
 
 /* class GLErrorException

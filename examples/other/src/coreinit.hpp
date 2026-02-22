@@ -1,10 +1,10 @@
 #ifndef COREINIT_HPP_
 #define COREINIT_HPP_
 
-#include "gl/glew.h"
-#include "../../../core/include/glfwstate.hpp"
-#include "../../../core/include/glfwinput.hpp"
-#include "../../../core/include/entity.hpp"
+#include "C:\dev\include\GL\glew.h"
+#include "..\..\..\core\include\glfwstate.hpp"
+#include "..\..\..\core\include\glfwinput.hpp"
+#include "..\..\..\core\include\entity.hpp"
 
 struct CoreResources {
     GLFWState state;

@@ -3,12 +3,12 @@ CXXFLAGS = -std=c++17 -Wall -O0 -glldb -fsanitize=address,undefined -fno-omit-fr
 # release flags: -std=c++17 -Wall -O3
 
 # graphics environment libraries
-GLLIBS = -llibglfw3dll.lib
-GLLIBS += -lglew32.lib
-GLLIBS += -lopengl32.lib
+GLLIBS = -llibglfw3dll
+GLLIBS += -lglew32
+GLLIBS += -lopengl32
 
 # core library
-CORELIB = -lcore.lib
+CORELIB = -lcore
 
 # library directory
 LIBDIR = -L./../../core -LC:/dev/lib
@@ -24,7 +24,7 @@ SRCS += src/implementations.cpp
 all: out
 
 libcore.a:
-	make -C ../../core
+	mingw32-make -C ../../core
 
 out: libcore.a
 	clang++ ${CXXFLAGS} ${SRCS} ${LIBDIR} ${CORELIB} ${GLLIBS} -o out.exe

@@ -4,8 +4,8 @@
 #include "script.hpp"
 #include "glenv.hpp"
 #include "filter.hpp"
-#include "glm/glm.hpp"
-#include "glm\gtx\rotate_vector.hpp"
+#include "C:\dev\include\glm\glm.hpp"
+#include "C:\dev\include\glm\gtx\rotate_vector.hpp"
 
 typedef std::unordered_map<std::string, Filter> unordered_map_string_Filter_t;
 

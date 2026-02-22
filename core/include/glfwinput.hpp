@@ -1,8 +1,8 @@
 #ifndef INPUT_HPP_
 #define INPUT_HPP_
 
-#include <GLFW\glfw3.h>
-#include <glm\glm.hpp>
+#include "C:\dev\include\GLFW\glfw3.h"
+#include "C:\dev\include\glm\glm.hpp"
 #include <iostream>
 
 #define PI_INPUT 3.14159265358979323846264338327950288

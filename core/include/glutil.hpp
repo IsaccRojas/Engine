@@ -1,11 +1,11 @@
 #ifndef GLUTIL_HPP_
 #define GLUTIL_HPP_
 
-#include <GL/glew.h>
+#include "C:\dev\include\GL\glew.h"
 #include <cstring>
-#include <glm\glm.hpp>
-#include <glm\gtc\matrix_transform.hpp>
-#include <glm\gtc\type_ptr.hpp>
+#include "C:\dev\include\glm\glm.hpp"
+#include "C:\dev\include\glm\gtc\matrix_transform.hpp"
+#include "C:\dev\include\glm\gtc\type_ptr.hpp"
 #include <memory>
 #include <iostream>
 
