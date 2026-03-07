@@ -46,7 +46,7 @@ public:
    void update();
 
    /* Returns reference to contained Animation state. */
-   AnimationState &animationstate();
+   AnimationState& animationstate();
 
    /* Writes animation data to related buffers, if an animation is stored. */
    void writeAnimation();
@@ -116,24 +116,24 @@ class GLEnv {
    unsigned _count;
 
    // reference to map of animations
-   unordered_map_string_Animation_t *_animations;
+   unordered_map_string_Animation_t* _animations;
 
    // flag to store if instance was initialized or not
    bool _initialized;
 
 public:
    /* Calls init() with the provided arguments. */
-   GLEnv(unsigned max_count, unordered_map_string_Animation_t *animations);
-   GLEnv(GLEnv &&other);
+   GLEnv(unsigned max_count, unordered_map_string_Animation_t* animations);
+   GLEnv(GLEnv&& other);
    GLEnv();
-   GLEnv(const GLEnv &Other) = delete;
+   GLEnv(const GLEnv& Other) = delete;
    ~GLEnv();
 
-   GLEnv& operator=(GLEnv &&other);
+   GLEnv& operator=(GLEnv&& other);
    GLEnv& operator=(const GLEnv&) = delete;
 
    /* Initializes GLBuffers, GLStage, and GLTexture2DArray, allowing the provided maximum amount of Quads and a map of animations. */
-   void init(unsigned max_count, unordered_map_string_Animation_t *animations);
+   void init(unsigned max_count, unordered_map_string_Animation_t* animations);
    void uninit();
 
    /* Generates an active Quad in system. This call does not write the new Quad into graphic memory. You 
@@ -151,7 +151,7 @@ public:
       of the Quad (see the remove() method). If the maximum number of active Quads allowed is exceeded, a
       CountLimitException is thrown.
    */
-   unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, DrawType type, const char *animation_name, glm::vec3 texpos, glm::vec2 texsize, GLfloat innerrad);
+   unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, DrawType type, const char* animation_name, glm::vec3 texpos, glm::vec2 texsize, GLfloat innerrad);
    /* Removes the Quad with the provided offset from the system. This will cause the provided offset to be 
       invalid until returned again by the genQuad() method. Note that this method does not actually
       free any GPU memory; it simply makes the specific offset usable again by the system. Attempting to use
@@ -195,7 +195,7 @@ public:
    void drawQuads();
 
    /* Returns a raw Quad pointer to the Quad with the specified offset. */
-   Quad *getQuad(unsigned offset);
+   Quad* getQuad(unsigned offset);
    /* Returns all active offsets in system. (note that this instantiates a vector and will take O(n) time) */
    std::vector<unsigned> getOffsets();
    /* Returns true if the provided offset is active. */

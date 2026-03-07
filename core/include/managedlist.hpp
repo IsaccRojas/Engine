@@ -14,27 +14,27 @@ class ManagedList {
 
 public:
     ManagedList() {}
-    ManagedList(ManagedList &&other) { operator=(std::move(other)); }
-    ManagedList(const ManagedList &other) = delete;
+    ManagedList(ManagedList&& other) { operator=(std::move(other)); }
+    ManagedList(const ManagedList& other) = delete;
     ~ManagedList() { clear(); }
     
-    ManagedList &operator=(ManagedList &&other) {
+    ManagedList &operator=(ManagedList&& other) {
         clear();
         _Ts = other._Ts;
         return *this;
     }
-    ManagedList &operator=(const ManagedList &other) = delete;
+    ManagedList& operator=(const ManagedList& other) = delete;
 
     /* Deletes and removes all stored references. */
     void clear() {
-        for (auto &t : _Ts)
+        for (auto& t : _Ts)
             delete t;
     }
 
     /* Takes ownership of and inserts a reference into this list. Returns iterator
        referring to the element's location.
     */
-    typename std::list<T*>::iterator push_back(T *t) {
+    typename std::list<T*>::iterator push_back(T* t) {
         _Ts.push_back(t);
         auto iter = _Ts.end();
         iter--;
@@ -45,7 +45,7 @@ public:
        becomes invalid after calling this.
     */
     void erase(typename std::list<T*>::iterator elem) {
-        T *t = *elem;
+        T* t = *elem;
         delete t;
         _Ts.erase(elem);
     }

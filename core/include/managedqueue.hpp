@@ -14,18 +14,18 @@ class ManagedQueue {
 
 public:
     ManagedQueue() {}
-    ManagedQueue(ManagedQueue &&other) { operator=(std::move(other)); }
-    ManagedQueue(const ManagedQueue &other) = delete;
+    ManagedQueue(ManagedQueue&& other) { operator=(std::move(other)); }
+    ManagedQueue(const ManagedQueue& other) = delete;
     ~ManagedQueue() { clear(); }
     
-    ManagedQueue &operator=(ManagedQueue &&other) {
+    ManagedQueue& operator=(ManagedQueue&& other) {
         clear();
         _Ts = other._Ts;
         std::queue<T*> empty;
         other._Ts.swap(empty);
         return *this;
     }
-    ManagedQueue &operator=(const ManagedQueue &other) = delete;
+    ManagedQueue& operator=(const ManagedQueue& other) = delete;
 
     /* Deletes and removes all stored references. */
     void clear() {
@@ -34,19 +34,19 @@ public:
     }
 
     /* Takes ownership of and inserts a reference into this queue. */
-    void push(T *t) { _Ts.push(t); }
+    void push(T* t) { _Ts.push(t); }
 
     /* Deletes and erases the oldest reference stored. Note that the reference 
        becomes invalid after calling this.
     */
     void pop() {
-        T *t = _Ts.front();
+        T* t = _Ts.front();
         delete t;
         _Ts.pop();
     }
 
     /* Returns the oldest reference stored. */
-    T *front() {
+    T* front() {
         return _Ts.front();
     }
 

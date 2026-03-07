@@ -42,7 +42,7 @@ public:
     corresponding to the desired order of the frames.
     */
     Cycle& addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 scale, unsigned duration);
-    Cycle& addFrame(const Frame &frame);
+    Cycle& addFrame(const Frame& frame);
 
     /* Sets whether this cycle loops or not. */
     void setLoop(bool loop);
@@ -69,7 +69,7 @@ public:
     /* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
     corresponding to the desired order of the frames.
     */
-    Animation& addCycle(Cycle &cycle);
+    Animation& addCycle(Cycle& cycle);
 
     Cycle& cycle(unsigned i);
 
@@ -83,9 +83,9 @@ public:
    this stepping.
 */
 class AnimationState {
-    Animation *_animation;
-    Cycle *_current_cycle;
-    Frame *_current_frame;
+    Animation* _animation;
+    Cycle* _current_cycle;
+    Frame* _current_frame;
     unsigned _step;
 
     // variables for indexing cycle and animation, respectively
@@ -94,14 +94,14 @@ class AnimationState {
     bool _completed;
 
 public:
-    AnimationState(Animation *animation);
+    AnimationState(Animation* animation);
     AnimationState();
     ~AnimationState();
 
     // default copy assignment/construction are fine (references are read only)
 
     /* Sets up instance to preserve state of provided animation. */
-    void setAnimation(Animation *animation);
+    void setAnimation(Animation* animation);
 
     /* Sets the animation cycle, using the cycle corresponding to the provided integer for
        future operations. Does nothing if the cycle provided is the same as the current one.
@@ -119,7 +119,7 @@ public:
     void step();
 
     /* Gets the current frame of the cycle. Causes an error if no frames exist. */
-    const Frame &current();
+    const Frame& current();
 
     /* Returns whether this AnimationState is set to a specific Animation. */
     bool hasAnimation();

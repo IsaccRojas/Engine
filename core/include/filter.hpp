@@ -11,7 +11,7 @@
 #include "util.hpp"
 
 /* Returns true of the integer vector contains the integer x. */
-bool isIn(std::vector<int> &v, int x);
+bool isIn(std::vector<int>& v, int x);
 
 /* Container for generic filtering information.
 
@@ -39,25 +39,25 @@ public:
 
     void clearLists();
 
-    std::vector<int> &getWhitelist();
-    std::vector<int> &getBlacklist();
-    std::vector<int> &getCorrectionWhitelist();
-    std::vector<int> &getCorrectionBlacklist();
+    std::vector<int>& getWhitelist();
+    std::vector<int>& getBlacklist();
+    std::vector<int>& getCorrectionWhitelist();
+    std::vector<int>& getCorrectionBlacklist();
 
-    int &getID();
+    int& getID();
 };
 
 class FilterState {
-    Filter *_filter;
+    Filter* _filter;
 public:
-    FilterState(Filter *filter);
+    FilterState(Filter* filter);
     FilterState();
     ~FilterState();
 
     // default copy assignment/construction are (reference is read only)
 
     /* Sets up instance to preserve state of provided filter. */
-    void setFilter(Filter *filter);
+    void setFilter(Filter* filter);
 
     /* Attempts to pass integer through contained filter. */
     bool pass(int x);

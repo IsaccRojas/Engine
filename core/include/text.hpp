@@ -33,7 +33,7 @@ struct TextConfig {
 
 /* collection of quads to represent text */
 class Text {
-    GLEnv *_glenv;
+    GLEnv* _glenv;
     std::vector<int> _quadids;
 
     TextConfig _tc;
@@ -46,16 +46,16 @@ class Text {
 
 public:
     Text();
-    Text(Text &&other);
-    Text(const Text &other) = delete;
+    Text(Text&& other);
+    Text(const Text& other) = delete;
     ~Text();
 
-    Text &operator=(Text &&other);
-    Text &operator=(const Text &other) = delete;
+    Text& operator=(Text&& other);
+    Text& operator=(const Text& other) = delete;
 
-    void setEnv(GLEnv *glenv);
+    void setEnv(GLEnv* glenv);
     void setTextConfig(TextConfig textconfig);
-    void setText(const char *str);
+    void setText(const char* str);
     void setPos(glm::vec3 pos);
     void setScale(glm::vec3 scale);
 

@@ -40,18 +40,18 @@ namespace GLUtil {
 
     public:
         /* Calls init() with the provided arguments. */
-        GLStage(const char *shader_srcs[], GLenum shader_types[], int count);
-        GLStage(GLStage &&other);
+        GLStage(const char* shader_srcs[], GLenum shader_types[], int count);
+        GLStage(GLStage&& other);
         GLStage();
         GLStage(const GLStage&) = delete;
         ~GLStage();
 
-        GLStage& operator=(GLStage &&other);
+        GLStage& operator=(GLStage&& other);
         GLStage& operator=(const GLStage&) = delete;
 
         /* Creates a program with the provided shader sources.
         */
-        void init(const char *shader_srcs[], GLenum shader_types[], int count);
+        void init(const char* shader_srcs[], GLenum shader_types[], int count);
         void uninit();
 
         /* Formats attribute in binded program, and enables it.
@@ -97,12 +97,12 @@ namespace GLUtil {
     public:
         /* Calls init() with the provided arguments. */
         GLBuffer(GLenum buffer_usage, GLuint buffer_size);
-        GLBuffer(GLBuffer &&other);
+        GLBuffer(GLBuffer&& other);
         GLBuffer();
         GLBuffer(const GLBuffer&) = delete;
         ~GLBuffer();
 
-        GLBuffer& operator=(GLBuffer &&other);
+        GLBuffer& operator=(GLBuffer&& other);
         GLBuffer& operator=(const GLBuffer&) = delete;
 
         /* Creates buffer with provided size.
@@ -120,7 +120,7 @@ namespace GLUtil {
 
         /* Updates sub data in GLBuffer; size and offset in bytes (e.g. 16 for 4 4-byte vertices).
         */
-        void subData(GLsizeiptr data_size, const void *data, GLsizeiptr offset);
+        void subData(GLsizeiptr data_size, const void* data, GLsizeiptr offset);
 
         GLuint size();
         GLenum usage();
@@ -152,12 +152,12 @@ namespace GLUtil {
     public:
         /* Calls init() with the provided arguments. */
         GLTexture2DArray(bool initialize);
-        GLTexture2DArray(GLTexture2DArray &&other);
+        GLTexture2DArray(GLTexture2DArray&& other);
         GLTexture2DArray();
         GLTexture2DArray(const GLTexture2DArray&) = delete;
         ~GLTexture2DArray();
         
-        GLTexture2DArray& operator=(GLTexture2DArray &&other);
+        GLTexture2DArray& operator=(GLTexture2DArray&& other);
         GLTexture2DArray& operator=(const GLTexture2DArray&) = delete;
 
         /* Initializes GLTexture2DArray.
@@ -177,7 +177,7 @@ namespace GLUtil {
 
         /* Write sub image data into level of allocated storage.
         */
-        void subImage(GLint level, GLint x_offset, GLint y_offset, GLint z_offset, GLsizei width, GLsizei height, GLsizei depth, const void *data);
+        void subImage(GLint level, GLint x_offset, GLint y_offset, GLint z_offset, GLsizei width, GLsizei height, GLsizei depth, const void* data);
 
         GLuint size();
         GLuint width();
@@ -189,19 +189,19 @@ namespace GLUtil {
        Wraps a float with a specific offset into a GLBuffer.
     */
     class BFloat {
-        GLBuffer *_buf;
+        GLBuffer* _buf;
         GLuint _off;
     public:
         GLfloat v;
 
-        BFloat(GLBuffer *buffer, GLuint offset);
-        BFloat(const BFloat &other);
+        BFloat(GLBuffer* buffer, GLuint offset);
+        BFloat(const BFloat& other);
         BFloat();
         ~BFloat();
 
-        BFloat& operator=(const BFloat &other);
+        BFloat& operator=(const BFloat& other);
 
-        void setBuffer(GLBuffer *buffer, GLuint offset);
+        void setBuffer(GLBuffer* buffer, GLuint offset);
 
         void update();
     };
@@ -210,20 +210,20 @@ namespace GLUtil {
        Wraps a glm::vec2 with a specific offset into a GLBuffer.
     */
     class BVec2 {
-        GLBuffer *_buf;
+        GLBuffer* _buf;
         GLuint _off;
         GLfloat _data[2];
     public:
         glm::vec2 v;
 
-        BVec2(GLBuffer *buffer, GLuint offset);
-        BVec2(const BVec2 &other);
+        BVec2(GLBuffer* buffer, GLuint offset);
+        BVec2(const BVec2& other);
         BVec2();
         ~BVec2();
 
-        BVec2& operator=(const BVec2 &other);
+        BVec2& operator=(const BVec2& other);
 
-        void setBuffer(GLBuffer *buffer, GLuint offset);
+        void setBuffer(GLBuffer* buffer, GLuint offset);
 
         void update();
     };
@@ -232,20 +232,20 @@ namespace GLUtil {
        Wraps a glm::vec3 with a specific offset into a GLBuffer.
     */
     class BVec3 {
-        GLBuffer *_buf;
+        GLBuffer* _buf;
         GLuint _off;
         GLfloat _data[3];
     public:
         glm::vec3 v;
 
-        BVec3(GLBuffer *buffer, GLuint offset);
-        BVec3(const BVec3 &other);
+        BVec3(GLBuffer* buffer, GLuint offset);
+        BVec3(const BVec3& other);
         BVec3();
         ~BVec3();
 
-        BVec3& operator=(const BVec3 &other);
+        BVec3& operator=(const BVec3& other);
 
-        void setBuffer(GLBuffer *buffer, GLuint offset);
+        void setBuffer(GLBuffer* buffer, GLuint offset);
 
         void update();
     };
@@ -254,20 +254,20 @@ namespace GLUtil {
        Wraps a glm::vec4 with a specific offset into a GLBuffer.
     */
     class BVec4 {
-        GLBuffer *_buf;
+        GLBuffer* _buf;
         GLuint _off;
         GLfloat _data[4];
     public:
         glm::vec4 v;
 
-        BVec4(GLBuffer *buffer, GLuint offset);
-        BVec4(const BVec4 &other);
+        BVec4(GLBuffer* buffer, GLuint offset);
+        BVec4(const BVec4& other);
         BVec4();
         ~BVec4();
 
-        BVec4& operator=(const BVec4 &other);
+        BVec4& operator=(const BVec4& other);
 
-        void setBuffer(GLBuffer *buffer, GLuint offset);
+        void setBuffer(GLBuffer* buffer, GLuint offset);
 
         void update();
     };

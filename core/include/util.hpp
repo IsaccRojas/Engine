@@ -10,7 +10,7 @@
 
 #define PI_UTIL 3.14159265358979323846264338327950288
 
-std::string readfile(const char *filename);
+std::string readfile(const char* filename);
 
 /* class InactiveIntException
    This exception is thrown when an inactive integer provided by an IntGenerator is accessed.
@@ -21,22 +21,22 @@ public:
 };
 
 class Image {
-    unsigned char *_data;
+    unsigned char* _data;
     int _w;
     int _h;
     int _components;
     int _size;
 public:
-    Image(const char *filename);
-    Image(const Image &other);
+    Image(const char* filename);
+    Image(const Image& other);
     Image();
-    Image(Image &&other) = delete;
+    Image(Image&& other) = delete;
     ~Image();
 
-    Image& operator=(const Image &other);
-    Image& operator=(Image &&other) = delete;
+    Image& operator=(const Image& other);
+    Image& operator=(Image&& other) = delete;
 
-    void load(const char *filename);
+    void load(const char* filename);
     void free();
 
     unsigned char* copyData() const;
@@ -135,8 +135,8 @@ public:
     }
 
     /* Returns all data (including inactive elements). */
-    std::vector<T> &data() { return _data; }
-    IntGenerator &intgen() { return _intgen; }
+    std::vector<T>& data() { return _data; }
+    IntGenerator& intgen() { return _intgen; }
 };
 
 /* Checks if provided string ends with the provided suffix.

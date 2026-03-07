@@ -8,7 +8,7 @@
 #define PI_INPUT 3.14159265358979323846264338327950288
 
 class GLFWInput {
-    GLFWwindow *_win_h;
+    GLFWwindow* _win_h;
 
     int _win_width;
     int _win_height;
@@ -51,11 +51,11 @@ class GLFWInput {
     bool _checkMouseButton(int jid);
 
 public:
-    GLFWInput(GLFWwindow *window, int pixelwidth, int pixelheight);
+    GLFWInput(GLFWwindow* window, int pixelwidth, int pixelheight);
     GLFWInput();
     ~GLFWInput();
 
-    void setWindow(GLFWwindow *window, int pixelwidth, int pixelheight);
+    void setWindow(GLFWwindow* window, int pixelwidth, int pixelheight);
 
     // default copy assignment/construction are fine (reference is read only)
 

@@ -16,22 +16,22 @@ public:
    Wraps the GLFW library state. Currently only supports one window being initialized.
 */
 class GLFWState {
-   GLFWwindow *_win_h;
+   GLFWwindow* _win_h;
    int _width;
    int _height;
    std::string _title;
 public:
-   GLFWState(int width, int height, const char *title, bool debug);
+   GLFWState(int width, int height, const char* title, bool debug);
    GLFWState();
    ~GLFWState();
-   GLFWState(const GLFWState &other) = delete;
-   GLFWState &operator=(const GLFWState &other) = delete;
+   GLFWState(const GLFWState& other) = delete;
+   GLFWState& operator=(const GLFWState& other) = delete;
 
    /* Initializes GLFW and instantiates a GLFWwindow, set to contained reference. */
-   void init(int width, int height, const char *title, bool debug);
+   void init(int width, int height, const char* title, bool debug);
    void uninit();
 
-   GLFWwindow *getWindowHandle();
+   GLFWwindow* getWindowHandle();
 };
 
 #endif

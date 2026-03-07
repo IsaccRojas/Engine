@@ -35,7 +35,7 @@ class Script {
    friend Executor;
 
    // fields maintained by owning Executor
-   Executor *_executor;
+   Executor* _executor;
    std::list<Script*>::iterator _this_iter;
    int _last_execqueue;
    bool _exec_enqueued;
@@ -60,12 +60,12 @@ protected:
    virtual void _update() = 0;
 
 public:
-   Script(Script &&other);
+   Script(Script&& other);
    Script();
    Script(const Script&) = delete;
    virtual ~Script();
 
-   Script& operator=(Script &&other);
+   Script& operator=(Script&& other);
    Script& operator=(const Script&) = delete;
 
 /* Functions wrapping the virtual versions of the same method, which are directly called by the Executor.
@@ -92,10 +92,10 @@ public:
    int getLastExecQueue();
    bool getExecEnqueued();
    bool getKillEnqueued();
-   const char *getName();
-   ScriptKey &key();
-   void lockout(ScriptKey *k);
-   void unlock(ScriptKey *k);
+   const char* getName();
+   ScriptKey& key();
+   void lockout(ScriptKey* k);
+   void unlock(ScriptKey* k);
    unsigned lockout_count();
 };
 
@@ -106,16 +106,16 @@ public:
 */
 class ScriptView {
    friend Executor;
-   Script *_script;
+   Script* _script;
 public:
-   ScriptView(Script *script);
+   ScriptView(Script* script);
    int getLastExecQueue();
    bool getExecEnqueued();
    bool getKillEnqueued();
-   const char *getName();
+   const char* getName();
    ScriptKey key();
-   void lockout(ScriptKey *k);
-   void unlock(ScriptKey *k);
+   void lockout(ScriptKey* k);
+   void unlock(ScriptKey* k);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -129,7 +129,7 @@ class AllocatorInterface {
    friend Executor;
 protected:
    /* Must return a heap-allocated instance of a covariant type of Script. */
-   virtual Script *_allocate() = 0;
+   virtual Script* _allocate() = 0;
    // no members; no need for constructor/assignment/destructor definitions
 };
 
@@ -139,7 +139,7 @@ protected:
 */
 template<class T>
 class GenericAllocator : public AllocatorInterface {
-   Script *_allocate() override { return new T; }
+   Script* _allocate() override { return new T; }
    // no members; no need for constructor/assignment/destructor definitions
 };
 
@@ -153,7 +153,7 @@ class GenericAllocator : public AllocatorInterface {
 class Executor {
    // struct holding Script information mapped to a name
    struct ScriptInfo {
-      AllocatorInterface *_allocator;
+      AllocatorInterface* _allocator;
       std::function<void(ScriptView)> _spawn_callback;
       std::function<void(ScriptView)> _remove_callback;
       // default copy assignment/construction are fine
@@ -163,7 +163,7 @@ protected:
    // class to store enqueues and polymorphically spawn later
    class ScriptEnqueue {
       friend Executor;
-      Executor *_executor;
+      Executor* _executor;
    protected:
       std::string _name;
       int _execution_queue;
@@ -198,24 +198,24 @@ private:
 
 protected:
    // initializes Script's Executor-related fields
-   void _setupScript(Script *script, const char *script_name, int execution_queue);
+   void _setupScript(Script* script, const char* script_name, int execution_queue);
 
    // pushes an enqueue
-   void _pushSpawnEnqueue(ScriptEnqueue *enqueue);
+   void _pushSpawnEnqueue(ScriptEnqueue* enqueue);
 
    // erases the passed Script; it is undefined behavior to use the ScriptView after this call
-   void _erase(Script *script);
+   void _erase(Script* script);
 
 public:
    /* Calls init() with the provided arguments. */
    Executor(unsigned queues);
    Executor();
-   Executor(Executor &&other);
-   Executor(const Executor &other) = delete;
+   Executor(Executor&& other);
+   Executor(const Executor& other) = delete;
    virtual ~Executor();
 
-   Executor &operator=(Executor &&other);
-   Executor &operator=(const Executor &other) = delete;
+   Executor& operator=(Executor&& other);
+   Executor& operator=(const Executor& other) = delete;
 
    /* Initializes internal Executor data. It is undefined behavior to make calls on this instance
       before calling this and after uninit().
@@ -223,20 +223,20 @@ public:
    void init(unsigned queues);
    void uninit();
 
-   /* Adds an Script allocator with initialization information to this manager, allowing its given
+   /* Adds an Script allocator with initialization information to this Executor, allowing its given
       name to be used for future spawns.
       - allocator - Reference to instance of class implementing AllocatorInterface.
       - name - name to associate with the allocator
       - spawn_callback - function callback to call after Script has been spawned and setup
       - remove_callback - function callback to call before Script has been removed
    */
-   void add(AllocatorInterface *allocator, const char *name, std::function<void(ScriptView)> spawn_callback, std::function<void(ScriptView)> remove_callback);
+   void add(AllocatorInterface* allocator, const char* name, std::function<void(ScriptView)> spawn_callback, std::function<void(ScriptView)> remove_callback);
 
-   /* Spawns a Script using a name previously added to this manager, calls its runInit() method, and returns a ScriptView of it. */
-   ScriptView spawnScript(const char *script_name, int execution_queue);
+   /* Spawns a Script using a name previously added to this Executor, calls its runInit() method, and returns a ScriptView of it. */
+   ScriptView spawnScript(const char* script_name, int execution_queue);
 
    /* Enqueues a Script to be spawned when calling runSpawnQueue(). */
-   void enqueueSpawn(const char *script_name, int execution_queue);
+   void enqueueSpawn(const char* script_name, int execution_queue);
    /* Enqueues a Script instance to be executed when runExecQueue() is called. */
    void enqueueExec(ScriptView scriptview, unsigned queue);
    /* Enqueues a Script instance to be killed and removed when runKillQueue() is called. */
@@ -253,11 +253,11 @@ public:
    /* Calls runUpdate() method on all Scripts. */
    void runUpdate();
 
-   /* Returns true if the provided Script name has been previously added to this executor. */
-   bool hasAdded(const char *script_name);
-   /* Returns the number of Scripts in this executor. */
+   /* Returns true if the provided Script name has been previously added to this Executor. */
+   bool hasAdded(const char* script_name);
+   /* Returns the number of Scripts in this Executor. */
    unsigned getCount();
-   /* Returns number of execution queues in this executor. */
+   /* Returns number of execution queues in this Executor. */
    int getQueueCount();
 
    /* Returns whether or not this Executor instance has been initialized or not. */
@@ -279,19 +279,19 @@ class Receiver {
    friend Provider<T>;
 
    // reference to provider
-   Provider<T> *_r_provider;
+   Provider<T>* _r_provider;
    int _channel;
    bool _reception;
 
 protected:
    // invoked on provider allocation
-   virtual void _receive(T *t) {};
+   virtual void _receive(T* t) {};
 
    Receiver() : _r_provider(nullptr), _channel(-1), _reception(false) {}
-   Receiver(Receiver<T> &&other) { operator=(std::move(other)); }
-   Receiver(const Receiver<T> &other) = delete;
+   Receiver(Receiver<T>&& other) { operator=(std::move(other)); }
+   Receiver(const Receiver<T>& other) = delete;
 
-   Receiver<T> &operator=(Receiver<T> &&other) {
+   Receiver<T>& operator=(Receiver<T>&& other) {
       if (this != &other) {
          _r_provider = other._r_provider;
          _channel = other._channel;
@@ -300,9 +300,9 @@ protected:
          other._channel = -1;
          other._reception = false;
       }
-      return *this;
+      return* this;
    }
-   Receiver<T> &operator=(const Receiver<T> &other) = delete;
+   Receiver<T>& operator=(const Receiver<T>& other) = delete;
 
 public:
    virtual ~Receiver() {
@@ -337,15 +337,15 @@ template<class T>
 class ProvidedType {
    friend Provider<T>;
 
-   Provider<T> *_pt_provider;
-   T *_t_ref;
+   Provider<T>* _pt_provider;
+   T* _t_ref;
 
 protected:
    ProvidedType() : _pt_provider(nullptr), _t_ref(nullptr) {}
-   ProvidedType(ProvidedType<T> &&other) { operator=(std::move(other)); }
-   ProvidedType(const ProvidedType<T> &other) = delete;
+   ProvidedType(ProvidedType<T>&& other) { operator=(std::move(other)); }
+   ProvidedType(const ProvidedType<T>& other) = delete;
 
-   ProvidedType<T> &operator=(ProvidedType<T> &&other) {
+   ProvidedType<T>& operator=(ProvidedType<T>&& other) {
       if (this != &other) {
          _pt_provider = other._pt_provider;
          _t_ref = other._t_ref;
@@ -354,7 +354,7 @@ protected:
       }
       return *this;
    }
-   ProvidedType<T> &operator=(const ProvidedType<T> &other) = delete;
+   ProvidedType<T>& operator=(const ProvidedType<T>& other) = delete;
 
 public:
    virtual ~ProvidedType() {
@@ -377,16 +377,16 @@ template<class T>
 class ProvidedAllocator : public AllocatorInterface {
    friend Provider<T>;
 
-   Provider<T> *_a_provider;
+   Provider<T>* _a_provider;
    std::string _name;
    
-   Script *_allocate() override {
+   Script* _allocate() override {
       return _allocateStore();
    }
 
 protected:
-   T * _allocateStore() {
-      T *t = _allocateProvided();
+   T* _allocateStore() {
+      T* t = _allocateProvided();
 
       // if in a provider, give it this T
       if (_a_provider)
@@ -395,13 +395,13 @@ protected:
       return t;
    }
 
-   virtual T *_allocateProvided() { return new T; }
+   virtual T* _allocateProvided() { return new T; }
 
    ProvidedAllocator() : _a_provider(nullptr) {}
-   ProvidedAllocator(ProvidedAllocator<T> &&other) { operator=(std::move(other)); }
-   ProvidedAllocator(const ProvidedAllocator<T> &other) = delete;
+   ProvidedAllocator(ProvidedAllocator<T>&& other) { operator=(std::move(other)); }
+   ProvidedAllocator(const ProvidedAllocator<T>& other) = delete;
 
-   ProvidedAllocator<T> &operator=(ProvidedAllocator<T> &&other) {
+   ProvidedAllocator<T> &operator=(ProvidedAllocator<T>&& other) {
       if (this != &other) {
          _a_provider = other._a_provider;
          _name = other._name;
@@ -410,7 +410,7 @@ protected:
       }
       return *this;
    }
-   ProvidedAllocator<T> &operator=(const ProvidedAllocator<T> &other) = delete;
+   ProvidedAllocator<T>& operator=(const ProvidedAllocator<T>& other) = delete;
 
 public:
    virtual ~ProvidedAllocator() {
@@ -438,7 +438,7 @@ class Provider {
    std::unordered_map<std::string, ProvidedAllocator<T>*> _allocators;
    
    // stores and broadcasts instances of T
-   void _storeType(T *t) {
+   void _storeType(T* t) {
       // set fields of providedtype and store it
       _providedtypes.insert(t);
       t->_pt_provider = this;
@@ -452,8 +452,8 @@ class Provider {
 
 public:
    Provider() {}
-   Provider(Provider<T> &&other) { operator=(std::move(other)); }
-   Provider(const Provider<T> &other) = delete;
+   Provider(Provider<T>&& other) { operator=(std::move(other)); }
+   Provider(const Provider<T>& other) = delete;
    ~Provider() {
       for (const auto& receiver: _receivers)
          receiver->_r_provider = nullptr;
@@ -463,7 +463,7 @@ public:
          allocator.second->_a_provider = nullptr;
    }
 
-   Provider<T> &operator=(Provider<T> &&other) {
+   Provider<T>& operator=(Provider<T>&& other) {
       if (this != &other) {
          _receivers = other._receivers;
          _providedtypes = other._providedtypes;
@@ -474,10 +474,10 @@ public:
       }
       return *this;
    }
-   Provider<T> &operator=(const Provider<T> &other) = delete;
+   Provider<T>& operator=(const Provider<T>& other) = delete;
 
    /* Adds the allocator to this provider's set of allocators, enabling interception of their allocations. */
-   void addAllocator(ProvidedAllocator<T> *allocator, const char *name) {
+   void addAllocator(ProvidedAllocator<T>* allocator, const char* name) {
       if (allocator->_a_provider)
          throw std::runtime_error("Attempt to add already added ProvidedAllocator");
       _allocators[name] = allocator;
@@ -486,7 +486,7 @@ public:
    }
 
    /* Subscribes the receiver to this provider's allocations, enabling receiving and getting instances. */
-   void subscribe(Receiver<T> *receiver) {
+   void subscribe(Receiver<T>* receiver) {
       if (receiver->_r_provider)
          throw std::runtime_error("Attempt to subscribe already subscribed Receiver");
       _receivers.insert(receiver);
@@ -494,13 +494,13 @@ public:
    }
 
    /* Tries to unsubscribe the receiver from this provider's allocations. Does nothing if not subscribed. */
-   void tryUnsubscribe(Receiver<T> *r) {
+   void tryUnsubscribe(Receiver<T>* r) {
       if (_receivers.find(r) != _receivers.end())
          _receivers.erase(r);
    }
 
    /* Tries to remove the T reference from this provider's storage. Does nothing if not contained. */
-   void tryRemoveProvidedType(T *t) {
+   void tryRemoveProvidedType(T* t) {
       if (_providedtypes.find(t) != _providedtypes.end())
          _providedtypes.erase(t);
    }
@@ -522,7 +522,7 @@ public:
    }
 
    /* Returns the allocator mapped to the name. */
-   ProvidedAllocator<T>* getAllocator(const char *name) {
+   ProvidedAllocator<T>* getAllocator(const char* name) {
       return _allocators[name];
    }
 };
