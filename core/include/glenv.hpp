@@ -5,8 +5,6 @@
 #include "glutil.hpp"
 #include "animation.hpp"
 
-typedef std::unordered_map<std::string, Animation> unordered_map_string_Animation_t;
-
 /* class Quad
    Encapsulates Quad-like data for OpenGL environments.
    Uses BVec instances to store basic parameters of quads:
@@ -115,15 +113,15 @@ class GLEnv {
    unsigned _max_count;
    unsigned _count;
 
-   // reference to map of animations
-   unordered_map_string_Animation_t* _animations;
+   // Map of animations
+   std::unordered_map<std::string, Animation> _animations;
 
    // flag to store if instance was initialized or not
    bool _initialized;
 
 public:
    /* Calls init() with the provided arguments. */
-   GLEnv(unsigned max_count, unordered_map_string_Animation_t* animations);
+   GLEnv(unsigned max_count);
    GLEnv(GLEnv&& other);
    GLEnv();
    GLEnv(const GLEnv& Other) = delete;
@@ -133,7 +131,7 @@ public:
    GLEnv& operator=(const GLEnv&) = delete;
 
    /* Initializes GLBuffers, GLStage, and GLTexture2DArray, allowing the provided maximum amount of Quads and a map of animations. */
-   void init(unsigned max_count, unordered_map_string_Animation_t* animations);
+   void init(unsigned max_count);
    void uninit();
 
    /* Generates an active Quad in system. This call does not write the new Quad into graphic memory. You 
@@ -160,6 +158,8 @@ public:
       offset - offset of Quad to remove
    */
    void remove(unsigned offset);
+
+   void addAnimation(const char* name, Animation animation);
 
    /* Initializes texture array space with unsigned byte storage in RGBA format.
       width - width of space

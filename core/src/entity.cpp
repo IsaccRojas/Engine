@@ -182,8 +182,7 @@ glm::vec3& EntityColliderView::vel() { return _collider->vel; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-CollisionSpace::CollisionSpace(unordered_map_string_Filter_t* filters) { init(filters); }
-CollisionSpace::CollisionSpace() : _filters(nullptr), _initialized(false) {}
+CollisionSpace::CollisionSpace() : _initialized(false) {}
 CollisionSpace::CollisionSpace(CollisionSpace&& other) { operator=(std::move(other)); }
 CollisionSpace::~CollisionSpace() { /* automatic destruction is fine */ }
 
@@ -197,11 +196,10 @@ CollisionSpace& CollisionSpace::operator=(CollisionSpace&& other) {
     return *this;
 }
 
-void CollisionSpace::init(unordered_map_string_Filter_t* filters) {
+void CollisionSpace::init() {
     if (_initialized)
         throw InitializedException();
     
-    _filters = filters;
     _initialized = true;
 }
 
@@ -210,7 +208,7 @@ void CollisionSpace::uninit() {
         return;
 
     _colliders.clear();
-    _filters = nullptr;
+    _filters.clear();
     _initialized = false;
 }
 
@@ -222,7 +220,7 @@ EntityColliderView CollisionSpace::spawnCollider(Transform transform, glm::vec3 
     
     collider->_collisionspace = this;
     collider->_this_iter = _colliders.push_back(collider);
-    collider->_filterstate.setFilter(&(*_filters)[filter_name]);
+    collider->_filterstate.setFilter(&_filters[filter_name]);
     collider->_entity = entity;
 
     collider->collision_enabled = true;
@@ -233,6 +231,10 @@ EntityColliderView CollisionSpace::spawnCollider(Transform transform, glm::vec3 
 }
 
 void CollisionSpace::erase(EntityColliderView colliderview) { _colliders.erase(colliderview._collider->_this_iter); }
+
+void CollisionSpace::addFilter(const char* name, Filter filter) {
+    _filters[name] = filter;
+}
 
 void CollisionSpace::detectCollisionAABB() {
     // perform pair-wise collision detection

@@ -7,8 +7,6 @@
 #include "C:\dev\include\glm\glm.hpp"
 #include "C:\dev\include\glm\gtx\rotate_vector.hpp"
 
-typedef std::unordered_map<std::string, Filter> unordered_map_string_Filter_t;
-
 class EntityColliderView;
 class EntityExecutor;
 class Entity;
@@ -280,15 +278,13 @@ class CollisionSpace {
     // memory-managed list of Collider references
     ManagedList<EntityCollider> _colliders;
 
-    // reference to map of filters
-    unordered_map_string_Filter_t* _filters;
+    // map of filters
+    std::unordered_map<std::string, Filter> _filters;
 
     // flag to store if instance was initialized or not
     bool _initialized;
     
 public:
-    /* Calls init() with the provided arguments. */
-    CollisionSpace(unordered_map_string_Filter_t* filters);
     CollisionSpace();
     CollisionSpace(CollisionSpace&& other);
     CollisionSpace(const CollisionSpace& other) = delete;
@@ -300,7 +296,7 @@ public:
     /* Initializes internal CollisionSpace data. It is undefined behavior to make calls on this instance
         before calling this and after uninit().
     */
-    void init(unordered_map_string_Filter_t* filters);
+    void init();
     void uninit();
 
     /* Spawns a Collider and returns a ColliderView. */
@@ -308,6 +304,8 @@ public:
 
     /* Erases the Collider referenced by the provided ColliderView. */
     void erase(EntityColliderView colliderview);
+
+    void addFilter(const char* name, Filter filter);
 
     /* Detects collision between all instances within the system via AABB method. This is done by iterating on all elements
        in a pair-wise fashion. All collided instances have their collided count incremented.

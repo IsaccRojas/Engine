@@ -175,15 +175,15 @@ const char * const frag_shader_str = R"(
 
 // _______________________________________ GLEnv _______________________________________
 
-GLEnv::GLEnv(unsigned maxcount, unordered_map_string_Animation_t* animations) : _initialized(false) {
-    init(maxcount, animations);
+GLEnv::GLEnv(unsigned maxcount) : _initialized(false) {
+    init(maxcount);
 }
 
 GLEnv::GLEnv(GLEnv&& other) {
     operator=(std::move(other));
 }
 
-GLEnv::GLEnv() : _max_count(0), _animations(nullptr), _initialized(false) {}
+GLEnv::GLEnv() : _max_count(0), _initialized(false) {}
 GLEnv::~GLEnv() {
     uninit();
 }
@@ -211,13 +211,13 @@ GLEnv& GLEnv::operator=(GLEnv&& other) {
         other._quad_offsets.clear();
         other._quads.clear();
         other._max_count = 0;
-        other._animations = nullptr;
+        other._animations.clear();
         other._initialized = false;
     }
     return *this;
 }
 
-void GLEnv::init(unsigned max_count, unordered_map_string_Animation_t* animations) {
+void GLEnv::init(unsigned max_count) {
     if (_initialized)
         throw InitializedException();
     
@@ -310,8 +310,6 @@ void GLEnv::init(unsigned max_count, unordered_map_string_Animation_t* animation
     _stage.uniform1i(11, 0);
     glActiveTexture(GL_TEXTURE0);
 
-    _animations = animations;
-
     _initialized = true;
 }
 
@@ -332,7 +330,7 @@ void GLEnv::uninit() {
     _quad_offsets.clear();
     _quads.clear();
     _max_count = 0;
-    _animations = nullptr;
+    _animations.clear();
     _initialized = false;
 }
 
@@ -370,7 +368,7 @@ unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, DrawTyp
     _glb_draw.subData(sizeof(GLfloat), &draw, offset * (1 * sizeof(GLfloat)));
 
     if (strcmp(animation_name, "") != 0)
-        _quads[offset].animationstate().setAnimation(&((*_animations)[animation_name]));
+        _quads[offset].animationstate().setAnimation(&(_animations[animation_name]));
 
     _count++;
     return offset;
@@ -388,6 +386,10 @@ void GLEnv::remove(unsigned offset) {
     _glb_draw.subData(sizeof(GLfloat), &draw, offset * (1 * sizeof(GLfloat)));
 
     _count--;
+}
+
+void GLEnv::addAnimation(const char* name, Animation animation) {
+    _animations[name] = animation;
 }
 
 void GLEnv::setTexArray(GLuint width, GLuint height, GLuint depth) {
