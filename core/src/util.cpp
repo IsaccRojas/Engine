@@ -5,17 +5,17 @@
 
 InactiveIntException::InactiveIntException() : std::logic_error("Inactive IntGenerator integer accessed") {}
 
-std::string readfile(const char *filename) {
+std::string readfile(const char* filename) {
     std::ifstream infile(filename);
     std::stringstream buf;
     buf << infile.rdbuf();
     return buf.str();
 }
 
-Image::Image(const char *filename) {
+Image::Image(const char* filename) {
     load(filename);
 }
-Image::Image(const Image &other) :
+Image::Image(const Image& other) :
     _data(other.copyData()),
     _w(other._w),
     _h(other._h),
@@ -23,7 +23,7 @@ Image::Image(const Image &other) :
     _size(other._size)
 {}
 Image::Image() : _data(NULL), _w(0), _h(0), _size(0) {};
-Image& Image::operator=(const Image &other) {
+Image& Image::operator=(const Image& other) {
     _data = other.copyData();
     _w = other._w;
     _h = other._h;
@@ -35,7 +35,7 @@ Image::~Image() {
     free();
 }
 
-void Image::load(const char *filename) {
+void Image::load(const char* filename) {
     _data = stbi_load(filename, &_w, &_h, &_components, 4);
     
     if (!_data)
@@ -56,7 +56,7 @@ unsigned char* Image::copyData() const {
     if (!_data)
         throw std::runtime_error("Attempt to copy Image with null data");
     
-    char *copy = new char[_size];
+    char* copy = new char[_size];
     return (unsigned char*)memcpy((void*)copy, (void*)_data, _size * sizeof(unsigned char));
 }
 

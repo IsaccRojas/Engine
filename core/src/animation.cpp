@@ -34,7 +34,7 @@ bool Cycle::loops() const {
 Animation::Animation() {}
 Animation::~Animation() { /* automatic destruction is fine */ }
 
-Animation& Animation::addCycle(Cycle &cycle) {
+Animation& Animation::addCycle(Cycle& cycle) {
     _cycles.push_back(cycle);
     return *this;
 }
@@ -47,7 +47,7 @@ unsigned Animation::count() {
     return _cycles.size();
 }
 
-AnimationState::AnimationState(Animation *animation) {
+AnimationState::AnimationState(Animation* animation) {
     setAnimation(animation);
 }
 AnimationState::AnimationState() :
@@ -62,7 +62,7 @@ AnimationState::AnimationState() :
 
 AnimationState::~AnimationState() { /* automatic destruction is fine */ }
 
-void AnimationState::setAnimation(Animation *animation) {
+void AnimationState::setAnimation(Animation* animation) {
     _animation = animation;
     
     _step = 0;
@@ -132,7 +132,7 @@ void AnimationState::step() {
     }
 }
 
-const Frame &AnimationState::current() {
+const Frame& AnimationState::current() {
     if (!_animation)
         throw std::runtime_error("Attempt to get current frame with null Animation reference");
     

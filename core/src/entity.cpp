@@ -10,7 +10,7 @@ EntityScript::EntityScript() :
 {}
 EntityScript::~EntityScript() { /* automatic destruction is fine */ }
 
-EntityScript &EntityScript::operator=(EntityScript &&other) {
+EntityScript& EntityScript::operator=(EntityScript&& other) {
     if (this != &other) {
         Script::operator=(std::move(other));
         _entity = other._entity;
@@ -37,27 +37,27 @@ void EntityScript::_update() {
     _updateEntity();
 }
 
-Entity &EntityScript::entity() {
+Entity& EntityScript::entity() {
     return *_entity;
 };
 
-void EntityScript::receive(Entity *entity, std::string message) {
+void EntityScript::receive(Entity* entity, std::string message) {
     _receive(entity, message);
 }
 
-void EntityScript::collide(Entity *entity) {
+void EntityScript::collide(Entity* entity) {
     _collide(entity);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-EntityScriptView::EntityScriptView(EntityScript *entityscript) : ScriptView(entityscript), _entityscript(entityscript) {}
+EntityScriptView::EntityScriptView(EntityScript* entityscript) : ScriptView(entityscript), _entityscript(entityscript) {}
 
-void EntityScriptView::receive(Entity *entity, std::string message) {
+void EntityScriptView::receive(Entity* entity, std::string message) {
     _entityscript->receive(entity, message);
 }
 
-void EntityScriptView::collide(Entity *entity) {
+void EntityScriptView::collide(Entity* entity) {
     _entityscript->collide(entity);
 }
 
@@ -67,11 +67,11 @@ ScriptView EntityExecutor::EntityScriptEnqueue::spawn() {
     return _entityexecutor->spawnEntityScript(_name.c_str(), _execution_queue, _entity);
 }
 
-EntityExecutor::EntityScriptEnqueue::EntityScriptEnqueue(EntityExecutor *entityexecutor, std::string name, int execution_queue, Entity *entity) :
+EntityExecutor::EntityScriptEnqueue::EntityScriptEnqueue(EntityExecutor* entityexecutor, std::string name, int execution_queue, Entity* entity) :
     ScriptEnqueue(nullptr, name, execution_queue), _entityexecutor(entityexecutor), _entity(entity)
 {}
 
-void EntityExecutor::_setupEntityScript(EntityScript *entityscript, Entity *entity) {
+void EntityExecutor::_setupEntityScript(EntityScript* entityscript, Entity* entity) {
     entityscript->_entity = entity;
 }
 
@@ -82,7 +82,7 @@ EntityExecutor::EntityExecutor(EntityExecutor &&other) : Executor() { operator=(
 EntityExecutor::EntityExecutor() : Executor() {}
 EntityExecutor::~EntityExecutor() { /* automatic destruction is fine */ }
 
-EntityExecutor &EntityExecutor::operator=(EntityExecutor &&other) {
+EntityExecutor& EntityExecutor::operator=(EntityExecutor&& other) {
     if (this == &other) {
         Executor::operator=(std::move(other));
         _entityscriptinfos = other._entityscriptinfos;
@@ -100,7 +100,7 @@ void EntityExecutor::uninit() {
     _entityscriptinfos.clear();
 }
 
-void EntityExecutor::addEntityScript(EntityScriptAllocatorInterface *allocator, const char *name, std::function<void(ScriptView)> spawn_callback, std::function<void(ScriptView)> remove_callback) {
+void EntityExecutor::addEntityScript(EntityScriptAllocatorInterface* allocator, const char* name, std::function<void(ScriptView)> spawn_callback, std::function<void(ScriptView)> remove_callback) {
     if (!hasAdded(name)) {
         Executor::add(nullptr, name, spawn_callback, remove_callback);
         _entityscriptinfos[name] = EntityScriptInfo{allocator};
@@ -108,9 +108,9 @@ void EntityExecutor::addEntityScript(EntityScriptAllocatorInterface *allocator, 
         throw std::runtime_error("Attempt to add already added name");
 }
 
-EntityScriptView EntityExecutor::spawnEntityScript(const char *entityscript_name, int execution_queue, Entity *entity) {
+EntityScriptView EntityExecutor::spawnEntityScript(const char* entityscript_name, int execution_queue, Entity* entity) {
     // allocate instance and set it up
-    EntityScript *entityscript = _entityscriptinfos[entityscript_name]._allocator->_allocate();
+    EntityScript* entityscript = _entityscriptinfos[entityscript_name]._allocator->_allocate();
     _setupScript(entityscript, entityscript_name, execution_queue);
     _setupEntityScript(entityscript, entity);
 
@@ -120,7 +120,7 @@ EntityScriptView EntityExecutor::spawnEntityScript(const char *entityscript_name
     return EntityScriptView(entityscript);
 }
 
-void EntityExecutor::enqueueSpawnEntityScript(const char *entityscript_name, int execution_queue, Entity *entity) {
+void EntityExecutor::enqueueSpawnEntityScript(const char* entityscript_name, int execution_queue, Entity* entity) {
     _pushSpawnEnqueue(new EntityScriptEnqueue(this, entityscript_name, execution_queue, entity));
 }
 
@@ -129,17 +129,17 @@ void EntityExecutor::enqueueSpawnEntityScript(const char *entityscript_name, int
 Entity::Entity() : _entitymanager(nullptr), _entityscriptview(nullptr), _script_killed(false) {}
 Entity::~Entity() {}
 
-EntityManager &Entity::manager() { return *_entitymanager; }
-std::vector<Quad*> &Entity::quads() { return _quads; }
-std::vector<EntityColliderView> &Entity::entitycolliderviews() { return _entitycolliderviews; }
-std::unordered_map<std::string, float> &Entity::attributes1f() { return _attributes1f; }
-std::unordered_map<std::string, glm::vec2> &Entity::attributes2f() { return _attributes2f; }
-std::unordered_map<std::string, glm::vec3> &Entity::attributes3f() { return _attributes3f; }
-EntityScriptView &Entity::entityscriptview() { return _entityscriptview; }
+EntityManager& Entity::manager() { return *_entitymanager; }
+std::vector<Quad*>& Entity::quads() { return _quads; }
+std::vector<EntityColliderView>& Entity::entitycolliderviews() { return _entitycolliderviews; }
+std::unordered_map<std::string, float>& Entity::attributes1f() { return _attributes1f; }
+std::unordered_map<std::string, glm::vec2>& Entity::attributes2f() { return _attributes2f; }
+std::unordered_map<std::string, glm::vec3>& Entity::attributes3f() { return _attributes3f; }
+EntityScriptView& Entity::entityscriptview() { return _entityscriptview; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-EntityCollider::EntityCollider(EntityCollider &&other) { operator=(std::move(other)); }
+EntityCollider::EntityCollider(EntityCollider&& other) { operator=(std::move(other)); }
 EntityCollider::EntityCollider() :
     _collisionspace(nullptr),
     _entity(nullptr),
@@ -148,7 +148,7 @@ EntityCollider::EntityCollider() :
 {}
 EntityCollider::~EntityCollider() {}
 
-EntityCollider& EntityCollider::operator=(EntityCollider &&other) {
+EntityCollider& EntityCollider::operator=(EntityCollider&& other) {
     if (this != &other) {
         _collisionspace = other._collisionspace;
         _this_iter = other._this_iter;
@@ -172,9 +172,9 @@ void EntityCollider::step() { transform.pos += vel; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-EntityColliderView::EntityColliderView(EntityCollider *collider) : _collider(collider) {}
+EntityColliderView::EntityColliderView(EntityCollider* collider) : _collider(collider) {}
 
-bool &EntityColliderView::collision_enabled() { return _collider->collision_enabled; }
+bool& EntityColliderView::collision_enabled() { return _collider->collision_enabled; }
 
 Transform& EntityColliderView::transform() { return _collider->transform; }
 
@@ -182,12 +182,12 @@ glm::vec3& EntityColliderView::vel() { return _collider->vel; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-CollisionSpace::CollisionSpace(unordered_map_string_Filter_t *filters) { init(filters); }
+CollisionSpace::CollisionSpace(unordered_map_string_Filter_t* filters) { init(filters); }
 CollisionSpace::CollisionSpace() : _filters(nullptr), _initialized(false) {}
-CollisionSpace::CollisionSpace(CollisionSpace &&other) { operator=(std::move(other)); }
+CollisionSpace::CollisionSpace(CollisionSpace&& other) { operator=(std::move(other)); }
 CollisionSpace::~CollisionSpace() { /* automatic destruction is fine */ }
 
-CollisionSpace &CollisionSpace::operator=(CollisionSpace &&other) {
+CollisionSpace& CollisionSpace::operator=(CollisionSpace&& other) {
     if (this != &other) {
         _colliders = std::move(other._colliders);
 
@@ -197,7 +197,7 @@ CollisionSpace &CollisionSpace::operator=(CollisionSpace &&other) {
     return *this;
 }
 
-void CollisionSpace::init(unordered_map_string_Filter_t *filters) {
+void CollisionSpace::init(unordered_map_string_Filter_t* filters) {
     if (_initialized)
         throw InitializedException();
     
@@ -214,11 +214,11 @@ void CollisionSpace::uninit() {
     _initialized = false;
 }
 
-EntityColliderView CollisionSpace::spawnCollider(Transform transform, glm::vec3 vel, const char *filter_name, Entity *entity) {
+EntityColliderView CollisionSpace::spawnCollider(Transform transform, glm::vec3 vel, const char* filter_name, Entity* entity) {
     if (!entity)
         throw std::runtime_error("Attempt to spawn EntityCollider with null Entity reference");
 
-    EntityCollider *collider = new EntityCollider;
+    EntityCollider* collider = new EntityCollider;
     
     collider->_collisionspace = this;
     collider->_this_iter = _colliders.push_back(collider);
@@ -239,7 +239,7 @@ void CollisionSpace::detectCollisionAABB() {
     for (auto iter1 = _colliders.begin(); iter1 != _colliders.end(); iter1++) {
 
         // get Collider and skip if scale is zeroed out
-        EntityCollider *c1 = *iter1;
+        EntityCollider* c1 = *iter1;
         if (!(c1->collision_enabled) || (c1->transform.scale == glm::vec3(0.0f)))
             continue;
 
@@ -248,7 +248,7 @@ void CollisionSpace::detectCollisionAABB() {
         for (;iter2 != _colliders.end(); iter2++) {
 
             // get other T and skip if scale is zeroed out (check t1's enable flag again in case it was unset this outer loop iteration)
-            EntityCollider *c2 = *iter2;
+            EntityCollider* c2 = *iter2;
             if (!(c1->collision_enabled) || !(c2->collision_enabled) || (c2->transform.scale == glm::vec3(0.0f)))
                 continue;
 
@@ -289,21 +289,21 @@ bool CollisionSpace::initialized() { return _initialized; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void EntityManager::_removeEntity(Entity *entity) {
+void EntityManager::_removeEntity(Entity* entity) {
     for (const unsigned &id : entity->_quad_ids)
         _glenv->remove(id);
-    for (const EntityColliderView &view : entity->_entitycolliderviews)
+    for (const EntityColliderView& view : entity->_entitycolliderviews)
         _collisionspace->erase(view);
 
     _entities[entity->_group.c_str()].erase(entity->_this_iter);
 }
 
-EntityManager::EntityManager(EntityExecutor *entityexecutor, GLEnv *glenv, CollisionSpace *collisionspace) : _initialized(false) { init(entityexecutor, glenv, collisionspace); }
-EntityManager::EntityManager(EntityManager &&other) { operator=(std::move(other)); }
+EntityManager::EntityManager(EntityExecutor* entityexecutor, GLEnv* glenv, CollisionSpace* collisionspace) : _initialized(false) { init(entityexecutor, glenv, collisionspace); }
+EntityManager::EntityManager(EntityManager&& other) { operator=(std::move(other)); }
 EntityManager::EntityManager() : _entityexecutor(nullptr), _glenv(nullptr), _collisionspace(nullptr), _initialized(false) {}
 EntityManager::~EntityManager() { /* automatic destruction is fine */ }
 
-EntityManager &EntityManager::operator=(EntityManager &&other) {
+EntityManager& EntityManager::operator=(EntityManager&& other) {
     if (this != &other) {
         _entityinfos = other._entityinfos;
 
@@ -328,7 +328,7 @@ EntityManager &EntityManager::operator=(EntityManager &&other) {
     return *this;
 }
 
-void EntityManager::init(EntityExecutor *entityexecutor, GLEnv *glenv, CollisionSpace *collisionspace) {
+void EntityManager::init(EntityExecutor* entityexecutor, GLEnv* glenv, CollisionSpace* collisionspace) {
     if (_initialized)
         throw InitializedException();
     
@@ -350,23 +350,23 @@ void EntityManager::uninit() {
     _initialized = false;
 }
 
-void EntityManager::addEntity(EntityInfo info, const char *name) {
+void EntityManager::addEntity(EntityInfo info, const char* name) {
     _entityinfos[name] = info;
     _entities[name] = ManagedList<Entity>();
 }
 
-Entity *EntityManager::spawnEntity(const char *name) {
-    EntityInfo &ei = _entityinfos[name];
-    Entity *entity = new Entity();
+Entity* EntityManager::spawnEntity(const char* name) {
+    EntityInfo& ei = _entityinfos[name];
+    Entity* entity = new Entity();
 
     // instantiate each Quad in info and push to entity's storage
-    for (const QuadArgs &a : ei._quad_args) {
+    for (const QuadArgs& a : ei._quad_args) {
         entity->_quad_ids.push_back(_glenv->genQuad(a.pos, a.scale, a.color, a.type, a.animation_name.c_str(), a.texpos, a.texsize, a.innerrad));
         entity->_quads.push_back(_glenv->getQuad(entity->_quad_ids.back()));
     }
 
     // instantiate each Box in info and push to entity's storage
-    for (const EntityColliderArgs &a : ei._entitycollider_args)
+    for (const EntityColliderArgs& a : ei._entitycollider_args)
         entity->_entitycolliderviews.push_back(_collisionspace->spawnCollider(a.transf, a.vel, a.filter_name.c_str(), entity));
 
     // instantiate each EntityScript in info and push to entity's storage
@@ -408,10 +408,10 @@ std::list<Entity*>::iterator EntityManager::groupEnd(const char *group) {
 // --------------------------------------------------------------------------------------------------------------------------
 
 bool computeCollisionAABB(Transform transf1, Transform transf2) {
-    glm::vec3 &pos1 = transf1.pos;
-    glm::vec3 &dim1 = transf1.scale;
-    glm::vec3 &pos2 = transf2.pos;
-    glm::vec3 &dim2 = transf2.scale;
+    glm::vec3& pos1 = transf1.pos;
+    glm::vec3& dim1 = transf1.scale;
+    glm::vec3& pos2 = transf2.pos;
+    glm::vec3& dim2 = transf2.scale;
 
     // get current collision
     float coll_x_space = glm::abs(pos1.x - pos2.x) - ((dim1.x + dim2.x) / 2.0f);

@@ -1,6 +1,6 @@
 #include "../include/filter.hpp"
 
-bool isIn(std::vector<int> &v, int x) {
+bool isIn(std::vector<int>& v, int x) {
     for (unsigned i = 0; i < v.size(); i++)
         if (v[i] == x)
             return true;
@@ -35,28 +35,28 @@ void Filter::clearLists() {
     _correction_blacklist.clear();
 }
 
-std::vector<int> &Filter::getWhitelist() {
+std::vector<int>& Filter::getWhitelist() {
     return _whitelist;
 }
-std::vector<int> &Filter::getBlacklist() {
+std::vector<int>& Filter::getBlacklist() {
     return _blacklist;
 }
-std::vector<int> &Filter::getCorrectionWhitelist() {
+std::vector<int>& Filter::getCorrectionWhitelist() {
     return _correction_whitelist;
 }
-std::vector<int> &Filter::getCorrectionBlacklist() {
+std::vector<int>& Filter::getCorrectionBlacklist() {
     return _correction_blacklist;
 }
 
-int &Filter::getID() {
+int& Filter::getID() {
     return _id;
 }
 
-FilterState::FilterState(Filter *filter) : _filter(filter) {}
+FilterState::FilterState(Filter* filter) : _filter(filter) {}
 FilterState::FilterState() : _filter(nullptr) {}
 FilterState::~FilterState() { /* automatic destruction is fine */ }
 
-void FilterState::setFilter(Filter *filter) {
+void FilterState::setFilter(Filter* filter) {
     _filter = filter;
 }
 
@@ -65,13 +65,13 @@ bool FilterState::pass(int x) {
         throw std::runtime_error("Attempt to pass value with null Filter reference");
 
     // check if blacklist exists; if it does, check if x is in it
-    std::vector<int> &blacklist = _filter->getBlacklist();
+    std::vector<int>& blacklist = _filter->getBlacklist();
     if (blacklist.size() > 0)
         if (isIn(blacklist, x))
             return false;
     
     // check if whitelist exists; if it does, check if x is in it
-    std::vector<int> &whitelist = _filter->getWhitelist();
+    std::vector<int>& whitelist = _filter->getWhitelist();
     if (whitelist.size() > 0) {
         if (isIn(whitelist, x))
             return true;
@@ -88,13 +88,13 @@ bool FilterState::passCorrection(int x) {
         throw std::runtime_error("Attempt to pass correction value with null Filter reference");
     
     // check if blacklist exists; if it does, check if x is in it
-    std::vector<int> &blacklist = _filter->getCorrectionBlacklist();
+    std::vector<int>& blacklist = _filter->getCorrectionBlacklist();
     if (blacklist.size() > 0)
         if (isIn(blacklist, x))
             return false;
     
     // check if whitelist exists; if it does, check if x is in it
-    std::vector<int> &whitelist = _filter->getCorrectionWhitelist();
+    std::vector<int>& whitelist = _filter->getCorrectionWhitelist();
     if (whitelist.size() > 0) {
         if (isIn(whitelist, x))
             return true;

@@ -23,7 +23,7 @@ void Quad::update() {
     bv_texsize.update();
 }
 
-AnimationState &Quad::animationstate() {
+AnimationState& Quad::animationstate() {
     return _animationstate;
 }
 
@@ -39,7 +39,7 @@ void Quad::writeAnimation() {
 
 // _______________________________________ Shaders _______________________________________
 
-const char * const vert_shader_str = R"(
+const char* const vert_shader_str = R"(
     #version 460
 
     layout(location = 0) in vec4 v_model;
@@ -175,11 +175,11 @@ const char * const frag_shader_str = R"(
 
 // _______________________________________ GLEnv _______________________________________
 
-GLEnv::GLEnv(unsigned maxcount, unordered_map_string_Animation_t *animations) : _initialized(false) {
+GLEnv::GLEnv(unsigned maxcount, unordered_map_string_Animation_t* animations) : _initialized(false) {
     init(maxcount, animations);
 }
 
-GLEnv::GLEnv(GLEnv &&other) {
+GLEnv::GLEnv(GLEnv&& other) {
     operator=(std::move(other));
 }
 
@@ -188,7 +188,7 @@ GLEnv::~GLEnv() {
     uninit();
 }
 
-GLEnv& GLEnv::operator=(GLEnv &&other) {
+GLEnv& GLEnv::operator=(GLEnv&& other) {
     if (this != &other) {
         _stage = std::move(other._stage);
         _texarray = std::move(other._texarray);
@@ -217,7 +217,7 @@ GLEnv& GLEnv::operator=(GLEnv &&other) {
     return *this;
 }
 
-void GLEnv::init(unsigned max_count, unordered_map_string_Animation_t *animations) {
+void GLEnv::init(unsigned max_count, unordered_map_string_Animation_t* animations) {
     if (_initialized)
         throw InitializedException();
     
@@ -239,7 +239,7 @@ void GLEnv::init(unsigned max_count, unordered_map_string_Animation_t *animation
     /* setup variables */
 
     // store shader code and types into arrays for shader program generation call
-    const char *shaders[2];
+    const char* shaders[2];
     shaders[0] = vert_shader_str;
     shaders[1] = frag_shader_str;
     GLuint types[2];
@@ -336,7 +336,7 @@ void GLEnv::uninit() {
     _initialized = false;
 }
 
-unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, DrawType type, const char *animation_name, glm::vec3 texpos, glm::vec2 texsize, GLfloat innerrad) {
+unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, DrawType type, const char* animation_name, glm::vec3 texpos, glm::vec2 texsize, GLfloat innerrad) {
     // if number of active offsets is greater than or equal to maximum allowed count, throw
     if (_count >= _max_count)
         throw CountLimitException();
@@ -396,7 +396,7 @@ void GLEnv::setTexArray(GLuint width, GLuint height, GLuint depth) {
 }
 
 void GLEnv::setTexture(Image img, GLuint xoffset, GLuint yoffset, GLuint zoffset) {
-    unsigned char *image_data = img.copyData();
+    unsigned char* image_data = img.copyData();
     _texarray.subImage(0, xoffset, yoffset, zoffset, img.width(), img.height(), 1, image_data);
     delete image_data;
 }

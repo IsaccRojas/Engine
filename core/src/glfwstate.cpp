@@ -8,7 +8,7 @@ void glfw_err_handler(int code, const char* desc) {
 
 GLFWErrorException::GLFWErrorException() : std::runtime_error("GLFW error") {}
 
-GLFWState::GLFWState(int width, int height, const char *title, bool debug) {
+GLFWState::GLFWState(int width, int height, const char* title, bool debug) {
     init(width, height, title, debug);
 }
 GLFWState::GLFWState() : _win_h(nullptr), _width(0), _height(0), _title("") {}
@@ -16,7 +16,7 @@ GLFWState::~GLFWState() {
     uninit();
 }
 
-void GLFWState::init(int width, int height, const char *title, bool debug) {
+void GLFWState::init(int width, int height, const char* title, bool debug) {
     if (_win_h)
         throw std::runtime_error("Attempt to initialize GLFWState with existing GLFWwindow");
 

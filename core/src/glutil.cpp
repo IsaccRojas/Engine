@@ -21,16 +21,16 @@ namespace GLUtil {
 
     // _______________________________________ GLStage _______________________________________
 
-    GLStage::GLStage(const char *shader_srcs[], GLenum shader_types[], int count) : _program_h(-1), _vao_h(-1) {
+    GLStage::GLStage(const char* shader_srcs[], GLenum shader_types[], int count) : _program_h(-1), _vao_h(-1) {
         init(shader_srcs, shader_types, count);
     }
     GLStage::GLStage() : _program_h(-1), _vao_h(-1) {}
 
-    GLStage::GLStage(GLStage &&other) {
+    GLStage::GLStage(GLStage&& other) {
         operator=(std::move(other));
     }
 
-    GLStage& GLStage::operator=(GLStage &&other) {
+    GLStage& GLStage::operator=(GLStage&& other) {
         if (this != &other) {
             _program_h = other._program_h;
             other._program_h = -1;
@@ -42,13 +42,13 @@ namespace GLUtil {
         uninit();
     };
 
-    void GLStage::init(const char *shader_srcs[], GLenum shader_types[], int count) {
+    void GLStage::init(const char* shader_srcs[], GLenum shader_types[], int count) {
         if (_program_h != -1 || _vao_h != -1)
             throw InitializedException();
         
         // create shaders
         GLint success = 0;
-        GLuint *shaders = new GLuint[count];
+        GLuint* shaders = new GLuint[count];
         for (int i = 0; i < count; i++) {
             shaders[i] = glCreateShader(shader_types[i]);
             glShaderSource(shaders[i], 1, &shader_srcs[i], NULL);
@@ -166,11 +166,11 @@ namespace GLUtil {
     }
     GLBuffer::GLBuffer() : _buf_h(-1), _usage(0), _size(0) {}
 
-    GLBuffer::GLBuffer(GLBuffer &&other) {
+    GLBuffer::GLBuffer(GLBuffer&& other) {
         operator=(std::move(other));
     }
 
-    GLBuffer& GLBuffer::operator=(GLBuffer &&other) {
+    GLBuffer& GLBuffer::operator=(GLBuffer&& other) {
         if (this != &other) {
             _buf_h = other._buf_h;
             _usage = other._usage;
@@ -222,7 +222,7 @@ namespace GLUtil {
         glBindBufferBase(target, index, buf_h); 
     }
 
-    void GLBuffer::subData(GLsizeiptr data_size, const void *data, GLsizeiptr offset) {
+    void GLBuffer::subData(GLsizeiptr data_size, const void* data, GLsizeiptr offset) {
         GLuint buf_h = _buf_h;
         glNamedBufferSubData(buf_h, offset, data_size, data);
     }
@@ -231,9 +231,9 @@ namespace GLUtil {
     GLenum GLBuffer::usage() { return _usage; }
     GLuint GLBuffer::handle() { return _buf_h; }
 
-    const char *GLBuffer::copy_mem() {
-        void *buf = glMapNamedBuffer(_buf_h, GL_READ_ONLY);
-        char *mem = new char[_size];
+    const char* GLBuffer::copy_mem() {
+        void* buf = glMapNamedBuffer(_buf_h, GL_READ_ONLY);
+        char* mem = new char[_size];
         std::memcpy(mem, buf, _size);
         bool res = glUnmapNamedBuffer(_buf_h);
 
@@ -275,11 +275,11 @@ namespace GLUtil {
         _allocated(false)
     {}
     
-    GLTexture2DArray::GLTexture2DArray(GLTexture2DArray &&other) {
+    GLTexture2DArray::GLTexture2DArray(GLTexture2DArray&& other) {
         operator=(std::move(other));
     }
 
-    GLTexture2DArray& GLTexture2DArray::operator=(GLTexture2DArray &&other) {
+    GLTexture2DArray& GLTexture2DArray::operator=(GLTexture2DArray&& other) {
         if (this != &other) {
             _tex_h = other._tex_h;
             _size = other._size;
@@ -367,7 +367,7 @@ namespace GLUtil {
         _allocated = true;
     }
 
-    void GLTexture2DArray::subImage(GLint level, GLint x_offset, GLint y_offset, GLint z_offset, GLsizei width, GLsizei height, GLsizei depth, const void *data) {
+    void GLTexture2DArray::subImage(GLint level, GLint x_offset, GLint y_offset, GLint z_offset, GLsizei width, GLsizei height, GLsizei depth, const void* data) {
         GLuint tex_h = _tex_h;
         glTextureSubImage3D(tex_h, level, x_offset, y_offset, z_offset, width, height, depth, _data_format, _type, data);
     }
@@ -379,18 +379,18 @@ namespace GLUtil {
 
     // _______________________________________ BFloat _______________________________________
 
-    BFloat::BFloat(GLBuffer *buffer, GLuint offset) : 
+    BFloat::BFloat(GLBuffer* buffer, GLuint offset) : 
         _buf(buffer), 
         _off(offset),
         v(0.0f)
     {}
-    BFloat::BFloat(const BFloat &other) {
+    BFloat::BFloat(const BFloat& other) {
         operator=(other);
     }
     BFloat::BFloat() : _buf(nullptr), _off(0), v(0.0f) {}
     BFloat::~BFloat() { /* automatic destruction is fine */ }
 
-    BFloat& BFloat::operator=(const BFloat &other) {
+    BFloat& BFloat::operator=(const BFloat& other) {
         _buf = other._buf;
         _off = other._off;
         v = other.v;
@@ -398,7 +398,7 @@ namespace GLUtil {
         return *this;
     }
 
-    void BFloat::setBuffer(GLBuffer *buffer, GLuint offset) {
+    void BFloat::setBuffer(GLBuffer* buffer, GLuint offset) {
         _buf = buffer;
         _off = offset;
     }
@@ -412,17 +412,17 @@ namespace GLUtil {
 
     // _______________________________________ BVec2 _______________________________________
 
-    BVec2::BVec2(GLBuffer *buffer, GLuint offset) : 
+    BVec2::BVec2(GLBuffer* buffer, GLuint offset) : 
         _buf(buffer), 
         _off(offset)
     {}
-    BVec2::BVec2(const BVec2 &other) {
+    BVec2::BVec2(const BVec2& other) {
         operator=(other);
     }
     BVec2::BVec2() : _buf(nullptr), _off(0) {}
     BVec2::~BVec2() { /* automatic destruction is fine */ }
 
-    BVec2& BVec2::operator=(const BVec2 &other) {
+    BVec2& BVec2::operator=(const BVec2& other) {
         _buf = other._buf;
         _off = other._off;
         _data[0] = other._data[0];
@@ -432,7 +432,7 @@ namespace GLUtil {
         return *this;
     }
 
-    void BVec2::setBuffer(GLBuffer *buffer, GLuint offset) {
+    void BVec2::setBuffer(GLBuffer* buffer, GLuint offset) {
         _buf = buffer;
         _off = offset;
     }
@@ -449,17 +449,17 @@ namespace GLUtil {
 
     // _______________________________________ BVec3 _______________________________________
 
-    BVec3::BVec3(GLBuffer *buffer, GLuint offset) : 
+    BVec3::BVec3(GLBuffer* buffer, GLuint offset) : 
         _buf(buffer), 
         _off(offset)
     {}
-    BVec3::BVec3(const BVec3 &other) {
+    BVec3::BVec3(const BVec3& other) {
         operator=(other);
     }
     BVec3::BVec3() : _buf(nullptr), _off(0) {}
     BVec3::~BVec3() { /* automatic destruction is fine */ }
 
-    BVec3& BVec3::operator=(const BVec3 &other) {
+    BVec3& BVec3::operator=(const BVec3& other) {
         _buf = other._buf;
         _off = other._off;
         _data[0] = other._data[0];
@@ -470,7 +470,7 @@ namespace GLUtil {
         return *this;
     }
 
-    void BVec3::setBuffer(GLBuffer *buffer, GLuint offset) {
+    void BVec3::setBuffer(GLBuffer* buffer, GLuint offset) {
         _buf = buffer;
         _off = offset;
     }
@@ -487,17 +487,17 @@ namespace GLUtil {
 
     // _______________________________________ BVec4 _______________________________________
 
-    BVec4::BVec4(GLBuffer *buffer, GLuint offset) : 
+    BVec4::BVec4(GLBuffer* buffer, GLuint offset) : 
         _buf(buffer), 
         _off(offset)
     {}
-    BVec4::BVec4(const BVec4 &other) {
+    BVec4::BVec4(const BVec4& other) {
         operator=(other);
     }
     BVec4::BVec4() : _buf(nullptr), _off(0) {}
     BVec4::~BVec4() { /* automatic destruction is fine */ }
 
-    BVec4& BVec4::operator=(const BVec4 &other) {
+    BVec4& BVec4::operator=(const BVec4& other) {
         _buf = other._buf;
         _off = other._off;
         _data[0] = other._data[0];
@@ -509,7 +509,7 @@ namespace GLUtil {
         return *this;
     }
 
-    void BVec4::setBuffer(GLBuffer *buffer, GLuint offset) {
+    void BVec4::setBuffer(GLBuffer* buffer, GLuint offset) {
         _buf = buffer;
         _off = offset;
     }

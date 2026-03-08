@@ -4,7 +4,7 @@ bool GLFWInput::_checkKey(int jid) { return (GLFW_PRESS == glfwGetKey(_win_h, ji
 
 bool GLFWInput::_checkMouseButton(int jid) { return (GLFW_PRESS == glfwGetMouseButton(_win_h, jid)); }
 
-GLFWInput::GLFWInput(GLFWwindow *window, int pixel_width, int pixel_height) {
+GLFWInput::GLFWInput(GLFWwindow* window, int pixel_width, int pixel_height) {
     setWindow(window, pixel_width, pixel_height);
     reset();
 }
@@ -19,7 +19,7 @@ GLFWInput::GLFWInput() :
 }
 GLFWInput::~GLFWInput() { /* automatic destruction is fine */ }
 
-void GLFWInput::setWindow(GLFWwindow *window, int pixel_width, int pixel_height) {
+void GLFWInput::setWindow(GLFWwindow* window, int pixel_width, int pixel_height) {
     _win_h = window;
     _pixel_width = pixel_width;
     _pixel_height = pixel_height;
