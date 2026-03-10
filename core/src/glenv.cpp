@@ -388,7 +388,7 @@ void GLEnv::remove(unsigned offset) {
     _count--;
 }
 
-void GLEnv::addAnimation(const char* name, Animation animation) {
+void GLEnv::addAnimation(Animation animation, const char* name) {
     _animations[name] = animation;
 }
 

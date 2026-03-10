@@ -182,6 +182,8 @@ class Entity {
    friend EntityExecutor;
    friend EntityManager;
 
+   std::string _name;
+
    EntityManager* _entitymanager;
    std::list<Entity*>::iterator _this_iter;
    std::string _group;
@@ -203,6 +205,7 @@ public:
 
    //TODO: revise copy/move semantics
 
+   std::string& name();
    EntityManager& manager();
    EntityScriptView& entityscriptview();
    std::vector<Quad*>& quads();
@@ -305,7 +308,7 @@ public:
     /* Erases the Collider referenced by the provided ColliderView. */
     void erase(EntityColliderView colliderview);
 
-    void addFilter(const char* name, Filter filter);
+    void addFilter(Filter filter, const char* name);
 
     /* Detects collision between all instances within the system via AABB method. This is done by iterating on all elements
        in a pair-wise fashion. All collided instances have their collided count incremented.
@@ -324,10 +327,15 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-struct EntityScriptArgs{
+struct EntityInfo {
+   std::string group;
    std::string entityscript_name;
    int execution_queue;
+   bool auto_enqueue;
+   int num_quads;
+   int num_entitycolliders;
 };
+
 struct QuadArgs {
    glm::vec3 pos;
    glm::vec3 scale;
@@ -344,11 +352,9 @@ struct EntityColliderArgs {
    std::string filter_name;
 };
 
-struct EntityInfo {
-   EntityScriptArgs _entityscript_args;
-   std::list<QuadArgs> _quad_args;
-   std::list<EntityColliderArgs> _entitycollider_args;
-   std::string _group;
+struct EntityArgs {
+   std::list<QuadArgs> quad_args;
+   std::list<EntityColliderArgs> entitycollider_args;
 };
 
 class EntityManager {
@@ -380,7 +386,7 @@ public:
    void uninit();
 
    void addEntity(EntityInfo info, const char* name);
-   Entity* spawnEntity(const char* name);
+   Entity* spawnEntity(const char* name, EntityArgs entity_args);
    
    void checkEntities();
 

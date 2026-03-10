@@ -159,7 +159,7 @@ public:
    */
    void remove(unsigned offset);
 
-   void addAnimation(const char* name, Animation animation);
+   void addAnimation(Animation animation, const char* name);
 
    /* Initializes texture array space with unsigned byte storage in RGBA format.
       width - width of space

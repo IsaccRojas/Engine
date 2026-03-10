@@ -129,6 +129,7 @@ void EntityExecutor::enqueueSpawnEntityScript(const char* entityscript_name, int
 Entity::Entity() : _entitymanager(nullptr), _entityscriptview(nullptr), _script_killed(false) {}
 Entity::~Entity() {}
 
+std::string& Entity::name() { return _name; }
 EntityManager& Entity::manager() { return *_entitymanager; }
 std::vector<Quad*>& Entity::quads() { return _quads; }
 std::vector<EntityColliderView>& Entity::entitycolliderviews() { return _entitycolliderviews; }
@@ -232,7 +233,7 @@ EntityColliderView CollisionSpace::spawnCollider(Transform transform, glm::vec3 
 
 void CollisionSpace::erase(EntityColliderView colliderview) { _colliders.erase(colliderview._collider->_this_iter); }
 
-void CollisionSpace::addFilter(const char* name, Filter filter) {
+void CollisionSpace::addFilter(Filter filter, const char* name) {
     _filters[name] = filter;
 }
 
@@ -357,25 +358,31 @@ void EntityManager::addEntity(EntityInfo info, const char* name) {
     _entities[name] = ManagedList<Entity>();
 }
 
-Entity* EntityManager::spawnEntity(const char* name) {
+Entity* EntityManager::spawnEntity(const char* name, EntityArgs entity_args) {
     EntityInfo& ei = _entityinfos[name];
     Entity* entity = new Entity();
 
+    if (entity_args.quad_args.size() != ei.num_quads)
+        throw std::runtime_error("Provided amount of QuadArgs instances unequal to number specified in EntityInfo");
+    if (entity_args.entitycollider_args.size() != ei.num_entitycolliders)
+        throw std::runtime_error("Provided amount of EntityColliderArgs instances unequal to number specified in EntityInfo");
+
     // instantiate each Quad in info and push to entity's storage
-    for (const QuadArgs& a : ei._quad_args) {
+    for (const QuadArgs& a : entity_args.quad_args) {
         entity->_quad_ids.push_back(_glenv->genQuad(a.pos, a.scale, a.color, a.type, a.animation_name.c_str(), a.texpos, a.texsize, a.innerrad));
         entity->_quads.push_back(_glenv->getQuad(entity->_quad_ids.back()));
     }
 
     // instantiate each Box in info and push to entity's storage
-    for (const EntityColliderArgs& a : ei._entitycollider_args)
+    for (const EntityColliderArgs& a : entity_args.entitycollider_args)
         entity->_entitycolliderviews.push_back(_collisionspace->spawnCollider(a.transf, a.vel, a.filter_name.c_str(), entity));
 
-    // instantiate each EntityScript in info and push to entity's storage
-    entity->_entityscriptview = _entityexecutor->spawnEntityScript(ei._entityscript_args.entityscript_name.c_str(), ei._entityscript_args.execution_queue, entity);
-
-    entity->_this_iter = _entities[ei._group.c_str()].push_back(entity);
+    entity->_name = name;
+    entity->_this_iter = _entities[ei.group.c_str()].push_back(entity);
     entity->_entitymanager = this;
+    
+    // instantiate EntityScript in info and push to entity's storage
+    entity->_entityscriptview = _entityexecutor->spawnEntityScript(ei.entityscript_name.c_str(), ei.execution_queue, entity);
     
     return entity;
 }
@@ -383,11 +390,22 @@ Entity* EntityManager::spawnEntity(const char* name) {
 void EntityManager::checkEntities() {
     std::queue<Entity*> remove_queue;
 
-    // check every script status of every entity in each group list
+    // check script status of every entity in each group list
     for (auto &[name, mlist] : _entities)
-        for (auto iter = mlist.begin(); iter != mlist.end(); ++iter)
-            if ((*iter)->_script_killed)
-                remove_queue.push(*iter);
+        for (auto iter = mlist.begin(); iter != mlist.end(); ++iter) {
+            auto& entity = *iter;
+
+            // check if entity needs to be removed
+            if (entity->_script_killed) {
+                remove_queue.push(entity);
+                continue;
+            }
+
+            // check if script needs to be enqueued
+            EntityInfo &ei = _entityinfos[entity->name()];
+            if ((!(entity->entityscriptview().getExecEnqueued())) && ei.auto_enqueue)
+                entity->entityscriptview().enqueueExec(ei.execution_queue);
+        }
 
     while (!remove_queue.empty()) {
         _removeEntity(remove_queue.front());

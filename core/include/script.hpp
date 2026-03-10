@@ -109,6 +109,9 @@ class ScriptView {
    Script* _script;
 public:
    ScriptView(Script* script);
+
+   void enqueueExec(unsigned queue);
+   void enqueueKill();
    int getLastExecQueue();
    bool getExecEnqueued();
    bool getKillEnqueued();

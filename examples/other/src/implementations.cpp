@@ -31,7 +31,6 @@ void ES_Player::_execEntity() {
 
     if (_input_state->get_space())
         enqueueKill();
-    enqueueExec(0);
 }
 
 void ES_Player::_killEntity() {}
@@ -89,8 +88,6 @@ void ES_Chaser::_execEntity() {
             _target = nullptr;
         }
     }
-    
-    enqueueExec(0);
 }
 
 void ES_Chaser::_killEntity() {

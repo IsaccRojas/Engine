@@ -90,6 +90,8 @@ unsigned Script::lockout_count() {
 
 ScriptView::ScriptView(Script* script) : _script(script) {};
 
+void ScriptView::enqueueExec(unsigned queue) { _script->enqueueExec(queue); }
+void ScriptView::enqueueKill() { _script->enqueueKill(); }
 int ScriptView::getLastExecQueue() { return _script->getLastExecQueue(); }
 bool ScriptView::getExecEnqueued() { return _script->getExecEnqueued(); }
 bool ScriptView::getKillEnqueued() { return _script->getKillEnqueued(); }

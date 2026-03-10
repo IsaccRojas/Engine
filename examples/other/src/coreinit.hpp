@@ -10,9 +10,6 @@ struct CoreResources {
     GLFWState state;
     GLFWInput input;
 
-    unordered_map_string_Animation_t animations;
-    unordered_map_string_Filter_t filters;
-
     EntityExecutor entityexecutor;
     GLEnv glenv;
     CollisionSpace collisionspace;
