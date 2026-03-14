@@ -141,6 +141,8 @@ const Frame& AnimationState::current() {
 
 bool AnimationState::hasAnimation() { return _animation != nullptr; }
 
+bool AnimationState::animationEmpty() { return _animation->count() == 0; }
+
 bool AnimationState::completed() { return _completed; }
 
 std::unordered_map<std::string, Animation> loadAnimations(std::string dir) {

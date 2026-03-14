@@ -7,8 +7,15 @@
 #include <vector>
 #include <string>
 #include <queue>
+#include "C:\dev\include\glm\glm.hpp"
 
 #define PI_UTIL 3.14159265358979323846264338327950288
+
+struct Transform {
+    glm::vec3 pos = glm::vec3(0.0f);
+    glm::vec3 scale = glm::vec3(0.0f);
+    // default copy assignment/construction are fine
+};
 
 std::string readfile(const char* filename);
 

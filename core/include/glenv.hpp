@@ -5,9 +5,11 @@
 #include "glutil.hpp"
 #include "animation.hpp"
 
+class GLEnv;
+
 /* class Quad
    Encapsulates Quad-like data for OpenGL environments.
-   Uses BVec instances to store basic parameters of quads:
+   Uses BVec instances to store basic parameters of quads.
 
    - position - location of quad in 3D space
    - scale - values to scale width, height and depth of unit quad
@@ -16,41 +18,45 @@
    - texture size - width and height of texture to use, applied to UV coordinates to get rectangle
 */
 class Quad {
+   friend GLEnv;
+
+   // BVecs containing references to Quad's associated OpenGL buffers
+   GLUtil::BVec3 _bv_pos;
+   GLUtil::BVec3 _bv_scale;
+   GLUtil::BVec4 _bv_color;
+   GLUtil::BVec3 _bv_texpos;
+   GLUtil::BVec2 _bv_texsize;
+
    // controllable variables
+   Transform _transform;
    AnimationState _animationstate;
 
 public:
-/* BVecs containing references to Quad's associated OpenGL buffers */
-   GLUtil::BVec3 bv_pos;
-   GLUtil::BVec3 bv_scale;
-   GLUtil::BVec4 bv_color;
-   GLUtil::BFloat bv_innerrad;
-   GLUtil::BVec3 bv_texpos;
-   GLUtil::BVec2 bv_texsize;
-   /* position - location of quad in 3D space
-      scale - scaling values for x, y, and z coordinates of quad vertices
-      color - color to apply to quad
-      innerradius - inner radius to not render for ellipses (from 0.0f to 1.0f)
-      textureposition - UV coordinates to use in texture space, only used by rects
-      texturesize - width and height of texture to use, applied to UV coordinates to get texture rectangle, only used by rects 
-   */
-   Quad(GLUtil::BVec3 position, GLUtil::BVec3 scale, GLUtil::BVec4 color, GLUtil::BFloat bv_innerradius, GLUtil::BVec3 textureposition, GLUtil::BVec2 texturesize);
    Quad();
    ~Quad();
 
    // default copy assignment/construction are fine
 
    /* Calls update() on all internal BVec instances, writing their respective data into their respective buffers. */
-   void update();
+   void updateBVecs();
+
+   /* Returns the contained Quad transform. */
+   Transform &transform();
 
    /* Returns reference to contained Animation state. */
    AnimationState& animationstate();
 
-   /* Writes animation data to related buffers, if an animation is stored. */
+   /* Writes transform data to related BVecs. */
+   void writeTransform();
+
+   /* Writes animation data to related BVecs, if an animation is stored. */
    void writeAnimation();
 };
 
-enum DrawType { GLE_RECT, GLE_ELLIPSE };
+struct QuadInfo {
+   glm::vec4 color;
+   Animation animation;
+};
 
 /* class GLEnv
    Encapsulates all OpenGL environment related data and methods. 
@@ -60,10 +66,8 @@ enum DrawType { GLE_RECT, GLE_ELLIPSE };
    - Quad position (vec3)
    - Quad scale (vec3)
    - Quad color (vec4)
-   - Quad inner radius (float) (used by ellipses to determine inner radius to not render, from 0.0f to 1.0f)
    - Quad texture position (vec3) (multi-level 2D texture space)
    - Quad texture size (vec2) (added to positions to get a rectangle)
-   - Quad drawtype (float) (describes to shader whether to render Quad as a rectangle or ellipse)
    - Quad drawing flag (float) (modified by GLEnv instance)
 
    The maximum amount of Quads allowed by the system can be specified. This also
@@ -93,14 +97,10 @@ class GLEnv {
    GLUtil::GLBuffer _glb_scale;
    // color of instance
    GLUtil::GLBuffer _glb_color;
-   // inner radius of instance (if ellipse)
-   GLUtil::GLBuffer _glb_innerrad;
    // texture position of instance
    GLUtil::GLBuffer _glb_texpos;
    // texture size of instance
    GLUtil::GLBuffer _glb_texsize;
-   // whether to interpret data as a rectangle or ellipse
-   GLUtil::GLBuffer _glb_type;
    // whether instance should be drawn or zeroed out
    GLUtil::GLBuffer _glb_draw;
 
@@ -113,8 +113,8 @@ class GLEnv {
    unsigned _max_count;
    unsigned _count;
 
-   // Map of animations
-   std::unordered_map<std::string, Animation> _animations;
+   // storage of entity info, mapped to names
+   std::unordered_map<std::string, QuadInfo> _quadinfos;
 
    // flag to store if instance was initialized or not
    bool _initialized;
@@ -133,7 +133,8 @@ public:
    /* Initializes GLBuffers, GLStage, and GLTexture2DArray, allowing the provided maximum amount of Quads and a map of animations. */
    void init(unsigned max_count);
    void uninit();
-
+   
+   void addQuad(QuadInfo quadinfo, const char *quad_name);
    /* Generates an active Quad in system. This call does not write the new Quad into graphic memory. You 
       must call the update() method on the environment or a reference to the Quad itself.
       pos - GLM vec3 position of Quad
@@ -143,13 +144,13 @@ public:
       animation_name - name of animation data to use with this Quad ("" if none)
       texpos - GLM vec3 texture position of Quad (multi-level 2D texture space)
       texsize - GLM vec2 texture size of Quad (added to positions to get a rectangle)
-      innerrad - float inner radius of Quad if rendered as ellipse, from 0.0f to 1.0f
       Returns the integer offset of Quad. This number can be used to index into the internal Quad container and
       obtain a reference (see the get() method). This offset is unique and will be valid for the lifetime 
       of the Quad (see the remove() method). If the maximum number of active Quads allowed is exceeded, a
       CountLimitException is thrown.
    */
-   unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, DrawType type, const char* animation_name, glm::vec3 texpos, glm::vec2 texsize, GLfloat innerrad);
+   //unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, DrawType type, const char* animation_name, glm::vec3 texpos, glm::vec2 texsize);
+   unsigned genQuad(const char* quad_name, Transform transform);
    /* Removes the Quad with the provided offset from the system. This will cause the provided offset to be 
       invalid until returned again by the genQuad() method. Note that this method does not actually
       free any GPU memory; it simply makes the specific offset usable again by the system. Attempting to use

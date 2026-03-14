@@ -199,6 +199,7 @@ class Entity {
 
    bool _script_killed;
 
+   Transform _transform;
 public:
    Entity();
    ~Entity();
@@ -213,15 +214,10 @@ public:
    std::unordered_map<std::string, float>& attributes1f();
    std::unordered_map<std::string, glm::vec2>& attributes2f();
    std::unordered_map<std::string, glm::vec3>& attributes3f();
+   Transform &transform();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
-
-struct Transform {
-    glm::vec3 pos = glm::vec3(0.0f);
-    glm::vec3 scale = glm::vec3(0.0f);
-    // default copy assignment/construction are fine
-};
 
 // prototype
 class CollisionSpace;
@@ -334,27 +330,14 @@ struct EntityInfo {
    bool auto_enqueue;
    int num_quads;
    int num_entitycolliders;
+   std::list<QuadInfo> quadinfos;
+   //std::list<EntityColliderArgs> entitycollider_args;
 };
 
-struct QuadArgs {
-   glm::vec3 pos;
-   glm::vec3 scale;
-   glm::vec4 color;
-   DrawType type;
-   std::string animation_name;
-   glm::vec3 texpos;
-   glm::vec2 texsize;
-   GLfloat innerrad;
-};
 struct EntityColliderArgs {
    Transform transf;
    glm::vec3 vel;
    std::string filter_name;
-};
-
-struct EntityArgs {
-   std::list<QuadArgs> quad_args;
-   std::list<EntityColliderArgs> entitycollider_args;
 };
 
 class EntityManager {
@@ -386,7 +369,7 @@ public:
    void uninit();
 
    void addEntity(EntityInfo info, const char* name);
-   Entity* spawnEntity(const char* name, EntityArgs entity_args);
+   Entity* spawnEntity(const char* name, Transform transform);
    
    void checkEntities();
 

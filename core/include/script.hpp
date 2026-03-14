@@ -6,7 +6,6 @@
 #include <queue>
 #include <unordered_map>
 #include <functional>
-#include "C:\dev\include\glm\glm.hpp"
 #include <unordered_set>
 
 #include "commonexcept.hpp"

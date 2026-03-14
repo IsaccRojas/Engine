@@ -121,8 +121,11 @@ public:
     /* Gets the current frame of the cycle. Causes an error if no frames exist. */
     const Frame& current();
 
-    /* Returns whether this AnimationState is set to a specific Animation. */
+    /* Returns whether or not this AnimationState is set to a specific Animation. */
     bool hasAnimation();
+
+    /* Returns whether or not this AnimationState's contained Animation is empty. */
+    bool animationEmpty();
 
     /* Returns whether the cycle has completed or not (always false if looping is set to true). */
     bool completed();
