@@ -112,7 +112,7 @@ void Text::writeText() {
     } else {
         // push new IDs to vector (TODO: assign proper values on generation)
         for (int i = l_ids; i < l_str; i++)
-            _quadids.push_back(_glenv->genQuad(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), GLE_RECT, "", glm::vec3(0.0f), glm::vec2(0.0f), 0.0f));
+            _quadids.push_back(_glenv->genQuad(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), glm::vec3(0.0f), glm::vec2(0.0f)));
     }
     
     // set position offset to be half-way leftward across complete text width, to center the text
@@ -128,14 +128,14 @@ void Text::writeText() {
         int charpos = int(_textstr[i]) - 32;
 
         // set values according to configuration and string
-        quad->bv_pos.v = _pos + glm::vec3(pos_offset + (shift * float(i)), 0.0f, 0.0f);
-        quad->bv_scale.v = glm::vec3(_tc.text_width, _tc.text_height, 0.0f) * _scale;
-        quad->bv_texpos.v = glm::vec3(
+        quad->bv_pos().v = _pos + glm::vec3(pos_offset + (shift * float(i)), 0.0f, 0.0f);
+        quad->bv_scale().v = glm::vec3(_tc.text_width, _tc.text_height, 0.0f) * _scale;
+        quad->bv_texpos().v = glm::vec3(
             _tc.tex_x + ((_tc.text_width + _tc.text_xoff) * (charpos % _tc.tex_columns)),
             _tc.tex_y + ((_tc.text_height + _tc.text_yoff) * int(charpos / _tc.tex_columns)),
             _tc.tex_z
         );
-        quad->bv_texsize.v = glm::vec2(_tc.text_width, _tc.text_height);
+        quad->bv_texsize().v = glm::vec2(_tc.text_width, _tc.text_height);
     }
 
     _update = false;

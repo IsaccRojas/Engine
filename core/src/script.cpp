@@ -195,9 +195,9 @@ void Executor::uninit() {
     _initialized = false;
 }
 
-void Executor::add(AllocatorInterface* allocator, const char *name, std::function<void(ScriptView)> spawn_callback, std::function<void(ScriptView)> remove_callback) {  
+void Executor::addScript(ScriptInfo scriptinfo, const char* name) {  
     if (!hasAdded(name))
-        _scriptinfos[name] = ScriptInfo{allocator, spawn_callback, remove_callback};
+        _scriptinfos[name] = scriptinfo;
     else
         throw std::runtime_error("Attempt to add already added Script name");
 }

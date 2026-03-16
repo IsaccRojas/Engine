@@ -100,10 +100,10 @@ void EntityExecutor::uninit() {
     _entityscriptinfos.clear();
 }
 
-void EntityExecutor::addEntityScript(EntityScriptAllocatorInterface* allocator, const char* name, std::function<void(ScriptView)> spawn_callback, std::function<void(ScriptView)> remove_callback) {
+void EntityExecutor::addEntityScript(EntityScriptInfo entityscriptinfo, const char* name) {
     if (!hasAdded(name)) {
-        Executor::add(nullptr, name, spawn_callback, remove_callback);
-        _entityscriptinfos[name] = EntityScriptInfo{allocator};
+        Executor::addScript(entityscriptinfo, name);
+        _entityscriptinfos[name] = entityscriptinfo;
     } else
         throw std::runtime_error("Attempt to add already added name");
 }
@@ -137,6 +137,7 @@ std::unordered_map<std::string, float>& Entity::attributes1f() { return _attribu
 std::unordered_map<std::string, glm::vec2>& Entity::attributes2f() { return _attributes2f; }
 std::unordered_map<std::string, glm::vec3>& Entity::attributes3f() { return _attributes3f; }
 EntityScriptView& Entity::entityscriptview() { return _entityscriptview; }
+Transform& Entity::transform() { return _transform; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -209,33 +210,34 @@ void CollisionSpace::uninit() {
         return;
 
     _colliders.clear();
-    _filters.clear();
+    _entitycolliderinfos.clear();
     _initialized = false;
 }
 
-EntityColliderView CollisionSpace::spawnCollider(Transform transform, glm::vec3 vel, const char* filter_name, Entity* entity) {
+void CollisionSpace::addCollider(EntityColliderInfo entitycolliderinfo, const char* name) {
+    _entitycolliderinfos[name] = entitycolliderinfo;
+}
+
+EntityColliderView CollisionSpace::spawnCollider(const char* name, Entity* entity) {
     if (!entity)
         throw std::runtime_error("Attempt to spawn EntityCollider with null Entity reference");
 
     EntityCollider* collider = new EntityCollider;
+    EntityColliderInfo &eci = _entitycolliderinfos[name];
     
     collider->_collisionspace = this;
     collider->_this_iter = _colliders.push_back(collider);
-    collider->_filterstate.setFilter(&_filters[filter_name]);
+    collider->_filterstate.setFilter(&(eci.filter));
     collider->_entity = entity;
 
     collider->collision_enabled = true;
-    collider->transform = transform;
-    collider->vel = vel;
+    collider->transform = eci.transform;
+    collider->vel = eci.vel;
 
     return EntityColliderView(collider);
 }
 
 void CollisionSpace::erase(EntityColliderView colliderview) { _colliders.erase(colliderview._collider->_this_iter); }
-
-void CollisionSpace::addFilter(Filter filter, const char* name) {
-    _filters[name] = filter;
-}
 
 void CollisionSpace::detectCollisionAABB() {
     // perform pair-wise collision detection
@@ -358,28 +360,24 @@ void EntityManager::addEntity(EntityInfo info, const char* name) {
     _entities[name] = ManagedList<Entity>();
 }
 
-Entity* EntityManager::spawnEntity(const char* name, EntityArgs entity_args) {
+Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     EntityInfo& ei = _entityinfos[name];
     Entity* entity = new Entity();
 
-    if (entity_args.quad_args.size() != ei.num_quads)
-        throw std::runtime_error("Provided amount of QuadArgs instances unequal to number specified in EntityInfo");
-    if (entity_args.entitycollider_args.size() != ei.num_entitycolliders)
-        throw std::runtime_error("Provided amount of EntityColliderArgs instances unequal to number specified in EntityInfo");
-
     // instantiate each Quad in info and push to entity's storage
-    for (const QuadArgs& a : entity_args.quad_args) {
-        entity->_quad_ids.push_back(_glenv->genQuad(a.pos, a.scale, a.color, a.type, a.animation_name.c_str(), a.texpos, a.texsize, a.innerrad));
+    for (const std::string& qn : ei.quad_names) {
+        entity->_quad_ids.push_back(_glenv->genQuad(qn.c_str()));
         entity->_quads.push_back(_glenv->getQuad(entity->_quad_ids.back()));
     }
 
-    // instantiate each Box in info and push to entity's storage
-    for (const EntityColliderArgs& a : entity_args.entitycollider_args)
-        entity->_entitycolliderviews.push_back(_collisionspace->spawnCollider(a.transf, a.vel, a.filter_name.c_str(), entity));
+    // instantiate each EntityCollider in info and push to entity's storage
+    for (const std::string& ecn : ei.entitycollider_names)
+        entity->_entitycolliderviews.push_back(_collisionspace->spawnCollider(ecn.c_str(), entity));
 
     entity->_name = name;
     entity->_this_iter = _entities[ei.group.c_str()].push_back(entity);
     entity->_entitymanager = this;
+    entity->_transform = transform;
     
     // instantiate EntityScript in info and push to entity's storage
     entity->_entityscriptview = _entityexecutor->spawnEntityScript(ei.entityscript_name.c_str(), ei.execution_queue, entity);

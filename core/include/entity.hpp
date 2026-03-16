@@ -97,13 +97,13 @@ class GenericEntityScriptAllocator : public EntityScriptAllocatorInterface {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-class EntityExecutor : public Executor {
-   // struct holding EntityScript information mapped to a name
-   struct EntityScriptInfo {
-      EntityScriptAllocatorInterface* _allocator;
-      // default copy assignment/construction are fine
-   };
+// struct holding EntityScript information mapped to a name
+struct EntityScriptInfo : public ScriptInfo {
+   EntityScriptAllocatorInterface* _allocator;
+   // default copy assignment/construction are fine
+};
 
+class EntityExecutor : public Executor {
    std::unordered_map<unsigned, EntityScript*> _entityscripts_id;
 
 protected:
@@ -147,13 +147,10 @@ public:
 
    /* Adds a EntityScript allocator with initialization information to this executor, allowing its given
       name to be used for future spawns.
-      - allocator - Reference to instance of class implementing EntityScriptAllocatorInterface.
-      - name - name to associate with the allocator
-      - removeonkill - removes this EntityScript from this executor when it is killed
-      - spawn_callback - function callback to call after EntityScript has been spawned and setup
-      - remove_callback - function callback to call before EntityScript has been removed
+      - EntityScriptInfo - instance of EntityScriptInfo with allocation/initialization information
+      - name - name to associate with the EntityScriptInfo instance
    */
-   void addEntityScript(EntityScriptAllocatorInterface* allocator, const char* name, std::function<void(ScriptView)> spawn_callback, std::function<void(ScriptView)>  remove_callback);
+   void addEntityScript(EntityScriptInfo entityscriptinfo, const char* name);
 
    /* Spawns a EntityScript using a name previously added to this executor, and returns its ID. */
    EntityScriptView spawnEntityScript(const char* entityscript_name, int execution_queue, Entity* entity);
@@ -214,7 +211,7 @@ public:
    std::unordered_map<std::string, float>& attributes1f();
    std::unordered_map<std::string, glm::vec2>& attributes2f();
    std::unordered_map<std::string, glm::vec3>& attributes3f();
-   Transform &transform();
+   Transform& transform();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -226,31 +223,31 @@ class CollisionSpace;
    Represents a physical presence capable of collision within a CollisionSpace.
 */
 class EntityCollider {
-    friend CollisionSpace;
+   friend CollisionSpace;
 
-    // fields maintained by owning CollisionSpace
-    CollisionSpace* _collisionspace;
-    std::list<EntityCollider*>::iterator _this_iter;
-    FilterState _filterstate;
-    
-    Entity* _entity;
+   // fields maintained by owning CollisionSpace
+   CollisionSpace* _collisionspace;
+   std::list<EntityCollider*>::iterator _this_iter;
+   FilterState _filterstate;
+   
+   Entity* _entity;
 public:
-    EntityCollider(EntityCollider&& other);
-    EntityCollider();
-    EntityCollider(const EntityCollider&) = delete;
-    virtual ~EntityCollider();
+   EntityCollider(EntityCollider&& other);
+   EntityCollider();
+   EntityCollider(const EntityCollider&) = delete;
+   virtual ~EntityCollider();
 
-    EntityCollider& operator=(EntityCollider&& other);
-    EntityCollider& operator=(const EntityCollider&) = delete;
+   EntityCollider& operator=(EntityCollider&& other);
+   EntityCollider& operator=(const EntityCollider&) = delete;
 
-    // physics variables
-    bool collision_enabled;
-    Transform transform;
-    glm::vec3 vel;
+   // physics variables
+   bool collision_enabled;
+   Transform transform;
+   glm::vec3 vel;
 
-    FilterState& filterstate();
-    Entity& entity();
-    void step();
+   FilterState& filterstate();
+   Entity& entity();
+   void step();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -259,66 +256,72 @@ public:
    Contains a EntityCollider reference and wraps access to EntityCollider data without owning it. Invalid if the viewed EntityCollider is destroyed.
 */
 class EntityColliderView {
-    friend CollisionSpace;
-    EntityCollider* _collider;
+   friend CollisionSpace;
+   EntityCollider* _collider;
 public:
-    EntityColliderView(EntityCollider* collider);
-    bool& collision_enabled();
-    Transform& transform();
-    glm::vec3& vel();
+   EntityColliderView(EntityCollider* collider);
+   bool& collision_enabled();
+   Transform& transform();
+   glm::vec3& vel();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+struct EntityColliderInfo {
+   Transform transform;
+   glm::vec3 vel;
+   Filter filter;
+};
+
 /* class CollisionSpace
-   Encapsulates a physical space for contained Colliders to interact.
+   Encapsulates a physical space for contained EntityColliders to interact.
 */
 class CollisionSpace {
-    // memory-managed list of Collider references
-    ManagedList<EntityCollider> _colliders;
+   // memory-managed list of collider references
+   ManagedList<EntityCollider> _colliders;
 
-    // map of filters
-    std::unordered_map<std::string, Filter> _filters;
+   // map of EntityColliderInfos
+   std::unordered_map<std::string, EntityColliderInfo> _entitycolliderinfos;
 
-    // flag to store if instance was initialized or not
-    bool _initialized;
+   // flag to store if instance was initialized or not
+   bool _initialized;
     
 public:
-    CollisionSpace();
-    CollisionSpace(CollisionSpace&& other);
-    CollisionSpace(const CollisionSpace& other) = delete;
-    virtual ~CollisionSpace();
+   CollisionSpace();
+   CollisionSpace(CollisionSpace&& other);
+   CollisionSpace(const CollisionSpace& other) = delete;
+   virtual ~CollisionSpace();
 
-    CollisionSpace& operator=(CollisionSpace&& other);
-    CollisionSpace& operator=(const CollisionSpace& other) = delete;
+   CollisionSpace& operator=(CollisionSpace&& other);
+   CollisionSpace& operator=(const CollisionSpace& other) = delete;
 
-    /* Initializes internal CollisionSpace data. It is undefined behavior to make calls on this instance
-        before calling this and after uninit().
-    */
-    void init();
-    void uninit();
+   /* Initializes internal CollisionSpace data. It is undefined behavior to make calls on this instance
+      before calling this and after uninit().
+   */
+   void init();
+   void uninit();
 
-    /* Spawns a Collider and returns a ColliderView. */
-    EntityColliderView spawnCollider(Transform transform, glm::vec3 vel, const char* filter_name, Entity* entity);
+   void addCollider(EntityColliderInfo entitycolliderinfo, const char* name);
 
-    /* Erases the Collider referenced by the provided ColliderView. */
-    void erase(EntityColliderView colliderview);
+   /* Spawns a Collider and returns a ColliderView. */
+   EntityColliderView spawnCollider(const char* name, Entity* entity);
 
-    void addFilter(Filter filter, const char* name);
+   /* Erases the Collider referenced by the provided ColliderView. */
+   void erase(EntityColliderView colliderview);
 
-    /* Detects collision between all instances within the system via AABB method. This is done by iterating on all elements
-       in a pair-wise fashion. All collided instances have their collided count incremented.
-    */
-    void detectCollisionAABB();
+   /* Detects collision between all instances within the system via AABB method. This is done by iterating on all elements
+      in a pair-wise fashion. All collided instances have their collided count incremented.
+   */
+   void detectCollisionAABB();
 
-    /* Advances every internal instance one step in time. */
-    void step();
+   /* Advances every internal instance one step in time. */
+   void step();
 
-    /* Returns the number of Colliders in this CollisionSpace. */
-    unsigned getCount();
+   /* Returns the number of Colliders in this CollisionSpace. */
+   unsigned getCount();
 
-    /* Returns whether or not this CollisionSpace instance has been initialized or not. */
-    bool initialized();
+   /* Returns whether or not this CollisionSpace instance has been initialized or not. */
+   bool initialized();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -328,16 +331,8 @@ struct EntityInfo {
    std::string entityscript_name;
    int execution_queue;
    bool auto_enqueue;
-   int num_quads;
-   int num_entitycolliders;
-   std::list<QuadInfo> quadinfos;
-   //std::list<EntityColliderArgs> entitycollider_args;
-};
-
-struct EntityColliderArgs {
-   Transform transf;
-   glm::vec3 vel;
-   std::string filter_name;
+   std::list<std::string> quad_names;
+   std::list<std::string> entitycollider_names;
 };
 
 class EntityManager {

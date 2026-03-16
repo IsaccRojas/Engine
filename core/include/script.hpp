@@ -147,20 +147,19 @@ class GenericAllocator : public AllocatorInterface {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+struct ScriptInfo {
+   AllocatorInterface* _allocator;
+   std::function<void(ScriptView)> _spawn_callback;
+   std::function<void(ScriptView)> _remove_callback;
+   // default copy assignment/construction are fine
+};
+
 /* class Executor
    Encapsulates an execution environment for queue-able, inheritable Script instances.
    Uses queues to control execution and erasure of Scripts. A variable number of queues 
    for execution can be specified.
 */
 class Executor {
-   // struct holding Script information mapped to a name
-   struct ScriptInfo {
-      AllocatorInterface* _allocator;
-      std::function<void(ScriptView)> _spawn_callback;
-      std::function<void(ScriptView)> _remove_callback;
-      // default copy assignment/construction are fine
-   };
-
 protected:
    // class to store enqueues and polymorphically spawn later
    class ScriptEnqueue {
@@ -225,14 +224,11 @@ public:
    void init(unsigned queues);
    void uninit();
 
-   /* Adds an Script allocator with initialization information to this Executor, allowing its given
-      name to be used for future spawns.
-      - allocator - Reference to instance of class implementing AllocatorInterface.
-      - name - name to associate with the allocator
-      - spawn_callback - function callback to call after Script has been spawned and setup
-      - remove_callback - function callback to call before Script has been removed
+   /* Stores ScriptInfo with allocator and initialization information in this Executor, mapped to the provided name.
+      - ScriptInfo - instance of ScriptInfo with allocation/initialization information
+      - name - name to associate with the ScriptInfo instance
    */
-   void add(AllocatorInterface* allocator, const char* name, std::function<void(ScriptView)> spawn_callback, std::function<void(ScriptView)> remove_callback);
+   void addScript(ScriptInfo scriptinfo, const char* name);
 
    /* Spawns a Script using a name previously added to this Executor, calls its runInit() method, and returns a ScriptView of it. */
    ScriptView spawnScript(const char* script_name, int execution_queue);

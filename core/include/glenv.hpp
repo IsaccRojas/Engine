@@ -40,6 +40,13 @@ public:
    /* Calls update() on all internal BVec instances, writing their respective data into their respective buffers. */
    void updateBVecs();
 
+   /* Returns the contained BVec. */
+   GLUtil::BVec3& bv_pos();
+   GLUtil::BVec3& bv_scale();
+   GLUtil::BVec4& bv_color();
+   GLUtil::BVec3& bv_texpos();
+   GLUtil::BVec2& bv_texsize();
+
    /* Returns the contained Quad transform. */
    Transform &transform();
 
@@ -54,6 +61,7 @@ public:
 };
 
 struct QuadInfo {
+   Transform transform;
    glm::vec4 color;
    Animation animation;
 };
@@ -134,23 +142,13 @@ public:
    void init(unsigned max_count);
    void uninit();
    
-   void addQuad(QuadInfo quadinfo, const char *quad_name);
-   /* Generates an active Quad in system. This call does not write the new Quad into graphic memory. You 
-      must call the update() method on the environment or a reference to the Quad itself.
-      pos - GLM vec3 position of Quad
-      scale - GLM vec3 scale of Quad
-      color - GLM vec4 color of Quad
-      type - whether to interpret this Quad data as a rectangle or ellipse
-      animation_name - name of animation data to use with this Quad ("" if none)
-      texpos - GLM vec3 texture position of Quad (multi-level 2D texture space)
-      texsize - GLM vec2 texture size of Quad (added to positions to get a rectangle)
-      Returns the integer offset of Quad. This number can be used to index into the internal Quad container and
-      obtain a reference (see the get() method). This offset is unique and will be valid for the lifetime 
-      of the Quad (see the remove() method). If the maximum number of active Quads allowed is exceeded, a
-      CountLimitException is thrown.
+   /* Stores QuadInfo mapped to provided name for use when generating Quads. */
+   void addQuad(QuadInfo quadinfo, const char* name);
+   /* Generates an active Quad in system using the specified QuadInfo or values. This call does not write the new Quad into graphic memory. You 
+      must call the updateBVecs() method on the environment or a reference to the Quad itself.
    */
-   //unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, DrawType type, const char* animation_name, glm::vec3 texpos, glm::vec2 texsize);
-   unsigned genQuad(const char* quad_name, Transform transform);
+   unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, glm::vec3 texpos, glm::vec2 texsize);
+   unsigned genQuad(const char* quad_name);
    /* Removes the Quad with the provided offset from the system. This will cause the provided offset to be 
       invalid until returned again by the genQuad() method. Note that this method does not actually
       free any GPU memory; it simply makes the specific offset usable again by the system. Attempting to use
