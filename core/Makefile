@@ -21,9 +21,6 @@ glutil.o: ${SRCDIR}/glutil.cpp
 glenv.o: ${SRCDIR}/glenv.cpp
 	clang++ ${CXXFLAGS} -c ${SRCDIR}/glenv.cpp -o glenv.o
 
-text.o: ${SRCDIR}/text.cpp
-	clang++ ${CXXFLAGS} -c ${SRCDIR}/text.cpp -o text.o
-
 animation.o: ${SRCDIR}/animation.cpp
 	clang++ ${CXXFLAGS} -c ${SRCDIR}/animation.cpp -o animation.o
 
@@ -39,7 +36,7 @@ glfwinput.o: ${SRCDIR}/glfwinput.cpp
 glfwstate.o: ${SRCDIR}/glfwstate.cpp
 	clang++ ${CXXFLAGS} -c ${SRCDIR}/glfwstate.cpp -o glfwstate.o
 
-libcore.a: commonexcept.o util.o script.o glutil.o glenv.o text.o animation.o filter.o entity.o glfwinput.o glfwstate.o
+libcore.a: commonexcept.o util.o script.o glutil.o glenv.o animation.o filter.o entity.o glfwinput.o glfwstate.o
 	llvm-ar rcs core.lib *.o
 
 # windows syntax

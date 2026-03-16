@@ -145,8 +145,8 @@ EntityCollider::EntityCollider(EntityCollider&& other) { operator=(std::move(oth
 EntityCollider::EntityCollider() :
     _collisionspace(nullptr),
     _entity(nullptr),
-    collision_enabled(false),
-    vel(glm::vec3(0.0f))
+    _collision_enabled(false),
+    _vel(glm::vec3(0.0f))
 {}
 EntityCollider::~EntityCollider() {}
 
@@ -156,31 +156,35 @@ EntityCollider& EntityCollider::operator=(EntityCollider&& other) {
         _this_iter = other._this_iter;
         _filterstate = other._filterstate;
         _entity = other._entity;
-        collision_enabled = other.collision_enabled;
-        vel = other.vel;
+        _collision_enabled = other._collision_enabled;
+        _transform = other._transform;
+        _vel = other._vel;
         other._collisionspace = nullptr;
         other._entity = nullptr;
-        other.collision_enabled = false;
-        other.vel = glm::vec3(0.0f);
+        other._collision_enabled = false;
+        other._vel = glm::vec3(0.0f);
     }
     return *this;
 }
 
 FilterState& EntityCollider::filterstate() { return _filterstate; }
-
 Entity& EntityCollider::entity() {return *_entity; }
 
-void EntityCollider::step() { transform.pos += vel; }
+void EntityCollider::step() { _transform.pos += _vel; }
+
+bool& EntityCollider::collision_enabled() { return _collision_enabled; }
+Transform& EntityCollider::transform() { return _transform; }
+glm::vec3& EntityCollider::vel() { return _vel; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 EntityColliderView::EntityColliderView(EntityCollider* collider) : _collider(collider) {}
 
-bool& EntityColliderView::collision_enabled() { return _collider->collision_enabled; }
+bool& EntityColliderView::collision_enabled() { return _collider->collision_enabled(); }
 
-Transform& EntityColliderView::transform() { return _collider->transform; }
+Transform& EntityColliderView::transform() { return _collider->transform(); }
 
-glm::vec3& EntityColliderView::vel() { return _collider->vel; }
+glm::vec3& EntityColliderView::vel() { return _collider->vel(); }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -230,9 +234,9 @@ EntityColliderView CollisionSpace::spawnCollider(const char* name, Entity* entit
     collider->_filterstate.setFilter(&(eci.filter));
     collider->_entity = entity;
 
-    collider->collision_enabled = true;
-    collider->transform = Transform::apply(eci.transform, transform);
-    collider->vel = eci.vel;
+    collider->collision_enabled() = true;
+    collider->transform() = Transform::apply(eci.transform, transform);
+    collider->vel() = eci.vel;
 
     return EntityColliderView(collider);
 }
@@ -245,7 +249,7 @@ void CollisionSpace::detectCollisionAABB() {
 
         // get Collider and skip if scale is zeroed out
         EntityCollider* c1 = *iter1;
-        if (!(c1->collision_enabled) || (c1->transform.scale == glm::vec3(0.0f)))
+        if (!(c1->collision_enabled()) || (c1->transform().scale == glm::vec3(0.0f)))
             continue;
 
         auto iter2 = iter1;
@@ -254,7 +258,7 @@ void CollisionSpace::detectCollisionAABB() {
 
             // get other T and skip if scale is zeroed out (check t1's enable flag again in case it was unset this outer loop iteration)
             EntityCollider* c2 = *iter2;
-            if (!(c1->collision_enabled) || !(c2->collision_enabled) || (c2->transform.scale == glm::vec3(0.0f)))
+            if (!(c1->collision_enabled()) || !(c2->collision_enabled()) || (c2->transform().scale == glm::vec3(0.0f)))
                 continue;
 
             // test filters against each other's IDs
@@ -272,7 +276,7 @@ void CollisionSpace::detectCollisionAABB() {
                     c2->filterstate().pass(c1->filterstate().id()))
             ) {
                 // detect and handle collision
-                if (computeCollisionAABB(c1->transform, c2->transform)) {
+                if (computeCollisionAABB(c1->transform(), c2->transform())) {
                     c1->entity().entityscriptview().collide(&(c2->entity()));
                     c2->entity().entityscriptview().collide(&(c1->entity()));
                 }

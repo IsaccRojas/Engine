@@ -2,7 +2,7 @@
 
 // _______________________________________ Quad _______________________________________
 
-Quad::Quad() {}
+Quad::Quad() : _base_pos(0.0f), _base_scale(1.0f) {}
 Quad::~Quad() { /* automatic destruction is fine */ }
 
 void Quad::updateBVecs() {
@@ -12,12 +12,6 @@ void Quad::updateBVecs() {
     _bv_texpos.update();
     _bv_texsize.update();
 }
-
-GLUtil::BVec3& Quad::bv_pos() { return _bv_pos; }
-GLUtil::BVec3& Quad::bv_scale() { return _bv_scale; }
-GLUtil::BVec4& Quad::bv_color() { return _bv_color; }
-GLUtil::BVec3& Quad::bv_texpos() { return _bv_texpos; }
-GLUtil::BVec2& Quad::bv_texsize() { return _bv_texsize; }
 
 Transform& Quad::transform() {
     return _transform;
@@ -29,8 +23,8 @@ AnimationState& Quad::animationstate() {
 
 void Quad::writeTransform() {
     // write transform data to quad
-    _bv_pos.v = _transform.pos;
-    _bv_scale.v = _transform.pos;
+    _bv_pos.v = _base_pos + _transform.pos;
+    _bv_scale.v = _base_scale * _transform.pos;
 }
 
 void Quad::writeAnimation() {
@@ -309,10 +303,14 @@ unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, glm::ve
     q._bv_texpos.setBuffer(&_glb_texpos, offset * (3 * sizeof(GLfloat))); 
     q._bv_texsize.setBuffer(&_glb_texsize, offset * (2 * sizeof(GLfloat)));
 
-    q.transform() = Transform{pos, scale};
+    q._bv_pos.v = pos;
+    q._bv_scale.v = scale;
     q._bv_color.v = color;
     q._bv_texpos.v = texpos;
     q._bv_texsize.v = texsize;
+
+    q._base_pos = pos;
+    q._base_scale = scale;
 
     q.writeTransform();
     q.writeAnimation();
@@ -343,8 +341,14 @@ unsigned GLEnv::genQuad(const char* quad_name, Transform transform) {
 
     QuadInfo &qi = _quadinfos[quad_name];
 
-    q.transform() = Transform::apply(qi.transform, transform);
+    q._bv_pos.v = qi.pos;
+    q._bv_scale.v = qi.scale;
     q._bv_color.v = qi.color;
+
+    q._base_pos = qi.pos;
+    q._base_scale = qi.scale;
+
+    q.transform() = transform;
     q.animationstate().setAnimation(&(qi.animation));
 
     q.writeTransform();

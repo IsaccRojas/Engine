@@ -231,6 +231,11 @@ class EntityCollider {
    CollisionSpace* _collisionspace;
    std::list<EntityCollider*>::iterator _this_iter;
    FilterState _filterstate;
+
+   // physics variables
+   bool _collision_enabled;
+   Transform _transform;
+   glm::vec3 _vel;
    
    Entity* _entity;
 public:
@@ -242,14 +247,13 @@ public:
    EntityCollider& operator=(EntityCollider&& other);
    EntityCollider& operator=(const EntityCollider&) = delete;
 
-   // physics variables
-   bool collision_enabled;
-   Transform transform;
-   glm::vec3 vel;
-
    FilterState& filterstate();
    Entity& entity();
    void step();
+
+   bool& collision_enabled();
+   Transform& transform();
+   glm::vec3& vel();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

@@ -16,12 +16,15 @@ void loop(CoreResources *core) {
     ES_PlayerAllocator alloc_ES_Player(&(core->input));
     GenericEntityScriptAllocator<ES_Chaser> alloc_ES_Chaser;
 
-    core->glenv.addQuad(QuadInfo{Transform{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f)}, glm::vec4(0.0f), core->animations["Animation_Player"]}, "Quad_Player");
-    core->glenv.addQuad(QuadInfo{Transform{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f)}, glm::vec4(0.0f), core->animations["Animation_PurpleSquare"]}, "Quad_PurpleSquare");
+    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f), glm::vec4(0.0f), core->animations["Animation_Player"]}, "Quad_Player");
+    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f), glm::vec4(0.0f), core->animations["Animation_PurpleSquare"]}, "Quad_PurpleSquare");
+
     core->collisionspace.addCollider(EntityColliderInfo{Transform{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 16.0f)}, glm::vec3(0.0f), core->filters["Filter_Player"]}, "EntityCollider_Player");
     core->collisionspace.addCollider(EntityColliderInfo{Transform{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 16.0f)}, glm::vec3(0.0f), core->filters["Filter_Enemy"]}, "EntityCollider_Enemy");
+
     core->entityexecutor.addEntityScript(EntityScriptInfo{&alloc_ES_Player, nullptr, nullptr}, "ES_Player");
     core->entityexecutor.addEntityScript(EntityScriptInfo{&alloc_ES_Chaser, nullptr, nullptr}, "ES_Chaser");
+    
     core->entitymanager.addEntity(EntityInfo{"Group_Player", "ES_Player", 0, true, {"Quad_Player"}, {"EntityCollider_Player"}}, "Entity_Player");
     core->entitymanager.addEntity(EntityInfo{"Group_Enemy", "ES_Chaser", 0, true, {"Quad_PurpleSquare"}, {"EntityCollider_Enemy"}}, "Entity_Dummy");
     

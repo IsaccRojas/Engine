@@ -27,7 +27,9 @@ class Quad {
    GLUtil::BVec3 _bv_texpos;
    GLUtil::BVec2 _bv_texsize;
 
-   // controllable variables
+   // variables for updating values
+   glm::vec3 _base_pos;
+   glm::vec3 _base_scale;
    Transform _transform;
    AnimationState _animationstate;
 
@@ -39,13 +41,6 @@ public:
 
    /* Calls update() on all internal BVec instances, writing their respective data into their respective buffers. */
    void updateBVecs();
-
-   /* Returns the contained BVec. */
-   GLUtil::BVec3& bv_pos();
-   GLUtil::BVec3& bv_scale();
-   GLUtil::BVec4& bv_color();
-   GLUtil::BVec3& bv_texpos();
-   GLUtil::BVec2& bv_texsize();
 
    /* Returns the contained Quad transform. */
    Transform &transform();
@@ -61,7 +56,8 @@ public:
 };
 
 struct QuadInfo {
-   Transform transform;
+   glm::vec3 pos;
+   glm::vec3 scale;
    glm::vec4 color;
    Animation animation;
 };
