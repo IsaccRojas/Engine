@@ -102,7 +102,7 @@ void EntityExecutor::uninit() {
 
 void EntityExecutor::addEntityScript(EntityScriptInfo entityscriptinfo, const char* name) {
     if (!hasAdded(name)) {
-        Executor::addScript(entityscriptinfo, name);
+        Executor::addScript(ScriptInfo{entityscriptinfo._allocator, entityscriptinfo._spawn_callback, entityscriptinfo._remove_callback}, name);
         _entityscriptinfos[name] = entityscriptinfo;
     } else
         throw std::runtime_error("Attempt to add already added name");

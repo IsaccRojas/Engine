@@ -98,8 +98,10 @@ class GenericEntityScriptAllocator : public EntityScriptAllocatorInterface {
 // --------------------------------------------------------------------------------------------------------------------------
 
 // struct holding EntityScript information mapped to a name
-struct EntityScriptInfo : public ScriptInfo {
+struct EntityScriptInfo {
    EntityScriptAllocatorInterface* _allocator;
+   std::function<void(ScriptView)> _spawn_callback;
+   std::function<void(ScriptView)> _remove_callback;
    // default copy assignment/construction are fine
 };
 

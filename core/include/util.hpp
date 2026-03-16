@@ -13,7 +13,7 @@
 
 struct Transform {
     glm::vec3 pos = glm::vec3(0.0f);
-    glm::vec3 scale = glm::vec3(0.0f);
+    glm::vec3 scale = glm::vec3(1.0f);
     // default copy assignment/construction are fine
 
     /* Adds position vector of other Transform to this position, and muliplies scale vector of this Transform to other's scale. */

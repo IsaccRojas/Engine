@@ -16,29 +16,17 @@ void loop(CoreResources *core) {
     ES_PlayerAllocator alloc_ES_Player(&(core->input));
     GenericEntityScriptAllocator<ES_Chaser> alloc_ES_Chaser;
 
-    core->entityexecutor.addEntityScript(&alloc_ES_Player, "ES_Player", nullptr, nullptr);
-    core->entityexecutor.addEntityScript(&alloc_ES_Chaser, "ES_Chaser", nullptr, nullptr);
+    core->glenv.addQuad(QuadInfo{Transform{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f)}, glm::vec4(0.0f), core->animations["Animation_Player"]}, "Quad_Player");
+    core->glenv.addQuad(QuadInfo{Transform{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f)}, glm::vec4(0.0f), core->animations["Animation_PurpleSquare"]}, "Quad_PurpleSquare");
+    core->collisionspace.addCollider(EntityColliderInfo{Transform{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 16.0f)}, glm::vec3(0.0f), core->filters["Filter_Player"]}, "EntityCollider_Player");
+    core->collisionspace.addCollider(EntityColliderInfo{Transform{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 16.0f)}, glm::vec3(0.0f), core->filters["Filter_Enemy"]}, "EntityCollider_Enemy");
+    core->entityexecutor.addEntityScript(EntityScriptInfo{&alloc_ES_Player, nullptr, nullptr}, "ES_Player");
+    core->entityexecutor.addEntityScript(EntityScriptInfo{&alloc_ES_Chaser, nullptr, nullptr}, "ES_Chaser");
+    core->entitymanager.addEntity(EntityInfo{"Group_Player", "ES_Player", 0, true, {"Quad_Player"}, {"EntityCollider_Player"}}, "Entity_Player");
+    core->entitymanager.addEntity(EntityInfo{"Group_Enemy", "ES_Chaser", 0, true, {"Quad_PurpleSquare"}, {"EntityCollider_Enemy"}}, "Entity_Dummy");
     
-    core->entitymanager.addEntity(EntityInfo{"Group_Player", "ES_Player", 0, true, 1, 1}, "Entity_Player");
-    core->entitymanager.addEntity(EntityInfo{"Group_Enemy", "ES_Chaser", 0, true, 1, 1}, "Entity_Dummy");
-
-    Entity *player = core->entitymanager.spawnEntity(
-        "Entity_Player",
-        EntityArgs{
-            {{glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), GLE_RECT, "Animation_Player", glm::vec3(0.0f), glm::vec2(0.0f), 0.0f}},
-            {{Transform{glm::vec3(0.0f), glm::vec3(16.0f)}, glm::vec3(0.0f), "Filter_Player"}}
-        }
-    );
-    player->attributes3f()["pos"] = glm::vec3(0.0f, 32.0f, 0.0f);
-
-    Entity *dummy = core->entitymanager.spawnEntity(
-        "Entity_Dummy",
-        EntityArgs{
-            {{glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), GLE_RECT, "Animation_PurpleSquare", glm::vec3(0.0f), glm::vec2(0.0f), 0.0f}},
-            {{Transform{glm::vec3(0.0f), glm::vec3(16.0f)}, glm::vec3(0.0f), "Filter_Enemy"}},
-        }
-    );
-    dummy->attributes3f()["pos"] = glm::vec3(32.0f, 0.0f, 0.0f);
+    Entity *player = core->entitymanager.spawnEntity("Entity_Player", Transform{glm::vec3(0.0f, 32.0f, 0.0f), glm::vec3(1.0f)});
+    Entity *dummy = core->entitymanager.spawnEntity("Entity_Dummy",Transform{glm::vec3(32.0f, 0.0f, 0.0f), glm::vec3(1.0f)});
     
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(core->state.getWindowHandle()) && !core->input.get_esc()) {

@@ -10,6 +10,9 @@ struct CoreResources {
     GLFWState state;
     GLFWInput input;
 
+    std::unordered_map<std::string, Animation> animations;
+    std::unordered_map<std::string, Filter> filters;
+
     EntityExecutor entityexecutor;
     GLEnv glenv;
     CollisionSpace collisionspace;

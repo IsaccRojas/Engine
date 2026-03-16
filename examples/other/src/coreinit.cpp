@@ -31,6 +31,8 @@ void initializeCore(CoreResources *core) {
 
     // get animation and filter maps
     std::cout << "Loading Animations and Filters" << std::endl;
+    core->animations = loadAnimations(ANIMATION_DIR);
+    core->filters = loadFilters(FILTER_DIR);
 
     // set up Executor
     std::cout << "Setting up EntityExecutor" << std::endl;
@@ -41,11 +43,6 @@ void initializeCore(CoreResources *core) {
     core->glenv.init(MAX_COUNT);
     core->glenv.setTexArray(TEX_SPACE_WIDTH, TEX_SPACE_HEIGHT, TEX_SPACE_LEVELS);
     core->glenv.setTexture(Image("gfx/sprites.png"), 0, 0, 0);
-
-    std::cout << "Loading animations into GLEnv" << std::endl;
-    for (auto &[name, animation] : loadAnimations(ANIMATION_DIR))
-        core->glenv.addAnimation(animation, name.c_str());
-
     
     float halfwidth = float(PIXEL_WIDTH) / 2.0f;
     float halfheight = float(PIXEL_HEIGHT) / 2.0f;
@@ -57,10 +54,6 @@ void initializeCore(CoreResources *core) {
     // set up CollisionSpace
     std::cout << "Setting up CollisionSpace" << std::endl;
     core->collisionspace.init();
-
-    std::cout << "Loading filters into CollisionSpace" << std::endl;
-    for (auto &[name, filter] : loadFilters(FILTER_DIR))
-        core->collisionspace.addFilter(filter, name.c_str());
 
     // set up Manager
     std::cout << "Setting up EntityManager" << std::endl;
