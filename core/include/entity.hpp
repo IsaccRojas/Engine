@@ -304,7 +304,7 @@ public:
    void addCollider(EntityColliderInfo entitycolliderinfo, const char* name);
 
    /* Spawns a Collider and returns a ColliderView. */
-   EntityColliderView spawnCollider(const char* name, Entity* entity);
+   EntityColliderView spawnCollider(const char* name, Entity* entity, Transform transform);
 
    /* Erases the Collider referenced by the provided ColliderView. */
    void erase(EntityColliderView colliderview);

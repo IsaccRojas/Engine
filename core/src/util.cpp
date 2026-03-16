@@ -3,6 +3,16 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../include/stb_image.h"
 
+Transform& Transform::apply(Transform& other) {
+    pos += other.pos;
+    scale *= other.scale;
+    return *this;
+}
+
+Transform Transform::apply(const Transform& first, const Transform& second) {
+    return Transform{first.pos + second.pos, first.scale * second.scale};
+}
+
 InactiveIntException::InactiveIntException() : std::logic_error("Inactive IntGenerator integer accessed") {}
 
 std::string readfile(const char* filename) {

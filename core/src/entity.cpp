@@ -218,7 +218,7 @@ void CollisionSpace::addCollider(EntityColliderInfo entitycolliderinfo, const ch
     _entitycolliderinfos[name] = entitycolliderinfo;
 }
 
-EntityColliderView CollisionSpace::spawnCollider(const char* name, Entity* entity) {
+EntityColliderView CollisionSpace::spawnCollider(const char* name, Entity* entity, Transform transform) {
     if (!entity)
         throw std::runtime_error("Attempt to spawn EntityCollider with null Entity reference");
 
@@ -231,7 +231,7 @@ EntityColliderView CollisionSpace::spawnCollider(const char* name, Entity* entit
     collider->_entity = entity;
 
     collider->collision_enabled = true;
-    collider->transform = eci.transform;
+    collider->transform = Transform::apply(eci.transform, transform);
     collider->vel = eci.vel;
 
     return EntityColliderView(collider);
@@ -366,13 +366,13 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
 
     // instantiate each Quad in info and push to entity's storage
     for (const std::string& qn : ei.quad_names) {
-        entity->_quad_ids.push_back(_glenv->genQuad(qn.c_str()));
+        entity->_quad_ids.push_back(_glenv->genQuad(qn.c_str(), transform));
         entity->_quads.push_back(_glenv->getQuad(entity->_quad_ids.back()));
     }
 
     // instantiate each EntityCollider in info and push to entity's storage
     for (const std::string& ecn : ei.entitycollider_names)
-        entity->_entitycolliderviews.push_back(_collisionspace->spawnCollider(ecn.c_str(), entity));
+        entity->_entitycolliderviews.push_back(_collisionspace->spawnCollider(ecn.c_str(), entity, transform));
 
     entity->_name = name;
     entity->_this_iter = _entities[ei.group.c_str()].push_back(entity);

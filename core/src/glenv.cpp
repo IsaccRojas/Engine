@@ -325,7 +325,7 @@ unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, glm::ve
     _count++;
     return offset;
 }
-unsigned GLEnv::genQuad(const char* quad_name) {
+unsigned GLEnv::genQuad(const char* quad_name, Transform transform) {
     // if number of active offsets is greater than or equal to maximum allowed count, throw
     if (_count >= _max_count)
         throw CountLimitException();
@@ -344,7 +344,7 @@ unsigned GLEnv::genQuad(const char* quad_name) {
 
     QuadInfo &qi = _quadinfos[quad_name];
 
-    q.transform() = qi.transform;
+    q.transform() = Transform::apply(qi.transform, transform);
     q._bv_color.v = qi.color;
     q.animationstate().setAnimation(&(qi.animation));
 

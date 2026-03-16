@@ -144,11 +144,12 @@ public:
    
    /* Stores QuadInfo mapped to provided name for use when generating Quads. */
    void addQuad(QuadInfo quadinfo, const char* name);
-   /* Generates an active Quad in system using the specified QuadInfo or values. This call does not write the new Quad into graphic memory. You 
-      must call the updateBVecs() method on the environment or a reference to the Quad itself.
+   /* Generates an active Quad in system using the specified QuadInfo and Transform (applied on top of QuadInfo transform), or values. 
+      This call does not write the new Quad into graphic memory. You must call the updateBVecs() method on the environment or a 
+      reference to the Quad itself.
    */
    unsigned genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, glm::vec3 texpos, glm::vec2 texsize);
-   unsigned genQuad(const char* quad_name);
+   unsigned genQuad(const char* quad_name, Transform transform);
    /* Removes the Quad with the provided offset from the system. This will cause the provided offset to be 
       invalid until returned again by the genQuad() method. Note that this method does not actually
       free any GPU memory; it simply makes the specific offset usable again by the system. Attempting to use
