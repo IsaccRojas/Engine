@@ -84,7 +84,6 @@ const char* const vert_shader_str = R"(
             )
         ;
 
-        f_type = v_type;
         f_draw = v_draw;
         
         // get final pos by shifting unit model to center, scaling it by attribute scale, and adding attribute pos
@@ -108,8 +107,8 @@ const char * const frag_shader_str = R"(
 
     layout(location = 9) uniform sampler2DArray texsamplerarray;
     layout(location = 10) uniform uvec3 texarraydims;
-    layout(location = 11) uniform uvec2 windowspace;
-    layout(location = 12) uniform uvec3 pixelspace;
+    // layout(location = 11) uniform uvec2 windowspace;
+    // layout(location = 12) uniform uvec3 pixelspace;
 
     in vec3 f_pos;
     in vec3 f_scale;
@@ -393,11 +392,13 @@ void GLEnv::setProj(glm::mat4 proj) {
 }
 
 void GLEnv::setWindowSpace(GLuint width, GLuint height) {
-    _stage.uniform2ui(11, glm::uvec2(width, height));
+    // NOTE: not currently needed, so related attribute is being optimized out
+    // _stage.uniform2ui(11, glm::uvec2(width, height));
 }
 
 void GLEnv::setPixelSpace(GLuint width, GLuint height, GLuint depth) {
-    _stage.uniform3ui(12, glm::uvec3(width, height, depth));
+    // NOTE: not currently needed, so related attribute is being optimized out
+    // _stage.uniform3ui(12, glm::uvec3(width, height, depth));
 }
 
 void GLEnv::update() {
