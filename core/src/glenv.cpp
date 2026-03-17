@@ -24,7 +24,7 @@ AnimationState& Quad::animationstate() {
 void Quad::writeTransform() {
     // write transform data to quad
     _bv_pos.v = _base_pos + _transform.pos;
-    _bv_scale.v = _base_scale * _transform.pos;
+    _bv_scale.v = _base_scale * _transform.scale;
 }
 
 void Quad::writeAnimation() {
@@ -311,9 +311,6 @@ unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, glm::ve
 
     q._base_pos = pos;
     q._base_scale = scale;
-
-    q.writeTransform();
-    q.writeAnimation();
 
     // set the draw flag
     GLfloat draw = 1.0f;

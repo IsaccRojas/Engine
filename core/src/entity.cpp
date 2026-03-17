@@ -144,9 +144,9 @@ Transform& Entity::transform() { return _transform; }
 EntityCollider::EntityCollider(EntityCollider&& other) { operator=(std::move(other)); }
 EntityCollider::EntityCollider() :
     _collisionspace(nullptr),
-    _entity(nullptr),
     _collision_enabled(false),
-    _vel(glm::vec3(0.0f))
+    _vel(glm::vec3(0.0f)),
+    _entity(nullptr)
 {}
 EntityCollider::~EntityCollider() {}
 
