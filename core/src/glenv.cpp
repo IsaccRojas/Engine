@@ -13,18 +13,21 @@ void Quad::updateBVecs() {
     _bv_texsize.update();
 }
 
-Transform& Quad::transform() {
-    return _transform;
+void Quad::resetTransformation() {
+    _bv_pos.v = _base_pos;
+    _bv_scale.v = _base_scale;
 }
+
+void Quad::applyTransform(Transform transform) {
+    _bv_pos.v += transform.pos;
+    _bv_scale.v *= transform.scale;
+}
+
+   /* Applies provided Transform to pos and scale BVecs. */
+   void applyTransform(Transform transform);
 
 AnimationState& Quad::animationstate() {
     return _animationstate;
-}
-
-void Quad::writeTransform() {
-    // write transform data to quad
-    _bv_pos.v = _base_pos + _transform.pos;
-    _bv_scale.v = _base_scale * _transform.scale;
 }
 
 void Quad::writeAnimation() {
@@ -341,14 +344,12 @@ unsigned GLEnv::genQuad(const char* quad_name, Transform transform) {
     q._bv_pos.v = qi.pos;
     q._bv_scale.v = qi.scale;
     q._bv_color.v = qi.color;
-
     q._base_pos = qi.pos;
     q._base_scale = qi.scale;
 
-    q.transform() = transform;
-    q.animationstate().setAnimation(&(qi.animation));
+    q.applyTransform(transform);
 
-    q.writeTransform();
+    q.animationstate().setAnimation(&(qi.animation));
     q.writeAnimation();
 
     // set the draw flag

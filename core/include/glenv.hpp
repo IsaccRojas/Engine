@@ -30,7 +30,6 @@ class Quad {
    // variables for updating values
    glm::vec3 _base_pos;
    glm::vec3 _base_scale;
-   Transform _transform;
    AnimationState _animationstate;
 
 public:
@@ -42,14 +41,14 @@ public:
    /* Calls update() on all internal BVec instances, writing their respective data into their respective buffers. */
    void updateBVecs();
 
-   /* Returns the contained Quad transform. */
-   Transform &transform();
+   /* Resets BVec values to base values. */
+   void resetTransformation();
+
+   /* Applies provided Transform to pos and scale BVecs. */
+   void applyTransform(Transform transform);
 
    /* Returns reference to contained Animation state. */
    AnimationState& animationstate();
-
-   /* Writes transform data to related BVecs. */
-   void writeTransform();
 
    /* Writes animation data to related BVecs, if an animation is stored. */
    void writeAnimation();
