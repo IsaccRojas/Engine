@@ -347,6 +347,7 @@ unsigned GLEnv::genQuad(const char* quad_name, Transform transform) {
     q._base_pos = qi.pos;
     q._base_scale = qi.scale;
 
+    q.resetTransformation();
     q.applyTransform(transform);
 
     q.animationstate().setAnimation(&(qi.animation));

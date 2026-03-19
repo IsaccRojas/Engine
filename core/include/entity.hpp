@@ -234,7 +234,10 @@ class EntityCollider {
 
    // physics variables
    bool _collision_enabled;
-   Transform _transform;
+   glm::vec3 _base_pos;
+   glm::vec3 _base_scale;
+   glm::vec3 _pos;
+   glm::vec3 _scale;
    
    Entity* _entity;
 public:
@@ -246,11 +249,15 @@ public:
    EntityCollider& operator=(EntityCollider&& other);
    EntityCollider& operator=(const EntityCollider&) = delete;
 
+   /* Resets position and scale to base values. */
+   void resetTransformation();
+
+   /* Applies provided Transform to pos and scale. */
+   void applyTransform(Transform transform);
+
    FilterState& filterstate();
    Entity& entity();
-
    bool& collision_enabled();
-   Transform& transform();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -264,13 +271,15 @@ class EntityColliderView {
 public:
    EntityColliderView(EntityCollider* collider);
    bool& collision_enabled();
-   Transform& transform();
+   void resetTransformation();
+   void applyTransform(Transform transform);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 struct EntityColliderInfo {
-   Transform transform;
+   glm::vec3 pos;
+   glm::vec3 scale;
    Filter filter;
 };
 

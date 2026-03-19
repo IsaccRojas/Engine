@@ -145,6 +145,10 @@ EntityCollider::EntityCollider(EntityCollider&& other) { operator=(std::move(oth
 EntityCollider::EntityCollider() :
     _collisionspace(nullptr),
     _collision_enabled(false),
+    _base_pos(glm::vec3(0.0f)),
+    _base_scale(glm::vec3(1.0f)),
+    _pos(glm::vec3(0.0f)),
+    _scale(glm::vec3(1.0f)),
     _entity(nullptr)
 {}
 EntityCollider::~EntityCollider() {}
@@ -154,20 +158,36 @@ EntityCollider& EntityCollider::operator=(EntityCollider&& other) {
         _collisionspace = other._collisionspace;
         _this_iter = other._this_iter;
         _filterstate = other._filterstate;
-        _entity = other._entity;
         _collision_enabled = other._collision_enabled;
-        _transform = other._transform;
+        _base_pos = other._base_pos;
+        _base_scale = other._base_scale;
+        _pos = other._pos;
+        _scale = other._scale;
+        _entity = other._entity;
         other._collisionspace = nullptr;
-        other._entity = nullptr;
         other._collision_enabled = false;
+        other._base_pos = glm::vec3(0.0f);
+        other._base_scale = glm::vec3(1.0f);
+        other._pos = glm::vec3(0.0f);
+        other._scale = glm::vec3(1.0f);
+        other._entity = nullptr;
     }
     return *this;
+}
+
+void EntityCollider::resetTransformation() {
+    _pos = _base_pos;
+    _scale = _base_scale;
+}
+
+void EntityCollider::applyTransform(Transform transform) {
+    _pos += transform.pos;
+    _scale *= transform.scale;
 }
 
 FilterState& EntityCollider::filterstate() { return _filterstate; }
 Entity& EntityCollider::entity() {return *_entity; }
 bool& EntityCollider::collision_enabled() { return _collision_enabled; }
-Transform& EntityCollider::transform() { return _transform; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -175,7 +195,9 @@ EntityColliderView::EntityColliderView(EntityCollider* collider) : _collider(col
 
 bool& EntityColliderView::collision_enabled() { return _collider->collision_enabled(); }
 
-Transform& EntityColliderView::transform() { return _collider->transform(); }
+void EntityColliderView::resetTransformation() { _collider->resetTransformation(); }
+
+void EntityColliderView::applyTransform(Transform transform) { _collider->applyTransform(transform); }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -226,7 +248,11 @@ EntityColliderView CollisionSpace::spawnCollider(const char* name, Entity* entit
     collider->_entity = entity;
 
     collider->collision_enabled() = true;
-    collider->transform() = Transform::apply(eci.transform, transform);
+    collider->_base_pos = eci.pos;
+    collider->_base_scale = eci.scale;
+
+    collider->resetTransformation();
+    collider->applyTransform(transform);
 
     return EntityColliderView(collider);
 }
@@ -239,7 +265,7 @@ void CollisionSpace::detectCollisionAABB() {
 
         // get Collider and skip if scale is zeroed out
         EntityCollider* c1 = *iter1;
-        if (!(c1->collision_enabled()) || (c1->transform().scale == glm::vec3(0.0f)))
+        if (!(c1->collision_enabled()) || (c1->_scale == glm::vec3(0.0f)))
             continue;
 
         auto iter2 = iter1;
@@ -248,7 +274,7 @@ void CollisionSpace::detectCollisionAABB() {
 
             // get other T and skip if scale is zeroed out (check t1's enable flag again in case it was unset this outer loop iteration)
             EntityCollider* c2 = *iter2;
-            if (!(c1->collision_enabled()) || !(c2->collision_enabled()) || (c2->transform().scale == glm::vec3(0.0f)))
+            if (!(c1->collision_enabled()) || !(c2->collision_enabled()) || (c1->_scale == glm::vec3(0.0f)))
                 continue;
 
             // test filters against each other's IDs
@@ -266,7 +292,7 @@ void CollisionSpace::detectCollisionAABB() {
                     c2->filterstate().pass(c1->filterstate().id()))
             ) {
                 // detect and handle collision
-                if (computeCollisionAABB(c1->transform(), c2->transform())) {
+                if (computeCollisionAABB({c1->_pos, c1->_scale}, {c2->_pos, c2->_scale})) {
                     c1->entity().entityscriptview().collide(&(c2->entity()));
                     c2->entity().entityscriptview().collide(&(c1->entity()));
                 }
@@ -399,8 +425,10 @@ void EntityManager::checkEntities() {
                 q->applyTransform(entity->globaltransform());
                 q->writeAnimation();
             }
-            for (auto &ecv : entity->entitycolliderviews())
-                ecv.transform() = entity->globaltransform();
+            for (auto &ecv : entity->entitycolliderviews()) {
+                ecv.resetTransformation();
+                ecv.applyTransform(entity->globaltransform());
+            }
         }
 
     while (!remove_queue.empty()) {

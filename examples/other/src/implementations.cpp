@@ -1,7 +1,6 @@
 #include "implementations.hpp"
 
 void ES_Player::_initEntity() {
-    entity().attributes3f()["pos"] = glm::vec3(0.0f);
     entity().attributes1f()["hurt_cooldown_max"] = 120.0f;
     entity().attributes1f()["hurt_cooldown"] = 0.0f;
     entity().quads()[0]->animationstate().setCycleState(0);
@@ -18,7 +17,7 @@ void ES_Player::_execEntity() {
         entity().quads()[0]->animationstate().setCycleState(1);
     }
 
-    glm::vec3 &pos = entity().attributes3f()["pos"];
+    glm::vec3 &pos = entity().globaltransform().pos;
 
     float speed = 0.5f;
     glm::vec3 dir = glm::vec3(
@@ -35,10 +34,7 @@ void ES_Player::_execEntity() {
 
 void ES_Player::_killEntity() {}
 
-void ES_Player::_updateEntity() {
-    glm::vec3 &pos = entity().attributes3f()["pos"];
-    entity().globaltransform().pos = pos;
-}
+void ES_Player::_updateEntity() {}
 
 void ES_Player::_receive(Entity *other, std::string message) {}
 
@@ -51,12 +47,10 @@ ES_Player::ES_Player(GLFWInput *input_state) : EntityScript(), _input_state(inpu
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Chaser::_initEntity() {
-    entity().attributes3f()["pos"] = glm::vec3(0.0f);
-}
+void ES_Chaser::_initEntity() {}
 
 void ES_Chaser::_execEntity() {
-    glm::vec3 &pos = entity().attributes3f()["pos"];
+    glm::vec3 &pos = entity().globaltransform().pos;
 
     // find target if one is not stored
     if (!_target)
@@ -77,7 +71,7 @@ void ES_Chaser::_execEntity() {
     // chase target if one is stored
     if (_target) {
         float speed = 0.25f;
-        glm::vec3 dir = _target->attributes3f()["pos"] - pos;
+        glm::vec3 dir = _target->globaltransform().pos - pos;
         if (glm::length(dir))
             pos += speed * glm::normalize(dir);
         
@@ -95,10 +89,7 @@ void ES_Chaser::_killEntity() {
         _target->entityscriptview().unlock(&this->key());
 }
 
-void ES_Chaser::_updateEntity() {
-    glm::vec3 &pos = entity().attributes3f()["pos"];
-    entity().globaltransform().pos = pos;
-}
+void ES_Chaser::_updateEntity() {}
 
 void ES_Chaser::_receive(Entity *entity, std::string message) {}
 
