@@ -19,8 +19,8 @@ void loop(CoreResources *core) {
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f), glm::vec4(1.0f), core->animations["Animation_Player"]}, "Quad_Player");
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f), glm::vec4(1.0f), core->animations["Animation_PurpleSquare"]}, "Quad_PurpleSquare");
 
-    core->collisionspace.addCollider(EntityColliderInfo{Transform{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 16.0f)}, glm::vec3(0.0f), core->filters["Filter_Player"]}, "EntityCollider_Player");
-    core->collisionspace.addCollider(EntityColliderInfo{Transform{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 16.0f)}, glm::vec3(0.0f), core->filters["Filter_Enemy"]}, "EntityCollider_Enemy");
+    core->collisionspace.addCollider(EntityColliderInfo{Transform{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 16.0f)}, core->filters["Filter_Player"]}, "EntityCollider_Player");
+    core->collisionspace.addCollider(EntityColliderInfo{Transform{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 16.0f)}, core->filters["Filter_Enemy"]}, "EntityCollider_Enemy");
 
     core->entityexecutor.addEntityScript(EntityScriptInfo{&alloc_ES_Player, nullptr, nullptr}, "ES_Player");
     core->entityexecutor.addEntityScript(EntityScriptInfo{&alloc_ES_Chaser, nullptr, nullptr}, "ES_Chaser");
@@ -36,7 +36,6 @@ void loop(CoreResources *core) {
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        core->collisionspace.step();
         core->collisionspace.detectCollisionAABB();
 
         core->input.update();

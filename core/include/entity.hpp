@@ -198,7 +198,7 @@ class Entity {
 
    bool _script_killed;
 
-   Transform _transform;
+   Transform _globaltransform;
 public:
    Entity();
    ~Entity();
@@ -213,7 +213,7 @@ public:
    std::unordered_map<std::string, float>& attributes1f();
    std::unordered_map<std::string, glm::vec2>& attributes2f();
    std::unordered_map<std::string, glm::vec3>& attributes3f();
-   Transform& transform();
+   Transform& globaltransform();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -235,7 +235,6 @@ class EntityCollider {
    // physics variables
    bool _collision_enabled;
    Transform _transform;
-   glm::vec3 _vel;
    
    Entity* _entity;
 public:
@@ -249,11 +248,9 @@ public:
 
    FilterState& filterstate();
    Entity& entity();
-   void step();
 
    bool& collision_enabled();
    Transform& transform();
-   glm::vec3& vel();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -268,14 +265,12 @@ public:
    EntityColliderView(EntityCollider* collider);
    bool& collision_enabled();
    Transform& transform();
-   glm::vec3& vel();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 struct EntityColliderInfo {
    Transform transform;
-   glm::vec3 vel;
    Filter filter;
 };
 
@@ -319,9 +314,6 @@ public:
       in a pair-wise fashion. All collided instances have their collided count incremented.
    */
    void detectCollisionAABB();
-
-   /* Advances every internal instance one step in time. */
-   void step();
 
    /* Returns the number of Colliders in this CollisionSpace. */
    unsigned getCount();

@@ -137,7 +137,7 @@ std::unordered_map<std::string, float>& Entity::attributes1f() { return _attribu
 std::unordered_map<std::string, glm::vec2>& Entity::attributes2f() { return _attributes2f; }
 std::unordered_map<std::string, glm::vec3>& Entity::attributes3f() { return _attributes3f; }
 EntityScriptView& Entity::entityscriptview() { return _entityscriptview; }
-Transform& Entity::transform() { return _transform; }
+Transform& Entity::globaltransform() { return _globaltransform; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -145,7 +145,6 @@ EntityCollider::EntityCollider(EntityCollider&& other) { operator=(std::move(oth
 EntityCollider::EntityCollider() :
     _collisionspace(nullptr),
     _collision_enabled(false),
-    _vel(glm::vec3(0.0f)),
     _entity(nullptr)
 {}
 EntityCollider::~EntityCollider() {}
@@ -158,23 +157,17 @@ EntityCollider& EntityCollider::operator=(EntityCollider&& other) {
         _entity = other._entity;
         _collision_enabled = other._collision_enabled;
         _transform = other._transform;
-        _vel = other._vel;
         other._collisionspace = nullptr;
         other._entity = nullptr;
         other._collision_enabled = false;
-        other._vel = glm::vec3(0.0f);
     }
     return *this;
 }
 
 FilterState& EntityCollider::filterstate() { return _filterstate; }
 Entity& EntityCollider::entity() {return *_entity; }
-
-void EntityCollider::step() { _transform.pos += _vel; }
-
 bool& EntityCollider::collision_enabled() { return _collision_enabled; }
 Transform& EntityCollider::transform() { return _transform; }
-glm::vec3& EntityCollider::vel() { return _vel; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -183,8 +176,6 @@ EntityColliderView::EntityColliderView(EntityCollider* collider) : _collider(col
 bool& EntityColliderView::collision_enabled() { return _collider->collision_enabled(); }
 
 Transform& EntityColliderView::transform() { return _collider->transform(); }
-
-glm::vec3& EntityColliderView::vel() { return _collider->vel(); }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -236,7 +227,6 @@ EntityColliderView CollisionSpace::spawnCollider(const char* name, Entity* entit
 
     collider->collision_enabled() = true;
     collider->transform() = Transform::apply(eci.transform, transform);
-    collider->vel() = eci.vel;
 
     return EntityColliderView(collider);
 }
@@ -285,11 +275,6 @@ void CollisionSpace::detectCollisionAABB() {
         }
 
     }
-}
-
-void CollisionSpace::step() {
-    for (auto iter = _colliders.begin(); iter != _colliders.end(); iter++)
-        (*iter)->step();
 }
 
 unsigned CollisionSpace::getCount() { return _colliders.size(); }
@@ -381,7 +366,7 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     entity->_name = name;
     entity->_this_iter = _entities[ei.group.c_str()].push_back(entity);
     entity->_entitymanager = this;
-    entity->_transform = transform;
+    entity->_globaltransform = transform;
     
     // instantiate EntityScript in info and push to entity's storage
     entity->_entityscriptview = _entityexecutor->spawnEntityScript(ei.entityscript_name.c_str(), ei.execution_queue, entity);
@@ -407,6 +392,15 @@ void EntityManager::checkEntities() {
             EntityInfo &ei = _entityinfos[entity->name()];
             if ((!(entity->entityscriptview().getExecEnqueued())) && ei.auto_enqueue)
                 entity->entityscriptview().enqueueExec(ei.execution_queue);
+
+            // update transforms
+            for (auto &q : entity->quads()) {
+                q->resetTransformation();
+                q->applyTransform(entity->globaltransform());
+                q->writeAnimation();
+            }
+            for (auto &ecv : entity->entitycolliderviews())
+                ecv.transform() = entity->globaltransform();
         }
 
     while (!remove_queue.empty()) {
