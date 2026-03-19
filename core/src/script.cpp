@@ -21,7 +21,7 @@ Script& Script::operator=(Script&& other) {
         _this_iter = other._this_iter;
         _last_execqueue = other._last_execqueue;
         _exec_enqueued = other._exec_enqueued;
-        _kill_enqueued = other._exec_enqueued;
+        _kill_enqueued = other._kill_enqueued;
         _script_name = other._script_name;
         _keys = other._keys;
         _keys_count = other._keys_count;
@@ -284,11 +284,10 @@ void Executor::runKillQueue() {
     while (!(_run_killqueue.empty())) {
         script = _run_killqueue.front();
 
-        script->_kill_enqueued = false;
-
         // check if script can be killed
         if (script->lockout_count() == 0) {
             script->runKill();
+            script->_kill_enqueued = false;
 
             // remove the script after killing it
             _erase(script);
