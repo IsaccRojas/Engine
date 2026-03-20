@@ -133,9 +133,6 @@ std::string& Entity::name() { return _name; }
 EntityManager& Entity::manager() { return *_entitymanager; }
 std::vector<Quad*>& Entity::quads() { return _quads; }
 std::vector<EntityColliderView>& Entity::entitycolliderviews() { return _entitycolliderviews; }
-std::unordered_map<std::string, float>& Entity::attributes1f() { return _attributes1f; }
-std::unordered_map<std::string, glm::vec2>& Entity::attributes2f() { return _attributes2f; }
-std::unordered_map<std::string, glm::vec3>& Entity::attributes3f() { return _attributes3f; }
 EntityScriptView& Entity::entityscriptview() { return _entityscriptview; }
 Transform& Entity::globaltransform() { return _globaltransform; }
 
@@ -274,7 +271,7 @@ void CollisionSpace::detectCollisionAABB() {
 
             // get other T and skip if scale is zeroed out (check t1's enable flag again in case it was unset this outer loop iteration)
             EntityCollider* c2 = *iter2;
-            if (!(c1->collision_enabled()) || !(c2->collision_enabled()) || (c1->_scale == glm::vec3(0.0f)))
+            if (!(c2->collision_enabled()) || (c2->_scale == glm::vec3(0.0f)))
                 continue;
 
             // test filters against each other's IDs
@@ -286,6 +283,7 @@ void CollisionSpace::detectCollisionAABB() {
             // if only one has a filter, skip
             if (f1 != f2)
                 continue;
+
             if (
                 (!f1 && !f2) ||
                     (c1->filterstate().pass(c2->filterstate().id()) &&

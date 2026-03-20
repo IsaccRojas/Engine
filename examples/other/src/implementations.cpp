@@ -1,15 +1,13 @@
 #include "implementations.hpp"
 
 void ES_Player::_initEntity() {
-    entity().attributes1f()["hurt_cooldown_max"] = 120.0f;
-    entity().attributes1f()["hurt_cooldown"] = 0.0f;
     entity().quads()[0]->animationstate().setCycleState(0);
 }
 
 void ES_Player::_execEntity() {
     // check if hurt and set appropriate animation state and collision state
-    if (entity().attributes1f()["hurt_cooldown"] > 0.0f) {
-        entity().attributes1f()["hurt_cooldown"] -= 1.0f;
+    if (_hurt_cooldown > 0.0f) {
+        _hurt_cooldown -= 1.0f;
         entity().entitycolliderviews()[0].collision_enabled() = false;
         entity().quads()[0]->animationstate().setCycleState(0);
     } else {
@@ -39,19 +37,16 @@ void ES_Player::_updateEntity() {}
 void ES_Player::_receive(Entity *other, std::string message) {}
 
 void ES_Player::_collide(Entity *other) {
-    std::cout << "TEST" << std::endl;
-    entity().attributes1f()["hurt_cooldown"] = entity().attributes1f()["hurt_cooldown_max"];
+    _hurt_cooldown = _hurt_cooldown_max;
 }
 
-ES_Player::ES_Player(GLFWInput *input_state) : EntityScript(), _input_state(input_state) {}
+ES_Player::ES_Player(GLFWInput *input_state) : EntityScript(), _input_state(input_state), _hurt_cooldown_max(120.0f), _hurt_cooldown(0.0f) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 void ES_Chaser::_initEntity() {}
 
 void ES_Chaser::_execEntity() {
-    glm::vec3 &pos = entity().globaltransform().pos;
-
     // find target if one is not stored
     if (!_target)
         // iterate on all players
@@ -67,6 +62,8 @@ void ES_Chaser::_execEntity() {
                 break;
             }
         }
+    
+    glm::vec3 &pos = entity().globaltransform().pos;
 
     // chase target if one is stored
     if (_target) {

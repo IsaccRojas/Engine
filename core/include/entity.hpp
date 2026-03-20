@@ -192,10 +192,6 @@ class Entity {
    std::vector<Quad*> _quads;
    std::vector<EntityColliderView> _entitycolliderviews;
 
-   std::unordered_map<std::string, float> _attributes1f;
-   std::unordered_map<std::string, glm::vec2> _attributes2f;
-   std::unordered_map<std::string, glm::vec3> _attributes3f;
-
    bool _script_killed;
 
    Transform _globaltransform;
@@ -210,9 +206,6 @@ public:
    EntityScriptView& entityscriptview();
    std::vector<Quad*>& quads();
    std::vector<EntityColliderView>& entitycolliderviews();
-   std::unordered_map<std::string, float>& attributes1f();
-   std::unordered_map<std::string, glm::vec2>& attributes2f();
-   std::unordered_map<std::string, glm::vec3>& attributes3f();
    Transform& globaltransform();
 };
 

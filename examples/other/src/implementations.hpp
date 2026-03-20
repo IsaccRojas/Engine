@@ -8,6 +8,8 @@ const float diag_factor = glm::sin(glm::radians(45.0f));
 
 class ES_Player : public EntityScript {
     GLFWInput *_input_state;
+    float _hurt_cooldown_max;
+    float _hurt_cooldown;
     void _initEntity() override;
     void _execEntity() override;
     void _killEntity() override;
