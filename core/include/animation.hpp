@@ -59,7 +59,7 @@ public:
    Represents a set of cycles that can be added or removed, collectively forming an animation.
 */
 class Animation {
-    std::vector<Cycle> _cycles;
+    std::unordered_map<std::string, Cycle> _cycles;
 public:
     Animation();
     ~Animation();
@@ -69,9 +69,11 @@ public:
     /* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
     corresponding to the desired order of the frames.
     */
-    Animation& addCycle(Cycle& cycle);
+    Animation& addCycle(Cycle& cycle, const char* name);
 
-    Cycle& cycle(unsigned i);
+    Cycle& cycle(const char* name);
+
+    std::string firstCycleName();
 
     /* Returns number of cycles contained in this animation. */
     unsigned count();
@@ -90,7 +92,7 @@ class AnimationState {
 
     // variables for indexing cycle and animation, respectively
     unsigned _frame_state;
-    unsigned _cycle_state;
+    std::string _cycle_state;
     bool _completed;
 
 public:
@@ -106,7 +108,7 @@ public:
     /* Sets the animation cycle, using the cycle corresponding to the provided integer for
        future operations. Does nothing if the cycle provided is the same as the current one.
     */
-    void setCycleState(unsigned cycle_state);
+    void setCycleState(const char* name);
 
     /* Sets the animation frame, using the frame corresponding to the provided integer for
        future operations.

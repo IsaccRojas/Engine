@@ -1,7 +1,7 @@
 #include "implementations.hpp"
 
 void ES_Player::_initEntity() {
-    entity().quads()[0]->animationstate().setCycleState(0);
+    entity().quads()[0]->animationstate().setCycleState("normal");
 }
 
 void ES_Player::_execEntity() {
@@ -9,10 +9,10 @@ void ES_Player::_execEntity() {
     if (_hurt_cooldown > 0.0f) {
         _hurt_cooldown -= 1.0f;
         entity().entitycolliderviews()[0].collision_enabled() = false;
-        entity().quads()[0]->animationstate().setCycleState(0);
+        entity().quads()[0]->animationstate().setCycleState("hurt");
     } else {
         entity().entitycolliderviews()[0].collision_enabled() = true;
-        entity().quads()[0]->animationstate().setCycleState(1);
+        entity().quads()[0]->animationstate().setCycleState("normal");
     }
 
     glm::vec3 &pos = entity().globaltransform().pos;

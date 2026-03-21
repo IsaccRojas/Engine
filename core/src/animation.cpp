@@ -34,13 +34,17 @@ bool Cycle::loops() const {
 Animation::Animation() {}
 Animation::~Animation() { /* automatic destruction is fine */ }
 
-Animation& Animation::addCycle(Cycle& cycle) {
-    _cycles.push_back(cycle);
+Animation& Animation::addCycle(Cycle& cycle, const char* name) {
+    _cycles[name] = cycle;
     return *this;
 }
 
-Cycle& Animation::cycle(unsigned i) {
-    return _cycles[i];
+Cycle& Animation::cycle(const char* name) {
+    return _cycles[name];
+}
+
+std::string Animation::firstCycleName() {
+    return (_cycles.begin())->first;
 }
 
 unsigned Animation::count() {
@@ -56,7 +60,7 @@ AnimationState::AnimationState() :
     _current_frame(nullptr),
     _step(0), 
     _frame_state(0), 
-    _cycle_state(0), 
+    _cycle_state(""), 
     _completed(false)
 {}
 
@@ -67,11 +71,11 @@ void AnimationState::setAnimation(Animation* animation) {
     
     _step = 0;
     _frame_state = 0;
-    _cycle_state = 0;
+    _cycle_state = _animation->firstCycleName();
     _completed = false;
 
     if (_animation) {
-        _current_cycle = &(_animation->cycle(_cycle_state));
+        _current_cycle = &(_animation->cycle(_cycle_state.c_str()));
         _current_frame = &(_current_cycle->frame(_frame_state));
     } else {
         _current_cycle = nullptr;
@@ -79,14 +83,14 @@ void AnimationState::setAnimation(Animation* animation) {
     }
 }
 
-void AnimationState::setCycleState(unsigned cyclestate) {
+void AnimationState::setCycleState(const char* name) {
     if (!_animation)
         throw std::runtime_error("Attempt to set cycle state with null Animation reference");
 
-    if (cyclestate == _cycle_state)
+    if (_cycle_state == name)
         return;
-    _cycle_state = cyclestate;
-    _current_cycle = &(_animation->cycle(_cycle_state));
+    _cycle_state = name;
+    _current_cycle = &(_animation->cycle(name));
     this->setFrameState(0);
 }
 
@@ -168,6 +172,7 @@ std::unordered_map<std::string, Animation> loadAnimations(std::string dir) {
             // variables to store all retrieved fields
             std::string name;
             std::vector<Cycle> cycles;
+            std::vector<std::string> cycle_names;
 
             // retrieve name
             if (data.contains("name") && data["name"].is_string())
@@ -186,6 +191,7 @@ std::unordered_map<std::string, Animation> loadAnimations(std::string dir) {
                     // retrieve cycle
                     if (data["cycles"][iter_cycles.key()].is_object()) {
                         cycles.push_back(Cycle{});
+                        cycle_names.push_back(iter_cycles.key());
 
                         // retrieve frames
                         if (data["cycles"][iter_cycles.key()].contains("frames") && data["cycles"][iter_cycles.key()]["frames"].is_object()) {
@@ -332,7 +338,7 @@ std::unordered_map<std::string, Animation> loadAnimations(std::string dir) {
             // push loaded animation data to map
             animations[name] = Animation();
             for (unsigned i = 0; i < cycles.size(); i++) {
-                animations[name].addCycle(cycles[i]);
+                animations[name].addCycle(cycles[i], cycle_names[i].c_str());
             }
         }
         dir_loop_end:
