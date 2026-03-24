@@ -25,22 +25,34 @@ void ES_Player::_execEntity() {
     );
     if (glm::length(dir))
         pos += speed * glm::normalize(dir);
-
+    
+    if (_hitbox_cooldown <= 0.0f && _input_state->get_m1()) {
+        entity().manager().spawnEntity("Entity_Hitbox", Transform{pos, glm::vec3(24.0f, 24.0f, 24.0f)});
+        _hitbox_cooldown = _hitbox_cooldown_max;
+    }
+    if (_hitbox_cooldown > 0.0f)
+        _hitbox_cooldown -= 1.0f;
+    
     if (_input_state->get_space())
         enqueueKill();
 }
 
 void ES_Player::_killEntity() {}
-
 void ES_Player::_updateEntity() {}
-
 void ES_Player::_receive(Entity *other, std::string message) {}
 
 void ES_Player::_collide(Entity *other) {
     _hurt_cooldown = _hurt_cooldown_max;
 }
 
-ES_Player::ES_Player(GLFWInput *input_state) : EntityScript(), _input_state(input_state), _hurt_cooldown_max(120.0f), _hurt_cooldown(0.0f) {}
+ES_Player::ES_Player(GLFWInput *input_state) :
+    EntityScript(), 
+    _input_state(input_state), 
+    _hurt_cooldown_max(120.0f), 
+    _hurt_cooldown(0.0f), 
+    _hitbox_cooldown_max(120.0f), 
+    _hitbox_cooldown(0.0f)
+{}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -87,9 +99,24 @@ void ES_Chaser::_killEntity() {
 }
 
 void ES_Chaser::_updateEntity() {}
-
 void ES_Chaser::_receive(Entity *entity, std::string message) {}
-
 void ES_Chaser::_collide(Entity *entity) {}
 
 ES_Chaser::ES_Chaser() : EntityScript(), _target(nullptr) {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void ES_Hitbox::_initEntity() {}
+void ES_Hitbox::_execEntity() {
+    _lifetime--;
+    if (_lifetime <= 0)
+        enqueueKill();
+}
+void ES_Hitbox::_killEntity() {}
+void ES_Hitbox::_updateEntity() {}
+void ES_Hitbox::_receive(Entity *entity, std::string message) {}
+void ES_Hitbox::_collide(Entity *entity) {
+    std::cout << "hitbox collision" << std::endl;
+}
+
+ES_Hitbox::ES_Hitbox() : EntityScript(), _lifetime(120) {}
