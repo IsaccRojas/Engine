@@ -181,7 +181,7 @@ class Entity {
    friend EntityExecutor;
    friend EntityManager;
 
-   std::string _name;
+   std::string _entity_name;
 
    EntityManager* _entitymanager;
    std::list<Entity*>::iterator _this_iter;
@@ -201,7 +201,7 @@ public:
 
    //TODO: revise copy/move semantics
 
-   std::string& name();
+   const char* getName();
    EntityManager& manager();
    EntityScriptView& entityscriptview();
    std::vector<Quad*>& quads();

@@ -129,7 +129,7 @@ void EntityExecutor::enqueueSpawnEntityScript(const char* entityscript_name, int
 Entity::Entity() : _entitymanager(nullptr), _entityscriptview(nullptr), _script_killed(false) {}
 Entity::~Entity() {}
 
-std::string& Entity::name() { return _name; }
+const char* Entity::getName() { return _entity_name.c_str(); }
 EntityManager& Entity::manager() { return *_entitymanager; }
 std::vector<Quad*>& Entity::quads() { return _quads; }
 std::vector<EntityColliderView>& Entity::entitycolliderviews() { return _entitycolliderviews; }
@@ -387,7 +387,7 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     for (const std::string& ecn : ei.entitycollider_names)
         entity->_entitycolliderviews.push_back(_collisionspace->spawnCollider(ecn.c_str(), entity, transform));
 
-    entity->_name = name;
+    entity->_entity_name = name;
     entity->_this_iter = _entities[ei.group.c_str()].push_back(entity);
     entity->_entitymanager = this;
     entity->_globaltransform = transform;
@@ -413,7 +413,7 @@ void EntityManager::checkEntities() {
             }
 
             // check if script needs to be enqueued
-            EntityInfo &ei = _entityinfos[entity->name()];
+            EntityInfo &ei = _entityinfos[entity->getName()];
             if ((!(entity->entityscriptview().getExecEnqueued())) && ei.auto_enqueue)
                 entity->entityscriptview().enqueueExec(ei.execution_queue);
 
