@@ -1,7 +1,7 @@
 #include "loop.hpp"
 
 // ES_Player allocator that holds reference to input state
-class PlayerProvider : public EntityScriptProvider<ES_Player> {
+class PlayerProvider : public EntityScriptProviderInterface<ES_Player> {
     GLFWInput* _input_state;
     ES_Player* _providerAllocate() override { return new ES_Player(_input_state); }
 public:

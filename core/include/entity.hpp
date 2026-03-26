@@ -94,7 +94,7 @@ protected:
    of allocated EntityScript types.
 */
 template<class T>
-class EntityScriptProvider : public EntityScriptAllocatorInterface {
+class EntityScriptProviderInterface : public EntityScriptAllocatorInterface {
    std::unordered_map<EntityScript*, T*> _Ts;
 
    EntityScript* _allocate() override {
@@ -118,7 +118,7 @@ public:
    Generic implementation of EntityScriptProvider<T>.
 */
 template<class T>
-class GenericEntityScriptProvider : public EntityScriptProvider<T> {
+class GenericEntityScriptProvider : public EntityScriptProviderInterface<T> {
    T* _providerAllocate() override { return new T; }
 };
 

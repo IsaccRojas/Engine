@@ -162,7 +162,7 @@ public:
    of allocated Script types.
 */
 template<class T>
-class ScriptProvider : public ScriptAllocatorInterface {
+class ScriptProviderInterface : public ScriptAllocatorInterface {
    std::unordered_map<Script*, T*> _Ts;
 
    Script* _allocate() override {
@@ -186,7 +186,7 @@ public:
    Generic implementation of ScriptProvider<T>.
 */
 template<class T>
-class GenericScriptProvider : public ScriptProvider<T> {
+class GenericScriptProvider : public ScriptProviderInterface<T> {
    T* _providerAllocate() override { return new T; }
 };
 
