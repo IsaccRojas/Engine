@@ -159,7 +159,7 @@ public:
 
 /* class ScriptProvider<T>
    Templated implementation of the ScriptAllocatorInterface, that can provide subtype references
-   of allocated Script types
+   of allocated Script types.
 */
 template<class T>
 class ScriptProvider : public ScriptAllocatorInterface {
@@ -168,8 +168,11 @@ class ScriptProvider : public ScriptAllocatorInterface {
    Script* _allocate() override {
       T* t = new T;
       _Ts[t] = t;
-      return new T;
+      return t;
    }
+
+protected:
+   virtual T* _providerAllocate() = 0;
 
 public:
    T* getInstance(Script* script) {
@@ -177,6 +180,14 @@ public:
          throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
       return _Ts[script];
    }
+};
+
+/* class GenericScriptProvider<T>
+   Generic implementation of ScriptProvider<T>.
+*/
+template<class T>
+class GenericScriptProvider : public ScriptProvider<T> {
+   T* _providerAllocate() override { return new T; }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

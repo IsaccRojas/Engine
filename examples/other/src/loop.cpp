@@ -1,11 +1,11 @@
 #include "loop.hpp"
 
 // ES_Player allocator that holds reference to input state
-class ES_PlayerAllocator : public EntityScriptAllocatorInterface {
-    GLFWInput *_input_state;
-    EntityScript *_allocate() override { return new ES_Player(_input_state); }
+class PlayerProvider : public EntityScriptProvider<ES_Player> {
+    GLFWInput* _input_state;
+    ES_Player* _providerAllocate() override { return new ES_Player(_input_state); }
 public:
-    ES_PlayerAllocator(GLFWInput *input_state) : _input_state(input_state) {}
+    PlayerProvider(GLFWInput *input_state) : _input_state(input_state) {}
 };
 
 void loop(CoreResources *core) {
@@ -13,9 +13,9 @@ void loop(CoreResources *core) {
     
     srand(time(NULL));
 
-    ES_PlayerAllocator alloc_ES_Player(&(core->input));
-    EntityScriptProvider<ES_Chaser> provider_ES_Chaser;
-    EntityScriptProvider<ES_Hitbox> provider_ES_Hitbox;
+    PlayerProvider alloc_ES_Player(&(core->input));
+    GenericEntityScriptProvider<ES_Chaser> provider_ES_Chaser;
+    GenericEntityScriptProvider<ES_Hitbox> provider_ES_Hitbox;
 
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f), glm::vec4(1.0f), core->animations["Animation_Player"]}, "Quad_Player");
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f), glm::vec4(1.0f), core->animations["Animation_PurpleSquare"]}, "Quad_PurpleSquare");
@@ -33,8 +33,8 @@ void loop(CoreResources *core) {
     core->entitymanager.addEntity(EntityInfo{"Group_Enemy", "ES_Chaser", 0, true, {"Quad_PurpleSquare"}, {"EntityCollider_Enemy"}}, "Entity_Dummy");
     core->entitymanager.addEntity(EntityInfo{"Group_Hitbox", "ES_Hitbox", 0, true, {"Quad_YellowSquare"}, {"EntityCollider_Hitbox"}}, "Entity_Hitbox");
     
-    Entity *player = core->entitymanager.spawnEntity("Entity_Player", Transform{glm::vec3(0.0f, 32.0f, 0.0f), glm::vec3(1.0f)});
-    Entity *dummy = core->entitymanager.spawnEntity("Entity_Dummy",Transform{glm::vec3(32.0f, 0.0f, 0.0f), glm::vec3(1.0f)});
+    core->entitymanager.spawnEntity("Entity_Player", Transform{glm::vec3(0.0f, 32.0f, 0.0f), glm::vec3(1.0f)});
+    core->entitymanager.spawnEntity("Entity_Dummy",Transform{glm::vec3(32.0f, 0.0f, 0.0f), glm::vec3(1.0f)});
 
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(core->state.getWindowHandle()) && !core->input.get_esc()) {

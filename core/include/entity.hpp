@@ -91,17 +91,20 @@ protected:
 
 /* class EntityScriptProvider<T>
    Templated implementation of the EntityScriptAllocatorInterface, that can provide subtype references
-   of allocated EntityScript types
+   of allocated EntityScript types.
 */
 template<class T>
 class EntityScriptProvider : public EntityScriptAllocatorInterface {
    std::unordered_map<EntityScript*, T*> _Ts;
 
    EntityScript* _allocate() override {
-      T* t = new T;
+      T* t = _providerAllocate();
       _Ts[t] = t;
-      return new T;
+      return t;
    }
+
+protected:
+   virtual T* _providerAllocate() = 0;
 
 public:
    T* getInstance(EntityScript* entityscript) {
@@ -109,6 +112,14 @@ public:
          throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
       return _Ts[entityscript];
    }
+};
+
+/* class GenericEntityScriptProvider<T>
+   Generic implementation of EntityScriptProvider<T>.
+*/
+template<class T>
+class GenericEntityScriptProvider : public EntityScriptProvider<T> {
+   T* _providerAllocate() override { return new T; }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
