@@ -61,6 +61,10 @@ void EntityScriptView::collide(Entity* entity) {
     _entityscript->collide(entity);
 }
 
+EntityScript* EntityScriptView::getEntityScript() {
+    return _entityscript;
+}
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 ScriptView EntityExecutor::EntityScriptEnqueue::spawn() {
@@ -111,7 +115,7 @@ void EntityExecutor::addEntityScript(EntityScriptInfo entityscriptinfo, const ch
 EntityScriptView EntityExecutor::spawnEntityScript(const char* entityscript_name, int execution_queue, Entity* entity) {
     // allocate instance and set it up
     EntityScript* entityscript = _entityscriptinfos[entityscript_name]._allocator->_allocate();
-    _setupScript(entityscript, entityscript_name, execution_queue);
+    _setupScript(entityscript, entityscript_name, execution_queue, _entityscriptinfos[entityscript_name]._allocator);
     _setupEntityScript(entityscript, entity);
 
     // run initialization method

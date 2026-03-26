@@ -14,8 +14,8 @@ void loop(CoreResources *core) {
     srand(time(NULL));
 
     ES_PlayerAllocator alloc_ES_Player(&(core->input));
-    GenericEntityScriptAllocator<ES_Chaser> alloc_ES_Chaser;
-    GenericEntityScriptAllocator<ES_Hitbox> alloc_ES_Hitbox;
+    EntityScriptProvider<ES_Chaser> provider_ES_Chaser;
+    EntityScriptProvider<ES_Hitbox> provider_ES_Hitbox;
 
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f), glm::vec4(1.0f), core->animations["Animation_Player"]}, "Quad_Player");
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f), glm::vec4(1.0f), core->animations["Animation_PurpleSquare"]}, "Quad_PurpleSquare");
@@ -26,8 +26,8 @@ void loop(CoreResources *core) {
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), glm::vec3(1.0f, 1.0f, 1.0f), core->filters["Filter_Player"]}, "EntityCollider_Hitbox");
 
     core->entityexecutor.addEntityScript(EntityScriptInfo{&alloc_ES_Player, nullptr, nullptr}, "ES_Player");
-    core->entityexecutor.addEntityScript(EntityScriptInfo{&alloc_ES_Chaser, nullptr, nullptr}, "ES_Chaser");
-    core->entityexecutor.addEntityScript(EntityScriptInfo{&alloc_ES_Hitbox, nullptr, nullptr}, "ES_Hitbox");
+    core->entityexecutor.addEntityScript(EntityScriptInfo{&provider_ES_Chaser, nullptr, nullptr}, "ES_Chaser");
+    core->entityexecutor.addEntityScript(EntityScriptInfo{&provider_ES_Hitbox, nullptr, nullptr}, "ES_Hitbox");
     
     core->entitymanager.addEntity(EntityInfo{"Group_Player", "ES_Player", 0, true, {"Quad_Player"}, {"EntityCollider_Player"}}, "Entity_Player");
     core->entitymanager.addEntity(EntityInfo{"Group_Enemy", "ES_Chaser", 0, true, {"Quad_PurpleSquare"}, {"EntityCollider_Enemy"}}, "Entity_Dummy");

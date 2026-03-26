@@ -71,28 +71,44 @@ public:
    EntityScriptView(EntityScript* entityscript);
    void receive(Entity* entity, std::string message);
    void collide(Entity* entity);
+   EntityScript* getEntityScript();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 /* abstract class EntityAllocatorInterface
-   Is used to invoke allocate(), which must return heap-allocated memory to be owned
+   Is used to invoke _allocate(), which must return heap-allocated memory to be owned
    by the invoking EntityExecutor instance.
+
+   Stores a reference that can be checked against for existence by subtypes.
 */
-class EntityScriptAllocatorInterface : public AllocatorInterface {
+class EntityScriptAllocatorInterface : public ScriptAllocatorInterface {
    friend EntityExecutor;
 protected:
-   /* Must return a heap-allocated instance of a covariant type of EntityScript. */
+   // must return a heap-allocated instance of a covariant type of EntityScript
    virtual EntityScript* _allocate() = 0;
 };
 
-/* class GenericEntityAllocator
-   A generic implementation of the EntityAllocatorInterface, that can be used if no
-   special behavior or state is needed.
+/* class EntityScriptProvider<T>
+   Templated implementation of the EntityScriptAllocatorInterface, that can provide subtype references
+   of allocated EntityScript types
 */
 template<class T>
-class GenericEntityScriptAllocator : public EntityScriptAllocatorInterface {
-   EntityScript* _allocate() override { return new T; } 
+class EntityScriptProvider : public EntityScriptAllocatorInterface {
+   std::unordered_map<EntityScript*, T*> _Ts;
+
+   EntityScript* _allocate() override {
+      T* t = new T;
+      _Ts[t] = t;
+      return new T;
+   }
+
+public:
+   T* getInstance(EntityScript* entityscript) {
+      if (!hasReference(entityscript))
+         throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
+      return _Ts[entityscript];
+   }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -159,19 +175,6 @@ public:
 
    /* Enqueues an EntityScript to be spawned when calling runSpawnQueue(). */
    void enqueueSpawnEntityScript(const char* entityscript_name, int execution_queue, Entity* entity);
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-/* abstract class ProvidedEntityScriptAllocator
-   Interface that extends EntityScriptAllocatorInterface to have its allocations intercepted and stored
-   by a containing Provider.
-*/
-template<class T>
-class ProvidedEntityScriptAllocator : public ProvidedAllocator<T>, public EntityScriptAllocatorInterface {
-   EntityScript* _allocate() override { return this->_allocateStore(); }
-protected:
-   virtual T* _allocateProvided() override { return new T; }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

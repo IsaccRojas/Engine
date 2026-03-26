@@ -7,13 +7,17 @@ ScriptKey::ScriptKey() {}
 Script::Script(Script&& other) { operator=(std::move(other)); }
 Script::Script() :
     _executor(nullptr),
+    _scriptallocator(nullptr),
     _last_execqueue(-1),
     _exec_enqueued(false), 
     _kill_enqueued(false),
     _script_name(""),
     _keys_count(0)
 {}
-Script::~Script() { /* automatic destruction is fine */ }
+Script::~Script() {
+    if (_scriptallocator)
+        _scriptallocator->_removeReference(this);
+}
 
 Script& Script::operator=(Script&& other) {
     if (this != &other) {
@@ -99,6 +103,26 @@ const char* ScriptView::getName() { return _script->getName(); }
 ScriptKey ScriptView::key() { return _script->key(); }
 void ScriptView::lockout(ScriptKey *k) { _script->lockout(k); }
 void ScriptView::unlock(ScriptKey *k) { _script->unlock(k); }
+Script* ScriptView::getScript() { return _script; }
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void ScriptAllocatorInterface::_insertReference(Script* script) {
+    _scripts.insert(script);
+}
+
+void ScriptAllocatorInterface::_removeReference(Script* script) {
+    _scripts.erase(script);
+}
+
+ScriptAllocatorInterface::~ScriptAllocatorInterface() {
+    for (auto& s : _scripts)
+        s->_scriptallocator = nullptr;
+}
+
+bool ScriptAllocatorInterface::hasReference(Script* script) {
+    return (_scripts.find(script) != _scripts.end());
+}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -135,13 +159,17 @@ Executor &Executor::operator=(Executor&& other) {
     return *this;
 }
 
-void Executor::_setupScript(Script* script, const char* script_name, int execution_queue) {
+void Executor::_setupScript(Script* script, const char* script_name, int execution_queue, ScriptAllocatorInterface* scriptallocator) {
     // get information
     ScriptInfo &info = _scriptinfos[script_name];
 
     // store data
     script->_executor = this;
     script->_this_iter = _scripts.push_back(script);
+
+    // set scriptallocator data
+    script->_scriptallocator = scriptallocator;
+    scriptallocator->_insertReference(script);
 
     // set script fields (make copy of string passed)
     script->_script_name = script_name;
@@ -205,7 +233,7 @@ void Executor::addScript(ScriptInfo scriptinfo, const char* name) {
 ScriptView Executor::spawnScript(const char* script_name, int execution_queue) {
     // allocate instance and set it up
     Script* script = _scriptinfos[script_name]._allocator->_allocate();
-    _setupScript(script, script_name, execution_queue);
+    _setupScript(script, script_name, execution_queue, _scriptinfos[script_name]._allocator);
 
     // run initialization method
     script->runInit();

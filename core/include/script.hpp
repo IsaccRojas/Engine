@@ -16,6 +16,7 @@
 // prototype
 class Script;
 class Executor;
+class ScriptAllocatorInterface;
 
 /* class ScriptKey
    Used to lock-out a Script, determining whether it can be removed or not. Held by Scripts.
@@ -32,9 +33,11 @@ class ScriptKey {
 */
 class Script {
    friend Executor;
+   friend ScriptAllocatorInterface;
 
    // fields maintained by owning Executor
    Executor* _executor;
+   ScriptAllocatorInterface* _scriptallocator;
    std::list<Script*>::iterator _this_iter;
    int _last_execqueue;
    bool _exec_enqueued;
@@ -118,37 +121,68 @@ public:
    ScriptKey key();
    void lockout(ScriptKey* k);
    void unlock(ScriptKey* k);
+   Script* getScript();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* abstract class AllocatorInterface
-   Is used to invoke allocate(), which must return heap-allocated memory to be owned
-   by the invoking Executor instance.
-*/
 class Executor;
-class AllocatorInterface {
+
+/* abstract class ScriptAllocatorInterface
+   Is used to invoke _allocate(), which must return heap-allocated memory to be owned
+   by the invoking EntityExecutor instance.
+
+   Stores a reference that can be checked against for existence by subtypes.
+*/
+class ScriptAllocatorInterface {
+   friend Script;
    friend Executor;
+   
+   std::unordered_set<Script*> _scripts;
+
+   // inserts reference into set (does not allocate memory)
+   void _insertReference(Script* script);
+
+   // removes reference from set (does not delete memory)
+   void _removeReference(Script* script);
+
 protected:
-   /* Must return a heap-allocated instance of a covariant type of Script. */
+   // must return a heap-allocated instance of a covariant type of EntityScript
    virtual Script* _allocate() = 0;
-   // no members; no need for constructor/assignment/destructor definitions
+
+public:
+   virtual ~ScriptAllocatorInterface();
+
+   // checks if reference came from this allocator
+   bool hasReference(Script* script);
 };
 
-/* class GenericAllocator
-   A generic implementation of the AllocatorInterface, that can be used if no
-   special behavior or state is needed.
+/* class ScriptProvider<T>
+   Templated implementation of the ScriptAllocatorInterface, that can provide subtype references
+   of allocated Script types
 */
 template<class T>
-class GenericAllocator : public AllocatorInterface {
-   Script* _allocate() override { return new T; }
-   // no members; no need for constructor/assignment/destructor definitions
+class ScriptProvider : public ScriptAllocatorInterface {
+   std::unordered_map<Script*, T*> _Ts;
+
+   Script* _allocate() override {
+      T* t = new T;
+      _Ts[t] = t;
+      return new T;
+   }
+
+public:
+   T* getInstance(Script* script) {
+      if (!hasReference(script))
+         throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
+      return _Ts[script];
+   }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 struct ScriptInfo {
-   AllocatorInterface* _allocator;
+   ScriptAllocatorInterface* _allocator;
    std::function<void(ScriptView)> _spawn_callback;
    std::function<void(ScriptView)> _remove_callback;
    // default copy assignment/construction are fine
@@ -199,7 +233,7 @@ private:
 
 protected:
    // initializes Script's Executor-related fields
-   void _setupScript(Script* script, const char* script_name, int execution_queue);
+   void _setupScript(Script* script, const char* script_name, int execution_queue, ScriptAllocatorInterface* scriptallocator);
 
    // pushes an enqueue
    void _pushSpawnEnqueue(ScriptEnqueue* enqueue);
@@ -263,266 +297,5 @@ public:
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
-
-// prototype
-template<typename T>
-class Provider;
-
-/* class Receiver
-   Interface that is used to allow reception of a generic specified type when
-   implemented, via subscription to a Provider of the same type.
-*/
-template<class T>
-class Receiver {
-   friend Provider<T>;
-
-   // reference to provider
-   Provider<T>* _r_provider;
-   int _channel;
-   bool _reception;
-
-protected:
-   // invoked on provider allocation
-   virtual void _receive(T* t) {};
-
-   Receiver() : _r_provider(nullptr), _channel(-1), _reception(false) {}
-   Receiver(Receiver<T>&& other) { operator=(std::move(other)); }
-   Receiver(const Receiver<T>& other) = delete;
-
-   Receiver<T>& operator=(Receiver<T>&& other) {
-      if (this != &other) {
-         _r_provider = other._r_provider;
-         _channel = other._channel;
-         _reception = other._reception;
-         other._r_provider = nullptr;
-         other._channel = -1;
-         other._reception = false;
-      }
-      return* this;
-   }
-   Receiver<T>& operator=(const Receiver<T>& other) = delete;
-
-public:
-   virtual ~Receiver() {
-      unsubscribeFromProvider();
-   }
-
-   void setChannel(int channel) { _channel = channel; }
-   void enableReception(bool state) { _reception = state; }
-   int getChannel() { return _channel; }
-   
-   /* Returns reference to provider's active set of T references, if it exists. */
-   const std::unordered_set<T*>* getAllProvided() { 
-      if (_r_provider)
-         return _r_provider->getAllProvided(); 
-      else
-         return nullptr;
-   }
-
-   /* Unsubscribes from subscribed provider. Does nothing if not subscribed. */
-   void unsubscribeFromProvider() {
-      if (_r_provider)
-         _r_provider->tryUnsubscribe(this);
-   }
-};
-
-/* class ProvidedType
-   Interface that is used to allow storage and retrieval of the inheriting
-   class by a Provider. Classes that do not implement this interface cannot be
-   allocated by Providers. Template parameter type must be the inheriting class.
-*/
-template<class T>
-class ProvidedType {
-   friend Provider<T>;
-
-   Provider<T>* _pt_provider;
-   T* _t_ref;
-
-protected:
-   ProvidedType() : _pt_provider(nullptr), _t_ref(nullptr) {}
-   ProvidedType(ProvidedType<T>&& other) { operator=(std::move(other)); }
-   ProvidedType(const ProvidedType<T>& other) = delete;
-
-   ProvidedType<T>& operator=(ProvidedType<T>&& other) {
-      if (this != &other) {
-         _pt_provider = other._pt_provider;
-         _t_ref = other._t_ref;
-         other._pt_provider = nullptr;
-         other._t_ref = nullptr;
-      }
-      return *this;
-   }
-   ProvidedType<T>& operator=(const ProvidedType<T>& other) = delete;
-
-public:
-   virtual ~ProvidedType() {
-      removeFromProvider();
-   }
-
-   /* Removes from containing provider. Does nothing if not contained within a provider. */
-   void removeFromProvider() {
-      if (_pt_provider)
-         _pt_provider->tryRemoveProvidedType(_t_ref);
-   }
-};
-
-/* abstract class ProvidedAllocator
-   Interface that extends AllocatorInterface to have its allocations intercepted and stored
-   by a containing Provider. Only classes inheriting ProvidedType<T> can be instantiated
-   by this class.
-*/
-template<class T>
-class ProvidedAllocator : public AllocatorInterface {
-   friend Provider<T>;
-
-   Provider<T>* _a_provider;
-   std::string _name;
-   
-   Script* _allocate() override {
-      return _allocateStore();
-   }
-
-protected:
-   T* _allocateStore() {
-      T* t = _allocateProvided();
-
-      // if in a provider, give it this T
-      if (_a_provider)
-            _a_provider->_storeType(t);
-      
-      return t;
-   }
-
-   virtual T* _allocateProvided() { return new T; }
-
-   ProvidedAllocator() : _a_provider(nullptr) {}
-   ProvidedAllocator(ProvidedAllocator<T>&& other) { operator=(std::move(other)); }
-   ProvidedAllocator(const ProvidedAllocator<T>& other) = delete;
-
-   ProvidedAllocator<T> &operator=(ProvidedAllocator<T>&& other) {
-      if (this != &other) {
-         _a_provider = other._a_provider;
-         _name = other._name;
-         other._a_provider = nullptr;
-         other._name = "";
-      }
-      return *this;
-   }
-   ProvidedAllocator<T>& operator=(const ProvidedAllocator<T>& other) = delete;
-
-public:
-   virtual ~ProvidedAllocator() {
-      removeFromProvider();
-   }
-
-   /* Removes from containing provider. Does nothing if not contained within a provider. */
-   void removeFromProvider() {
-      if (_a_provider)
-         _a_provider->tryRemoveAllocator(_name);
-   }
-};
-
-/* class Provider
-   Stores ProvidedAllocators of the same templated type. Whenever its stored allocators are
-   invoked, the instance is stored here for broadcasting and getting by any subscribed
-   Receivers.
-*/
-template<class T>
-class Provider {
-   friend ProvidedAllocator<T>;
-
-   std::unordered_set<Receiver<T>*> _receivers;
-   std::unordered_set<T*> _providedtypes;
-   std::unordered_map<std::string, ProvidedAllocator<T>*> _allocators;
-   
-   // stores and broadcasts instances of T
-   void _storeType(T* t) {
-      // set fields of providedtype and store it
-      _providedtypes.insert(t);
-      t->_pt_provider = this;
-      t->_t_ref = t;
-
-      // deliver instance
-      for (const auto& receiver: _receivers)
-         if (receiver->_reception)
-            receiver->_receive(t);
-   }
-
-public:
-   Provider() {}
-   Provider(Provider<T>&& other) { operator=(std::move(other)); }
-   Provider(const Provider<T>& other) = delete;
-   ~Provider() {
-      for (const auto& receiver: _receivers)
-         receiver->_r_provider = nullptr;
-      for (const auto& providedtype: _providedtypes)
-         providedtype->_pt_provider = nullptr;
-      for (const auto& allocator: _allocators)
-         allocator.second->_a_provider = nullptr;
-   }
-
-   Provider<T>& operator=(Provider<T>&& other) {
-      if (this != &other) {
-         _receivers = other._receivers;
-         _providedtypes = other._providedtypes;
-         _allocators = other._allocators;
-         other._receivers.clear();
-         other._providedtypes.clear();
-         other._allocators.clear();
-      }
-      return *this;
-   }
-   Provider<T>& operator=(const Provider<T>& other) = delete;
-
-   /* Adds the allocator to this provider's set of allocators, enabling interception of their allocations. */
-   void addAllocator(ProvidedAllocator<T>* allocator, const char* name) {
-      if (allocator->_a_provider)
-         throw std::runtime_error("Attempt to add already added ProvidedAllocator");
-      _allocators[name] = allocator;
-      allocator->_a_provider = this;
-      allocator->_name = name;
-   }
-
-   /* Subscribes the receiver to this provider's allocations, enabling receiving and getting instances. */
-   void subscribe(Receiver<T>* receiver) {
-      if (receiver->_r_provider)
-         throw std::runtime_error("Attempt to subscribe already subscribed Receiver");
-      _receivers.insert(receiver);
-      receiver->_r_provider = this;
-   }
-
-   /* Tries to unsubscribe the receiver from this provider's allocations. Does nothing if not subscribed. */
-   void tryUnsubscribe(Receiver<T>* r) {
-      if (_receivers.find(r) != _receivers.end())
-         _receivers.erase(r);
-   }
-
-   /* Tries to remove the T reference from this provider's storage. Does nothing if not contained. */
-   void tryRemoveProvidedType(T* t) {
-      if (_providedtypes.find(t) != _providedtypes.end())
-         _providedtypes.erase(t);
-   }
-
-   /* Tries to remove a named allocator from this provider's storage. Does nothing if the name is not contained. */
-   void tryRemoveAllocator(std::string name) {
-      if (_allocators.find(name) != _allocators.end())
-         _allocators.erase(name);
-   }
-
-   /* Returns read-only reference to all stored T references in this provider. */
-   const std::unordered_set<T*>* getAllProvided() {
-      return &_providedtypes;
-   }
-
-   /* Returns the number of ProvidedType instances currently contained. */
-   unsigned getProvidedCount() {
-      return _providedtypes.size();
-   }
-
-   /* Returns the allocator mapped to the name. */
-   ProvidedAllocator<T>* getAllocator(const char* name) {
-      return _allocators[name];
-   }
-};
 
 #endif
