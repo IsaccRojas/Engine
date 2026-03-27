@@ -112,6 +112,12 @@ public:
          throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
       return _Ts[entityscript];
    }
+   T* getInstance(Entity* entity) {
+      EntityScript* entityscript = entity->entityscriptview().getEntityScript();
+      if (!hasReference(entityscript))
+         throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
+      return _Ts[entityscript];
+   }
 };
 
 /* class GenericEntityScriptProvider<T>
