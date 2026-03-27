@@ -25,9 +25,9 @@ void loop(CoreResources *core) {
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 16.0f), core->filters["Filter_Enemy"]}, "EntityCollider_Enemy");
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), glm::vec3(1.0f, 1.0f, 1.0f), core->filters["Filter_Player"]}, "EntityCollider_Hitbox");
 
-    core->entityexecutor.addEntityScript(EntityScriptInfo{&alloc_ES_Player, nullptr, nullptr}, "ES_Player");
-    core->entityexecutor.addEntityScript(EntityScriptInfo{&provider_ES_Chaser, nullptr, nullptr}, "ES_Chaser");
-    core->entityexecutor.addEntityScript(EntityScriptInfo{&provider_ES_Hitbox, nullptr, nullptr}, "ES_Hitbox");
+    core->executor.addEntityScript(EntityScriptInfo{&alloc_ES_Player, nullptr, nullptr}, "ES_Player");
+    core->executor.addEntityScript(EntityScriptInfo{&provider_ES_Chaser, nullptr, nullptr}, "ES_Chaser");
+    core->executor.addEntityScript(EntityScriptInfo{&provider_ES_Hitbox, nullptr, nullptr}, "ES_Hitbox");
     
     core->entitymanager.addEntity(EntityInfo{"Group_Player", "ES_Player", 0, true, {"Quad_Player"}, {"EntityCollider_Player"}}, "Entity_Player");
     core->entitymanager.addEntity(EntityInfo{"Group_Enemy", "ES_Chaser", 0, true, {"Quad_PurpleSquare"}, {"EntityCollider_Enemy"}}, "Entity_Dummy");
@@ -45,10 +45,10 @@ void loop(CoreResources *core) {
 
         core->input.update();
 
-        core->entityexecutor.runExecQueue(0);
-        core->entityexecutor.runSpawnQueue();
-        core->entityexecutor.runKillQueue();
-        core->entityexecutor.runUpdate();
+        core->executor.runExecQueue(0);
+        core->executor.runSpawnQueue();
+        core->executor.runKillQueue();
+        core->executor.runUpdate();
 
         core->entitymanager.checkEntities();
 

@@ -8,15 +8,16 @@
 #include "C:\dev\include\glm\gtx\rotate_vector.hpp"
 
 class EntityColliderView;
-class EntityExecutor;
+class EntityScriptExecutor;
 class Entity;
+class EntityScriptAllocatorInterface;
 class EntityManager;
 
-/* class EntityScript
-   Represents a Script that belongs to an Entity.
+/* class EntityScriptInterface
+   Represents a ScriptInterface that belongs to an Entity.
 */
-class EntityScript : public Script {
-   friend EntityExecutor;
+class EntityScriptInterface : public ScriptInterface {
+   friend EntityScriptExecutor;
    friend Entity;
    friend EntityManager;
 
@@ -31,7 +32,7 @@ class EntityScript : public Script {
 protected:
    /* Functions to be overridden by children.
       - _init() is called by runInit(). runInit() is called on spawn.
-      - _exec() is called by runExec(). runExec() is called on execution, each time the Script is queued.
+      - _exec() is called by runExec(). runExec() is called on execution, each time the script is queued.
       - _kill() is called by runKill(). runKill() is called on erasure.
       - _update() is called by runUpdate(). runUpdate() is called when update() is called by the owning Executor.
    */
@@ -47,13 +48,13 @@ protected:
    virtual void _collide(Entity* entity) = 0;
 
 public:
-   EntityScript(EntityScript&& other);
-   EntityScript();
-   EntityScript(const EntityScript& other) = delete;
-   virtual ~EntityScript();
+   EntityScriptInterface(EntityScriptInterface&& other);
+   EntityScriptInterface();
+   EntityScriptInterface(const EntityScriptInterface& other) = delete;
+   virtual ~EntityScriptInterface();
 
-   EntityScript& operator=(EntityScript&& other);
-   EntityScript& operator=(const EntityScript& other) = delete;
+   EntityScriptInterface& operator=(EntityScriptInterface&& other);
+   EntityScriptInterface& operator=(const EntityScriptInterface& other) = delete;
 
    Entity& entity();
    void receive(Entity* entity, std::string message);
@@ -63,69 +64,15 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 /* class EntityScriptView
-   Contains a EntityScript reference and wraps access to EntityScript data without owning it. Invalid if the viewed Script is destroyed.
+   Contains a EntityScript reference and wraps access to EntityScriptInterface data without owning it. Invalid if the viewed EntityScriptInterface is destroyed.
 */
 class EntityScriptView : public ScriptView {
-   EntityScript* _entityscript;
+   EntityScriptInterface* _entityscript;
 public:
-   EntityScriptView(EntityScript* entityscript);
+   EntityScriptView(EntityScriptInterface* entityscript);
    void receive(Entity* entity, std::string message);
    void collide(Entity* entity);
-   EntityScript* getEntityScript();
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-/* abstract class EntityAllocatorInterface
-   Is used to invoke _allocate(), which must return heap-allocated memory to be owned
-   by the invoking EntityExecutor instance.
-
-   Stores a reference that can be checked against for existence by subtypes.
-*/
-class EntityScriptAllocatorInterface : public ScriptAllocatorInterface {
-   friend EntityExecutor;
-protected:
-   // must return a heap-allocated instance of a covariant type of EntityScript
-   virtual EntityScript* _allocate() = 0;
-};
-
-/* class EntityScriptProvider<T>
-   Templated implementation of the EntityScriptAllocatorInterface, that can provide subtype references
-   of allocated EntityScript types.
-*/
-template<class T>
-class EntityScriptProviderInterface : public EntityScriptAllocatorInterface {
-   std::unordered_map<EntityScript*, T*> _Ts;
-
-   EntityScript* _allocate() override {
-      T* t = _providerAllocate();
-      _Ts[t] = t;
-      return t;
-   }
-
-protected:
-   virtual T* _providerAllocate() = 0;
-
-public:
-   T* getInstance(EntityScript* entityscript) {
-      if (!hasReference(entityscript))
-         throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
-      return _Ts[entityscript];
-   }
-   T* getInstance(Entity* entity) {
-      EntityScript* entityscript = entity->entityscriptview().getEntityScript();
-      if (!hasReference(entityscript))
-         throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
-      return _Ts[entityscript];
-   }
-};
-
-/* class GenericEntityScriptProvider<T>
-   Generic implementation of EntityScriptProvider<T>.
-*/
-template<class T>
-class GenericEntityScriptProvider : public EntityScriptProviderInterface<T> {
-   T* _providerAllocate() override { return new T; }
+   EntityScriptInterface* getEntityScript();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -138,49 +85,49 @@ struct EntityScriptInfo {
    // default copy assignment/construction are fine
 };
 
-class EntityExecutor : public Executor {
-   std::unordered_map<unsigned, EntityScript*> _entityscripts_id;
+class EntityScriptExecutor : public ScriptExecutor {
+   std::unordered_map<unsigned, EntityScriptInterface*> _entityscripts_id;
 
 protected:
    // class to store enqueues and polymorphically spawn later
    class EntityScriptEnqueue : public ScriptEnqueue {
-      friend EntityExecutor;
-      EntityExecutor* _entityexecutor;
+      friend EntityScriptExecutor;
+      EntityScriptExecutor* _entityscriptexecutor;
       Entity* _entity;
    
    protected:
-      // invokes the containing EntityExecutor's _spawnEntityScript() method and returns the spawned instance's reference
+      // invokes the containing EntityScriptExecutor's _spawnEntityScript() method and returns the spawned instance's reference
       virtual ScriptView spawn() override;
-      EntityScriptEnqueue(EntityExecutor* entityexecutor, std::string name, int execution_queue, Entity* entity);
-      // default copy assignment/construction are fine (copying implies another enqueue in the same EntityExecutor)
+      EntityScriptEnqueue(EntityScriptExecutor* entityscriptexecutor, std::string name, int execution_queue, Entity* entity);
+      // default copy assignment/construction are fine (copying implies another enqueue in the same EntityScriptExecutor)
    };
 
 private:
-   // internal variables for added EntityScript information and enqueued EntityScripts
+   // internal variables for added EntityScriptInterface information and enqueued EntityScriptInterfaces
    std::unordered_map<std::string, EntityScriptInfo> _entityscriptinfos;
 
 protected:
-   // initializes EntityScript's EntityExecutor-related fields
-   void _setupEntityScript(EntityScript* entityscript, Entity* entity);
+   // initializes EntityScriptInterface's EntityScriptExecutor-related fields
+   void _setupEntityScript(EntityScriptInterface* entityscript, Entity* entity);
     
 public:
    /* Calls init() with the provided arguments. */
-   EntityExecutor(unsigned queues);
-   EntityExecutor(EntityExecutor&& other);
-   EntityExecutor();
-   EntityExecutor(const EntityExecutor& other) = delete;
-   virtual ~EntityExecutor() override;
+   EntityScriptExecutor(unsigned queues);
+   EntityScriptExecutor(EntityScriptExecutor&& other);
+   EntityScriptExecutor();
+   EntityScriptExecutor(const EntityScriptExecutor& other) = delete;
+   virtual ~EntityScriptExecutor() override;
 
-   EntityExecutor& operator=(EntityExecutor&& other);
-   EntityExecutor& operator=(const EntityExecutor& other) = delete;
+   EntityScriptExecutor& operator=(EntityScriptExecutor&& other);
+   EntityScriptExecutor& operator=(const EntityScriptExecutor& other) = delete;
 
-   /* Initializes internal EntityExecutor data. It is undefined behavior to make calls on this instance
+   /* Initializes internal EntityScriptExecutor data. It is undefined behavior to make calls on this instance
       before calling this and after uninit().
    */
    void init(unsigned queues);
    void uninit();
 
-   /* Adds a EntityScript allocator with initialization information to this executor, allowing its given
+   /* Adds an EntityScriptInterface allocator with initialization information to this executor, allowing its given
       name to be used for future spawns.
       - EntityScriptInfo - instance of EntityScriptInfo with allocation/initialization information
       - name - name to associate with the EntityScriptInfo instance
@@ -197,8 +144,8 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 class Entity {
-   friend EntityScript;
-   friend EntityExecutor;
+   friend EntityScriptInterface;
+   friend EntityScriptExecutor;
    friend EntityManager;
 
    std::string _entity_name;
@@ -227,6 +174,60 @@ public:
    std::vector<Quad*>& quads();
    std::vector<EntityColliderView>& entitycolliderviews();
    Transform& globaltransform();
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+/* abstract class EntityAllocatorInterface
+   Is used to invoke _allocate(), which must return heap-allocated memory to be owned
+   by the invoking EntityScriptExecutor instance.
+
+   Stores a reference that can be checked against for existence by subtypes.
+*/
+class EntityScriptAllocatorInterface : public ScriptAllocatorInterface {
+   friend EntityScriptExecutor;
+protected:
+   // must return a heap-allocated instance of a covariant type of EntityScriptInterface
+   virtual EntityScriptInterface* _allocate() = 0;
+};
+
+/* class EntityScriptProvider<T>
+   Templated implementation of the EntityScriptAllocatorInterface, that can provide subtype references
+   of allocated EntityScriptInterface types.
+*/
+template<class T>
+class EntityScriptProviderInterface : public EntityScriptAllocatorInterface {
+   std::unordered_map<EntityScriptInterface*, T*> _Ts;
+
+   EntityScriptInterface* _allocate() override {
+      T* t = _providerAllocate();
+      _Ts[t] = t;
+      return t;
+   }
+
+protected:
+   virtual T* _providerAllocate() = 0;
+
+public:
+   T* getInstance(EntityScriptInterface* entityscript) {
+      if (!hasReference(entityscript))
+         throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
+      return _Ts[entityscript];
+   }
+   T* getInstance(Entity* entity) {
+      EntityScriptInterface* entityscript = entity->entityscriptview().getEntityScript();
+      if (!hasReference(entityscript))
+         throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
+      return _Ts[entityscript];
+   }
+};
+
+/* class GenericEntityScriptProvider<T>
+   Generic implementation of EntityScriptProvider<T>.
+*/
+template<class T>
+class GenericEntityScriptProvider : public EntityScriptProviderInterface<T> {
+   T* _providerAllocate() override { return new T; }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -362,7 +363,7 @@ class EntityManager {
    // storage of entities, mapped to group names
    std::unordered_map<std::string, ManagedList<Entity>> _entities;
 
-   EntityExecutor* _entityexecutor;
+   EntityScriptExecutor* _entityscriptexecutor;
    GLEnv* _glenv;
    CollisionSpace* _collisionspace;
 
@@ -371,7 +372,7 @@ class EntityManager {
    // can only be called from checkEntities() if entity's entityscript is killed
    void _removeEntity(Entity* entity);
 public:
-   EntityManager(EntityExecutor* entityexecutor, GLEnv* glenv, CollisionSpace* physspace_box);
+   EntityManager(EntityScriptExecutor* entityscriptexecutor, GLEnv* glenv, CollisionSpace* physspace_box);
    EntityManager(EntityManager&& other);
    EntityManager();
    EntityManager(const EntityManager& other) = delete;
@@ -380,7 +381,7 @@ public:
    EntityManager& operator=(EntityManager&& other);
    EntityManager& operator=(const EntityManager& other) = delete;
 
-   void init(EntityExecutor* entityexecutor, GLEnv* glenv, CollisionSpace* physspace_box);
+   void init(EntityScriptExecutor* entityscriptexecutor, GLEnv* glenv, CollisionSpace* physspace_box);
    void uninit();
 
    void addEntity(EntityInfo info, const char* name);

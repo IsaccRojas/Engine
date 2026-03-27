@@ -46,7 +46,7 @@ void ES_Player::_collide(Entity *other) {
 }
 
 ES_Player::ES_Player(GLFWInput *input_state) :
-    EntityScript(), 
+    EntityScriptInterface(), 
     _input_state(input_state), 
     _hurt_cooldown_max(120.0f), 
     _hurt_cooldown(0.0f), 
@@ -102,7 +102,7 @@ void ES_Chaser::_updateEntity() {}
 void ES_Chaser::_receive(Entity *entity, std::string message) {}
 void ES_Chaser::_collide(Entity *entity) {}
 
-ES_Chaser::ES_Chaser() : EntityScript(), _target(nullptr) {}
+ES_Chaser::ES_Chaser() : EntityScriptInterface(), _target(nullptr) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -119,4 +119,4 @@ void ES_Hitbox::_collide(Entity *entity) {
     std::cout << "hitbox collision" << std::endl;
 }
 
-ES_Hitbox::ES_Hitbox() : EntityScript(), _lifetime(120) {}
+ES_Hitbox::ES_Hitbox() : EntityScriptInterface(), _lifetime(120) {}

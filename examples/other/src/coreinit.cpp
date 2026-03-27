@@ -36,7 +36,7 @@ void initializeCore(CoreResources *core) {
 
     // set up Executor
     std::cout << "Setting up EntityExecutor" << std::endl;
-    core->entityexecutor.init(EXECUTION_QUEUES);
+    core->executor.init(EXECUTION_QUEUES);
 
     // set up GLEnv
     std::cout << "Setting up GLEnv" << std::endl;
@@ -57,7 +57,7 @@ void initializeCore(CoreResources *core) {
 
     // set up Manager
     std::cout << "Setting up EntityManager" << std::endl;
-    core->entitymanager.init(&core->entityexecutor, &core->glenv, &core->collisionspace);
+    core->entitymanager.init(&core->executor, &core->glenv, &core->collisionspace);
 
     std::cout << "Setting some OpenGL parameters" << std::endl;
     glfwSwapInterval(1);

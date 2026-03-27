@@ -1,57 +1,57 @@
 #include "../include/entity.hpp"
 
-EntityScript::EntityScript(EntityScript &&other) {
+EntityScriptInterface::EntityScriptInterface(EntityScriptInterface&& other) {
     operator=(std::move(other));
     _entity = other._entity;
     other._entity = nullptr;
 }
-EntityScript::EntityScript() : 
-    Script(), _entity(nullptr)
+EntityScriptInterface::EntityScriptInterface() : 
+    ScriptInterface(), _entity(nullptr)
 {}
-EntityScript::~EntityScript() { /* automatic destruction is fine */ }
+EntityScriptInterface::~EntityScriptInterface() { /* automatic destruction is fine */ }
 
-EntityScript& EntityScript::operator=(EntityScript&& other) {
+EntityScriptInterface& EntityScriptInterface::operator=(EntityScriptInterface&& other) {
     if (this != &other) {
-        Script::operator=(std::move(other));
+        ScriptInterface::operator=(std::move(other));
         _entity = other._entity;
         other._entity = nullptr;
     }
     return *this;
 }
 
-void EntityScript::_init() {
+void EntityScriptInterface::_init() {
     _initEntity();
 }
 
-void EntityScript::_exec() {
+void EntityScriptInterface::_exec() {
     _execEntity();
 }
 
-void EntityScript::_kill() {
+void EntityScriptInterface::_kill() {
     _killEntity();
     if (_entity)
         _entity->_script_killed = true;
 }
 
-void EntityScript::_update() {
+void EntityScriptInterface::_update() {
     _updateEntity();
 }
 
-Entity& EntityScript::entity() {
+Entity& EntityScriptInterface::entity() {
     return *_entity;
 };
 
-void EntityScript::receive(Entity* entity, std::string message) {
+void EntityScriptInterface::receive(Entity* entity, std::string message) {
     _receive(entity, message);
 }
 
-void EntityScript::collide(Entity* entity) {
+void EntityScriptInterface::collide(Entity* entity) {
     _collide(entity);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-EntityScriptView::EntityScriptView(EntityScript* entityscript) : ScriptView(entityscript), _entityscript(entityscript) {}
+EntityScriptView::EntityScriptView(EntityScriptInterface* entityscript) : ScriptView(entityscript), _entityscript(entityscript) {}
 
 void EntityScriptView::receive(Entity* entity, std::string message) {
     _entityscript->receive(entity, message);
@@ -61,60 +61,60 @@ void EntityScriptView::collide(Entity* entity) {
     _entityscript->collide(entity);
 }
 
-EntityScript* EntityScriptView::getEntityScript() {
+EntityScriptInterface* EntityScriptView::getEntityScript() {
     return _entityscript;
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-ScriptView EntityExecutor::EntityScriptEnqueue::spawn() {
-    return _entityexecutor->spawnEntityScript(_name.c_str(), _execution_queue, _entity);
+ScriptView EntityScriptExecutor::EntityScriptEnqueue::spawn() {
+    return _entityscriptexecutor->spawnEntityScript(_name.c_str(), _execution_queue, _entity);
 }
 
-EntityExecutor::EntityScriptEnqueue::EntityScriptEnqueue(EntityExecutor* entityexecutor, std::string name, int execution_queue, Entity* entity) :
-    ScriptEnqueue(nullptr, name, execution_queue), _entityexecutor(entityexecutor), _entity(entity)
+EntityScriptExecutor::EntityScriptEnqueue::EntityScriptEnqueue(EntityScriptExecutor* entityscriptexecutor, std::string name, int execution_queue, Entity* entity) :
+    ScriptEnqueue(nullptr, name, execution_queue), _entityscriptexecutor(entityscriptexecutor), _entity(entity)
 {}
 
-void EntityExecutor::_setupEntityScript(EntityScript* entityscript, Entity* entity) {
+void EntityScriptExecutor::_setupEntityScript(EntityScriptInterface* entityscript, Entity* entity) {
     entityscript->_entity = entity;
 }
 
-EntityExecutor::EntityExecutor(unsigned queues) : Executor() { 
+EntityScriptExecutor::EntityScriptExecutor(unsigned queues) : ScriptExecutor() { 
     init(queues);
 }
-EntityExecutor::EntityExecutor(EntityExecutor &&other) : Executor() { operator=(std::move(other)); }
-EntityExecutor::EntityExecutor() : Executor() {}
-EntityExecutor::~EntityExecutor() { /* automatic destruction is fine */ }
+EntityScriptExecutor::EntityScriptExecutor(EntityScriptExecutor &&other) : ScriptExecutor() { operator=(std::move(other)); }
+EntityScriptExecutor::EntityScriptExecutor() : ScriptExecutor() {}
+EntityScriptExecutor::~EntityScriptExecutor() { /* automatic destruction is fine */ }
 
-EntityExecutor& EntityExecutor::operator=(EntityExecutor&& other) {
+EntityScriptExecutor& EntityScriptExecutor::operator=(EntityScriptExecutor&& other) {
     if (this == &other) {
-        Executor::operator=(std::move(other));
+        ScriptExecutor::operator=(std::move(other));
         _entityscriptinfos = other._entityscriptinfos;
         other._entityscriptinfos.clear();
     }
     return *this;
 }
 
-void EntityExecutor::init(unsigned queues) {
-    Executor::init(queues);
+void EntityScriptExecutor::init(unsigned queues) {
+    ScriptExecutor::init(queues);
 }
 
-void EntityExecutor::uninit() {
-    Executor::uninit();
+void EntityScriptExecutor::uninit() {
+    ScriptExecutor::uninit();
     _entityscriptinfos.clear();
 }
 
-void EntityExecutor::addEntityScript(EntityScriptInfo entityscriptinfo, const char* name) {
+void EntityScriptExecutor::addEntityScript(EntityScriptInfo entityscriptinfo, const char* name) {
     if (!hasAdded(name)) {
-        Executor::addScript(ScriptInfo{entityscriptinfo._allocator, entityscriptinfo._spawn_callback, entityscriptinfo._remove_callback}, name);
+        ScriptExecutor::addScript(ScriptInfo{entityscriptinfo._allocator, entityscriptinfo._spawn_callback, entityscriptinfo._remove_callback}, name);
         _entityscriptinfos[name] = entityscriptinfo;
     } else
         throw std::runtime_error("Attempt to add already added name");
 }
 
-EntityScriptView EntityExecutor::spawnEntityScript(const char* entityscript_name, int execution_queue, Entity* entity) {
+EntityScriptView EntityScriptExecutor::spawnEntityScript(const char* entityscript_name, int execution_queue, Entity* entity) {
     // allocate instance and set it up
-    EntityScript* entityscript = _entityscriptinfos[entityscript_name]._allocator->_allocate();
+    EntityScriptInterface* entityscript = _entityscriptinfos[entityscript_name]._allocator->_allocate();
     _setupScript(entityscript, entityscript_name, execution_queue, _entityscriptinfos[entityscript_name]._allocator);
     _setupEntityScript(entityscript, entity);
 
@@ -124,7 +124,7 @@ EntityScriptView EntityExecutor::spawnEntityScript(const char* entityscript_name
     return EntityScriptView(entityscript);
 }
 
-void EntityExecutor::enqueueSpawnEntityScript(const char* entityscript_name, int execution_queue, Entity* entity) {
+void EntityScriptExecutor::enqueueSpawnEntityScript(const char* entityscript_name, int execution_queue, Entity* entity) {
     _pushSpawnEnqueue(new EntityScriptEnqueue(this, entityscript_name, execution_queue, entity));
 }
 
@@ -320,9 +320,9 @@ void EntityManager::_removeEntity(Entity* entity) {
     _entities[entity->_group.c_str()].erase(entity->_this_iter);
 }
 
-EntityManager::EntityManager(EntityExecutor* entityexecutor, GLEnv* glenv, CollisionSpace* collisionspace) : _initialized(false) { init(entityexecutor, glenv, collisionspace); }
+EntityManager::EntityManager(EntityScriptExecutor* entityscriptexecutor, GLEnv* glenv, CollisionSpace* collisionspace) : _initialized(false) { init(entityscriptexecutor, glenv, collisionspace); }
 EntityManager::EntityManager(EntityManager&& other) { operator=(std::move(other)); }
-EntityManager::EntityManager() : _entityexecutor(nullptr), _glenv(nullptr), _collisionspace(nullptr), _initialized(false) {}
+EntityManager::EntityManager() : _entityscriptexecutor(nullptr), _glenv(nullptr), _collisionspace(nullptr), _initialized(false) {}
 EntityManager::~EntityManager() { /* automatic destruction is fine */ }
 
 EntityManager& EntityManager::operator=(EntityManager&& other) {
@@ -340,7 +340,7 @@ EntityManager& EntityManager::operator=(EntityManager&& other) {
         for (std::unordered_map<std::string, ManagedList<Entity>>::iterator i = other._entities.begin(); i != other._entities.end(); ++i)
             _entities[i->first] = std::move(i->second);
 
-        _entityexecutor = other._entityexecutor;
+        _entityscriptexecutor = other._entityscriptexecutor;
         _glenv = other._glenv;
         _collisionspace = other._collisionspace;
 
@@ -350,11 +350,11 @@ EntityManager& EntityManager::operator=(EntityManager&& other) {
     return *this;
 }
 
-void EntityManager::init(EntityExecutor* entityexecutor, GLEnv* glenv, CollisionSpace* collisionspace) {
+void EntityManager::init(EntityScriptExecutor* entityscriptexecutor, GLEnv* glenv, CollisionSpace* collisionspace) {
     if (_initialized)
         throw InitializedException();
     
-    _entityexecutor = entityexecutor;
+    _entityscriptexecutor = entityscriptexecutor;
     _glenv = glenv;
     _collisionspace = collisionspace;
     _initialized = true;
@@ -366,7 +366,7 @@ void EntityManager::uninit() {
     
     _entityinfos.clear();
     _entities.clear();
-    _entityexecutor = nullptr;
+    _entityscriptexecutor = nullptr;
     _glenv = nullptr;
     _collisionspace = nullptr;
     _initialized = false;
@@ -396,8 +396,8 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     entity->_entitymanager = this;
     entity->_globaltransform = transform;
     
-    // instantiate EntityScript in info and push to entity's storage
-    entity->_entityscriptview = _entityexecutor->spawnEntityScript(ei.entityscript_name.c_str(), ei.execution_queue, entity);
+    // instantiate EntityScriptInterface in info and push to entity's storage
+    entity->_entityscriptview = _entityscriptexecutor->spawnEntityScript(ei.entityscript_name.c_str(), ei.execution_queue, entity);
     
     return entity;
 }
