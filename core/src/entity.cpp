@@ -30,7 +30,7 @@ void EntityScriptInterface::_exec() {
 void EntityScriptInterface::_kill() {
     _killEntity();
     if (_entity)
-        _entity->_script_killed = true;
+        _entity->checkScriptStatus();
 }
 
 void EntityScriptInterface::_update() {
@@ -130,8 +130,12 @@ void EntityScriptExecutor::enqueueSpawnEntityScript(const char* entityscript_nam
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-Entity::Entity() : _entitymanager(nullptr), _entityscriptview(nullptr), _script_killed(false) {}
+Entity::Entity() : _entitymanager(nullptr), _entityscriptview(nullptr), _script_kill_started(false) {}
 Entity::~Entity() {}
+
+void Entity::checkScriptStatus() {
+    _script_kill_started = _entityscriptview.getScript()->getKillStarted();
+}
 
 const char* Entity::getName() { return _entity_name.c_str(); }
 EntityManager& Entity::manager() { return *_entitymanager; }
@@ -417,7 +421,7 @@ void EntityManager::checkEntities() {
             auto& entity = *iter;
 
             // check if entity needs to be removed
-            if (entity->_script_killed) {
+            if (entity->_script_kill_started) {
                 remove_queue.push(entity);
                 continue;
             }

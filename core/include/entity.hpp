@@ -144,7 +144,6 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 class Entity {
-   //friend EntityScriptInterface;
    friend EntityManager;
 
    std::string _entity_name;
@@ -158,7 +157,7 @@ class Entity {
    std::vector<Quad*> _quads;
    std::vector<EntityColliderView> _entitycolliderviews;
 
-   bool _script_killed;
+   bool _script_kill_started;
 
    Transform _globaltransform;
 
@@ -168,6 +167,9 @@ public:
    ~Entity();
 
    //TODO: revise copy/move semantics
+
+   /* Checks if script was killed, enabling its removal from its manager. */
+   void checkScriptStatus();
 
    const char* getName();
    EntityManager& manager();

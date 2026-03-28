@@ -41,6 +41,7 @@ class ScriptInterface {
    int _last_execqueue;
    bool _exec_enqueued;
    bool _kill_enqueued; 
+   bool _kill_started;
    std::string _script_name;
 
    // lockout variables
@@ -96,6 +97,7 @@ public:
    int getLastExecQueue();
    bool getExecEnqueued();
    bool getKillEnqueued();
+   bool getKillStarted();
    const char* getName();
    ScriptKey& key();
    void lockout(ScriptKey* k);

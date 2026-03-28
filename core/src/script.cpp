@@ -11,6 +11,7 @@ ScriptInterface::ScriptInterface() :
     _last_execqueue(-1),
     _exec_enqueued(false), 
     _kill_enqueued(false),
+    _kill_started(false),
     _script_name(""),
     _keys_count(0)
 {}
@@ -23,6 +24,7 @@ ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
         _last_execqueue = other._last_execqueue;
         _exec_enqueued = other._exec_enqueued;
         _kill_enqueued = other._kill_enqueued;
+        _kill_started = other._kill_started;
         _script_name = other._script_name;
         _keys = other._keys;
         _keys_count = other._keys_count;
@@ -30,6 +32,7 @@ ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
         other._last_execqueue = -1;
         other._exec_enqueued = false;
         other._exec_enqueued = false;
+        other._kill_started = false;
         other._script_name = "";
         other._keys.clear();
         other._keys_count = 0;
@@ -60,6 +63,7 @@ void ScriptInterface::runUpdate() {
 int ScriptInterface::getLastExecQueue() { return _last_execqueue; }
 bool ScriptInterface::getExecEnqueued() { return _exec_enqueued; }
 bool ScriptInterface::getKillEnqueued() { return _kill_enqueued; }
+bool ScriptInterface::getKillStarted() { return _kill_started; }
 const char *ScriptInterface::getName() { return _script_name.c_str(); }
 
 void ScriptInterface::enqueueExec(unsigned queue) {
@@ -161,7 +165,7 @@ void ScriptExecutor::_setupScript(ScriptInterface* script, const char* script_na
 
     // store data
     script->_executor = this;
-    script->_scriptallocator;
+    script->_scriptallocator = scriptallocator;
     script->_this_iter = _scripts.push_back(script);
 
     // store in allocator
@@ -311,8 +315,9 @@ void ScriptExecutor::runKillQueue() {
 
         // check if script can be killed
         if (script->lockoutCount() == 0) {
-            script->runKill();
             script->_kill_enqueued = false;
+            script->_kill_started = true;
+            script->runKill();
 
             // remove the script after killing it
             _erase(script);
