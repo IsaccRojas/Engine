@@ -6,12 +6,19 @@
 #include "..\..\..\core\include\glfwinput.hpp"
 #include "..\..\..\core\include\entity.hpp"
 
+#include "implementations.hpp"
+
 struct CoreResources {
+    CoreResources();
+
     GLFWState state;
     GLFWInput input;
 
     std::unordered_map<std::string, Animation> animations;
     std::unordered_map<std::string, Filter> filters;
+
+    PlayerProvider provider_ES_Player;
+    GlobalProviders providers;
 
     EntityScriptExecutor executor;
     GLEnv glenv;

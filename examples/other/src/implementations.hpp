@@ -55,4 +55,13 @@ struct GlobalProviders {
     GenericEntityScriptProvider<ES_Hitbox> provider_ES_Hitbox;
 };
 
+// ES_Player allocator that holds reference to input state
+class PlayerProvider : public EntityScriptProviderInterface<ES_Player> {
+    GLFWInput* _input_state;
+    GlobalProviders* _providers;
+    ES_Player* _providerAllocate() override { return new ES_Player(_input_state, _providers); }
+public:
+    PlayerProvider(GLFWInput* input_state, GlobalProviders* providers) : _input_state(input_state), _providers(providers) {}
+};
+
 #endif

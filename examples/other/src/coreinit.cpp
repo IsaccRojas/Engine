@@ -18,6 +18,8 @@ const unsigned TEX_SPACE_LEVELS = 3;
 
 const float CLEAR_COLOR_GRAY = 0.0f;
 
+CoreResources::CoreResources() : provider_ES_Player(&(this->input), &(this->providers)) {}
+
 void initializeCore(CoreResources *core) {
     // initialize GLFW, OpenGL, and GLFWInput
     std::cout << "Setting up GLFWState" << std::endl;

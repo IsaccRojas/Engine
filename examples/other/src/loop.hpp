@@ -2,15 +2,12 @@
 #define LOOP_HPP_
 
 #include "coreinit.hpp"
-#include "implementations.hpp"
 
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
 #include <chrono>
 #include <thread>
-
-//#include "implementations.hpp"
 
 /* Primary program execution loop. */
 void loop(CoreResources *core);

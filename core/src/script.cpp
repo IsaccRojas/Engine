@@ -14,10 +14,7 @@ ScriptInterface::ScriptInterface() :
     _script_name(""),
     _keys_count(0)
 {}
-ScriptInterface::~ScriptInterface() {
-    if (_scriptallocator)
-        _scriptallocator->removeReference(this);
-}
+ScriptInterface::~ScriptInterface() {}
 
 ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
     if (this != &other) {
@@ -86,7 +83,7 @@ void ScriptInterface::lockout(ScriptKey* k) {
 void ScriptInterface::unlock(ScriptKey* k) {
     _keys.erase(k);
 }
-unsigned ScriptInterface::lockout_count() {
+unsigned ScriptInterface::lockoutCount() {
     return _keys.size();
 }
 
@@ -111,19 +108,16 @@ void ScriptAllocatorInterface::_insertReference(ScriptInterface* script) {
     _scripts.insert(script);
 }
 
+void ScriptAllocatorInterface::_removeReference(ScriptInterface* script) {
+    _scripts.erase(script);
+}
+
 ScriptAllocatorInterface::ScriptAllocatorInterface() {}
 
-ScriptAllocatorInterface::~ScriptAllocatorInterface() {
-    for (auto& s : _scripts)
-        s->_scriptallocator = nullptr;
-}
+ScriptAllocatorInterface::~ScriptAllocatorInterface() {}
 
 bool ScriptAllocatorInterface::hasReference(ScriptInterface* script) {
     return (_scripts.find(script) != _scripts.end());
-}
-
-void ScriptAllocatorInterface::removeReference(ScriptInterface* script) {
-    _scripts.erase(script);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -167,10 +161,10 @@ void ScriptExecutor::_setupScript(ScriptInterface* script, const char* script_na
 
     // store data
     script->_executor = this;
+    script->_scriptallocator;
     script->_this_iter = _scripts.push_back(script);
 
-    // set scriptallocator data
-    script->_scriptallocator = scriptallocator;
+    // store in allocator
     scriptallocator->_insertReference(script);
 
     // set script fields (make copy of string passed)
@@ -197,6 +191,7 @@ void ScriptExecutor::_erase(ScriptInterface* script) {
     if (scriptinfo._remove_callback)
         scriptinfo._remove_callback(script);
 
+    script->_scriptallocator->_removeReference(script);
     _scripts.erase(script->_this_iter);
 }
 
@@ -315,7 +310,7 @@ void ScriptExecutor::runKillQueue() {
         script = _run_killqueue.front();
 
         // check if script can be killed
-        if (script->lockout_count() == 0) {
+        if (script->lockoutCount() == 0) {
             script->runKill();
             script->_kill_enqueued = false;
 

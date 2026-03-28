@@ -144,7 +144,7 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 class Entity {
-   friend EntityScriptInterface;
+   //friend EntityScriptInterface;
    friend EntityManager;
 
    std::string _entity_name;

@@ -33,7 +33,6 @@ class ScriptKey {
 */
 class ScriptInterface {
    friend ScriptExecutor;
-   friend ScriptAllocatorInterface;
 
    // fields maintained by owning ScriptExecutor
    ScriptExecutor* _executor;
@@ -101,7 +100,7 @@ public:
    ScriptKey& key();
    void lockout(ScriptKey* k);
    void unlock(ScriptKey* k);
-   unsigned lockout_count();
+   unsigned lockoutCount();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -141,6 +140,9 @@ class ScriptAllocatorInterface {
    // inserts reference into set (does not allocate memory)
    void _insertReference(ScriptInterface* script);
 
+   /* Removes reference from internal storage (does not delete memory). */
+   void _removeReference(ScriptInterface* script);
+
 protected:
    // must return a heap-allocated instance of a covariant type of ScriptInterface
    virtual ScriptInterface* _allocate() = 0;
@@ -152,9 +154,6 @@ public:
 
    /* Checks if reference came from this allocator. */
    bool hasReference(ScriptInterface* script);
-
-   /* Removes reference from internal storage (does not delete memory). */
-   void removeReference(ScriptInterface* script);
 };
 
 /* class ScriptProvider<T>
