@@ -16,7 +16,7 @@ ScriptInterface::ScriptInterface() :
 {}
 ScriptInterface::~ScriptInterface() {
     if (_scriptallocator)
-        _scriptallocator->_removeReference(this);
+        _scriptallocator->removeReference(this);
 }
 
 ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
@@ -111,9 +111,7 @@ void ScriptAllocatorInterface::_insertReference(ScriptInterface* script) {
     _scripts.insert(script);
 }
 
-void ScriptAllocatorInterface::_removeReference(ScriptInterface* script) {
-    _scripts.erase(script);
-}
+ScriptAllocatorInterface::ScriptAllocatorInterface() {}
 
 ScriptAllocatorInterface::~ScriptAllocatorInterface() {
     for (auto& s : _scripts)
@@ -122,6 +120,10 @@ ScriptAllocatorInterface::~ScriptAllocatorInterface() {
 
 bool ScriptAllocatorInterface::hasReference(ScriptInterface* script) {
     return (_scripts.find(script) != _scripts.end());
+}
+
+void ScriptAllocatorInterface::removeReference(ScriptInterface* script) {
+    _scripts.erase(script);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -246,7 +248,7 @@ void ScriptExecutor::enqueueSpawn(const char* script_name, int execution_queue) 
 }
 
 void ScriptExecutor::enqueueExec(ScriptView scriptview, unsigned queue) {
-    ScriptInterface* script = scriptview._script;
+    ScriptInterface* script = scriptview.getScript();
 
     if (queue >= _queuepairs.size())
         throw std::out_of_range("Execution queue index out of range");
@@ -260,7 +262,7 @@ void ScriptExecutor::enqueueExec(ScriptView scriptview, unsigned queue) {
 
 void ScriptExecutor::enqueueKill(ScriptView scriptview) {
     // TODO: check if ID is valid
-    ScriptInterface* script = scriptview._script;
+    ScriptInterface* script = scriptview.getScript();
 
     if (!(script->_exec_enqueued || script->_kill_enqueued)) {
         // push to kill queue

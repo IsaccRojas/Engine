@@ -27,7 +27,8 @@ void ES_Player::_execEntity() {
         pos += speed * glm::normalize(dir);
     
     if (_hitbox_cooldown <= 0.0f && _input_state->get_m1()) {
-        entity().manager().spawnEntity("Entity_Hitbox", Transform{pos, glm::vec3(24.0f, 24.0f, 24.0f)});
+        Entity* hitbox = entity().manager().spawnEntity("Entity_Hitbox", Transform{pos, glm::vec3(24.0f, 24.0f, 24.0f)});
+        _providers->provider_ES_Hitbox.getInstance(hitbox)->lifetime = 60;
         _hitbox_cooldown = _hitbox_cooldown_max;
     }
     if (_hitbox_cooldown > 0.0f)
@@ -39,15 +40,16 @@ void ES_Player::_execEntity() {
 
 void ES_Player::_killEntity() {}
 void ES_Player::_updateEntity() {}
-void ES_Player::_receive(Entity *other, std::string message) {}
+void ES_Player::_receive(Entity* other, std::string message) {}
 
-void ES_Player::_collide(Entity *other) {
+void ES_Player::_collide(Entity* other) {
     _hurt_cooldown = _hurt_cooldown_max;
 }
 
-ES_Player::ES_Player(GLFWInput *input_state) :
+ES_Player::ES_Player(GLFWInput* input_state, GlobalProviders* providers) :
     EntityScriptInterface(), 
-    _input_state(input_state), 
+    _input_state(input_state),
+    _providers(providers), 
     _hurt_cooldown_max(120.0f), 
     _hurt_cooldown(0.0f), 
     _hitbox_cooldown_max(120.0f), 
@@ -106,10 +108,17 @@ ES_Chaser::ES_Chaser() : EntityScriptInterface(), _target(nullptr) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Hitbox::_initEntity() {}
+void ES_Hitbox::_initEntity() {
+    std::cout << "hitbox init: lifetime is " << lifetime << std::endl;
+}
 void ES_Hitbox::_execEntity() {
-    _lifetime--;
-    if (_lifetime <= 0)
+    if (_debug) {
+        std::cout << "hitbox exec: lifetime is " << lifetime << std::endl;
+        _debug = false;
+    }
+    
+    lifetime--;
+    if (lifetime <= 0)
         enqueueKill();
 }
 void ES_Hitbox::_killEntity() {}
@@ -119,4 +128,4 @@ void ES_Hitbox::_collide(Entity *entity) {
     std::cout << "hitbox collision" << std::endl;
 }
 
-ES_Hitbox::ES_Hitbox() : EntityScriptInterface(), _lifetime(120) {}
+ES_Hitbox::ES_Hitbox() : EntityScriptInterface(), _debug(true), lifetime(120) {}

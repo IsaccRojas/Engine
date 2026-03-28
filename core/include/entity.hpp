@@ -11,6 +11,7 @@ class EntityColliderView;
 class EntityScriptExecutor;
 class Entity;
 class EntityScriptAllocatorInterface;
+class CollisionSpace;
 class EntityManager;
 
 /* class EntityScriptInterface
@@ -18,8 +19,6 @@ class EntityManager;
 */
 class EntityScriptInterface : public ScriptInterface {
    friend EntityScriptExecutor;
-   friend Entity;
-   friend EntityManager;
 
    Entity* _entity;
 
@@ -47,9 +46,10 @@ protected:
    /* Call invoked by EntityColliders. */
    virtual void _collide(Entity* entity) = 0;
 
-public:
    EntityScriptInterface(EntityScriptInterface&& other);
    EntityScriptInterface();
+
+public:
    EntityScriptInterface(const EntityScriptInterface& other) = delete;
    virtual ~EntityScriptInterface();
 
@@ -145,7 +145,6 @@ public:
 
 class Entity {
    friend EntityScriptInterface;
-   friend EntityScriptExecutor;
    friend EntityManager;
 
    std::string _entity_name;
@@ -162,8 +161,10 @@ class Entity {
    bool _script_killed;
 
    Transform _globaltransform;
-public:
+
    Entity();
+
+public:
    ~Entity();
 
    //TODO: revise copy/move semantics
@@ -186,9 +187,12 @@ public:
 */
 class EntityScriptAllocatorInterface : public ScriptAllocatorInterface {
    friend EntityScriptExecutor;
+
 protected:
    // must return a heap-allocated instance of a covariant type of EntityScriptInterface
    virtual EntityScriptInterface* _allocate() = 0;
+
+   EntityScriptAllocatorInterface();
 };
 
 /* class EntityScriptProvider<T>
@@ -232,9 +236,6 @@ class GenericEntityScriptProvider : public EntityScriptProviderInterface<T> {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-// prototype
-class CollisionSpace;
-
 /* class EntityCollider
    Represents a physical presence capable of collision within a CollisionSpace.
 */
@@ -254,9 +255,11 @@ class EntityCollider {
    glm::vec3 _scale;
    
    Entity* _entity;
-public:
+
    EntityCollider(EntityCollider&& other);
    EntityCollider();
+
+public:
    EntityCollider(const EntityCollider&) = delete;
    virtual ~EntityCollider();
 
@@ -280,13 +283,13 @@ public:
    Contains a EntityCollider reference and wraps access to EntityCollider data without owning it. Invalid if the viewed EntityCollider is destroyed.
 */
 class EntityColliderView {
-   friend CollisionSpace;
    EntityCollider* _collider;
 public:
    EntityColliderView(EntityCollider* collider);
    bool& collision_enabled();
    void resetTransformation();
    void applyTransform(Transform transform);
+   EntityCollider* getCollider();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -371,6 +374,7 @@ class EntityManager {
 
    // can only be called from checkEntities() if entity's entityscript is killed
    void _removeEntity(Entity* entity);
+   
 public:
    EntityManager(EntityScriptExecutor* entityscriptexecutor, GLEnv* glenv, CollisionSpace* physspace_box);
    EntityManager(EntityManager&& other);

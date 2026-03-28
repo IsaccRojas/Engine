@@ -32,8 +32,9 @@ class Quad {
    glm::vec3 _base_scale;
    AnimationState _animationstate;
 
-public:
    Quad();
+   
+public:
    ~Quad();
 
    // default copy assignment/construction are fine

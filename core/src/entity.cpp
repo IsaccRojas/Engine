@@ -142,6 +142,10 @@ Transform& Entity::globaltransform() { return _globaltransform; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+EntityScriptAllocatorInterface::EntityScriptAllocatorInterface() {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 EntityCollider::EntityCollider(EntityCollider&& other) { operator=(std::move(other)); }
 EntityCollider::EntityCollider() :
     _collisionspace(nullptr),
@@ -199,6 +203,8 @@ bool& EntityColliderView::collision_enabled() { return _collider->collision_enab
 void EntityColliderView::resetTransformation() { _collider->resetTransformation(); }
 
 void EntityColliderView::applyTransform(Transform transform) { _collider->applyTransform(transform); }
+
+EntityCollider* EntityColliderView::getCollider() { return _collider; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -258,7 +264,7 @@ EntityColliderView CollisionSpace::spawnCollider(const char* name, Entity* entit
     return EntityColliderView(collider);
 }
 
-void CollisionSpace::erase(EntityColliderView colliderview) { _colliders.erase(colliderview._collider->_this_iter); }
+void CollisionSpace::erase(EntityColliderView colliderview) { _colliders.erase(colliderview.getCollider()->_this_iter); }
 
 void CollisionSpace::detectCollisionAABB() {
     // perform pair-wise collision detection

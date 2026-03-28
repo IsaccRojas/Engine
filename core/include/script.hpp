@@ -61,9 +61,10 @@ protected:
    virtual void _kill() = 0;
    virtual void _update() = 0;
 
-public:
    ScriptInterface(ScriptInterface&& other);
    ScriptInterface();
+
+public:
    ScriptInterface(const ScriptInterface&) = delete;
    virtual ~ScriptInterface();
 
@@ -89,6 +90,8 @@ public:
    /* Kills the ScriptInterface. */
    void enqueueKill();
 
+   /* Removes script reference from its allocator. */
+
    /* Gets various internal flags used by ScriptExecutors to control state.
    */
    int getLastExecQueue();
@@ -107,11 +110,9 @@ public:
    Contains a ScriptInterface reference and wraps access to ScriptInterface data without owning it. Invalid if the viewed ScriptInterface is destroyed.
 */
 class ScriptView {
-   friend ScriptExecutor;
    ScriptInterface* _script;
 public:
    ScriptView(ScriptInterface* script);
-
    void enqueueExec(unsigned queue);
    void enqueueKill();
    int getLastExecQueue();
@@ -133,7 +134,6 @@ public:
    Stores a reference that can be checked against for existence by subtypes.
 */
 class ScriptAllocatorInterface {
-   friend ScriptInterface;
    friend ScriptExecutor;
    
    std::unordered_set<ScriptInterface*> _scripts;
@@ -141,18 +141,20 @@ class ScriptAllocatorInterface {
    // inserts reference into set (does not allocate memory)
    void _insertReference(ScriptInterface* script);
 
-   // removes reference from set (does not delete memory)
-   void _removeReference(ScriptInterface* script);
-
 protected:
    // must return a heap-allocated instance of a covariant type of ScriptInterface
    virtual ScriptInterface* _allocate() = 0;
 
+   ScriptAllocatorInterface();
+
 public:
    virtual ~ScriptAllocatorInterface();
 
-   // checks if reference came from this allocator
+   /* Checks if reference came from this allocator. */
    bool hasReference(ScriptInterface* script);
+
+   /* Removes reference from internal storage (does not delete memory). */
+   void removeReference(ScriptInterface* script);
 };
 
 /* class ScriptProvider<T>
