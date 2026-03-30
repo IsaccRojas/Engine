@@ -1,34 +1,36 @@
 #include "implementations.hpp"
 
-void ES_Player::_initEntity() {
-    entity().quads()[0]->animationstate().setCycleState("normal");
-}
+void ES_Player::_initEntity() {}
 
 void ES_Player::_execEntity() {
-    // check if hurt and set appropriate animation state and collision state
+    // check if hurt (does nothing for now)
     if (_hurt_cooldown > 0.0f) {
         _hurt_cooldown -= 1.0f;
-        entity().entitycolliderviews()[0].collision_enabled() = false;
-        entity().quads()[0]->animationstate().setCycleState("hurt");
-    } else {
-        entity().entitycolliderviews()[0].collision_enabled() = true;
-        entity().quads()[0]->animationstate().setCycleState("normal");
     }
 
     glm::vec3 &pos = entity().globaltransform().pos;
 
-    float speed = 0.5f;
-    glm::vec3 dir = glm::vec3(
+    glm::vec3 vel = glm::vec3(
         float(-1.0f * _input_state->get_a()) + float(_input_state->get_d()),
         float(-1.0f * _input_state->get_s()) + float(_input_state->get_w()),
         0.0f
     );
-    if (glm::length(dir))
-        pos += speed * glm::normalize(dir);
+    if (glm::length(vel))
+        vel = _speed * glm::normalize(vel);
+
+    pos += vel;
     
     if (_hitbox_cooldown <= 0.0f && _input_state->get_m1()) {
+        // spawn hitbox
         Entity* hitbox = entity().manager().spawnEntity("Entity_Hitbox", Transform{pos, glm::vec3(24.0f, 24.0f, 24.0f)});
-        _providers->provider_ES_Hitbox.getInstance(hitbox)->lifetime = 60;
+        _providers->provider_ES_Lifetime.getInstance(hitbox)->lifetime = 22;
+
+        // spawn slash effect and set self as its target
+        Entity* slash = entity().manager().spawnEntity("Entity_Slash", Transform{pos, glm::vec3(1.0f)});
+        ES_Lifetime* slash_lifetime = _providers->provider_ES_Lifetime.getInstance(slash);
+        slash_lifetime->receive(&entity(), "target");
+        slash_lifetime->lifetime = 18;
+
         _hitbox_cooldown = _hitbox_cooldown_max;
     }
     if (_hitbox_cooldown > 0.0f)
@@ -52,8 +54,9 @@ ES_Player::ES_Player(GLFWInput* input_state, GlobalProviders* providers) :
     _providers(providers), 
     _hurt_cooldown_max(120.0f), 
     _hurt_cooldown(0.0f), 
-    _hitbox_cooldown_max(120.0f), 
-    _hitbox_cooldown(0.0f)
+    _hitbox_cooldown_max(24.0f),
+    _hitbox_cooldown(0.0f),
+    _speed(0.5f)
 {}
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -101,31 +104,47 @@ void ES_Chaser::_killEntity() {
 }
 
 void ES_Chaser::_updateEntity() {}
-void ES_Chaser::_receive(Entity *entity, std::string message) {}
-void ES_Chaser::_collide(Entity *entity) {}
+void ES_Chaser::_receive(Entity *other, std::string message) {}
+void ES_Chaser::_collide(Entity *other) {}
 
 ES_Chaser::ES_Chaser() : EntityScriptInterface(), _target(nullptr) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Hitbox::_initEntity() {
-    std::cout << "hitbox init: lifetime is " << lifetime << std::endl;
-}
-void ES_Hitbox::_execEntity() {
-    if (_debug) {
-        std::cout << "hitbox exec: lifetime is " << lifetime << std::endl;
-        _debug = false;
-    }
+void ES_Lifetime::_initEntity() {}
+
+void ES_Lifetime::_execEntity() {    
+    if (lifetime > 0)
+        lifetime--;
     
-    lifetime--;
+    if (_target) {
+        entity().globaltransform().pos = _target->globaltransform().pos;
+
+        if (_target->entityscriptview().getKillEnqueued()) {
+            _target->entityscriptview().unlock(&key());
+            _target = nullptr;
+        }
+    } else
+        entity().globaltransform().pos += vel;
+
     if (lifetime <= 0)
         enqueueKill();
 }
-void ES_Hitbox::_killEntity() {}
-void ES_Hitbox::_updateEntity() {}
-void ES_Hitbox::_receive(Entity *entity, std::string message) {}
-void ES_Hitbox::_collide(Entity *entity) {
-    std::cout << "hitbox collision" << std::endl;
+
+void ES_Lifetime::_killEntity() {
+    if (_target) {
+        _target->entityscriptview().unlock(&key());
+    }
 }
 
-ES_Hitbox::ES_Hitbox() : EntityScriptInterface(), _debug(true), lifetime(120) {}
+void ES_Lifetime::_updateEntity() {}
+
+void ES_Lifetime::_receive(Entity *other, std::string message) {
+    if (message == "target") {
+        _target = other;
+        _target->entityscriptview().lockout(&key());
+    }
+}
+void ES_Lifetime::_collide(Entity *other) {}
+
+ES_Lifetime::ES_Lifetime() : EntityScriptInterface(), _target(nullptr), lifetime(0), vel(glm::vec3(0.0f)) {}

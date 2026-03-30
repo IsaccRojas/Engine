@@ -12,8 +12,8 @@ const unsigned PIXEL_WIDTH = WINDOW_WIDTH / 2;
 const unsigned PIXEL_HEIGHT = WINDOW_HEIGHT / 2;
 const unsigned PIXEL_LEVELS = 16;
 
-const unsigned TEX_SPACE_WIDTH = 48;
-const unsigned TEX_SPACE_HEIGHT = 32;
+const unsigned TEX_SPACE_WIDTH = 96;
+const unsigned TEX_SPACE_HEIGHT = 64;
 const unsigned TEX_SPACE_LEVELS = 3;
 
 const float CLEAR_COLOR_GRAY = 0.0f;
@@ -44,7 +44,7 @@ void initializeCore(CoreResources *core) {
     std::cout << "Setting up GLEnv" << std::endl;
     core->glenv.init(MAX_COUNT);
     core->glenv.setTexArray(TEX_SPACE_WIDTH, TEX_SPACE_HEIGHT, TEX_SPACE_LEVELS);
-    core->glenv.setTexture(Image("gfx/sprites.png"), 0, 0, 0);
+    core->glenv.setTexture(Image("gfx/sprites2.png"), 0, 0, 0);
     
     float halfwidth = float(PIXEL_WIDTH) / 2.0f;
     float halfheight = float(PIXEL_HEIGHT) / 2.0f;

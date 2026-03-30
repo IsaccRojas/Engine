@@ -315,7 +315,6 @@ void ScriptExecutor::runKillQueue() {
 
         // check if script can be killed
         if (script->lockoutCount() == 0) {
-            script->_kill_enqueued = false;
             script->_kill_started = true;
             script->runKill();
 

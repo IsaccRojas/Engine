@@ -435,6 +435,8 @@ void EntityManager::checkEntities() {
             for (auto &q : entity->quads()) {
                 q->resetTransformation();
                 q->applyTransform(entity->globaltransform());
+                
+                q->animationstate().step();
                 q->writeAnimation();
             }
             for (auto &ecv : entity->entitycolliderviews()) {

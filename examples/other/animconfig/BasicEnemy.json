@@ -1,7 +1,7 @@
 {
-	"name" : "Animation_PurpleSquare",
+	"name" : "Animation_BasicEnemy",
 	"cycles" : {
-		"cycle1" : {
+		"default" : {
 			"frames" : {
 				"frame1" : {
 					"texpos" : [0.0, 16.0, 0.0],

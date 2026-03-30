@@ -40,6 +40,15 @@ Animation& Animation::addCycle(Cycle& cycle, const char* name) {
 }
 
 Cycle& Animation::cycle(const char* name) {
+    if (_cycles.find(name) == _cycles.end()) {
+            std::string s;
+        s
+            .append("Attempt to get Cycle name '")
+            .append(name)
+            .append("' that does not exist in this Animation");
+        throw std::runtime_error(s);
+    }
+
     return _cycles[name];
 }
 
@@ -89,6 +98,7 @@ void AnimationState::setCycleState(const char* name) {
 
     if (_cycle_state == name)
         return;
+
     _cycle_state = name;
     _current_cycle = &(_animation->cycle(name));
     this->setFrameState(0);
