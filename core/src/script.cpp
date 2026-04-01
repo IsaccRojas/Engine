@@ -260,10 +260,9 @@ void ScriptExecutor::enqueueExec(ScriptView scriptview, unsigned queue) {
 }
 
 void ScriptExecutor::enqueueKill(ScriptView scriptview) {
-    // TODO: check if ID is valid
     ScriptInterface* script = scriptview.getScript();
 
-    if (!(script->_exec_enqueued || script->_kill_enqueued)) {
+    if (!(script->_kill_enqueued)) {
         // push to kill queue
         _push_killqueue.push(script);
         script->_kill_enqueued = true;

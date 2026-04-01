@@ -17,14 +17,13 @@ struct CoreResources {
     std::unordered_map<std::string, Animation> animations;
     std::unordered_map<std::string, Filter> filters;
 
-    PlayerProvider provider_ES_Player;
-    GlobalProviders providers;
-
     EntityScriptExecutor executor;
     GLEnv glenv;
     CollisionSpace collisionspace;
-
     EntityManager entitymanager;
+
+    PlayerProvider provider_ES_Player;
+    GlobalResources globalresources;
 };
 
 /* Initializes core library data structures.

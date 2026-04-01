@@ -18,7 +18,7 @@ const unsigned TEX_SPACE_LEVELS = 3;
 
 const float CLEAR_COLOR_GRAY = 0.0f;
 
-CoreResources::CoreResources() : provider_ES_Player(&(this->input), &(this->providers)) {}
+CoreResources::CoreResources() : provider_ES_Player(&(this->input), &(this->globalresources)), globalresources(&(this->entitymanager)) {}
 
 void initializeCore(CoreResources *core) {
     // initialize GLFW, OpenGL, and GLFWInput

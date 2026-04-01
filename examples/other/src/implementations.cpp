@@ -1,5 +1,46 @@
 #include "implementations.hpp"
 
+void SpellInterface::_init() {}
+void SpellInterface::_exec() {
+    // new execution lifetime, set _executing and call _startSpell()
+    if (!_executing) {
+        _executing = true;
+        _startSpell();
+    }
+
+    _execSpell();
+
+    // if _end_execution not set, keep enqueuing
+    if (!_end_execution)
+        enqueueExec(_execution_queue);
+    // else, unset _executing
+    else {
+        _end_execution = false;
+        _executing = false;
+    }
+}
+void SpellInterface::_kill() {}
+void SpellInterface::_update() {}
+SpellInterface::SpellInterface(unsigned execution_queue, GlobalResources* resources) :
+    ScriptInterface(),
+    _execution_queue(execution_queue),
+    _resources(resources),
+    _executing(false),
+    _end_execution(false)
+{};
+
+void SpellInterface::endSpell() {
+    _end_execution = true;
+}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void Spell_LightBall::_startSpell() {}
+void Spell_LightBall::_execSpell() {}
+Spell_LightBall::Spell_LightBall(unsigned execution_queue, GlobalResources* resources) : SpellInterface(execution_queue, resources) {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 void ES_Player::_initEntity() {}
 
 void ES_Player::_execEntity() {
@@ -23,11 +64,11 @@ void ES_Player::_execEntity() {
     if (_hitbox_cooldown <= 0.0f && _input_state->get_m1()) {
         // spawn hitbox
         Entity* hitbox = entity().manager().spawnEntity("Entity_Hitbox", Transform{pos, glm::vec3(24.0f, 24.0f, 24.0f)});
-        _providers->provider_ES_Lifetime.getInstance(hitbox)->lifetime = 22;
+        _resources->provider_ES_Lifetime.getInstance(hitbox)->lifetime = 22;
 
         // spawn slash effect and set self as its target
         Entity* slash = entity().manager().spawnEntity("Entity_Slash", Transform{pos, glm::vec3(1.0f)});
-        ES_Lifetime* slash_lifetime = _providers->provider_ES_Lifetime.getInstance(slash);
+        ES_Lifetime* slash_lifetime = _resources->provider_ES_Lifetime.getInstance(slash);
         slash_lifetime->receive(&entity(), "target");
         slash_lifetime->lifetime = 18;
 
@@ -48,10 +89,10 @@ void ES_Player::_collide(Entity* other) {
     _hurt_cooldown = _hurt_cooldown_max;
 }
 
-ES_Player::ES_Player(GLFWInput* input_state, GlobalProviders* providers) :
+ES_Player::ES_Player(GLFWInput* input_state, GlobalResources* resources) :
     EntityScriptInterface(), 
     _input_state(input_state),
-    _providers(providers), 
+    _resources(resources), 
     _hurt_cooldown_max(120.0f), 
     _hurt_cooldown(0.0f), 
     _hitbox_cooldown_max(24.0f),
@@ -132,9 +173,8 @@ void ES_Lifetime::_execEntity() {
 }
 
 void ES_Lifetime::_killEntity() {
-    if (_target) {
+    if (_target)
         _target->entityscriptview().unlock(&key());
-    }
 }
 
 void ES_Lifetime::_updateEntity() {}
@@ -148,3 +188,7 @@ void ES_Lifetime::_receive(Entity *other, std::string message) {
 void ES_Lifetime::_collide(Entity *other) {}
 
 ES_Lifetime::ES_Lifetime() : EntityScriptInterface(), _target(nullptr), lifetime(0), vel(glm::vec3(0.0f)) {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+GlobalResources::GlobalResources(EntityManager* entitymanager) : manager(entitymanager) {}
