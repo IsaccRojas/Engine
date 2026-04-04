@@ -1,7 +1,14 @@
 #include "implementations.hpp"
 
+GlobalResources::GlobalResources(GLFWInput* glfw_input) : input(glfw_input) {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 ResourcesMixin::ResourcesMixin(GlobalResources* resources) : _resources(resources) {}
+
 GlobalResources& ResourcesMixin::resources() { return *_resources; }
+
+// --------------------------------------------------------------------------------------------------------------------------
 
 void SpellInterface::_init() {}
 void SpellInterface::_exec() {
@@ -26,8 +33,8 @@ void SpellInterface::_kill() {}
 void SpellInterface::_update() {}
 SpellInterface::SpellInterface(unsigned execution_queue, GlobalResources* resources) :
     ScriptInterface(),
+    ResourcesMixin(resources),
     _execution_queue(execution_queue),
-    _resources(resources),
     _executing(false),
     _end_execution(false)
 {};
@@ -55,8 +62,8 @@ void ES_Player::_execEntity() {
     glm::vec3 &pos = entity().globaltransform().pos;
 
     glm::vec3 vel = glm::vec3(
-        float(-1.0f * _resources->input_state->get_a()) + float(_resources->input_state->get_d()),
-        float(-1.0f * _resources->input_state->get_s()) + float(_resources->input_state->get_w()),
+        float(-1.0f * resources().input->get_a()) + float(resources().input->get_d()),
+        float(-1.0f * resources().input->get_s()) + float(resources().input->get_w()),
         0.0f
     );
     if (glm::length(vel))
@@ -64,14 +71,14 @@ void ES_Player::_execEntity() {
 
     pos += vel;
     
-    if (_hitbox_cooldown <= 0.0f && _resources->input_state->get_m1()) {
+    if (_hitbox_cooldown <= 0.0f && resources().input->get_m1()) {
         // spawn hitbox
         Entity* hitbox = entity().manager().spawnEntity("Entity_Hitbox", Transform{pos, glm::vec3(24.0f, 24.0f, 24.0f)});
-        _resources->provider_ES_Lifetime.getInstance(hitbox)->lifetime = 22;
+        resources().provider_ES_Lifetime.getInstance(hitbox)->lifetime = 22;
 
         // spawn slash effect and set self as its target
         Entity* slash = entity().manager().spawnEntity("Entity_Slash", Transform{pos, glm::vec3(1.0f)});
-        ES_Lifetime* slash_lifetime = _resources->provider_ES_Lifetime.getInstance(slash);
+        ES_Lifetime* slash_lifetime = resources().provider_ES_Lifetime.getInstance(slash);
         slash_lifetime->receive(&entity(), "target");
         slash_lifetime->lifetime = 18;
 
@@ -80,7 +87,7 @@ void ES_Player::_execEntity() {
     if (_hitbox_cooldown > 0.0f)
         _hitbox_cooldown -= 1.0f;
     
-    if (_resources->input_state->get_space())
+    if (resources().input->get_space())
         enqueueKill();
 }
 
@@ -94,7 +101,7 @@ void ES_Player::_collide(Entity* other) {
 
 ES_Player::ES_Player(GlobalResources* resources) :
     EntityScriptInterface(),
-    _resources(resources), 
+    ResourcesMixin(resources),
     _hurt_cooldown_max(120.0f), 
     _hurt_cooldown(0.0f), 
     _hitbox_cooldown_max(24.0f),
@@ -190,7 +197,3 @@ void ES_Lifetime::_receive(Entity *other, std::string message) {
 void ES_Lifetime::_collide(Entity *other) {}
 
 ES_Lifetime::ES_Lifetime() : EntityScriptInterface(), _target(nullptr), lifetime(0), vel(glm::vec3(0.0f)) {}
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-GlobalResources::GlobalResources(EntityManager* entitymanager) : manager(entitymanager) {}

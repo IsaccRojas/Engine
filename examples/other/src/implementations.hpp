@@ -6,14 +6,15 @@
 
 const float diag_factor = glm::sin(glm::radians(45.0f));
 
+class ES_Chaser;
+class ES_Lifetime;
+
 /* struct Global Resources
    Aggregates resources for classes with ResourcesMixin inherited to access.
 */
 struct GlobalResources {
-    GlobalResources(EntityManager* entitymanager);
-    
-    EntityManager* manager;
-    GLFWInput* input_state;
+    GlobalResources(GLFWInput* glfw_input);
+    GLFWInput* input;
     GenericEntityScriptProvider<ES_Chaser> provider_ES_Chaser;
     GenericEntityScriptProvider<ES_Lifetime> provider_ES_Lifetime;
 };
@@ -51,9 +52,8 @@ public:
     Describes behavior of a spell. Enqueues self while executing. Calls _startSpell() if new execution loop started. Can call endExec()
     to stop automatic enqueuing.
 */
-class SpellInterface : public ScriptInterface {
+class SpellInterface : public ScriptInterface, public ResourcesMixin {
     unsigned _execution_queue;
-    GlobalResources* _resources;
 
     // controls when to call _startSpell()
     bool _executing;
@@ -90,8 +90,7 @@ public:
     Entity Script Player 
     Player script.
 */
-class ES_Player : public EntityScriptInterface {
-    GlobalResources* _resources;
+class ES_Player : public EntityScriptInterface, public ResourcesMixin {
     float _hurt_cooldown_max;
     float _hurt_cooldown;
     float _hitbox_cooldown_max;

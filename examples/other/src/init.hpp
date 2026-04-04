@@ -22,12 +22,16 @@ struct CoreResources {
     CollisionSpace collisionspace;
     EntityManager entitymanager;
 
-    PlayerProvider provider_ES_Player;
+    ResourcesProvider<ES_Player> provider_ES_Player;
     GlobalResources globalresources;
 };
 
 /* Initializes core library data structures.
 */
 void initializeCore(CoreResources *core);
+
+/* Initializes script, graphics, and collision assets.
+*/
+void initializeAssets(CoreResources *core);
 
 #endif
