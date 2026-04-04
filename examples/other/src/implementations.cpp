@@ -1,5 +1,8 @@
 #include "implementations.hpp"
 
+ResourcesMixin::ResourcesMixin(GlobalResources* resources) : _resources(resources) {}
+GlobalResources& ResourcesMixin::resources() { return *_resources; }
+
 void SpellInterface::_init() {}
 void SpellInterface::_exec() {
     // new execution lifetime, set _executing and call _startSpell()
@@ -52,8 +55,8 @@ void ES_Player::_execEntity() {
     glm::vec3 &pos = entity().globaltransform().pos;
 
     glm::vec3 vel = glm::vec3(
-        float(-1.0f * _input_state->get_a()) + float(_input_state->get_d()),
-        float(-1.0f * _input_state->get_s()) + float(_input_state->get_w()),
+        float(-1.0f * _resources->input_state->get_a()) + float(_resources->input_state->get_d()),
+        float(-1.0f * _resources->input_state->get_s()) + float(_resources->input_state->get_w()),
         0.0f
     );
     if (glm::length(vel))
@@ -61,7 +64,7 @@ void ES_Player::_execEntity() {
 
     pos += vel;
     
-    if (_hitbox_cooldown <= 0.0f && _input_state->get_m1()) {
+    if (_hitbox_cooldown <= 0.0f && _resources->input_state->get_m1()) {
         // spawn hitbox
         Entity* hitbox = entity().manager().spawnEntity("Entity_Hitbox", Transform{pos, glm::vec3(24.0f, 24.0f, 24.0f)});
         _resources->provider_ES_Lifetime.getInstance(hitbox)->lifetime = 22;
@@ -77,7 +80,7 @@ void ES_Player::_execEntity() {
     if (_hitbox_cooldown > 0.0f)
         _hitbox_cooldown -= 1.0f;
     
-    if (_input_state->get_space())
+    if (_resources->input_state->get_space())
         enqueueKill();
 }
 
@@ -89,9 +92,8 @@ void ES_Player::_collide(Entity* other) {
     _hurt_cooldown = _hurt_cooldown_max;
 }
 
-ES_Player::ES_Player(GLFWInput* input_state, GlobalResources* resources) :
-    EntityScriptInterface(), 
-    _input_state(input_state),
+ES_Player::ES_Player(GlobalResources* resources) :
+    EntityScriptInterface(),
     _resources(resources), 
     _hurt_cooldown_max(120.0f), 
     _hurt_cooldown(0.0f), 

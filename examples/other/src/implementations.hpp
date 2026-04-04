@@ -4,9 +4,47 @@
 #include "../../../core/include/entity.hpp"
 #include "../../../core/include/glfwinput.hpp"
 
-struct GlobalResources;
-
 const float diag_factor = glm::sin(glm::radians(45.0f));
+
+/* struct Global Resources
+   Aggregates resources for classes with ResourcesMixin inherited to access.
+*/
+struct GlobalResources {
+    GlobalResources(EntityManager* entitymanager);
+    
+    EntityManager* manager;
+    GLFWInput* input_state;
+    GenericEntityScriptProvider<ES_Chaser> provider_ES_Chaser;
+    GenericEntityScriptProvider<ES_Lifetime> provider_ES_Lifetime;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+/* class ResourcesMixin
+   Mix-in class for accessing GlobalResources reference.
+*/
+class ResourcesMixin {
+    GlobalResources *_resources;
+
+public:
+    ResourcesMixin(GlobalResources* resources);
+    GlobalResources& resources();
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+/* class ResourcesMixin
+   Templated implementation of EntityScriptProviderInterface that supports ResourcesMixin.
+*/
+template<typename T>
+class ResourcesProvider : public EntityScriptProviderInterface<T> {
+    GlobalResources* _resources;
+    T* _providerAllocate() override { return new T(_resources); }
+public:
+    ResourcesProvider(GlobalResources* resources) : _resources(resources) {}
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
 
 /*
     Script Interface SpellInterface 
@@ -53,7 +91,6 @@ public:
     Player script.
 */
 class ES_Player : public EntityScriptInterface {
-    GLFWInput *_input_state;
     GlobalResources* _resources;
     float _hurt_cooldown_max;
     float _hurt_cooldown;
@@ -67,7 +104,7 @@ class ES_Player : public EntityScriptInterface {
     void _receive(Entity* other, std::string message) override;
     void _collide(Entity* other) override;
 public:
-    ES_Player(GLFWInput* input_state, GlobalResources* resources);
+    ES_Player(GlobalResources* resources);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -112,24 +149,5 @@ public:
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
-
-struct GlobalResources {
-    GlobalResources(EntityManager* entitymanager);
-    
-    EntityManager *manager;
-    GenericEntityScriptProvider<ES_Chaser> provider_ES_Chaser;
-    GenericEntityScriptProvider<ES_Lifetime> provider_ES_Lifetime;
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-// ES_Player allocator that holds reference to input state
-class PlayerProvider : public EntityScriptProviderInterface<ES_Player> {
-    GLFWInput* _input_state;
-    GlobalResources* _resources;
-    ES_Player* _providerAllocate() override { return new ES_Player(_input_state, _resources); }
-public:
-    PlayerProvider(GLFWInput* input_state, GlobalResources* resources) : _input_state(input_state), _resources(resources) {}
-};
 
 #endif
