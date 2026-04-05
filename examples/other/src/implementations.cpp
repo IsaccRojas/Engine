@@ -1,6 +1,9 @@
 #include "implementations.hpp"
 
-GlobalResources::GlobalResources(GLFWInput* glfw_input) : input(glfw_input) {}
+GlobalResources::GlobalResources(GLFWInput* glfw_input) : 
+    input(glfw_input),
+    provider_ES_Player(this)
+{}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -81,6 +84,12 @@ void ES_Player::_execEntity() {
         ES_Lifetime* slash_lifetime = resources().provider_ES_Lifetime.getInstance(slash);
         slash_lifetime->receive(&entity(), "target");
         slash_lifetime->lifetime = 18;
+
+        // spawn light ball
+        Entity* lightball = entity().manager().spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
+        ES_Lifetime* lightball_lifetime = resources().provider_ES_Lifetime.getInstance(lightball);
+        lightball_lifetime->lifetime = 90;
+        lightball_lifetime->vel = glm::vec3(0.0f, -1.0f, 0.0f);
 
         _hitbox_cooldown = _hitbox_cooldown_max;
     }

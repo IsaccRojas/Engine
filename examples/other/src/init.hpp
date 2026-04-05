@@ -22,7 +22,6 @@ struct CoreResources {
     CollisionSpace collisionspace;
     EntityManager entitymanager;
 
-    ResourcesProvider<ES_Player> provider_ES_Player;
     GlobalResources globalresources;
 };
 

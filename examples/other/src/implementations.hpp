@@ -6,20 +6,7 @@
 
 const float diag_factor = glm::sin(glm::radians(45.0f));
 
-class ES_Chaser;
-class ES_Lifetime;
-
-/* struct Global Resources
-   Aggregates resources for classes with ResourcesMixin inherited to access.
-*/
-struct GlobalResources {
-    GlobalResources(GLFWInput* glfw_input);
-    GLFWInput* input;
-    GenericEntityScriptProvider<ES_Chaser> provider_ES_Chaser;
-    GenericEntityScriptProvider<ES_Lifetime> provider_ES_Lifetime;
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
+struct GlobalResources;
 
 /* class ResourcesMixin
    Mix-in class for accessing GlobalResources reference.
@@ -148,5 +135,17 @@ public:
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
+
+/* struct Global Resources
+   Aggregates resources for classes with ResourcesMixin inherited to access.
+*/
+struct GlobalResources {
+    GlobalResources(GLFWInput* glfw_input);
+    GLFWInput* input;
+    
+    ResourcesProvider<ES_Player> provider_ES_Player;
+    GenericEntityScriptProvider<ES_Chaser> provider_ES_Chaser;
+    GenericEntityScriptProvider<ES_Lifetime> provider_ES_Lifetime;
+};
 
 #endif
