@@ -17,7 +17,7 @@ struct CoreResources {
     std::unordered_map<std::string, Animation> animations;
     std::unordered_map<std::string, Filter> filters;
 
-    EntityScriptExecutor executor;
+    EntityScriptExecutor entityscriptexecutor;
     GLEnv glenv;
     CollisionSpace collisionspace;
     EntityManager entitymanager;

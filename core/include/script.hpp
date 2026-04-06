@@ -167,7 +167,7 @@ class ScriptProviderInterface : public ScriptAllocatorInterface {
    std::unordered_map<ScriptInterface*, T*> _Ts;
 
    ScriptInterface* _allocate() override {
-      T* t = new T;
+      T* t = _providerAllocate();
       _Ts[t] = t;
       return t;
    }

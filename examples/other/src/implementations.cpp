@@ -1,10 +1,12 @@
 #include "implementations.hpp"
 
-GlobalResources::GlobalResources(EntityManager* entitymanager, GLFWInput* glfwinput) : 
+GlobalResources::GlobalResources(EntityManager* entitymanager, EntityScriptExecutor* entityscriptexecutor, GLFWInput* glfwinput) : 
     manager(entitymanager),
+    executor(entityscriptexecutor),
     input(glfwinput),
     provider_Player(this),
-    provider_Chaser(this)
+    provider_Chaser(this),
+    provider_Spell_LightBall(this)
 {}
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -15,54 +17,20 @@ GlobalResources& ResourcesMixin::resources() { return *_resources; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void SpellInterface::_init() {}
-void SpellInterface::_exec() {
-    // new execution lifetime, set _executing and call _startSpell()
-    if (!_executing) {
-        _executing = true;
-        _startSpell();
-    }
+void S_Spell_LightBall::_init() {}
 
-    _execSpell();
-
-    // if _end_execution not set, keep enqueuing
-    if (!_end_execution)
-        enqueueExec(_execution_queue);
-    // else, unset _executing
-    else {
-        _end_execution = false;
-        _executing = false;
-    }
-}
-void SpellInterface::_kill() {}
-void SpellInterface::_update() {}
-SpellInterface::SpellInterface(unsigned execution_queue, GlobalResources* resources) :
-    ScriptInterface(),
-    ResourcesMixin(resources),
-    _execution_queue(execution_queue),
-    _executing(false),
-    _end_execution(false)
-{};
-
-void SpellInterface::endSpell() {
-    _end_execution = true;
-}
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-void Spell_LightBall::_startSpell() {}
-void Spell_LightBall::_execSpell() {
-    // specify source Entity to use for spawn position and direction
-    
-    /*
+void S_Spell_LightBall::_exec() {
     // spawn light ball
-    Entity* lightball = entity().manager().spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
-    ES_Lifetime* lightball_lifetime = resources().provider_ES_Lifetime.getInstance(lightball);
+    Entity* lightball = resources().manager->spawnEntity("Entity_LightBall", Transform{glm::vec3(0.0f), glm::vec3(1.0f)});
+    ES_Lifetime* lightball_lifetime = resources().provider_Lifetime.getInstance(lightball);
     lightball_lifetime->lifetime = 90;
     lightball_lifetime->vel = glm::vec3(0.0f, -1.0f, 0.0f);
-    */
 }
-Spell_LightBall::Spell_LightBall(unsigned execution_queue, GlobalResources* resources) : SpellInterface(execution_queue, resources) {}
+
+void S_Spell_LightBall::_kill() {}
+void S_Spell_LightBall::_update() {}
+
+S_Spell_LightBall::S_Spell_LightBall(GlobalResources* resources) : ScriptInterface(), ResourcesMixin(resources) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -96,12 +64,9 @@ void ES_Player::_execEntity() {
         ES_Lifetime* slash_lifetime = resources().provider_Lifetime.getInstance(slash);
         slash_lifetime->receive(&entity(), "target");
         slash_lifetime->lifetime = 18;
-
+        
         // spawn light ball
-        Entity* lightball = resources().manager->spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
-        ES_Lifetime* lightball_lifetime = resources().provider_Lifetime.getInstance(lightball);
-        lightball_lifetime->lifetime = 90;
-        lightball_lifetime->vel = glm::vec3(0.0f, -1.0f, 0.0f);
+        resources().executor->spawnScript("S_Spell_LightBall", 0);
 
         _hitbox_cooldown = _hitbox_cooldown_max;
     }

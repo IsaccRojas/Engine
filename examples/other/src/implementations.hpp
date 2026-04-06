@@ -21,54 +21,39 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class ResourcesMixin
+/* class ScriptResourcesProvider
    Templated implementation of EntityScriptProviderInterface that supports ResourcesMixin.
 */
 template<typename T>
-class ResourcesProvider : public EntityScriptProviderInterface<T> {
+class ScriptResourcesProvider : public ScriptProviderInterface<T> {
     GlobalResources* _resources;
     T* _providerAllocate() override { return new T(_resources); }
 public:
-    ResourcesProvider(GlobalResources* resources) : _resources(resources) {}
+    ScriptResourcesProvider(GlobalResources* resources) : _resources(resources) {}
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/*
-    Script Interface SpellInterface 
-    Describes behavior of a spell. Enqueues self while executing. Calls _startSpell() if new execution loop started. Can call endExec()
-    to stop automatic enqueuing.
+/* class EntityScriptResourcesProvider
+   Templated implementation of EntityScriptProviderInterface that supports ResourcesMixin.
 */
-class SpellInterface : public ScriptInterface, public ResourcesMixin {
-    unsigned _execution_queue;
-
-    // controls when to call _startSpell()
-    bool _executing;
-
-    // controls when to stop enqueuing and reset _executing
-    bool _end_execution;
-
-    virtual void _init() override;
-    virtual void _exec() override;
-    virtual void _kill() override;
-    virtual void _update() override;
-
-    virtual void _startSpell() = 0;
-    virtual void _execSpell() = 0;
-
+template<typename T>
+class EntityScriptResourcesProvider : public EntityScriptProviderInterface<T> {
+    GlobalResources* _resources;
+    T* _providerAllocate() override { return new T(_resources); }
 public:
-    SpellInterface(unsigned execution_queue, GlobalResources* resources);
-
-    void endSpell();
+    EntityScriptResourcesProvider(GlobalResources* resources) : _resources(resources) {}
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-class Spell_LightBall : public SpellInterface {
-    void _startSpell();
-    void _execSpell();
+class S_Spell_LightBall : public ScriptInterface, public ResourcesMixin {
+    void _init() override;
+    void _exec() override;
+    void _kill() override;
+    void _update() override;
 public:
-    Spell_LightBall(unsigned execution_queue, GlobalResources* resources);
+    S_Spell_LightBall(GlobalResources* resources);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -140,14 +125,16 @@ public:
    Aggregates resources for classes with ResourcesMixin inherited to access.
 */
 struct GlobalResources {
-    GlobalResources(EntityManager* entitymanager, GLFWInput* glfwinput);
+    GlobalResources(EntityManager* entitymanager, EntityScriptExecutor* entityscriptexecutor, GLFWInput* glfwinput);
 
     EntityManager* manager;
+    EntityScriptExecutor* executor;
     GLFWInput* input;
     
-    ResourcesProvider<ES_Player> provider_Player;
-    ResourcesProvider<ES_Chaser> provider_Chaser;
+    EntityScriptResourcesProvider<ES_Player> provider_Player;
+    EntityScriptResourcesProvider<ES_Chaser> provider_Chaser;
     GenericEntityScriptProvider<ES_Lifetime> provider_Lifetime;
+    ScriptResourcesProvider<S_Spell_LightBall> provider_Spell_LightBall;
 };
 
 #endif

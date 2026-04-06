@@ -17,10 +17,10 @@ void loop(CoreResources *core) {
 
         core->glfwinput.update();
 
-        core->executor.runExecQueue(0);
-        core->executor.runSpawnQueue();
-        core->executor.runKillQueue();
-        core->executor.runUpdate();
+        core->entityscriptexecutor.runExecQueue(0);
+        core->entityscriptexecutor.runSpawnQueue();
+        core->entityscriptexecutor.runKillQueue();
+        core->entityscriptexecutor.runUpdate();
 
         core->entitymanager.checkEntities();
 
