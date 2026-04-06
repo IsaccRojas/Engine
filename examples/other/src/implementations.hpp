@@ -99,7 +99,7 @@ public:
     Entity Script Chaser
     Chases assigned target directly.
 */
-class ES_Chaser : public EntityScriptInterface {
+class ES_Chaser : public EntityScriptInterface, public ResourcesMixin {
     Entity *_target;
     void _initEntity() override;
     void _execEntity() override;
@@ -108,7 +108,7 @@ class ES_Chaser : public EntityScriptInterface {
     void _receive(Entity *other, std::string message) override;
     void _collide(Entity *other) override;
 public:
-    ES_Chaser();
+    ES_Chaser(GlobalResources* resources);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -140,12 +140,14 @@ public:
    Aggregates resources for classes with ResourcesMixin inherited to access.
 */
 struct GlobalResources {
-    GlobalResources(GLFWInput* glfw_input);
+    GlobalResources(EntityManager* entitymanager, GLFWInput* glfwinput);
+
+    EntityManager* manager;
     GLFWInput* input;
     
-    ResourcesProvider<ES_Player> provider_ES_Player;
-    GenericEntityScriptProvider<ES_Chaser> provider_ES_Chaser;
-    GenericEntityScriptProvider<ES_Lifetime> provider_ES_Lifetime;
+    ResourcesProvider<ES_Player> provider_Player;
+    ResourcesProvider<ES_Chaser> provider_Chaser;
+    GenericEntityScriptProvider<ES_Lifetime> provider_Lifetime;
 };
 
 #endif

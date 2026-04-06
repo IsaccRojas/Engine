@@ -1,8 +1,10 @@
 #include "implementations.hpp"
 
-GlobalResources::GlobalResources(GLFWInput* glfw_input) : 
-    input(glfw_input),
-    provider_ES_Player(this)
+GlobalResources::GlobalResources(EntityManager* entitymanager, GLFWInput* glfwinput) : 
+    manager(entitymanager),
+    input(glfwinput),
+    provider_Player(this),
+    provider_Chaser(this)
 {}
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -49,7 +51,17 @@ void SpellInterface::endSpell() {
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Spell_LightBall::_startSpell() {}
-void Spell_LightBall::_execSpell() {}
+void Spell_LightBall::_execSpell() {
+    // specify source Entity to use for spawn position and direction
+    
+    /*
+    // spawn light ball
+    Entity* lightball = entity().manager().spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
+    ES_Lifetime* lightball_lifetime = resources().provider_ES_Lifetime.getInstance(lightball);
+    lightball_lifetime->lifetime = 90;
+    lightball_lifetime->vel = glm::vec3(0.0f, -1.0f, 0.0f);
+    */
+}
 Spell_LightBall::Spell_LightBall(unsigned execution_queue, GlobalResources* resources) : SpellInterface(execution_queue, resources) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -76,18 +88,18 @@ void ES_Player::_execEntity() {
     
     if (_hitbox_cooldown <= 0.0f && resources().input->get_m1()) {
         // spawn hitbox
-        Entity* hitbox = entity().manager().spawnEntity("Entity_Hitbox", Transform{pos, glm::vec3(24.0f, 24.0f, 24.0f)});
-        resources().provider_ES_Lifetime.getInstance(hitbox)->lifetime = 22;
+        Entity* hitbox = resources().manager->spawnEntity("Entity_Hitbox", Transform{pos, glm::vec3(24.0f, 24.0f, 24.0f)});
+        resources().provider_Lifetime.getInstance(hitbox)->lifetime = 22;
 
         // spawn slash effect and set self as its target
-        Entity* slash = entity().manager().spawnEntity("Entity_Slash", Transform{pos, glm::vec3(1.0f)});
-        ES_Lifetime* slash_lifetime = resources().provider_ES_Lifetime.getInstance(slash);
+        Entity* slash = resources().manager->spawnEntity("Entity_Slash", Transform{pos, glm::vec3(1.0f)});
+        ES_Lifetime* slash_lifetime = resources().provider_Lifetime.getInstance(slash);
         slash_lifetime->receive(&entity(), "target");
         slash_lifetime->lifetime = 18;
 
         // spawn light ball
-        Entity* lightball = entity().manager().spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
-        ES_Lifetime* lightball_lifetime = resources().provider_ES_Lifetime.getInstance(lightball);
+        Entity* lightball = resources().manager->spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
+        ES_Lifetime* lightball_lifetime = resources().provider_Lifetime.getInstance(lightball);
         lightball_lifetime->lifetime = 90;
         lightball_lifetime->vel = glm::vec3(0.0f, -1.0f, 0.0f);
 
@@ -127,8 +139,8 @@ void ES_Chaser::_execEntity() {
     if (!_target)
         // iterate on all players
         for (
-            auto group_player_iter = entity().manager().groupBegin("Group_Player");
-            group_player_iter != entity().manager().groupEnd("Group_Player");
+            auto group_player_iter = resources().manager->groupBegin("Group_Player");
+            group_player_iter != resources().manager->groupEnd("Group_Player");
             ++group_player_iter
         ) {
             // store and lockout player if it is not kill enqueued
@@ -166,7 +178,7 @@ void ES_Chaser::_updateEntity() {}
 void ES_Chaser::_receive(Entity *other, std::string message) {}
 void ES_Chaser::_collide(Entity *other) {}
 
-ES_Chaser::ES_Chaser() : EntityScriptInterface(), _target(nullptr) {}
+ES_Chaser::ES_Chaser(GlobalResources* resources) : EntityScriptInterface(), ResourcesMixin(resources), _target(nullptr) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 

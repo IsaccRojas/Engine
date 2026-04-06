@@ -172,7 +172,6 @@ public:
    void checkScriptStatus();
 
    const char* getName();
-   EntityManager& manager();
    EntityScriptView& entityscriptview();
    std::vector<Quad*>& quads();
    std::vector<EntityColliderView>& entitycolliderviews();

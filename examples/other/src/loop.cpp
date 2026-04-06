@@ -9,13 +9,13 @@ void loop(CoreResources *core) {
     core->entitymanager.spawnEntity("Entity_BasicEnemy",Transform{glm::vec3(32.0f, 0.0f, 0.0f), glm::vec3(1.0f)});
 
     std::cout << "Running loop" << std::endl;
-    while (!glfwWindowShouldClose(core->state.getWindowHandle()) && !core->input.get_esc()) {
+    while (!glfwWindowShouldClose(core->glfwstate.getWindowHandle()) && !core->glfwinput.get_esc()) {
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         core->collisionspace.detectCollisionAABB();
 
-        core->input.update();
+        core->glfwinput.update();
 
         core->executor.runExecQueue(0);
         core->executor.runSpawnQueue();
@@ -27,7 +27,7 @@ void loop(CoreResources *core) {
         core->glenv.update();
         core->glenv.drawQuads();
 
-        glfwSwapBuffers(core->state.getWindowHandle());
+        glfwSwapBuffers(core->glfwstate.getWindowHandle());
     };
 
     std::cout << "Ending loop" << std::endl;

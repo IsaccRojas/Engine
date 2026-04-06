@@ -138,7 +138,6 @@ void Entity::checkScriptStatus() {
 }
 
 const char* Entity::getName() { return _entity_name.c_str(); }
-EntityManager& Entity::manager() { return *_entitymanager; }
 std::vector<Quad*>& Entity::quads() { return _quads; }
 std::vector<EntityColliderView>& Entity::entitycolliderviews() { return _entitycolliderviews; }
 EntityScriptView& Entity::entityscriptview() { return _entityscriptview; }

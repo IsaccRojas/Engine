@@ -18,18 +18,18 @@ const unsigned TEX_SPACE_LEVELS = 3;
 
 const float CLEAR_COLOR_GRAY = 0.0f;
 
-CoreResources::CoreResources() : globalresources(&(this->input)) {}
+CoreResources::CoreResources() : globalresources(&(this->entitymanager), &(this->glfwinput)) {}
 
 void initializeCore(CoreResources *core) {
     // initialize GLFW, OpenGL, and GLFWInput
     std::cout << "Setting up GLFWState" << std::endl;
-    core->state.init(WINDOW_WIDTH, WINDOW_HEIGHT, "title", true);
+    core->glfwstate.init(WINDOW_WIDTH, WINDOW_HEIGHT, "title", true);
 
     std::cout << "Setting up OpenGL" << std::endl;
     GLUtil::glinit(true);
 
     std::cout << "Setting up GLFWInput" << std::endl;
-    core->input.setWindow(core->state.getWindowHandle(), PIXEL_WIDTH, PIXEL_HEIGHT);
+    core->glfwinput.setWindow(core->glfwstate.getWindowHandle(), PIXEL_WIDTH, PIXEL_HEIGHT);
 
     // get animation and filter maps
     std::cout << "Loading Animations and Filters" << std::endl;
@@ -79,9 +79,9 @@ void initializeAssets(CoreResources *core) {
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 16.0f), core->filters["Filter_Enemy"]}, "EntityCollider_Enemy");
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), glm::vec3(1.0f, 1.0f, 1.0f), core->filters["Filter_Player"]}, "EntityCollider_Hitbox");
 
-    core->executor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_ES_Player, nullptr, nullptr}, "ES_Player");
-    core->executor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_ES_Chaser, nullptr, nullptr}, "ES_Chaser");
-    core->executor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_ES_Lifetime, nullptr, nullptr}, "ES_Lifetime");
+    core->executor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_Player, nullptr, nullptr}, "ES_Player");
+    core->executor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_Chaser, nullptr, nullptr}, "ES_Chaser");
+    core->executor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_Lifetime, nullptr, nullptr}, "ES_Lifetime");
     
     core->entitymanager.addEntity(EntityInfo{"Group_Player", "ES_Player", 0, true, {"Quad_Player"}, {"EntityCollider_Player"}}, "Entity_Player");
     core->entitymanager.addEntity(EntityInfo{"Group_Enemy", "ES_Chaser", 0, true, {"Quad_BasicEnemy"}, {"EntityCollider_Enemy"}}, "Entity_BasicEnemy");

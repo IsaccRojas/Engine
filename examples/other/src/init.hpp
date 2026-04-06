@@ -11,8 +11,8 @@
 struct CoreResources {
     CoreResources();
 
-    GLFWState state;
-    GLFWInput input;
+    GLFWState glfwstate;
+    GLFWInput glfwinput;
 
     std::unordered_map<std::string, Animation> animations;
     std::unordered_map<std::string, Filter> filters;
