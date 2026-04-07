@@ -11,18 +11,12 @@ GlobalResources::GlobalResources(EntityManager* entitymanager, EntityScriptExecu
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-ResourcesMixin::ResourcesMixin(GlobalResources* resources) : _resources(resources) {}
-
-GlobalResources& ResourcesMixin::resources() { return *_resources; }
-
-// --------------------------------------------------------------------------------------------------------------------------
-
 void S_Spell_LightBall::_init() {}
 
 void S_Spell_LightBall::_exec() {
     // spawn light ball
-    Entity* lightball = resources().manager->spawnEntity("Entity_LightBall", Transform{glm::vec3(0.0f), glm::vec3(1.0f)});
-    ES_Lifetime* lightball_lifetime = resources().provider_Lifetime.getInstance(lightball);
+    Entity* lightball = resource()->manager->spawnEntity("Entity_LightBall", Transform{glm::vec3(0.0f), glm::vec3(1.0f)});
+    ES_Lifetime* lightball_lifetime = resource()->provider_Lifetime.getInstance(lightball);
     lightball_lifetime->lifetime = 90;
     lightball_lifetime->vel = glm::vec3(0.0f, -1.0f, 0.0f);
 }
@@ -30,7 +24,7 @@ void S_Spell_LightBall::_exec() {
 void S_Spell_LightBall::_kill() {}
 void S_Spell_LightBall::_update() {}
 
-S_Spell_LightBall::S_Spell_LightBall(GlobalResources* resources) : ScriptInterface(), ResourcesMixin(resources) {}
+S_Spell_LightBall::S_Spell_LightBall() : ScriptInterface() {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -45,8 +39,8 @@ void ES_Player::_execEntity() {
     glm::vec3 &pos = entity().globaltransform().pos;
 
     glm::vec3 vel = glm::vec3(
-        float(-1.0f * resources().input->get_a()) + float(resources().input->get_d()),
-        float(-1.0f * resources().input->get_s()) + float(resources().input->get_w()),
+        float(-1.0f * resource()->input->get_a()) + float(resource()->input->get_d()),
+        float(-1.0f * resource()->input->get_s()) + float(resource()->input->get_w()),
         0.0f
     );
     if (glm::length(vel))
@@ -54,26 +48,26 @@ void ES_Player::_execEntity() {
 
     pos += vel;
     
-    if (_hitbox_cooldown <= 0.0f && resources().input->get_m1()) {
+    if (_hitbox_cooldown <= 0.0f && resource()->input->get_m1()) {
         // spawn hitbox
-        Entity* hitbox = resources().manager->spawnEntity("Entity_Hitbox", Transform{pos, glm::vec3(24.0f, 24.0f, 24.0f)});
-        resources().provider_Lifetime.getInstance(hitbox)->lifetime = 22;
+        Entity* hitbox = resource()->manager->spawnEntity("Entity_Hitbox", Transform{pos, glm::vec3(24.0f, 24.0f, 24.0f)});
+        resource()->provider_Lifetime.getInstance(hitbox)->lifetime = 22;
 
         // spawn slash effect and set self as its target
-        Entity* slash = resources().manager->spawnEntity("Entity_Slash", Transform{pos, glm::vec3(1.0f)});
-        ES_Lifetime* slash_lifetime = resources().provider_Lifetime.getInstance(slash);
+        Entity* slash = resource()->manager->spawnEntity("Entity_Slash", Transform{pos, glm::vec3(1.0f)});
+        ES_Lifetime* slash_lifetime = resource()->provider_Lifetime.getInstance(slash);
         slash_lifetime->receive(&entity(), "target");
         slash_lifetime->lifetime = 18;
         
         // spawn light ball
-        resources().executor->spawnScript("S_Spell_LightBall", 0);
+        resource()->executor->spawnScript("S_Spell_LightBall", 0);
 
         _hitbox_cooldown = _hitbox_cooldown_max;
     }
     if (_hitbox_cooldown > 0.0f)
         _hitbox_cooldown -= 1.0f;
     
-    if (resources().input->get_space())
+    if (resource()->input->get_space())
         enqueueKill();
 }
 
@@ -85,9 +79,8 @@ void ES_Player::_collide(Entity* other) {
     _hurt_cooldown = _hurt_cooldown_max;
 }
 
-ES_Player::ES_Player(GlobalResources* resources) :
+ES_Player::ES_Player() :
     EntityScriptInterface(),
-    ResourcesMixin(resources),
     _hurt_cooldown_max(120.0f), 
     _hurt_cooldown(0.0f), 
     _hitbox_cooldown_max(24.0f),
@@ -104,8 +97,8 @@ void ES_Chaser::_execEntity() {
     if (!_target)
         // iterate on all players
         for (
-            auto group_player_iter = resources().manager->groupBegin("Group_Player");
-            group_player_iter != resources().manager->groupEnd("Group_Player");
+            auto group_player_iter = resource()->manager->groupBegin("Group_Player");
+            group_player_iter != resource()->manager->groupEnd("Group_Player");
             ++group_player_iter
         ) {
             // store and lockout player if it is not kill enqueued
@@ -143,7 +136,7 @@ void ES_Chaser::_updateEntity() {}
 void ES_Chaser::_receive(Entity *other, std::string message) {}
 void ES_Chaser::_collide(Entity *other) {}
 
-ES_Chaser::ES_Chaser(GlobalResources* resources) : EntityScriptInterface(), ResourcesMixin(resources), _target(nullptr) {}
+ES_Chaser::ES_Chaser() : EntityScriptInterface(), _target(nullptr) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 

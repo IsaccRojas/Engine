@@ -1,59 +1,20 @@
 #ifndef IMPLEMENTATIONS_HPP_
 #define IMPLEMENTATIONS_HPP_
 
-#include "../../../core/include/entity.hpp"
+#include "resource.hpp"
 #include "../../../core/include/glfwinput.hpp"
 
 const float diag_factor = glm::sin(glm::radians(45.0f));
 
 struct GlobalResources;
 
-/* class ResourcesMixin
-   Mix-in class for accessing GlobalResources reference.
-*/
-class ResourcesMixin {
-    GlobalResources *_resources;
-
-public:
-    ResourcesMixin(GlobalResources* resources);
-    GlobalResources& resources();
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-/* class ScriptResourcesProvider
-   Templated implementation of EntityScriptProviderInterface that supports ResourcesMixin.
-*/
-template<typename T>
-class ScriptResourcesProvider : public ScriptProviderInterface<T> {
-    GlobalResources* _resources;
-    T* _providerAllocate() override { return new T(_resources); }
-public:
-    ScriptResourcesProvider(GlobalResources* resources) : _resources(resources) {}
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-/* class EntityScriptResourcesProvider
-   Templated implementation of EntityScriptProviderInterface that supports ResourcesMixin.
-*/
-template<typename T>
-class EntityScriptResourcesProvider : public EntityScriptProviderInterface<T> {
-    GlobalResources* _resources;
-    T* _providerAllocate() override { return new T(_resources); }
-public:
-    EntityScriptResourcesProvider(GlobalResources* resources) : _resources(resources) {}
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-class S_Spell_LightBall : public ScriptInterface, public ResourcesMixin {
+class S_Spell_LightBall : public ScriptInterface, public Resource<GlobalResources> {
     void _init() override;
     void _exec() override;
     void _kill() override;
     void _update() override;
 public:
-    S_Spell_LightBall(GlobalResources* resources);
+    S_Spell_LightBall();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -62,7 +23,7 @@ public:
     Entity Script Player 
     Player script.
 */
-class ES_Player : public EntityScriptInterface, public ResourcesMixin {
+class ES_Player : public EntityScriptInterface, public Resource<GlobalResources> {
     float _hurt_cooldown_max;
     float _hurt_cooldown;
     float _hitbox_cooldown_max;
@@ -75,7 +36,7 @@ class ES_Player : public EntityScriptInterface, public ResourcesMixin {
     void _receive(Entity* other, std::string message) override;
     void _collide(Entity* other) override;
 public:
-    ES_Player(GlobalResources* resources);
+    ES_Player();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -84,7 +45,7 @@ public:
     Entity Script Chaser
     Chases assigned target directly.
 */
-class ES_Chaser : public EntityScriptInterface, public ResourcesMixin {
+class ES_Chaser : public EntityScriptInterface, public Resource<GlobalResources> {
     Entity *_target;
     void _initEntity() override;
     void _execEntity() override;
@@ -93,7 +54,7 @@ class ES_Chaser : public EntityScriptInterface, public ResourcesMixin {
     void _receive(Entity *other, std::string message) override;
     void _collide(Entity *other) override;
 public:
-    ES_Chaser(GlobalResources* resources);
+    ES_Chaser();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -131,10 +92,10 @@ struct GlobalResources {
     EntityScriptExecutor* executor;
     GLFWInput* input;
     
-    EntityScriptResourcesProvider<ES_Player> provider_Player;
-    EntityScriptResourcesProvider<ES_Chaser> provider_Chaser;
+    EntityScriptResourcesProvider<ES_Player, GlobalResources> provider_Player;
+    EntityScriptResourcesProvider<ES_Chaser, GlobalResources> provider_Chaser;
     GenericEntityScriptProvider<ES_Lifetime> provider_Lifetime;
-    ScriptResourcesProvider<S_Spell_LightBall> provider_Spell_LightBall;
+    ScriptResourcesProvider<S_Spell_LightBall, GlobalResources> provider_Spell_LightBall;
 };
 
 #endif
