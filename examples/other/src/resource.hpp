@@ -19,10 +19,10 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 /* class ScriptResourcesProvider
-   Templated implementation of EntityScriptProviderInterface that supports ResourcesMixin.
+   Templated implementation of EntityScriptProviderInterface that supports the Resource mixin with assignment on instantiation.
 */
 template<typename T, typename U>
-class ScriptResourcesProvider : public ScriptProviderInterface<T> {
+class ScriptResourceProvider : public ScriptProviderInterface<T> {
     U* _resource;
     T* _providerAllocate() override {
         T* t = new T;
@@ -30,7 +30,7 @@ class ScriptResourcesProvider : public ScriptProviderInterface<T> {
         return t;
     }
 public:
-    ScriptResourcesProvider(U* resource) : _resource(resource) {}
+    ScriptResourceProvider(U* resource) : _resource(resource) {}
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -39,7 +39,7 @@ public:
    Templated implementation of EntityScriptProviderInterface that supports ResourcesMixin.
 */
 template<typename T, typename U>
-class EntityScriptResourcesProvider : public EntityScriptProviderInterface<T> {
+class EntityScriptResourceProvider : public EntityScriptProviderInterface<T> {
     U* _resource;
     T* _providerAllocate() override {
         T* t = new T;
@@ -47,7 +47,7 @@ class EntityScriptResourcesProvider : public EntityScriptProviderInterface<T> {
         return t;
     }
 public:
-    EntityScriptResourcesProvider(U* resource) : _resource(resource) {}
+    EntityScriptResourceProvider(U* resource) : _resource(resource) {}
 };
 
 #endif

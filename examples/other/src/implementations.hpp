@@ -83,7 +83,7 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 /* struct Global Resources
-   Aggregates resources for classes with ResourcesMixin inherited to access.
+   Aggregates resources for classes with Resource<GlobalResources> inherited to access.
 */
 struct GlobalResources {
     GlobalResources(EntityManager* entitymanager, EntityScriptExecutor* entityscriptexecutor, GLFWInput* glfwinput);
@@ -92,10 +92,10 @@ struct GlobalResources {
     EntityScriptExecutor* executor;
     GLFWInput* input;
     
-    EntityScriptResourcesProvider<ES_Player, GlobalResources> provider_Player;
-    EntityScriptResourcesProvider<ES_Chaser, GlobalResources> provider_Chaser;
+    EntityScriptResourceProvider<ES_Player, GlobalResources> provider_Player;
+    EntityScriptResourceProvider<ES_Chaser, GlobalResources> provider_Chaser;
     GenericEntityScriptProvider<ES_Lifetime> provider_Lifetime;
-    ScriptResourcesProvider<S_Spell_LightBall, GlobalResources> provider_Spell_LightBall;
+    ScriptResourceProvider<S_Spell_LightBall, GlobalResources> provider_Spell_LightBall;
 };
 
 #endif
