@@ -15,16 +15,16 @@ void S_Spell_LightBall::_init() {}
 
 void S_Spell_LightBall::_exec() {
     // spawn light ball
-    Entity* lightball = resource()->manager->spawnEntity("Entity_LightBall", Transform{glm::vec3(0.0f), glm::vec3(1.0f)});
+    Entity* lightball = resource()->manager->spawnEntity("Entity_LightBall", Transform{src_pos, glm::vec3(1.0f)});
     ES_Lifetime* lightball_lifetime = resource()->provider_Lifetime.getInstance(lightball);
     lightball_lifetime->lifetime = 90;
-    lightball_lifetime->vel = glm::vec3(0.0f, -1.0f, 0.0f);
+    lightball_lifetime->vel = vel;
 }
 
 void S_Spell_LightBall::_kill() {}
 void S_Spell_LightBall::_update() {}
 
-S_Spell_LightBall::S_Spell_LightBall() : ScriptInterface() {}
+S_Spell_LightBall::S_Spell_LightBall() : ScriptInterface(), src_pos(glm::vec3(0.0f)), vel(glm::vec3(0.0f)) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -60,7 +60,10 @@ void ES_Player::_execEntity() {
         slash_lifetime->lifetime = 18;
         
         // spawn light ball
-        resource()->executor->spawnScript("S_Spell_LightBall", 0);
+        ScriptView scriptview = resource()->executor->spawnScript("S_Spell_LightBall", 0);
+        S_Spell_LightBall* spell_lightball = resource()->provider_Spell_LightBall.getInstance(scriptview.getScript());
+        spell_lightball->src_pos = pos;
+        spell_lightball->vel = glm::vec3(0.0f, -1.0f, 0.0f);
 
         _hitbox_cooldown = _hitbox_cooldown_max;
     }

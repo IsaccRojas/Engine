@@ -15,6 +15,8 @@ class S_Spell_LightBall : public ScriptInterface, public Resource<GlobalResource
     void _update() override;
 public:
     S_Spell_LightBall();
+    glm::vec3 src_pos;
+    glm::vec3 vel;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
