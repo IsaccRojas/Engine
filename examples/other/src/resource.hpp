@@ -34,7 +34,7 @@ class ScriptResourceProvider : public ScriptProviderInterface<T, U> {
     }
     void _providerOnDeallocation(ScriptInterface* script) override {}
 public:
-    ScriptResourceProvider(V* resource) : _resource(resource) {}
+    ScriptResourceProvider(ScriptContainer<U>* scriptcontainer, V* resource) : ScriptProviderInterface<T, U>(scriptcontainer), _resource(resource) {}
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -55,7 +55,7 @@ class EntityScriptResourceProvider : public EntityScriptProviderInterface<T, U> 
     }
     void _providerOnDeallocation(ScriptInterface* script) override {}
 public:
-    EntityScriptResourceProvider(V* resource) : _resource(resource) {}
+    EntityScriptResourceProvider(ScriptContainer<U>* scriptcontainer, V* resource) : EntityScriptProviderInterface<T, U>(scriptcontainer), _resource(resource) {}
 };
 
 #endif

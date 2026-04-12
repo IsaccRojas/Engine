@@ -18,7 +18,13 @@ const unsigned TEX_SPACE_LEVELS = 3;
 
 const float CLEAR_COLOR_GRAY = 0.0f;
 
-CoreResources::CoreResources() : globalresources(&(this->entitymanager), &(this->entityscriptexecutor), &(this->glfwinput)) {}
+CoreResources::CoreResources() :
+    globalresources(&(this->entitymanager), &(this->entityscriptexecutor), &(this->glfwinput)),
+    provider_Player(&globalresources.container_Player, &globalresources),
+    provider_Chaser(&globalresources.container_Chaser, &globalresources),
+    provider_Lifetime(&globalresources.container_Lifetime),
+    provider_Spell_LightBallSpell(&globalresources.container_LightBallSpell, &globalresources)
+{}
 
 void initializeCore(CoreResources *core) {
     // initialize GLFW, OpenGL, and GLFWInput
@@ -79,10 +85,10 @@ void initializeAssets(CoreResources *core) {
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 16.0f), core->filters["Filter_Enemy"]}, "EntityCollider_Enemy");
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), glm::vec3(1.0f, 1.0f, 1.0f), core->filters["Filter_Player"]}, "EntityCollider_Hitbox");
 
-    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_Player, nullptr, nullptr}, "ES_Player");
-    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_Chaser, nullptr, nullptr}, "ES_Chaser");
-    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_Lifetime, nullptr, nullptr}, "ES_Lifetime");
-    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_Spell_LightBall, nullptr, nullptr}, "Spell_LightBallSpell");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Player, nullptr, nullptr}, "ES_Player");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Chaser, nullptr, nullptr}, "ES_Chaser");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Lifetime, nullptr, nullptr}, "ES_Lifetime");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Spell_LightBallSpell, nullptr, nullptr}, "Spell_LightBallSpell");
     
     core->entitymanager.addEntity(EntityInfo{"Group_Player", "ES_Player", 0, true, {"Quad_Player"}, {"EntityCollider_Player"}}, "Entity_Player");
     core->entitymanager.addEntity(EntityInfo{"Group_Enemy", "ES_Chaser", 0, true, {"Quad_BasicEnemy"}, {"EntityCollider_Enemy"}}, "Entity_BasicEnemy");

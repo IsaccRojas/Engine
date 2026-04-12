@@ -3,10 +3,7 @@
 GlobalResources::GlobalResources(EntityManager* entitymanager, EntityScriptExecutor* entityscriptexecutor, GLFWInput* glfwinput) : 
     manager(entitymanager),
     executor(entityscriptexecutor),
-    input(glfwinput),
-    provider_Player(this),
-    provider_Chaser(this),
-    provider_Spell_LightBall(this)
+    input(glfwinput)
 {}
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -26,7 +23,7 @@ void Spell_LightBallSpell::_initSpell() {}
 void Spell_LightBallSpell::_execSpell() {
     // spawn light ball
     Entity* lightball = resource()->manager->spawnEntity("Entity_LightBall", Transform{entity().globaltransform().pos, glm::vec3(1.0f)});
-    ES_Lifetime* lightball_lifetime = resource()->provider_Lifetime.getInstance(lightball);
+    ES_Lifetime* lightball_lifetime = resource()->container_Lifetime.getInstance(lightball->entityscriptview().getScript());
     lightball_lifetime->lifetime = 90;
     lightball_lifetime->vel = entity().globaltransform().scale;
     

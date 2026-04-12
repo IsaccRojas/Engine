@@ -132,10 +132,10 @@ struct GlobalResources {
     EntityScriptExecutor* executor;
     GLFWInput* input;
     
-    EntityScriptResourceProvider<ES_Player, ES_Player, GlobalResources> provider_Player;
-    EntityScriptResourceProvider<ES_Chaser, ES_Chaser, GlobalResources> provider_Chaser;
-    GenericEntityScriptProvider<ES_Lifetime, ES_Lifetime> provider_Lifetime;
-    EntityScriptResourceProvider<Spell_LightBallSpell, Spell_LightBallSpell, GlobalResources> provider_Spell_LightBall;
+    ScriptContainer<ES_Player> container_Player;
+    ScriptContainer<ES_Chaser> container_Chaser;
+    ScriptContainer<ES_Lifetime> container_Lifetime;
+    ScriptContainer<Spell_LightBallSpell> container_LightBallSpell;
 };
 
 #endif

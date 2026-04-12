@@ -199,25 +199,26 @@ protected:
    EntityScriptAllocatorInterface();
 };
 
-/* class EntityScriptProvider<T, U>
+/* class EntityScriptProviderInterface<T, U>
    Templated implementation of the EntityScriptAllocatorInterface, that can provide subtype references
-   of allocated EntityScriptInterface types.
+   of allocated EntityScriptInterface types to a ScriptContainer. It is undefined behavior for an 
+   EntityScriptProviderInterface instance to go out of scope before its passed ScriptContainer.
    T - type allocated; must be covariant of EntityScriptInterface
-   U - type stored; must be covariant of T and thus covariant of EntityScriptInterface
+   U - type to be stored by ScriptContainer; must be covariant of T and thus covariant of EntityScriptInterface
 */
 template<class T, class U>
 class EntityScriptProviderInterface : public EntityScriptAllocatorInterface {
-   std::unordered_map<ScriptInterface*, U*> _Us;
+   ScriptContainer<U>* _scriptcontainer;
 
    EntityScriptInterface* _allocate() override {
       T* t = _providerAllocate();
-      _Us[t] = t;
+      _scriptcontainer->insertInstance(t);
       return t;
    }
 
    void _onDeallocation(ScriptInterface* script) override {
       _providerOnDeallocation(script);
-      _Us.erase(script);
+      _scriptcontainer->removeInstance(script);
    }
 
 protected:
@@ -226,17 +227,7 @@ protected:
    virtual void _providerOnDeallocation(ScriptInterface* script) = 0;
 
 public:
-   U* getInstance(EntityScriptInterface* entityscript) {
-      if (!hasReference(entityscript))
-         throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
-      return _Us[entityscript];
-   }
-   U* getInstance(Entity* entity) {
-      EntityScriptInterface* entityscript = entity->entityscriptview().getEntityScript();
-      if (!hasReference(entityscript))
-         throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
-      return _Us[entityscript];
-   }
+   EntityScriptProviderInterface(ScriptContainer<U>* scriptcontainer) : _scriptcontainer(scriptcontainer) {}
 };
 
 /* class GenericEntityScriptProvider<T>
@@ -246,6 +237,8 @@ template<class T, class U>
 class GenericEntityScriptProvider : public EntityScriptProviderInterface<T, U> {
    T* _providerAllocate() override { return new T; }
    void _providerOnDeallocation(ScriptInterface* script) override {}
+public:
+   GenericEntityScriptProvider(ScriptContainer<U>* scriptcontainer) : EntityScriptProviderInterface<T, U>(scriptcontainer) {}
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
