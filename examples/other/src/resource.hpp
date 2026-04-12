@@ -20,34 +20,42 @@ public:
 
 /* class ScriptResourcesProvider
    Templated implementation of EntityScriptProviderInterface that supports the Resource mixin with assignment on instantiation.
+   T - type allocated; must be covariant of ScriptInterface
+   U - type stored; must be covariant of T and thus covariant of ScriptInterface
+   V - type of resource made available
 */
-template<typename T, typename U>
-class ScriptResourceProvider : public ScriptProviderInterface<T> {
-    U* _resource;
+template<class T, class U, typename V>
+class ScriptResourceProvider : public ScriptProviderInterface<T, U> {
+    V* _resource;
     T* _providerAllocate() override {
         T* t = new T;
-        t->Resource<U>::setResource(_resource);
+        t->Resource<V>::setResource(_resource);
         return t;
     }
+    void _providerOnDeallocation(ScriptInterface* script) override {}
 public:
-    ScriptResourceProvider(U* resource) : _resource(resource) {}
+    ScriptResourceProvider(V* resource) : _resource(resource) {}
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 /* class EntityScriptResourcesProvider
-   Templated implementation of EntityScriptProviderInterface that supports ResourcesMixin.
+   Templated implementation of EntityScriptProviderInterface that supports the Resource mixin with assignment on instantiation.
+   T - type allocated; must be covariant of EntityScriptInterface
+   U - type stored; must be covariant of T and thus covariant of EntityScriptInterface
+   V - type of resource made available
 */
-template<typename T, typename U>
-class EntityScriptResourceProvider : public EntityScriptProviderInterface<T> {
-    U* _resource;
+template<class T, class U, typename V>
+class EntityScriptResourceProvider : public EntityScriptProviderInterface<T, U> {
+    V* _resource;
     T* _providerAllocate() override {
         T* t = new T;
-        t->Resource<U>::setResource(_resource);
+        t->Resource<V>::setResource(_resource);
         return t;
     }
+    void _providerOnDeallocation(ScriptInterface* script) override {}
 public:
-    EntityScriptResourceProvider(U* resource) : _resource(resource) {}
+    EntityScriptResourceProvider(V* resource) : _resource(resource) {}
 };
 
 #endif

@@ -82,11 +82,12 @@ void initializeAssets(CoreResources *core) {
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_Player, nullptr, nullptr}, "ES_Player");
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_Chaser, nullptr, nullptr}, "ES_Chaser");
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_Lifetime, nullptr, nullptr}, "ES_Lifetime");
-    core->entityscriptexecutor.addScript(ScriptInfo{&core->globalresources.provider_Spell_LightBall, nullptr, nullptr}, "S_Spell_LightBall");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->globalresources.provider_Spell_LightBall, nullptr, nullptr}, "Spell_LightBallSpell");
     
     core->entitymanager.addEntity(EntityInfo{"Group_Player", "ES_Player", 0, true, {"Quad_Player"}, {"EntityCollider_Player"}}, "Entity_Player");
     core->entitymanager.addEntity(EntityInfo{"Group_Enemy", "ES_Chaser", 0, true, {"Quad_BasicEnemy"}, {"EntityCollider_Enemy"}}, "Entity_BasicEnemy");
     core->entitymanager.addEntity(EntityInfo{"Group_Hitbox", "ES_Lifetime", 0, true, {}, {"EntityCollider_Hitbox"}}, "Entity_Hitbox");
     core->entitymanager.addEntity(EntityInfo{"Group_Effect", "ES_Lifetime", 0, true, {"Quad_Slash"}, {}}, "Entity_Slash");
     core->entitymanager.addEntity(EntityInfo{"Group_PlayerProjectile", "ES_Lifetime", 0, true, {"Quad_LightBall"}, {"EntityCollider_Player"}}, "Entity_LightBall");
+    core->entitymanager.addEntity(EntityInfo{"Group_Spell", "Spell_LightBallSpell", 0, true, {}, {}}, "Entity_LightBallSpell");
 }

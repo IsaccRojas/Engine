@@ -8,15 +8,50 @@ const float diag_factor = glm::sin(glm::radians(45.0f));
 
 struct GlobalResources;
 
-class S_Spell_LightBall : public ScriptInterface, public Resource<GlobalResources> {
-    void _init() override;
-    void _exec() override;
-    void _kill() override;
-    void _update() override;
+class SpellInterface : public EntityScriptInterface, public Resource<GlobalResources> {
+    void _initEntity() override;
+    void _execEntity() override;
+    void _killEntity() override;
+    void _updateEntity() override;
+    void _receive(Entity* other, std::string message) override;
+    void _collide(Entity* other) override;
+    virtual void _initSpell() = 0;
+    virtual void _execSpell() = 0;
+    virtual void _killSpell() = 0;
+    virtual void _updateSpell() = 0;
 public:
-    S_Spell_LightBall();
-    glm::vec3 src_pos;
-    glm::vec3 vel;
+    SpellInterface();
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+class Spell_LightBallSpell : public SpellInterface {
+    void _initSpell() override;
+    void _execSpell() override;
+    void _killSpell() override;
+    void _updateSpell() override;
+public:
+    Spell_LightBallSpell();
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+enum CastType {CASTTYPE_TOME, CASTTYPE_STAVE};
+/* struct Castable
+   source - can be used to avoid casting twice
+   type - type of cast
+   spell_entity_name - EntityScript name to be spawned
+   cast_time - duration for spell_name to be used
+   pos - cast position; may not be used
+   dir - cast direction; may not be used
+*/
+struct Castable {
+    Castable* source;
+    CastType type;
+    std::string spell_entity_name;
+    int cast_time;
+    glm::vec3 pos;
+    glm::vec3 dir;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -26,6 +61,8 @@ public:
     Player script.
 */
 class ES_Player : public EntityScriptInterface, public Resource<GlobalResources> {
+    std::list<Castable> _castables;
+    std::list<Castable> _casts;
     float _hurt_cooldown_max;
     float _hurt_cooldown;
     float _hitbox_cooldown_max;
@@ -39,6 +76,7 @@ class ES_Player : public EntityScriptInterface, public Resource<GlobalResources>
     void _collide(Entity* other) override;
 public:
     ES_Player();
+    void checkCasts();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -94,10 +132,10 @@ struct GlobalResources {
     EntityScriptExecutor* executor;
     GLFWInput* input;
     
-    EntityScriptResourceProvider<ES_Player, GlobalResources> provider_Player;
-    EntityScriptResourceProvider<ES_Chaser, GlobalResources> provider_Chaser;
-    GenericEntityScriptProvider<ES_Lifetime> provider_Lifetime;
-    ScriptResourceProvider<S_Spell_LightBall, GlobalResources> provider_Spell_LightBall;
+    EntityScriptResourceProvider<ES_Player, ES_Player, GlobalResources> provider_Player;
+    EntityScriptResourceProvider<ES_Chaser, ES_Chaser, GlobalResources> provider_Chaser;
+    GenericEntityScriptProvider<ES_Lifetime, ES_Lifetime> provider_Lifetime;
+    EntityScriptResourceProvider<Spell_LightBallSpell, Spell_LightBallSpell, GlobalResources> provider_Spell_LightBall;
 };
 
 #endif

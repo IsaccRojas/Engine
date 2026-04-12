@@ -194,6 +194,8 @@ void ScriptExecutor::_erase(ScriptInterface* script) {
     // try removal callback if it exists
     if (scriptinfo._remove_callback)
         scriptinfo._remove_callback(script);
+    
+    scriptinfo._allocator->_onDeallocation(script);
 
     script->_scriptallocator->_removeReference(script);
     _scripts.erase(script->_this_iter);

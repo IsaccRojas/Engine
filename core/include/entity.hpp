@@ -193,46 +193,59 @@ protected:
    // must return a heap-allocated instance of a covariant type of EntityScriptInterface
    virtual EntityScriptInterface* _allocate() = 0;
 
+   // called on deallocation; should not deallocate anything
+   virtual void _onDeallocation(ScriptInterface* script) = 0;
+
    EntityScriptAllocatorInterface();
 };
 
-/* class EntityScriptProvider<T>
+/* class EntityScriptProvider<T, U>
    Templated implementation of the EntityScriptAllocatorInterface, that can provide subtype references
    of allocated EntityScriptInterface types.
+   T - type allocated; must be covariant of EntityScriptInterface
+   U - type stored; must be covariant of T and thus covariant of EntityScriptInterface
 */
-template<class T>
+template<class T, class U>
 class EntityScriptProviderInterface : public EntityScriptAllocatorInterface {
-   std::unordered_map<EntityScriptInterface*, T*> _Ts;
+   std::unordered_map<ScriptInterface*, U*> _Us;
 
    EntityScriptInterface* _allocate() override {
       T* t = _providerAllocate();
-      _Ts[t] = t;
+      _Us[t] = t;
       return t;
+   }
+
+   void _onDeallocation(ScriptInterface* script) override {
+      _providerOnDeallocation(script);
+      _Us.erase(script);
    }
 
 protected:
    virtual T* _providerAllocate() = 0;
 
+   virtual void _providerOnDeallocation(ScriptInterface* script) = 0;
+
 public:
-   T* getInstance(EntityScriptInterface* entityscript) {
+   U* getInstance(EntityScriptInterface* entityscript) {
       if (!hasReference(entityscript))
          throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
-      return _Ts[entityscript];
+      return _Us[entityscript];
    }
-   T* getInstance(Entity* entity) {
+   U* getInstance(Entity* entity) {
       EntityScriptInterface* entityscript = entity->entityscriptview().getEntityScript();
       if (!hasReference(entityscript))
          throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
-      return _Ts[entityscript];
+      return _Us[entityscript];
    }
 };
 
 /* class GenericEntityScriptProvider<T>
-   Generic implementation of EntityScriptProvider<T>.
+   Generic implementation of EntityScriptProviderInterface<T, U>. Allocates instances of T with default constructor.
 */
-template<class T>
-class GenericEntityScriptProvider : public EntityScriptProviderInterface<T> {
+template<class T, class U>
+class GenericEntityScriptProvider : public EntityScriptProviderInterface<T, U> {
    T* _providerAllocate() override { return new T; }
+   void _providerOnDeallocation(ScriptInterface* script) override {}
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

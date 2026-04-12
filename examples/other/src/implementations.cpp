@@ -11,24 +11,45 @@ GlobalResources::GlobalResources(EntityManager* entitymanager, EntityScriptExecu
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void S_Spell_LightBall::_init() {}
-
-void S_Spell_LightBall::_exec() {
-    // spawn light ball
-    Entity* lightball = resource()->manager->spawnEntity("Entity_LightBall", Transform{src_pos, glm::vec3(1.0f)});
-    ES_Lifetime* lightball_lifetime = resource()->provider_Lifetime.getInstance(lightball);
-    lightball_lifetime->lifetime = 90;
-    lightball_lifetime->vel = vel;
-}
-
-void S_Spell_LightBall::_kill() {}
-void S_Spell_LightBall::_update() {}
-
-S_Spell_LightBall::S_Spell_LightBall() : ScriptInterface(), src_pos(glm::vec3(0.0f)), vel(glm::vec3(0.0f)) {}
+void SpellInterface::_initEntity() { _initSpell(); }
+void SpellInterface::_execEntity() { _execSpell(); }
+void SpellInterface::_killEntity() { _killSpell(); }
+void SpellInterface::_updateEntity() { _updateSpell(); }
+void SpellInterface::_receive(Entity* other, std::string message) {}
+void SpellInterface::_collide(Entity* other) {}
+SpellInterface::SpellInterface() : EntityScriptInterface(), Resource() {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Player::_initEntity() {}
+void Spell_LightBallSpell::_initSpell() {}
+
+void Spell_LightBallSpell::_execSpell() {
+    // spawn light ball
+    Entity* lightball = resource()->manager->spawnEntity("Entity_LightBall", Transform{entity().globaltransform().pos, glm::vec3(1.0f)});
+    ES_Lifetime* lightball_lifetime = resource()->provider_Lifetime.getInstance(lightball);
+    lightball_lifetime->lifetime = 90;
+    lightball_lifetime->vel = entity().globaltransform().scale;
+    
+    enqueueKill();
+}
+
+void Spell_LightBallSpell::_killSpell() {}
+void Spell_LightBallSpell::_updateSpell() {}
+
+Spell_LightBallSpell::Spell_LightBallSpell() : SpellInterface() {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void ES_Player::_initEntity() {
+    _castables.push_back(Castable{
+        nullptr,
+        CASTTYPE_STAVE,
+        "Entity_LightBallSpell",
+        30,
+        glm::vec3(0.0f),
+        glm::vec3(0.0f)
+    });
+}
 
 void ES_Player::_execEntity() {
     // check if hurt (does nothing for now)
@@ -48,28 +69,24 @@ void ES_Player::_execEntity() {
 
     pos += vel;
     
-    if (_hitbox_cooldown <= 0.0f && resource()->input->get_m1()) {
-        // spawn hitbox
-        Entity* hitbox = resource()->manager->spawnEntity("Entity_Hitbox", Transform{pos, glm::vec3(24.0f, 24.0f, 24.0f)});
-        resource()->provider_Lifetime.getInstance(hitbox)->lifetime = 22;
-
-        // spawn slash effect and set self as its target
-        Entity* slash = resource()->manager->spawnEntity("Entity_Slash", Transform{pos, glm::vec3(1.0f)});
-        ES_Lifetime* slash_lifetime = resource()->provider_Lifetime.getInstance(slash);
-        slash_lifetime->receive(&entity(), "target");
-        slash_lifetime->lifetime = 18;
-        
-        // spawn light ball
-        ScriptView scriptview = resource()->executor->spawnScript("S_Spell_LightBall", 0);
-        S_Spell_LightBall* spell_lightball = resource()->provider_Spell_LightBall.getInstance(scriptview.getScript());
-        spell_lightball->src_pos = pos;
-        spell_lightball->vel = glm::vec3(0.0f, -1.0f, 0.0f);
+    if (_hitbox_cooldown <= 0.0f && resource()->input->get_m1()) {       
+        // cast
+        _casts.push_back(Castable{
+            &(*(_castables.begin())),
+            _castables.begin()->type,
+            _castables.begin()->spell_entity_name,
+            _castables.begin()->cast_time,
+            glm::vec3(0.0f),
+            glm::vec3(0.0f, -0.5f, 0.0f)
+        });
 
         _hitbox_cooldown = _hitbox_cooldown_max;
     }
     if (_hitbox_cooldown > 0.0f)
         _hitbox_cooldown -= 1.0f;
     
+    checkCasts();
+
     if (resource()->input->get_space())
         enqueueKill();
 }
@@ -84,12 +101,43 @@ void ES_Player::_collide(Entity* other) {
 
 ES_Player::ES_Player() :
     EntityScriptInterface(),
-    _hurt_cooldown_max(120.0f), 
-    _hurt_cooldown(0.0f), 
+    Resource(),
+    _hurt_cooldown_max(120.0f),
+    _hurt_cooldown(0.0f),
     _hitbox_cooldown_max(24.0f),
     _hitbox_cooldown(0.0f),
     _speed(0.5f)
 {}
+
+void ES_Player::checkCasts() {
+    auto iter = _casts.begin();
+    while (iter != _casts.end()) {
+        Castable& cast = *iter;
+
+        if (cast.cast_time <= 0) {
+            // spawn spell and remove cast
+            switch (cast.type) {
+                case CASTTYPE_TOME:
+                    resource()->manager->spawnEntity(cast.spell_entity_name.c_str(), Transform{cast.pos, glm::vec3(1.0f)});
+                    break;
+
+                case CASTTYPE_STAVE:
+                    resource()->manager->spawnEntity(cast.spell_entity_name.c_str(), Transform{entity().globaltransform().pos, cast.dir});
+                    break;
+
+                default:
+                    throw std::runtime_error("Unknown cast type");
+            }
+            
+            iter = _casts.erase(iter);
+            continue;
+        }
+
+        // advance cast time
+        cast.cast_time--;
+        iter++;
+    }
+}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -139,13 +187,13 @@ void ES_Chaser::_updateEntity() {}
 void ES_Chaser::_receive(Entity *other, std::string message) {}
 void ES_Chaser::_collide(Entity *other) {}
 
-ES_Chaser::ES_Chaser() : EntityScriptInterface(), _target(nullptr) {}
+ES_Chaser::ES_Chaser() : EntityScriptInterface(), Resource(), _target(nullptr) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 void ES_Lifetime::_initEntity() {}
 
-void ES_Lifetime::_execEntity() {    
+void ES_Lifetime::_execEntity() {
     if (lifetime > 0)
         lifetime--;
     

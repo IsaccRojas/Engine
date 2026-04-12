@@ -149,6 +149,9 @@ protected:
    // must return a heap-allocated instance of a covariant type of ScriptInterface
    virtual ScriptInterface* _allocate() = 0;
 
+   // called on deallocation; should not deallocate anything
+   virtual void _onDeallocation(ScriptInterface* script) = 0;
+
    ScriptAllocatorInterface();
 
 public:
@@ -158,36 +161,45 @@ public:
    bool hasReference(ScriptInterface* script);
 };
 
-/* class ScriptProvider<T>
+/* class ScriptProvider<T, U>
    Templated implementation of the ScriptAllocatorInterface, that can provide subtype references
    of allocated ScriptInterface types.
+   T - type allocated; must be covariant of ScriptInterface
+   U - type stored; must be covariant of T and thus covariant of ScriptInterface
 */
-template<class T>
+template<class T, class U>
 class ScriptProviderInterface : public ScriptAllocatorInterface {
-   std::unordered_map<ScriptInterface*, T*> _Ts;
+   std::unordered_map<ScriptInterface*, U*> _Us;
 
    ScriptInterface* _allocate() override {
       T* t = _providerAllocate();
-      _Ts[t] = t;
+      _Us[t] = t;
       return t;
+   }
+
+   void _onDeallocation(ScriptInterface* script) override {
+      _providerOnDeallocation(script);
+      _Us.erase(script);
    }
 
 protected:
    virtual T* _providerAllocate() = 0;
 
+   virtual void _providerOnDeallocation(ScriptInterface* script) = 0;
+
 public:
-   T* getInstance(ScriptInterface* script) {
+   U* getInstance(ScriptInterface* script) {
       if (!hasReference(script))
          throw std::runtime_error("Attempt to get subtype instance with script address that this allocator did not allocate");
-      return _Ts[script];
+      return _Us[script];
    }
 };
 
 /* class GenericScriptProvider<T>
-   Generic implementation of ScriptProvider<T>.
+   Generic implementation of ScriptProvider<T>. Allocates instances of T with default constructor.
 */
-template<class T>
-class GenericScriptProvider : public ScriptProviderInterface<T> {
+template<class T, class U>
+class GenericScriptProvider : public ScriptProviderInterface<T, U> {
    T* _providerAllocate() override { return new T; }
 };
 
