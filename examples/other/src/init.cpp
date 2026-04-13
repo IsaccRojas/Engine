@@ -23,7 +23,7 @@ CoreResources::CoreResources() :
     provider_Player(&globalresources.container_Player, &globalresources),
     provider_Chaser(&globalresources.container_Chaser, &globalresources),
     provider_Lifetime(&globalresources.container_Lifetime),
-    provider_Spell_LightBallSpell(&globalresources.container_LightBallSpell, &globalresources)
+    provider_Spell_LightBallSpell(&globalresources.container_Spells, &globalresources)
 {}
 
 void initializeCore(CoreResources *core) {
@@ -88,7 +88,7 @@ void initializeAssets(CoreResources *core) {
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Player, nullptr, nullptr}, "ES_Player");
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Chaser, nullptr, nullptr}, "ES_Chaser");
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Lifetime, nullptr, nullptr}, "ES_Lifetime");
-    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Spell_LightBallSpell, nullptr, nullptr}, "Spell_LightBallSpell");
+    core->entityscriptexecutor.addScript(ScriptInfo{&core->provider_Spell_LightBallSpell, nullptr, nullptr}, "Spell_LightBallSpell");
     
     core->entitymanager.addEntity(EntityInfo{"Group_Player", "ES_Player", 0, true, {"Quad_Player"}, {"EntityCollider_Player"}}, "Entity_Player");
     core->entitymanager.addEntity(EntityInfo{"Group_Enemy", "ES_Chaser", 0, true, {"Quad_BasicEnemy"}, {"EntityCollider_Enemy"}}, "Entity_BasicEnemy");

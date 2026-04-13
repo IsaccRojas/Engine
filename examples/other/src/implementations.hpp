@@ -8,19 +8,19 @@ const float diag_factor = glm::sin(glm::radians(45.0f));
 
 struct GlobalResources;
 
-class SpellInterface : public EntityScriptInterface, public Resource<GlobalResources> {
-    void _initEntity() override;
-    void _execEntity() override;
-    void _killEntity() override;
-    void _updateEntity() override;
-    void _receive(Entity* other, std::string message) override;
-    void _collide(Entity* other) override;
+class SpellInterface : public ScriptInterface, public Resource<GlobalResources> {
+    void _init() override;
+    void _exec() override;
+    void _kill() override;
+    void _update() override;
     virtual void _initSpell() = 0;
     virtual void _execSpell() = 0;
     virtual void _killSpell() = 0;
     virtual void _updateSpell() = 0;
 public:
     SpellInterface();
+    glm::vec3 pos;
+    glm::vec3 dir;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -135,7 +135,7 @@ struct GlobalResources {
     ScriptContainer<ES_Player> container_Player;
     ScriptContainer<ES_Chaser> container_Chaser;
     ScriptContainer<ES_Lifetime> container_Lifetime;
-    ScriptContainer<Spell_LightBallSpell> container_LightBallSpell;
+    ScriptContainer<SpellInterface> container_Spells;
 };
 
 #endif

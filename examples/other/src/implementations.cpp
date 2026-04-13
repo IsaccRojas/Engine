@@ -8,13 +8,14 @@ GlobalResources::GlobalResources(EntityManager* entitymanager, EntityScriptExecu
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void SpellInterface::_initEntity() { _initSpell(); }
-void SpellInterface::_execEntity() { _execSpell(); }
-void SpellInterface::_killEntity() { _killSpell(); }
-void SpellInterface::_updateEntity() { _updateSpell(); }
-void SpellInterface::_receive(Entity* other, std::string message) {}
-void SpellInterface::_collide(Entity* other) {}
-SpellInterface::SpellInterface() : EntityScriptInterface(), Resource() {}
+void SpellInterface::_init() { _initSpell(); }
+void SpellInterface::_exec() {
+    _execSpell();
+    enqueueExec(getLastExecQueue());
+}
+void SpellInterface::_kill() { _killSpell(); }
+void SpellInterface::_update() { _updateSpell(); }
+SpellInterface::SpellInterface() : ScriptInterface(), Resource(), pos(glm::vec3(0.0f)), dir(glm::vec3(0.0f)) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -22,10 +23,10 @@ void Spell_LightBallSpell::_initSpell() {}
 
 void Spell_LightBallSpell::_execSpell() {
     // spawn light ball
-    Entity* lightball = resource()->manager->spawnEntity("Entity_LightBall", Transform{entity().globaltransform().pos, glm::vec3(1.0f)});
-    ES_Lifetime* lightball_lifetime = resource()->container_Lifetime.getInstance(lightball->entityscriptview().getScript());
+    resource()->manager->spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
+    ES_Lifetime* lightball_lifetime = resource()->container_Lifetime.getLastInstance();
     lightball_lifetime->lifetime = 90;
-    lightball_lifetime->vel = entity().globaltransform().scale;
+    lightball_lifetime->vel = dir;
     
     enqueueKill();
 }
@@ -112,19 +113,11 @@ void ES_Player::checkCasts() {
         Castable& cast = *iter;
 
         if (cast.cast_time <= 0) {
-            // spawn spell and remove cast
-            switch (cast.type) {
-                case CASTTYPE_TOME:
-                    resource()->manager->spawnEntity(cast.spell_entity_name.c_str(), Transform{cast.pos, glm::vec3(1.0f)});
-                    break;
-
-                case CASTTYPE_STAVE:
-                    resource()->manager->spawnEntity(cast.spell_entity_name.c_str(), Transform{entity().globaltransform().pos, cast.dir});
-                    break;
-
-                default:
-                    throw std::runtime_error("Unknown cast type");
-            }
+            // spawn spell
+            resource()->executor->spawnScript(cast.spell_entity_name.c_str(), 1);
+            SpellInterface* spell = resource()->container_Spells.getLastInstance();
+            spell->pos = (cast.type == CASTTYPE_TOME) ? cast.pos : entity().globaltransform().pos;
+            spell->dir = cast.dir;
             
             iter = _casts.erase(iter);
             continue;
