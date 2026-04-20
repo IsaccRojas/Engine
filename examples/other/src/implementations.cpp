@@ -42,10 +42,10 @@ void ES_Player::_initEntity() {
     _castables.push_back(Castable{
         nullptr,
         CASTTYPE_STAVE,
-        "Entity_LightBallSpell",
+        "Spell_LightBallSpell",
         30,
         glm::vec3(0.0f),
-        glm::vec3(0.0f)
+        glm::vec3(0.0f, -0.5f, 0.0f)
     });
 }
 
@@ -67,21 +67,28 @@ void ES_Player::_execEntity() {
 
     pos += vel;
     
-    if (_hitbox_cooldown <= 0.0f && resource()->input->get_m1()) {       
+    if (_cast_cooldown <= 0.0f && resource()->input->get_m1()) {
+        // select first cast for now
+        Castable &castable = *(_castables.begin());
+        
+        // check if already casted
+        bool cast_found = false;
+        for (auto &c : _casts) {
+            if (&castable == c.source) {
+                cast_found = true;
+                break;
+            }
+        }
+        
         // cast
-        _casts.push_back(Castable{
-            &(*(_castables.begin())),
-            _castables.begin()->type,
-            _castables.begin()->spell_entity_name,
-            _castables.begin()->cast_time,
-            glm::vec3(0.0f),
-            glm::vec3(0.0f, -0.5f, 0.0f)
-        });
-
-        _hitbox_cooldown = _hitbox_cooldown_max;
+        if (!cast_found) {
+            _casts.push_back(castable);
+            _casts.back().source = &castable;
+            _cast_cooldown = _cast_cooldown_max;
+        }
     }
-    if (_hitbox_cooldown > 0.0f)
-        _hitbox_cooldown -= 1.0f;
+    if (_cast_cooldown > 0.0f)
+        _cast_cooldown -= 1.0f;
     
     checkCasts();
 
@@ -102,8 +109,8 @@ ES_Player::ES_Player() :
     Resource(),
     _hurt_cooldown_max(120.0f),
     _hurt_cooldown(0.0f),
-    _hitbox_cooldown_max(24.0f),
-    _hitbox_cooldown(0.0f),
+    _cast_cooldown_max(24.0f),
+    _cast_cooldown(0.0f),
     _speed(0.5f)
 {}
 

@@ -13,4 +13,6 @@
 */
 void loop(CoreResources *core);
 
+void checkTileCollision(CoreResources *core);
+
 #endif

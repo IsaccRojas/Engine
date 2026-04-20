@@ -55,6 +55,14 @@ public:
    void writeAnimation();
 };
 
+/* struct QuadInfo 
+   Collection of information of a Quad that can be used when adding named Quad info to GLEnv instances.
+   pos - position of Quad
+   scale = scale of Quad
+   color = color of Quad
+   animation = Animation for Quad to use
+
+*/
 struct QuadInfo {
    glm::vec3 pos;
    glm::vec3 scale;

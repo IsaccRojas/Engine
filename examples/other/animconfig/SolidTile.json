@@ -1,0 +1,16 @@
+{
+	"name" : "Animation_SolidTile",
+	"cycles" : {
+		"default" : {
+			"frames" : {
+				"frame1" : {
+					"texpos" : [0.0, 64.0, 0.0],
+					"texsize" : [16.0, 16.0],
+					"scale" : [16.0, 16.0, 0.0],
+					"duration" : 0
+				}
+			},
+			"loop" : false
+		}
+	}
+}

@@ -11,9 +11,13 @@ const unsigned WINDOW_HEIGHT = 512;
 const unsigned PIXEL_WIDTH = WINDOW_WIDTH / 2;
 const unsigned PIXEL_HEIGHT = WINDOW_HEIGHT / 2;
 const unsigned PIXEL_LEVELS = 16;
+const unsigned UNIT_PIXEL_WIDTH = 16;
+const unsigned UNIT_PIXEL_HEIGHT = 16;
+const unsigned NUM_TILES_WIDTH = 16;
+const unsigned NUM_TILES_HEIGHT = 16;
 
 const unsigned TEX_SPACE_WIDTH = 144;
-const unsigned TEX_SPACE_HEIGHT = 64;
+const unsigned TEX_SPACE_HEIGHT = 80;
 const unsigned TEX_SPACE_LEVELS = 3;
 
 const float CLEAR_COLOR_GRAY = 0.0f;
@@ -52,8 +56,9 @@ void initializeCore(CoreResources *core) {
     core->glenv.setTexArray(TEX_SPACE_WIDTH, TEX_SPACE_HEIGHT, TEX_SPACE_LEVELS);
     core->glenv.setTexture(Image("gfx/sprites2.png"), 0, 0, 0);
     
-    float halfwidth = float(PIXEL_WIDTH) / 2.0f;
-    float halfheight = float(PIXEL_HEIGHT) / 2.0f;
+    // set up view and projection matrices
+    float halfwidth = float(PIXEL_WIDTH) * 0.5f;
+    float halfheight = float(PIXEL_HEIGHT) * 0.5f;
     core->glenv.setView(glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
     core->glenv.setProj(glm::ortho(-1.0f * halfwidth, halfwidth, -1.0f * halfheight, halfheight, 0.0f, float(PIXEL_LEVELS)));
     core->glenv.setWindowSpace(WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -76,13 +81,17 @@ void initializeCore(CoreResources *core) {
 /* Initializes script, graphics, and collision assets.
 */
 void initializeAssets(CoreResources *core) {
-    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f), glm::vec4(1.0f), core->animations["Animation_Player"]}, "Quad_Player");
-    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f), glm::vec4(1.0f), core->animations["Animation_BasicEnemy"]}, "Quad_BasicEnemy");
-    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), glm::vec3(32.0f, 32.0f, 0.0f), glm::vec4(1.0f), core->animations["Animation_Slash"]}, "Quad_Slash");
-    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 0.0f), glm::vec4(1.0f), core->animations["Animation_LightBall"]}, "Quad_LightBall");
+    srand(time(NULL));
+    glm::vec3 unit_scale = glm::vec3(UNIT_PIXEL_WIDTH, UNIT_PIXEL_HEIGHT, 0.0f);
 
-    core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 16.0f), core->filters["Filter_Player"]}, "EntityCollider_Player");
-    core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), glm::vec3(16.0f, 16.0f, 16.0f), core->filters["Filter_Enemy"]}, "EntityCollider_Enemy");
+    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_Player"]}, "Quad_Player");
+    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_BasicEnemy"]}, "Quad_BasicEnemy");
+    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), 2.0f * unit_scale, glm::vec4(1.0f), core->animations["Animation_Slash"]}, "Quad_Slash");
+    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_LightBall"]}, "Quad_LightBall");
+    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_SolidTile"]}, "Quad_SolidTile");
+
+    core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_Player"]}, "EntityCollider_Player");
+    core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_Enemy"]}, "EntityCollider_Enemy");
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), glm::vec3(1.0f, 1.0f, 1.0f), core->filters["Filter_Player"]}, "EntityCollider_Hitbox");
 
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Player, nullptr, nullptr}, "ES_Player");
@@ -95,5 +104,27 @@ void initializeAssets(CoreResources *core) {
     core->entitymanager.addEntity(EntityInfo{"Group_Hitbox", "ES_Lifetime", 0, true, {}, {"EntityCollider_Hitbox"}}, "Entity_Hitbox");
     core->entitymanager.addEntity(EntityInfo{"Group_Effect", "ES_Lifetime", 0, true, {"Quad_Slash"}, {}}, "Entity_Slash");
     core->entitymanager.addEntity(EntityInfo{"Group_PlayerProjectile", "ES_Lifetime", 0, true, {"Quad_LightBall"}, {"EntityCollider_Player"}}, "Entity_LightBall");
-    core->entitymanager.addEntity(EntityInfo{"Group_Spell", "Spell_LightBallSpell", 0, true, {}, {}}, "Entity_LightBallSpell");
+
+    // initialize map
+    for (unsigned r = 0; r < NUM_TILES_WIDTH; r++) {
+        core->globalresources.map.push_back(std::vector<TileInfo>());
+        for (unsigned c = 0; c < NUM_TILES_HEIGHT; c++)
+            core->globalresources.map.back().push_back(TileInfo{rand() % 2, 0});
+    }
+    
+    core ->globalresources.map[4][4] = TileInfo{1, 0};
+
+    // create tile graphics
+    auto &map = core ->globalresources.map;
+    for (unsigned r = 0; r < map.size(); r++)
+        for (unsigned c = 0; c < map.size(); c++)
+            if (map[r][c].value)
+                map[r][c].quad_id = core->glenv.genQuad(
+                    "Quad_SolidTile",
+                    Transform{glm::vec3(
+                        ((c * UNIT_PIXEL_WIDTH) + (UNIT_PIXEL_WIDTH / 2.0f)) - (PIXEL_HEIGHT / 2.0f),
+                        ((r * UNIT_PIXEL_HEIGHT) + (UNIT_PIXEL_HEIGHT / 2.0f)) - (PIXEL_WIDTH / 2.0f), 
+                        -1.0f
+                    ), glm::vec3(1.0f)}
+                );
 }

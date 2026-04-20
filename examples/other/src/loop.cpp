@@ -3,8 +3,6 @@
 void loop(CoreResources *core) {
     std::cout << "Setting up loop" << std::endl;
     
-    srand(time(NULL));
-    
     core->entitymanager.spawnEntity("Entity_Player", Transform{glm::vec3(0.0f, 32.0f, 0.0f), glm::vec3(1.0f)});
     core->entitymanager.spawnEntity("Entity_BasicEnemy",Transform{glm::vec3(32.0f, 0.0f, 0.0f), glm::vec3(1.0f)});
 
@@ -21,6 +19,7 @@ void loop(CoreResources *core) {
         core->entityscriptexecutor.runSpawnQueue();
         core->entityscriptexecutor.runKillQueue();
         core->entityscriptexecutor.runUpdate();
+        checkTileCollision(core);
 
         core->entitymanager.checkEntities();
 
@@ -31,4 +30,8 @@ void loop(CoreResources *core) {
     };
 
     std::cout << "Ending loop" << std::endl;
+}
+
+void checkTileCollision(CoreResources *core) {
+
 }

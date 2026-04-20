@@ -65,8 +65,8 @@ class ES_Player : public EntityScriptInterface, public Resource<GlobalResources>
     std::list<Castable> _casts;
     float _hurt_cooldown_max;
     float _hurt_cooldown;
-    float _hitbox_cooldown_max;
-    float _hitbox_cooldown;
+    float _cast_cooldown_max;
+    float _cast_cooldown;
     float _speed;
     void _initEntity() override;
     void _execEntity() override;
@@ -122,6 +122,11 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+struct TileInfo {
+    int value;
+    int quad_id;
+};
+
 /* struct Global Resources
    Aggregates resources for classes with Resource<GlobalResources> inherited to access.
 */
@@ -136,6 +141,8 @@ struct GlobalResources {
     ScriptContainer<ES_Chaser> container_Chaser;
     ScriptContainer<ES_Lifetime> container_Lifetime;
     ScriptContainer<SpellInterface> container_Spells;
+
+    std::vector<std::vector<TileInfo>> map;
 };
 
 #endif
