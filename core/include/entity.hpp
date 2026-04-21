@@ -260,7 +260,8 @@ class EntityCollider {
    glm::vec3 _base_scale;
    glm::vec3 _pos;
    glm::vec3 _scale;
-   
+   Transform _prev_applied_transform;
+
    Entity* _entity;
 
    EntityCollider(EntityCollider&& other);
@@ -279,6 +280,15 @@ public:
    /* Applies provided Transform to pos and scale. */
    void applyTransform(Transform transform);
 
+   /* Get base position and scale as a Transform */
+   Transform getBaseTransformation();
+
+   /* Get current position and scale as a Transform */
+   Transform getCurrentTransformation();
+
+   /* Get last applied Transform */
+   Transform getPrevAppliedTransform();
+
    FilterState& filterstate();
    Entity& entity();
    bool& collision_enabled();
@@ -296,6 +306,9 @@ public:
    bool& collision_enabled();
    void resetTransformation();
    void applyTransform(Transform transform);
+   Transform getBaseTransformation();
+   Transform getCurrentTransformation();
+   Transform getPrevAppliedTransform();
    EntityCollider* getCollider();
 };
 

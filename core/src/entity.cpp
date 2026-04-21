@@ -53,17 +53,11 @@ void EntityScriptInterface::collide(Entity* entity) {
 
 EntityScriptView::EntityScriptView(EntityScriptInterface* entityscript) : ScriptView(entityscript), _entityscript(entityscript) {}
 
-void EntityScriptView::receive(Entity* entity, std::string message) {
-    _entityscript->receive(entity, message);
-}
+void EntityScriptView::receive(Entity* entity, std::string message) { _entityscript->receive(entity, message); }
 
-void EntityScriptView::collide(Entity* entity) {
-    _entityscript->collide(entity);
-}
+void EntityScriptView::collide(Entity* entity) { _entityscript->collide(entity); }
 
-EntityScriptInterface* EntityScriptView::getEntityScript() {
-    return _entityscript;
-}
+EntityScriptInterface* EntityScriptView::getEntityScript() { return _entityscript; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -157,6 +151,7 @@ EntityCollider::EntityCollider() :
     _base_scale(glm::vec3(1.0f)),
     _pos(glm::vec3(0.0f)),
     _scale(glm::vec3(1.0f)),
+    _prev_applied_transform(Transform{}),
     _entity(nullptr)
 {}
 EntityCollider::~EntityCollider() {}
@@ -171,6 +166,7 @@ EntityCollider& EntityCollider::operator=(EntityCollider&& other) {
         _base_scale = other._base_scale;
         _pos = other._pos;
         _scale = other._scale;
+        _prev_applied_transform = other._prev_applied_transform;
         _entity = other._entity;
         other._collisionspace = nullptr;
         other._collision_enabled = false;
@@ -178,6 +174,7 @@ EntityCollider& EntityCollider::operator=(EntityCollider&& other) {
         other._base_scale = glm::vec3(1.0f);
         other._pos = glm::vec3(0.0f);
         other._scale = glm::vec3(1.0f);
+        other._prev_applied_transform = Transform{};
         other._entity = nullptr;
     }
     return *this;
@@ -189,8 +186,21 @@ void EntityCollider::resetTransformation() {
 }
 
 void EntityCollider::applyTransform(Transform transform) {
+    _prev_applied_transform = transform;
     _pos += transform.pos;
     _scale *= transform.scale;
+}
+
+Transform EntityCollider::getBaseTransformation() {
+    return Transform{_base_pos, _base_scale};
+}
+
+Transform EntityCollider::getCurrentTransformation() {
+    return Transform{_pos, _scale};
+}
+
+Transform EntityCollider::getPrevAppliedTransform() {
+    return _prev_applied_transform;
 }
 
 FilterState& EntityCollider::filterstate() { return _filterstate; }
@@ -206,6 +216,12 @@ bool& EntityColliderView::collision_enabled() { return _collider->collision_enab
 void EntityColliderView::resetTransformation() { _collider->resetTransformation(); }
 
 void EntityColliderView::applyTransform(Transform transform) { _collider->applyTransform(transform); }
+
+Transform EntityColliderView::getBaseTransformation() { return _collider->getBaseTransformation(); }
+
+Transform EntityColliderView::getCurrentTransformation() { return _collider->getCurrentTransformation(); }
+
+Transform EntityColliderView::getPrevAppliedTransform() { return _collider->getPrevAppliedTransform(); }
 
 EntityCollider* EntityColliderView::getCollider() { return _collider; }
 
