@@ -16,6 +16,7 @@ void loop(CoreResources *core) {
         core->glfwinput.update();
 
         core->entityscriptexecutor.runExecQueue(0);
+        core->entityscriptexecutor.runExecQueue(1);
         core->entityscriptexecutor.runSpawnQueue();
         core->entityscriptexecutor.runKillQueue();
         core->entityscriptexecutor.runUpdate();
@@ -33,5 +34,10 @@ void loop(CoreResources *core) {
 }
 
 void checkTileCollision(CoreResources *core) {
+    /*
+    auto iter_end = core->entitymanager.groupEnd("");
+    for (auto iter = core->entitymanager.groupBegin(""); iter != iter_end; iter++) {
 
+    }
+    */
 }
