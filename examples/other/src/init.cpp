@@ -24,12 +24,16 @@ const float CLEAR_COLOR_GRAY = 0.0f;
 
 CoreResources::CoreResources() :
     globalresources(&(this->entitymanager), &(this->entityscriptexecutor), &(this->glfwinput)),
-    provider_Player(&globalresources.container_Player, &globalresources),
-    provider_Chaser(&globalresources.container_Chaser, &globalresources),
-    provider_Lifetime(&globalresources.container_Lifetime),
-    provider_Spell_LightBallSpell(nullptr, &globalresources)
-    //provider_Spell_LightBallSpell(&globalresources.container_Spells, &globalresources)
-{}
+    provider_Player(&globalresources),
+    provider_Chaser(&globalresources),
+    provider_Lifetime(),
+    provider_Spell_LightBallSpell(&globalresources)
+{
+    provider_Player.attach(&globalresources.container_Player);
+    provider_Chaser.attach(&globalresources.container_Chaser);
+    provider_Lifetime.attach(&globalresources.container_Lifetime);
+    provider_Spell_LightBallSpell.attach(&globalresources.container_Spells);
+}
 
 void initializeCore(CoreResources *core) {
     // initialize GLFW, OpenGL, and GLFWInput

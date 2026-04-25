@@ -60,17 +60,17 @@ public:
     }
 };
 
-/* class ScriptProviderInterface<T, ...subTs>
+/* class ScriptProviderInterface<T, ...SubTs>
    Templated implementation of the ScriptAllocatorInterface, that can provide subtype references
    of allocated ScriptInterface types to attached ScriptReceiverInterfaces. Supported subtypes must be specified
    per the variadic template argument. It is undefined behavior for a ScriptProviderInterface instance 
    to go out of scope before its passed ScriptReceiverInterfaces.
    T - type allocated; must be covariant of ScriptInterface
-   subTs - types to be supported to be passed to ScriptReceiverInterfaces; must be covariant of T and thus covariant of ScriptInterface
+   ...SubTs - types to be supported to be passed to ScriptReceiverInterfaces; must be covariant of T and thus covariant of ScriptInterface
 */
-template<class T, class ...subTs>
+template<class T, class ...SubTs>
 class ScriptProviderInterface : public ScriptAllocatorInterface {
-    std::tuple<std::unordered_set<ScriptReceiverInterface<subTs>*>...> scriptreceivers;
+    std::tuple<std::unordered_set<ScriptReceiverInterface<SubTs>*>...> scriptreceivers;
 
     void _passToReceivers(T* t) {
         // expand scriptreceivers tuple
@@ -126,12 +126,12 @@ public:
 
     template<class U>
     void attach(ScriptReceiverInterface<U>* scriptreceiver) {
-        std::get<U>(scriptreceivers).insert(scriptreceiver);
+        std::get<std::unordered_set<ScriptReceiverInterface<U>*>>(scriptreceivers).insert(scriptreceiver);
     }
 
     template<class U>
     void detach(ScriptReceiverInterface<U>* scriptreceiver) {
-        std::get<U>(scriptreceivers).erase(scriptreceiver);
+        std::get<std::unordered_set<ScriptReceiverInterface<U>*>>(scriptreceivers).erase(scriptreceiver);
     }
 };
 
@@ -139,11 +139,11 @@ public:
    Generic implementation of ScriptProvider<T>. Allocates instances of T with default constructor.
 */
 template<class T>
-class GenericScriptProvider : public ScriptProviderInterface<T> {
+class GenericScriptProvider : public ScriptProviderInterface<T, T> {
     T* _providerAllocate() override { return new T; }
     void _providerOnDeallocation(ScriptInterface* script) override {}
 public:
-    GenericScriptProvider(ScriptContainer<T>* scriptcontainer) : ScriptProviderInterface<T>(scriptcontainer) {}
+    GenericScriptProvider() {}
 };
 
 #endif

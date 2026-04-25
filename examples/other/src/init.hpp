@@ -24,10 +24,10 @@ struct CoreResources {
 
     GlobalResources globalresources;
 
-    EntityScriptResourceProvider<ES_Player, ES_Player, GlobalResources> provider_Player;
-    EntityScriptResourceProvider<ES_Chaser, ES_Chaser, GlobalResources> provider_Chaser;
-    GenericEntityScriptProvider<ES_Lifetime, ES_Lifetime> provider_Lifetime;
-    ScriptResourceProvider<Spell_LightBallSpell, GlobalResources> provider_Spell_LightBallSpell;
+    EntityScriptResourceProvider<ES_Player, GlobalResources, ES_Player> provider_Player;
+    EntityScriptResourceProvider<ES_Chaser, GlobalResources, ES_Chaser> provider_Chaser;
+    GenericEntityScriptProvider<ES_Lifetime> provider_Lifetime;
+    ScriptResourceProvider<Spell_LightBallSpell, GlobalResources, SpellInterface> provider_Spell_LightBallSpell;
 };
 
 /* Initializes core library data structures.
