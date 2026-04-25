@@ -1,7 +1,7 @@
 #ifndef ENTITY_HPP_
 #define ENTITY_HPP_
 
-#include "script.hpp"
+#include "scriptutil.hpp"
 #include "glenv.hpp"
 #include "filter.hpp"
 #include "C:\dev\include\glm\glm.hpp"
@@ -382,6 +382,9 @@ struct EntityInfo {
 class EntityManager {
    // storage of entity info, mapped to names
    std::unordered_map<std::string, EntityInfo> _entityinfos;
+
+   // storage of entity group names
+   std::list<std::string> _entity_group_names;
 
    // storage of entities, mapped to group names
    std::unordered_map<std::string, ManagedList<Entity>> _entities;

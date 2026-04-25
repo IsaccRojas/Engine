@@ -353,6 +353,7 @@ EntityManager::~EntityManager() { /* automatic destruction is fine */ }
 EntityManager& EntityManager::operator=(EntityManager&& other) {
     if (this != &other) {
         _entityinfos = other._entityinfos;
+        _entity_group_names = other._entity_group_names;
 
         // clear all lists
         std::vector<std::string> keys;
@@ -390,6 +391,7 @@ void EntityManager::uninit() {
         return;
     
     _entityinfos.clear();
+    _entity_group_names.clear();
     _entities.clear();
     _entityscriptexecutor = nullptr;
     _glenv = nullptr;
@@ -399,7 +401,10 @@ void EntityManager::uninit() {
 
 void EntityManager::addEntity(EntityInfo info, const char* name) {
     _entityinfos[name] = info;
-    _entities[name] = ManagedList<Entity>();
+    if (_entities.find(info.group) == _entities.end()) {
+        _entity_group_names.push_back(info.group);
+        _entities[info.group] = ManagedList<Entity>();
+    }
 }
 
 Entity* EntityManager::spawnEntity(const char* name, Transform transform) {

@@ -24,8 +24,8 @@ public:
    U - type stored; must be covariant of T and thus covariant of ScriptInterface
    V - type of resource made available
 */
-template<class T, class U, typename V>
-class ScriptResourceProvider : public ScriptProviderInterface<T, U> {
+template<class T, typename V>
+class ScriptResourceProvider : public ScriptProviderInterface<T> {
     V* _resource;
     T* _providerAllocate() override {
         T* t = new T;
@@ -34,7 +34,7 @@ class ScriptResourceProvider : public ScriptProviderInterface<T, U> {
     }
     void _providerOnDeallocation(ScriptInterface* script) override {}
 public:
-    ScriptResourceProvider(ScriptContainer<U>* scriptcontainer, V* resource) : ScriptProviderInterface<T, U>(scriptcontainer), _resource(resource) {}
+    ScriptResourceProvider(ScriptContainer<T>* scriptcontainer, V* resource) : ScriptProviderInterface<T>(scriptcontainer), _resource(resource) {}
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

@@ -27,7 +27,8 @@ CoreResources::CoreResources() :
     provider_Player(&globalresources.container_Player, &globalresources),
     provider_Chaser(&globalresources.container_Chaser, &globalresources),
     provider_Lifetime(&globalresources.container_Lifetime),
-    provider_Spell_LightBallSpell(&globalresources.container_Spells, &globalresources)
+    provider_Spell_LightBallSpell(nullptr, &globalresources)
+    //provider_Spell_LightBallSpell(&globalresources.container_Spells, &globalresources)
 {}
 
 void initializeCore(CoreResources *core) {
