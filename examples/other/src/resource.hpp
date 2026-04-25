@@ -1,7 +1,7 @@
 #ifndef RESOURCE_HPP_
 #define RESOURCE_HPP_
 
-#include "../../../core/include/entity.hpp"
+#include "../../../core/include/entityutil.hpp"
 
 /* class Resource<T>
    Mix-in class for accessing GlobalResources reference.
