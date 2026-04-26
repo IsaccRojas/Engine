@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <queue>
+#include <unordered_set>
 #include "C:\dev\include\glm\glm.hpp"
 
 #define PI_UTIL 3.14159265358979323846264338327950288
@@ -224,12 +225,12 @@ public:
     }
 
     /* Returns internal unordered map begin() iterator. Key is a void pointer cast of value. */
-    std::unordered_map<void*, T*>::iterator begin() {
+    typename std::unordered_map<void*, T*>::iterator begin() {
         return _Ts.begin();
     }
 
     /* Returns internal unordered map end() iterator. Key is a void pointer cast of value. */
-    std::unordered_map<void*, T*>::iterator end() {
+    typename std::unordered_map<void*, T*>::iterator end() {
         return _Ts.end();
     }
 
@@ -241,16 +242,14 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class RefProviderInterface<T, ...BaseTs>
+/* class RefProvider<T, ...BaseTs>
    Templated implementation of RefReceiverInterface, that can provide covariant type references of T to attached
    RefReceiverInterface references. Supported types for must be specified per the variadic template argument.
-   The scope of any attached RefReceiverInterface must be equal to or a subset of this instance; it is undefined behavior
-   to make calls on this instance or attached receiver instances otherwise.
    T - type received as a reference
    ...BaseTs - types to be supported to be passed to attached RefReceiverInterfaces; must be covariant of T
 */
 template<class T, class ...BaseTs>
-class RefProviderInterface : RefReceiverInterface<T> {
+class RefProvider : RefReceiverInterface<T> {
     std::tuple<std::unordered_set<RefReceiverInterface<BaseTs>*>...> refreceiverlists;
 
     void _passToReceivers(T* t) {
@@ -288,46 +287,29 @@ class RefProviderInterface : RefReceiverInterface<T> {
     };
 
 public:
-    RefProviderInterface() : RefReceiverInterface<T>() {}
+    RefProvider() : RefReceiverInterface<T>() {}
 
+    /* Passes instance to all attached RefReceivers. */
     void receiveInstance(T* t) override {
         _passToReceivers(t);
-        providerReceiveInstance(t);
     }
 
+    /* Passes instance address to all attached RefReceivers. */
     void receiveInstanceAddr(void* vt) override {
-        providerReceiveInstanceAddr(vt);
         _passToReceiversAddr(vt);
     }
 
-    virtual void providerReceiveInstance(T* t) = 0;
-    virtual void providerReceiveInstanceAddr(void *vt) = 0;
-
+    /* Attaches RefReceiver, which will receive instances passed to invocations of receiveInstance(T*) on this provider. */
     template<class U>
     void attach(RefReceiverInterface<U>* refreceiver) {
         std::get<std::unordered_set<RefReceiverInterface<U>*>>(refreceiverlists).insert(refreceiver);
     }
 
+    /* Detaches RefReceiver, which will no longer receive instances from this provider. */
     template<class U>
     void detach(RefReceiverInterface<U>* refreceiver) {
         std::get<std::unordered_set<RefReceiverInterface<U>*>>(refreceiverlists).erase(refreceiver);
     }
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-/* class GenericRefProvider<T, ...BaseTs>
-   Generic implementation of RefProviderInterface<T, ...BaseTs>.
-   T - type received as a reference
-   ...BaseTs - types to be supported to be passed to attached RefReceiverInterfaces; must be covariant of T
-*/
-
-template<class T, class ...BaseTs>
-class GenericRefProvider : public RefProviderInterface<T, BaseTs...> {
-public:
-    GenericRefProvider() : RefProviderInterface<T, BaseTs...>() {}
-    void providerReceiveInstance(T* t) override {}
-    void providerReceiveInstanceAddr(void *vt) override {}
 };
 
 #endif

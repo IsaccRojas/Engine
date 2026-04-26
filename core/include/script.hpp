@@ -280,4 +280,54 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+/* class ScriptProviderInterface<T, ...BaseTs>
+   Templated implementation of the ScriptAllocatorInterface, that contains a RefProvider for passing allocations
+   to attached receivers. The scope of any attached RefReceiverInterface must be equal to or a subset of this instance; 
+   it is undefined behavior to make calls on this instance or attached receiver instances otherwise.
+   T - type allocated; must be covariant of ScriptInterface
+   ...BaseTs - types to be supported to be passed to attached RefReceiverInterfaces; must be covariant of T and thus of ScriptInterface
+*/
+template<class T, class ...BaseTs>
+class ScriptProviderInterface : public ScriptAllocatorInterface {
+   RefProvider<T, BaseTs...> _refprovider;
+
+   ScriptInterface* _allocate() override {
+      T* t = _providerAllocate();
+      _refprovider.receiveInstance(t);
+      return t;
+   }
+
+   void _onDeallocation(ScriptInterface* script) override {
+      _providerOnDeallocation(script);
+      _refprovider.receiveInstanceAddr(script);
+   }
+
+protected:
+   virtual T* _providerAllocate() = 0;
+   virtual void _providerOnDeallocation(ScriptInterface* script) = 0;
+
+public:
+   ScriptProviderInterface() {}
+   template<class U>
+   void attach(RefReceiverInterface<U>* refreceiver) {
+      _refprovider.attach(refreceiver);
+   }
+
+   template<class U>
+   void detach(RefReceiverInterface<U>* refreceiver) {
+      _refprovider.detach(refreceiver);
+   }
+};
+
+/* class GenericScriptProvider<T>
+   Generic implementation of ScriptProviderInterface<T>. Allocates instances of T with default constructor.
+*/
+template<class T>
+class GenericScriptProvider : public ScriptProviderInterface<T, T> {
+   T* _providerAllocate() override { return new T; }
+   void _providerOnDeallocation(ScriptInterface* script) override {}
+public:
+   GenericScriptProvider() {}
+};
+
 #endif

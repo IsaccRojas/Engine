@@ -1,7 +1,7 @@
 #ifndef ENTITY_HPP_
 #define ENTITY_HPP_
 
-#include "scriptutil.hpp"
+#include "script.hpp"
 #include "glenv.hpp"
 #include "filter.hpp"
 #include "C:\dev\include\glm\glm.hpp"
@@ -378,6 +378,60 @@ public:
 
    std::list<Entity*>::iterator groupEnd(const char* group);
 };
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+/* class EntityScriptProviderInterface<T, ...BaseTs>
+   Templated implementation of the EntityScriptAllocatorInterface, that contains a RefProvider for passing allocations
+   to attached receivers. The scope of any attached RefReceiverInterface must be equal to or a subset of this instance; 
+   it is undefined behavior to make calls on this instance or attached receiver instances otherwise.
+   T - type allocated; must be covariant of EntityScriptInterface
+   ...BaseTs - types to be supported to be passed to attached RefReceiverInterfaces; must be covariant of T and thus of EntityScriptInterface
+*/
+template<class T, class ...BaseTs>
+class EntityScriptProviderInterface : public EntityScriptAllocatorInterface {
+    RefProvider<T, BaseTs...> _refprovider;
+
+    EntityScriptInterface* _allocate() override {
+        T* t = _providerAllocate();
+        _refprovider.receiveInstance(t);
+        return t;
+    }
+
+    void _onDeallocation(ScriptInterface* script) override {
+        _providerOnDeallocation(script);
+        _refprovider.receiveInstanceAddr(script);
+    }
+
+protected:
+    virtual T* _providerAllocate() = 0;
+    virtual void _providerOnDeallocation(EntityScriptInterface* script) = 0;
+
+public:
+    EntityScriptProviderInterface() {}
+    template<class U>
+    void attach(RefReceiverInterface<U>* refreceiver) {
+        _refprovider.attach(refreceiver);
+    }
+
+    template<class U>
+    void detach(RefReceiverInterface<U>* refreceiver) {
+        _refprovider.detach(refreceiver);
+    }
+};
+
+/* class GenericEntityScriptProvider<T>
+   Generic implementation of EntityScriptProviderInterface<T>. Allocates instances of T with default constructor.
+*/
+template<class T>
+class GenericEntityScriptProvider : public EntityScriptProviderInterface<T, T> {
+    T* _providerAllocate() override { return new T; }
+    void _providerOnDeallocation(EntityScriptInterface* script) override {}
+public:
+    GenericEntityScriptProvider() {}
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
 
 bool computeCollisionAABB(Transform transf1, Transform transf2);
 
