@@ -8,6 +8,8 @@ const float diag_factor = glm::sin(glm::radians(45.0f));
 
 struct GlobalResources;
 
+// --------------------------------------------------------------------------------------------------------------------------
+
 class SpellInterface : public ScriptInterface, public Resource<GlobalResources> {
     void _init() override;
     void _exec() override;
@@ -21,6 +23,21 @@ public:
     SpellInterface();
     glm::vec3 pos;
     glm::vec3 dir;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+class ObjectInterface : public EntityScriptInterface, public Resource<GlobalResources> {
+    void _initEntity() override;
+    void _execEntity() override;
+    void _killEntity() override;
+    void _updateEntity() override;
+    virtual void _initObject() = 0;
+    virtual void _execObject() = 0;
+    virtual void _killObject() = 0;
+    virtual void _updateObject() = 0;
+public:
+    ObjectInterface();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -57,10 +74,10 @@ struct Castable {
 // --------------------------------------------------------------------------------------------------------------------------
 
 /*
-    Entity Script Player 
+    class ES_Player 
     Player script.
 */
-class ES_Player : public EntityScriptInterface, public Resource<GlobalResources> {
+class ES_Player : public ObjectInterface {
     std::list<Castable> _castables;
     std::list<Castable> _casts;
     float _hurt_cooldown_max;
@@ -68,10 +85,10 @@ class ES_Player : public EntityScriptInterface, public Resource<GlobalResources>
     float _cast_cooldown_max;
     float _cast_cooldown;
     float _speed;
-    void _initEntity() override;
-    void _execEntity() override;
-    void _killEntity() override;
-    void _updateEntity() override;
+    void _initObject() override;
+    void _execObject() override;
+    void _killObject() override;
+    void _updateObject() override;
     void _receive(Entity* other, std::string message) override;
     void _collide(Entity* other) override;
 public:
@@ -82,15 +99,15 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 /*
-    Entity Script Chaser
+    class Chaser
     Chases assigned target directly.
 */
-class ES_Chaser : public EntityScriptInterface, public Resource<GlobalResources> {
+class ES_Chaser : public ObjectInterface {
     Entity *_target;
-    void _initEntity() override;
-    void _execEntity() override;
-    void _killEntity() override;
-    void _updateEntity() override;
+    void _initObject() override;
+    void _execObject() override;
+    void _killObject() override;
+    void _updateObject() override;
     void _receive(Entity *other, std::string message) override;
     void _collide(Entity *other) override;
 public:

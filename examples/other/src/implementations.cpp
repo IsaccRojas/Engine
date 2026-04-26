@@ -19,6 +19,14 @@ SpellInterface::SpellInterface() : ScriptInterface(), Resource(), pos(glm::vec3(
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+void ObjectInterface::_initEntity() { _initObject(); }
+void ObjectInterface::_execEntity() { _execObject();}
+void ObjectInterface::_killEntity() { _killObject(); }
+void ObjectInterface::_updateEntity() { _updateObject(); }
+ObjectInterface::ObjectInterface() : EntityScriptInterface(), Resource() {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 void Spell_LightBallSpell::_initSpell() {}
 
 void Spell_LightBallSpell::_execSpell() {
@@ -38,7 +46,7 @@ Spell_LightBallSpell::Spell_LightBallSpell() : SpellInterface() {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Player::_initEntity() {
+void ES_Player::_initObject() {
     _castables.push_back(Castable{
         nullptr,
         CASTTYPE_STAVE,
@@ -49,7 +57,7 @@ void ES_Player::_initEntity() {
     });
 }
 
-void ES_Player::_execEntity() {
+void ES_Player::_execObject() {
     // check if hurt (does nothing for now)
     if (_hurt_cooldown > 0.0f) {
         _hurt_cooldown -= 1.0f;
@@ -96,8 +104,8 @@ void ES_Player::_execEntity() {
         enqueueKill();
 }
 
-void ES_Player::_killEntity() {}
-void ES_Player::_updateEntity() {}
+void ES_Player::_killObject() {}
+void ES_Player::_updateObject() {}
 void ES_Player::_receive(Entity* other, std::string message) {}
 
 void ES_Player::_collide(Entity* other) {
@@ -105,8 +113,7 @@ void ES_Player::_collide(Entity* other) {
 }
 
 ES_Player::ES_Player() :
-    EntityScriptInterface(),
-    Resource(),
+    ObjectInterface(),
     _hurt_cooldown_max(120.0f),
     _hurt_cooldown(0.0f),
     _cast_cooldown_max(24.0f),
@@ -138,9 +145,9 @@ void ES_Player::checkCasts() {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Chaser::_initEntity() {}
+void ES_Chaser::_initObject() {}
 
-void ES_Chaser::_execEntity() {
+void ES_Chaser::_execObject() {
     // find target if one is not stored
     if (!_target)
         // iterate on all players
@@ -174,17 +181,17 @@ void ES_Chaser::_execEntity() {
     }
 }
 
-void ES_Chaser::_killEntity() {
+void ES_Chaser::_killObject() {
     // unlock target in case it is stored
     if (_target)
         _target->entityscriptview().unlock(&this->key());
 }
 
-void ES_Chaser::_updateEntity() {}
+void ES_Chaser::_updateObject() {}
 void ES_Chaser::_receive(Entity *other, std::string message) {}
 void ES_Chaser::_collide(Entity *other) {}
 
-ES_Chaser::ES_Chaser() : EntityScriptInterface(), Resource(), _target(nullptr) {}
+ES_Chaser::ES_Chaser() : ObjectInterface(), _target(nullptr) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
