@@ -154,10 +154,10 @@ struct GlobalResources {
     EntityScriptExecutor* executor;
     GLFWInput* input;
     
-    ScriptContainer<ES_Player> container_Player;
-    ScriptContainer<ES_Chaser> container_Chaser;
-    ScriptContainer<ES_Lifetime> container_Lifetime;
-    ScriptContainer<SpellInterface> container_Spells;
+    RefContainer<ES_Player> container_Player;
+    RefContainer<ES_Chaser> container_Chaser;
+    RefContainer<ES_Lifetime> container_Lifetime;
+    RefContainer<SpellInterface> container_Spells;
 
     std::vector<std::vector<TileInfo>> map;
 };

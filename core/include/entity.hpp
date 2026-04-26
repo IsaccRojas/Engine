@@ -405,7 +405,7 @@ class EntityScriptProviderInterface : public EntityScriptAllocatorInterface {
 
 protected:
     virtual T* _providerAllocate() = 0;
-    virtual void _providerOnDeallocation(EntityScriptInterface* script) = 0;
+    virtual void _providerOnDeallocation(ScriptInterface* script) = 0;
 
 public:
     EntityScriptProviderInterface() {}
@@ -426,7 +426,7 @@ public:
 template<class T>
 class GenericEntityScriptProvider : public EntityScriptProviderInterface<T, T> {
     T* _providerAllocate() override { return new T; }
-    void _providerOnDeallocation(EntityScriptInterface* script) override {}
+    void _providerOnDeallocation(ScriptInterface* script) override {}
 public:
     GenericEntityScriptProvider() {}
 };
