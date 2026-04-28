@@ -24,8 +24,8 @@ struct CoreResources {
 
     GlobalResources globalresources;
 
-    EntityScriptResourceProvider<ES_Player, GlobalResources, ES_Player, ObjectInterface> provider_Player;
-    EntityScriptResourceProvider<ES_Chaser, GlobalResources, ES_Chaser, ObjectInterface> provider_Chaser;
+    EntityScriptResourceProvider<ES_Player, GlobalResources, ES_Player> provider_Player;
+    EntityScriptResourceProvider<ES_Chaser, GlobalResources, ES_Chaser> provider_Chaser;
     GenericEntityScriptProvider<ES_Lifetime> provider_Lifetime;
     ScriptResourceProvider<Spell_LightBallSpell, GlobalResources, SpellInterface> provider_Spell_LightBallSpell;
 };

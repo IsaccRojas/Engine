@@ -8,7 +8,7 @@ ScriptInterface::ScriptInterface(ScriptInterface&& other) { operator=(std::move(
 ScriptInterface::ScriptInterface() :
     _executor(nullptr),
     _scriptallocator(nullptr),
-    _last_execqueue(-1),
+    _preferred_queue(-1),
     _exec_enqueued(false), 
     _kill_enqueued(false),
     _kill_started(false),
@@ -21,7 +21,7 @@ ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
     if (this != &other) {
         _executor = other._executor;
         _this_iter = other._this_iter;
-        _last_execqueue = other._last_execqueue;
+        _preferred_queue = other._preferred_queue;
         _exec_enqueued = other._exec_enqueued;
         _kill_enqueued = other._kill_enqueued;
         _kill_started = other._kill_started;
@@ -29,7 +29,7 @@ ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
         _keys = other._keys;
         _keys_count = other._keys_count;
         other._executor = nullptr;
-        other._last_execqueue = -1;
+        other._preferred_queue = -1;
         other._exec_enqueued = false;
         other._exec_enqueued = false;
         other._kill_started = false;
@@ -60,51 +60,41 @@ void ScriptInterface::runUpdate() {
         _update();
 }
 
-int ScriptInterface::getLastExecQueue() { return _last_execqueue; }
+int& ScriptInterface::preferred_queue() { return _preferred_queue; }
 bool ScriptInterface::getExecEnqueued() { return _exec_enqueued; }
 bool ScriptInterface::getKillEnqueued() { return _kill_enqueued; }
 bool ScriptInterface::getKillStarted() { return _kill_started; }
 const char *ScriptInterface::getName() { return _script_name.c_str(); }
 
-void ScriptInterface::enqueueExec(unsigned queue) {
+void ScriptInterface::enqueueExec() {
     if (!_executor)
         throw std::runtime_error("Attempt to enqueue for execution with null ScriptExecutor owner");
+    if (_preferred_queue < 0)
+        throw std::runtime_error("Attempt to enqueue for execution through Script with negative preferred queue");
 
-    _executor->enqueueExec(ScriptView(this), queue);
+    _executor->enqueueExec(this, _preferred_queue);
 }
 
 void ScriptInterface::enqueueKill() {
     if (!_executor)
         throw std::runtime_error("Attempt to enqueue for kill with null ScriptExecutor owner");
 
-    _executor->enqueueKill(ScriptView(this));
+    _executor->enqueueKill(this);
 }
 
 ScriptKey& ScriptInterface::key() { return _key; };
+
 void ScriptInterface::lockout(ScriptKey* k) {
     _keys.insert(k);
 }
+
 void ScriptInterface::unlock(ScriptKey* k) {
     _keys.erase(k);
 }
+
 unsigned ScriptInterface::lockoutCount() {
     return _keys.size();
 }
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-ScriptView::ScriptView(ScriptInterface* script) : _script(script) {};
-
-void ScriptView::enqueueExec(unsigned queue) { _script->enqueueExec(queue); }
-void ScriptView::enqueueKill() { _script->enqueueKill(); }
-int ScriptView::getLastExecQueue() { return _script->getLastExecQueue(); }
-bool ScriptView::getExecEnqueued() { return _script->getExecEnqueued(); }
-bool ScriptView::getKillEnqueued() { return _script->getKillEnqueued(); }
-const char* ScriptView::getName() { return _script->getName(); }
-ScriptKey ScriptView::key() { return _script->key(); }
-void ScriptView::lockout(ScriptKey *k) { _script->lockout(k); }
-void ScriptView::unlock(ScriptKey *k) { _script->unlock(k); }
-ScriptInterface* ScriptView::getScript() { return _script; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -126,12 +116,12 @@ bool ScriptAllocatorInterface::hasReference(ScriptInterface* script) {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-ScriptExecutor::ScriptEnqueue::ScriptEnqueue(ScriptExecutor* executor, std::string name, int execution_queue) :
-    _executor(executor), _name(name), _execution_queue(execution_queue)
+ScriptExecutor::ScriptEnqueue::ScriptEnqueue(ScriptExecutor* executor, std::string name) :
+    _executor(executor), _name(name)
 {}
 ScriptExecutor::ScriptEnqueue::~ScriptEnqueue() { /* automatic destruction is fine */ }
-ScriptView ScriptExecutor::ScriptEnqueue::spawn() {
-    return _executor->spawnScript(_name.c_str(), _execution_queue);
+ScriptInterface* ScriptExecutor::ScriptEnqueue::spawn() {
+    return _executor->spawnScript(_name.c_str());
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -159,7 +149,7 @@ ScriptExecutor &ScriptExecutor::operator=(ScriptExecutor&& other) {
     return *this;
 }
 
-void ScriptExecutor::_setupScript(ScriptInterface* script, const char* script_name, int execution_queue, ScriptAllocatorInterface* scriptallocator) {
+void ScriptExecutor::_setupScript(ScriptInterface* script, const char* script_name, ScriptAllocatorInterface* scriptallocator) {
     // get information
     ScriptInfo &info = _scriptinfos[script_name];
 
@@ -167,20 +157,19 @@ void ScriptExecutor::_setupScript(ScriptInterface* script, const char* script_na
     script->_executor = this;
     script->_scriptallocator = scriptallocator;
     script->_this_iter = _scripts.push_back(script);
+    script->_preferred_queue = info.preferred_queue;
+    script->_script_name = script_name;
 
     // store in allocator
     scriptallocator->_insertReference(script);
 
-    // set script fields (make copy of string passed)
-    script->_script_name = script_name;
-    
     // enqueue if non-negative queue provided
-    if (execution_queue >= 0)
-        enqueueExec(ScriptView(script), execution_queue);
+    if (script->preferred_queue() >= 0)
+        enqueueExec(script, script->preferred_queue());
     
     // try spawn callback if it exists
-    if (info._spawn_callback)
-        info._spawn_callback(script);
+    if (info.spawn_callback)
+        info.spawn_callback(script);
 }
 
 void ScriptExecutor::_pushSpawnEnqueue(ScriptEnqueue *enqueue) {
@@ -192,10 +181,10 @@ void ScriptExecutor::_erase(ScriptInterface* script) {
     ScriptInfo &scriptinfo = _scriptinfos[script->_script_name];
 
     // try removal callback if it exists
-    if (scriptinfo._remove_callback)
-        scriptinfo._remove_callback(script);
+    if (scriptinfo.remove_callback)
+        scriptinfo.remove_callback(script);
     
-    scriptinfo._allocator->_onDeallocation(script);
+    scriptinfo.allocator->_onDeallocation(script);
 
     script->_scriptallocator->_removeReference(script);
     _scripts.erase(script->_this_iter);
@@ -233,24 +222,22 @@ void ScriptExecutor::addScript(ScriptInfo scriptinfo, const char* name) {
         throw std::runtime_error("Attempt to add already added ScriptInterface name");
 }
 
-ScriptView ScriptExecutor::spawnScript(const char* script_name, int execution_queue) {
+ScriptInterface* ScriptExecutor::spawnScript(const char* script_name) {
     // allocate instance and set it up
-    ScriptInterface* script = _scriptinfos[script_name]._allocator->_allocate();
-    _setupScript(script, script_name, execution_queue, _scriptinfos[script_name]._allocator);
+    ScriptInterface* script = _scriptinfos[script_name].allocator->_allocate();
+    _setupScript(script, script_name, _scriptinfos[script_name].allocator);
 
     // run initialization method
     script->runInit();
 
-    return ScriptView(script);
+    return script;
 }
 
-void ScriptExecutor::enqueueSpawn(const char* script_name, int execution_queue) {
-    _pushSpawnEnqueue(new ScriptEnqueue(this, script_name, execution_queue));
+void ScriptExecutor::enqueueSpawn(const char* script_name) {
+    _pushSpawnEnqueue(new ScriptEnqueue(this, script_name));
 }
 
-void ScriptExecutor::enqueueExec(ScriptView scriptview, unsigned queue) {
-    ScriptInterface* script = scriptview.getScript();
-
+void ScriptExecutor::enqueueExec(ScriptInterface* script, unsigned queue) {
     if (queue >= _queuepairs.size())
         throw std::out_of_range("Execution queue index out of range");
 
@@ -261,9 +248,7 @@ void ScriptExecutor::enqueueExec(ScriptView scriptview, unsigned queue) {
     }
 }
 
-void ScriptExecutor::enqueueKill(ScriptView scriptview) {
-    ScriptInterface* script = scriptview.getScript();
-
+void ScriptExecutor::enqueueKill(ScriptInterface* script) {
     if (!(script->_kill_enqueued)) {
         // push to kill queue
         _push_killqueue.push(script);
@@ -271,16 +256,16 @@ void ScriptExecutor::enqueueKill(ScriptView scriptview) {
     }
 }
 
-std::vector<ScriptView> ScriptExecutor::runSpawnQueue() {
-    std::vector<ScriptView> scriptviews;
+std::vector<ScriptInterface*> ScriptExecutor::runSpawnQueue() {
+    std::vector<ScriptInterface*> scripts;
 
     while (!(_scriptenqueues.empty())) {
         ScriptEnqueue* scriptenqueue = _scriptenqueues.front();
-        scriptviews.push_back(scriptenqueue->spawn());
+        scripts.push_back(scriptenqueue->spawn());
         _scriptenqueues.pop();
     }
 
-    return scriptviews;
+    return scripts;
 }
 
 void ScriptExecutor::runExecQueue(unsigned queue) {
@@ -297,8 +282,7 @@ void ScriptExecutor::runExecQueue(unsigned queue) {
     ScriptInterface* script;
     while (!(run_execqueue.empty())) {
         script = run_execqueue.front();
-
-        script->_last_execqueue = queue;
+        
         script->_exec_enqueued = false;
         script->runExec();
         

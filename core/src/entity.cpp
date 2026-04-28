@@ -51,22 +51,12 @@ void EntityScriptInterface::collide(Entity* entity) {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-EntityScriptView::EntityScriptView(EntityScriptInterface* entityscript) : ScriptView(entityscript), _entityscript(entityscript) {}
-
-void EntityScriptView::receive(Entity* entity, std::string message) { _entityscript->receive(entity, message); }
-
-void EntityScriptView::collide(Entity* entity) { _entityscript->collide(entity); }
-
-EntityScriptInterface* EntityScriptView::getEntityScript() { return _entityscript; }
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-ScriptView EntityScriptExecutor::EntityScriptEnqueue::spawn() {
-    return _entityscriptexecutor->spawnEntityScript(_name.c_str(), _execution_queue, _entity);
+ScriptInterface* EntityScriptExecutor::EntityScriptEnqueue::spawn() {
+    return _entityscriptexecutor->spawnEntityScript(_name.c_str(), _entity);
 }
 
-EntityScriptExecutor::EntityScriptEnqueue::EntityScriptEnqueue(EntityScriptExecutor* entityscriptexecutor, std::string name, int execution_queue, Entity* entity) :
-    ScriptEnqueue(nullptr, name, execution_queue), _entityscriptexecutor(entityscriptexecutor), _entity(entity)
+EntityScriptExecutor::EntityScriptEnqueue::EntityScriptEnqueue(EntityScriptExecutor* entityscriptexecutor, std::string name, Entity* entity) :
+    ScriptEnqueue(nullptr, name), _entityscriptexecutor(entityscriptexecutor), _entity(entity)
 {}
 
 void EntityScriptExecutor::_setupEntityScript(EntityScriptInterface* entityscript, Entity* entity) {
@@ -100,41 +90,41 @@ void EntityScriptExecutor::uninit() {
 
 void EntityScriptExecutor::addEntityScript(EntityScriptInfo entityscriptinfo, const char* name) {
     if (!hasAdded(name)) {
-        ScriptExecutor::addScript(ScriptInfo{entityscriptinfo._allocator, entityscriptinfo._spawn_callback, entityscriptinfo._remove_callback}, name);
+        ScriptExecutor::addScript(ScriptInfo{entityscriptinfo.allocator, entityscriptinfo.preferred_queue, entityscriptinfo.spawn_callback, entityscriptinfo.remove_callback}, name);
         _entityscriptinfos[name] = entityscriptinfo;
     } else
         throw std::runtime_error("Attempt to add already added name");
 }
 
-EntityScriptView EntityScriptExecutor::spawnEntityScript(const char* entityscript_name, int execution_queue, Entity* entity) {
+EntityScriptInterface* EntityScriptExecutor::spawnEntityScript(const char* entityscript_name, Entity* entity) {
     // allocate instance and set it up
-    EntityScriptInterface* entityscript = _entityscriptinfos[entityscript_name]._allocator->_allocate();
-    _setupScript(entityscript, entityscript_name, execution_queue, _entityscriptinfos[entityscript_name]._allocator);
+    EntityScriptInterface* entityscript = _entityscriptinfos[entityscript_name].allocator->_allocate();
+    _setupScript(entityscript, entityscript_name, _entityscriptinfos[entityscript_name].allocator);
     _setupEntityScript(entityscript, entity);
 
     // run initialization method
     entityscript->runInit();
 
-    return EntityScriptView(entityscript);
+    return entityscript;
 }
 
-void EntityScriptExecutor::enqueueSpawnEntityScript(const char* entityscript_name, int execution_queue, Entity* entity) {
-    _pushSpawnEnqueue(new EntityScriptEnqueue(this, entityscript_name, execution_queue, entity));
+void EntityScriptExecutor::enqueueSpawnEntityScript(const char* entityscript_name, Entity* entity) {
+    _pushSpawnEnqueue(new EntityScriptEnqueue(this, entityscript_name, entity));
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-Entity::Entity() : _entitymanager(nullptr), _entityscriptview(nullptr), _script_kill_started(false) {}
+Entity::Entity() : _entitymanager(nullptr), _entityscript(nullptr), _script_kill_started(false) {}
 Entity::~Entity() {}
 
 void Entity::checkScriptStatus() {
-    _script_kill_started = _entityscriptview.getScript()->getKillStarted();
+    _script_kill_started = _entityscript->getKillStarted();
 }
 
 const char* Entity::getName() { return _entity_name.c_str(); }
 std::vector<Quad*>& Entity::quads() { return _quads; }
-std::vector<EntityColliderView>& Entity::entitycolliderviews() { return _entitycolliderviews; }
-EntityScriptView& Entity::entityscriptview() { return _entityscriptview; }
+std::vector<EntityCollider*>& Entity::entitycolliders() { return _entitycolliders; }
+EntityScriptInterface* Entity::entityscript() { return _entityscript; }
 Transform& Entity::globaltransform() { return _globaltransform; }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -209,24 +199,6 @@ bool& EntityCollider::collision_enabled() { return _collision_enabled; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-EntityColliderView::EntityColliderView(EntityCollider* collider) : _collider(collider) {}
-
-bool& EntityColliderView::collision_enabled() { return _collider->collision_enabled(); }
-
-void EntityColliderView::resetTransformation() { _collider->resetTransformation(); }
-
-void EntityColliderView::applyTransform(Transform transform) { _collider->applyTransform(transform); }
-
-Transform EntityColliderView::getBaseTransformation() { return _collider->getBaseTransformation(); }
-
-Transform EntityColliderView::getCurrentTransformation() { return _collider->getCurrentTransformation(); }
-
-Transform EntityColliderView::getPrevAppliedTransform() { return _collider->getPrevAppliedTransform(); }
-
-EntityCollider* EntityColliderView::getCollider() { return _collider; }
-
-// --------------------------------------------------------------------------------------------------------------------------
-
 CollisionSpace::CollisionSpace() : _initialized(false) {}
 CollisionSpace::CollisionSpace(CollisionSpace&& other) { operator=(std::move(other)); }
 CollisionSpace::~CollisionSpace() { /* automatic destruction is fine */ }
@@ -261,7 +233,7 @@ void CollisionSpace::addCollider(EntityColliderInfo entitycolliderinfo, const ch
     _entitycolliderinfos[name] = entitycolliderinfo;
 }
 
-EntityColliderView CollisionSpace::spawnCollider(const char* name, Entity* entity, Transform transform) {
+EntityCollider* CollisionSpace::spawnCollider(const char* name, Entity* entity, Transform transform) {
     if (!entity)
         throw std::runtime_error("Attempt to spawn EntityCollider with null Entity reference");
 
@@ -280,10 +252,10 @@ EntityColliderView CollisionSpace::spawnCollider(const char* name, Entity* entit
     collider->resetTransformation();
     collider->applyTransform(transform);
 
-    return EntityColliderView(collider);
+    return collider;
 }
 
-void CollisionSpace::erase(EntityColliderView colliderview) { _colliders.erase(colliderview.getCollider()->_this_iter); }
+void CollisionSpace::erase(EntityCollider* collider) { _colliders.erase(collider->_this_iter); }
 
 void CollisionSpace::detectCollisionAABB() {
     // perform pair-wise collision detection
@@ -320,8 +292,8 @@ void CollisionSpace::detectCollisionAABB() {
             ) {
                 // detect and handle collision
                 if (computeCollisionAABB({c1->_pos, c1->_scale}, {c2->_pos, c2->_scale})) {
-                    c1->entity().entityscriptview().collide(&(c2->entity()));
-                    c2->entity().entityscriptview().collide(&(c1->entity()));
+                    c1->entity().entityscript()->collide(&(c2->entity()));
+                    c2->entity().entityscript()->collide(&(c1->entity()));
                 }
             }
 
@@ -339,8 +311,8 @@ bool CollisionSpace::initialized() { return _initialized; }
 void EntityManager::_removeEntity(Entity* entity) {
     for (const unsigned &id : entity->_quad_ids)
         _glenv->remove(id);
-    for (const EntityColliderView& view : entity->_entitycolliderviews)
-        _collisionspace->erase(view);
+    for (EntityCollider* collider : entity->_entitycolliders)
+        _collisionspace->erase(collider);
 
     _entities[entity->_group.c_str()].erase(entity->_this_iter);
 }
@@ -419,7 +391,7 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
 
     // instantiate each EntityCollider in info and push to entity's storage
     for (const std::string& ecn : ei.entitycollider_names)
-        entity->_entitycolliderviews.push_back(_collisionspace->spawnCollider(ecn.c_str(), entity, transform));
+        entity->_entitycolliders.push_back(_collisionspace->spawnCollider(ecn.c_str(), entity, transform));
 
     entity->_entity_name = name;
     entity->_this_iter = _entities[ei.group.c_str()].push_back(entity);
@@ -427,7 +399,7 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     entity->_globaltransform = transform;
     
     // instantiate EntityScriptInterface in info and push to entity's storage
-    entity->_entityscriptview = _entityscriptexecutor->spawnEntityScript(ei.entityscript_name.c_str(), ei.execution_queue, entity);
+    entity->_entityscript = _entityscriptexecutor->spawnEntityScript(ei.entityscript_name.c_str(), entity);
     
     return entity;
 }
@@ -448,8 +420,8 @@ void EntityManager::checkEntities() {
 
             // check if script needs to be enqueued
             EntityInfo &ei = _entityinfos[entity->getName()];
-            if ((!(entity->entityscriptview().getExecEnqueued())) && ei.auto_enqueue)
-                entity->entityscriptview().enqueueExec(ei.execution_queue);
+            if ((!(entity->entityscript()->getExecEnqueued())) && ei.auto_enqueue)
+                entity->entityscript()->enqueueExec();
 
             // update transforms
             for (auto &q : entity->quads()) {
@@ -459,9 +431,9 @@ void EntityManager::checkEntities() {
                 q->animationstate().step();
                 q->writeAnimation();
             }
-            for (auto &ecv : entity->entitycolliderviews()) {
-                ecv.resetTransformation();
-                ecv.applyTransform(entity->globaltransform());
+            for (auto &ec : entity->entitycolliders()) {
+                ec->resetTransformation();
+                ec->applyTransform(entity->globaltransform());
             }
         }
 

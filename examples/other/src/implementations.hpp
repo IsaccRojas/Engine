@@ -27,21 +27,6 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-class ObjectInterface : public EntityScriptInterface, public Resource<GlobalResources> {
-    void _initEntity() override;
-    void _execEntity() override;
-    void _killEntity() override;
-    void _updateEntity() override;
-    virtual void _initObject() = 0;
-    virtual void _execObject() = 0;
-    virtual void _killObject() = 0;
-    virtual void _updateObject() = 0;
-public:
-    ObjectInterface();
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
 class Spell_LightBallSpell : public SpellInterface {
     void _initSpell() override;
     void _execSpell() override;
@@ -77,7 +62,7 @@ struct Castable {
     class ES_Player 
     Player script.
 */
-class ES_Player : public ObjectInterface {
+class ES_Player : public EntityScriptInterface, public Resource<GlobalResources> {
     std::list<Castable> _castables;
     std::list<Castable> _casts;
     float _hurt_cooldown_max;
@@ -85,10 +70,10 @@ class ES_Player : public ObjectInterface {
     float _cast_cooldown_max;
     float _cast_cooldown;
     float _speed;
-    void _initObject() override;
-    void _execObject() override;
-    void _killObject() override;
-    void _updateObject() override;
+    void _initEntity() override;
+    void _execEntity() override;
+    void _killEntity() override;
+    void _updateEntity() override;
     void _receive(Entity* other, std::string message) override;
     void _collide(Entity* other) override;
 public:
@@ -102,12 +87,12 @@ public:
     class Chaser
     Chases assigned target directly.
 */
-class ES_Chaser : public ObjectInterface {
+class ES_Chaser : public EntityScriptInterface, public Resource<GlobalResources> {
     Entity *_target;
-    void _initObject() override;
-    void _execObject() override;
-    void _killObject() override;
-    void _updateObject() override;
+    void _initEntity() override;
+    void _execEntity() override;
+    void _killEntity() override;
+    void _updateEntity() override;
     void _receive(Entity *other, std::string message) override;
     void _collide(Entity *other) override;
 public:

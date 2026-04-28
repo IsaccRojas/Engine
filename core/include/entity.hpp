@@ -7,11 +7,11 @@
 #include "C:\dev\include\glm\glm.hpp"
 #include "C:\dev\include\glm\gtx\rotate_vector.hpp"
 
-class EntityColliderView;
 class EntityScriptExecutor;
+class EntityCollider;
+class CollisionSpace;
 class Entity;
 class EntityScriptAllocatorInterface;
-class CollisionSpace;
 class EntityManager;
 
 /* class EntityScriptInterface
@@ -63,25 +63,12 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class EntityScriptView
-   Contains a EntityScript reference and wraps access to EntityScriptInterface data without owning it. Invalid if the viewed EntityScriptInterface is destroyed.
-*/
-class EntityScriptView : public ScriptView {
-   EntityScriptInterface* _entityscript;
-public:
-   EntityScriptView(EntityScriptInterface* entityscript);
-   void receive(Entity* entity, std::string message);
-   void collide(Entity* entity);
-   EntityScriptInterface* getEntityScript();
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
 // struct holding EntityScript information mapped to a name
 struct EntityScriptInfo {
-   EntityScriptAllocatorInterface* _allocator;
-   std::function<void(ScriptView)> _spawn_callback;
-   std::function<void(ScriptView)> _remove_callback;
+   EntityScriptAllocatorInterface* allocator;
+   int preferred_queue;
+   std::function<void(ScriptInterface*)> spawn_callback;
+   std::function<void(ScriptInterface*)> remove_callback;
    // default copy assignment/construction are fine
 };
 
@@ -97,8 +84,8 @@ protected:
    
    protected:
       // invokes the containing EntityScriptExecutor's _spawnEntityScript() method and returns the spawned instance's reference
-      virtual ScriptView spawn() override;
-      EntityScriptEnqueue(EntityScriptExecutor* entityscriptexecutor, std::string name, int execution_queue, Entity* entity);
+      virtual ScriptInterface* spawn() override;
+      EntityScriptEnqueue(EntityScriptExecutor* entityscriptexecutor, std::string name, Entity* entity);
       // default copy assignment/construction are fine (copying implies another enqueue in the same EntityScriptExecutor)
    };
 
@@ -135,10 +122,10 @@ public:
    void addEntityScript(EntityScriptInfo entityscriptinfo, const char* name);
 
    /* Spawns a EntityScript using a name previously added to this executor, and returns its ID. */
-   EntityScriptView spawnEntityScript(const char* entityscript_name, int execution_queue, Entity* entity);
+   EntityScriptInterface* spawnEntityScript(const char* entityscript_name, Entity* entity);
 
    /* Enqueues an EntityScript to be spawned when calling runSpawnQueue(). */
-   void enqueueSpawnEntityScript(const char* entityscript_name, int execution_queue, Entity* entity);
+   void enqueueSpawnEntityScript(const char* entityscript_name, Entity* entity);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -152,10 +139,10 @@ class Entity {
    std::list<Entity*>::iterator _this_iter;
    std::string _group;
 
-   EntityScriptView _entityscriptview;
+   EntityScriptInterface* _entityscript;
    std::vector<unsigned> _quad_ids;
    std::vector<Quad*> _quads;
-   std::vector<EntityColliderView> _entitycolliderviews;
+   std::vector<EntityCollider*> _entitycolliders;
 
    bool _script_kill_started;
 
@@ -172,9 +159,9 @@ public:
    void checkScriptStatus();
 
    const char* getName();
-   EntityScriptView& entityscriptview();
+   EntityScriptInterface* entityscript();
    std::vector<Quad*>& quads();
-   std::vector<EntityColliderView>& entitycolliderviews();
+   std::vector<EntityCollider*>& entitycolliders();
    Transform& globaltransform();
 };
 
@@ -254,24 +241,6 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class EntityColliderView
-   Contains a EntityCollider reference and wraps access to EntityCollider data without owning it. Invalid if the viewed EntityCollider is destroyed.
-*/
-class EntityColliderView {
-   EntityCollider* _collider;
-public:
-   EntityColliderView(EntityCollider* collider);
-   bool& collision_enabled();
-   void resetTransformation();
-   void applyTransform(Transform transform);
-   Transform getBaseTransformation();
-   Transform getCurrentTransformation();
-   Transform getPrevAppliedTransform();
-   EntityCollider* getCollider();
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
 struct EntityColliderInfo {
    glm::vec3 pos;
    glm::vec3 scale;
@@ -308,18 +277,18 @@ public:
 
    void addCollider(EntityColliderInfo entitycolliderinfo, const char* name);
 
-   /* Spawns a Collider and returns a ColliderView. */
-   EntityColliderView spawnCollider(const char* name, Entity* entity, Transform transform);
+   /* Spawns a EntityCollider and returns a reference to it. */
+   EntityCollider* spawnCollider(const char* name, Entity* entity, Transform transform);
 
-   /* Erases the Collider referenced by the provided ColliderView. */
-   void erase(EntityColliderView colliderview);
+   /* Erases the EntityCollider referenced by the provided EntityCollider. */
+   void erase(EntityCollider* collider);
 
    /* Detects collision between all instances within the system via AABB method. This is done by iterating on all elements
       in a pair-wise fashion. All collided instances have their collided count incremented.
    */
    void detectCollisionAABB();
 
-   /* Returns the number of Colliders in this CollisionSpace. */
+   /* Returns the number of EntityColliders in this CollisionSpace. */
    unsigned getCount();
 
    /* Returns whether or not this CollisionSpace instance has been initialized or not. */
@@ -331,7 +300,6 @@ public:
 struct EntityInfo {
    std::string group;
    std::string entityscript_name;
-   int execution_queue;
    bool auto_enqueue;
    std::list<std::string> quad_names;
    std::list<std::string> entitycollider_names;

@@ -38,7 +38,7 @@ class ScriptInterface {
    ScriptExecutor* _executor;
    ScriptAllocatorInterface* _scriptallocator;
    std::list<ScriptInterface*>::iterator _this_iter;
-   int _last_execqueue;
+   int _preferred_queue;
    bool _exec_enqueued;
    bool _kill_enqueued; 
    bool _kill_started;
@@ -82,10 +82,8 @@ public:
    void runKill();
    void runUpdate();
 
-   /* Enqueues the ScriptInterface for execution.
-      - queue - queue to enqueue into
-   */
-   void enqueueExec(unsigned queue);
+   /* Enqueues the ScriptInterface for execution. */
+   void enqueueExec();
 
    /* Kills the ScriptInterface. */
    void enqueueKill();
@@ -94,7 +92,7 @@ public:
 
    /* Gets various internal flags used by ScriptExecutors to control state.
    */
-   int getLastExecQueue();
+   int& preferred_queue();
    bool getExecEnqueued();
    bool getKillEnqueued();
    bool getKillStarted();
@@ -103,27 +101,6 @@ public:
    void lockout(ScriptKey* k);
    void unlock(ScriptKey* k);
    unsigned lockoutCount();
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-/* class ScriptView
-   Contains a ScriptInterface reference and wraps access to ScriptInterface data without owning it. Invalid if the viewed ScriptInterface is destroyed.
-*/
-class ScriptView {
-   ScriptInterface* _script;
-public:
-   ScriptView(ScriptInterface* script);
-   void enqueueExec(unsigned queue);
-   void enqueueKill();
-   int getLastExecQueue();
-   bool getExecEnqueued();
-   bool getKillEnqueued();
-   const char* getName();
-   ScriptKey key();
-   void lockout(ScriptKey* k);
-   void unlock(ScriptKey* k);
-   ScriptInterface* getScript();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -164,9 +141,10 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 struct ScriptInfo {
-   ScriptAllocatorInterface* _allocator;
-   std::function<void(ScriptView)> _spawn_callback;
-   std::function<void(ScriptView)> _remove_callback;
+   ScriptAllocatorInterface* allocator;
+   int preferred_queue;
+   std::function<void(ScriptInterface*)> spawn_callback;
+   std::function<void(ScriptInterface*)> remove_callback;
    // default copy assignment/construction are fine
 };
 
@@ -183,9 +161,8 @@ protected:
       ScriptExecutor* _executor;
    protected:
       std::string _name;
-      int _execution_queue;
-      virtual ScriptView spawn();
-      ScriptEnqueue(ScriptExecutor *executor, std::string name, int execution_queue);
+      virtual ScriptInterface* spawn();
+      ScriptEnqueue(ScriptExecutor *executor, std::string name);
       // default copy assignment/construction are fine (copying implies another enqueue in the same ScriptExecutor)
    public:
       virtual ~ScriptEnqueue();
@@ -215,12 +192,12 @@ private:
 
 protected:
    // initializes ScriptInterface's ScriptExecutor-related fields
-   void _setupScript(ScriptInterface* script, const char* script_name, int execution_queue, ScriptAllocatorInterface* scriptallocator);
+   void _setupScript(ScriptInterface* script, const char* script_name, ScriptAllocatorInterface* scriptallocator);
 
    // pushes an enqueue
    void _pushSpawnEnqueue(ScriptEnqueue* enqueue);
 
-   // erases the passed ScriptInterface; it is undefined behavior to use the ScriptView after this call
+   // erases the passed ScriptInterface; it is undefined behavior to use the script reference after this call
    void _erase(ScriptInterface* script);
 
 public:
@@ -246,18 +223,18 @@ public:
    */
    void addScript(ScriptInfo scriptinfo, const char* name);
 
-   /* Spawns a script using a name previously added to this ScriptExecutor, calls its runInit() method, and returns a ScriptView of it. */
-   ScriptView spawnScript(const char* script_name, int execution_queue);
+   /* Spawns a script using a name previously added to this ScriptExecutor, calls its runInit() method, and returns a script reference of it. */
+   ScriptInterface* spawnScript(const char* script_name);
 
    /* Enqueues a script to be spawned when calling runSpawnQueue(). */
-   void enqueueSpawn(const char* script_name, int execution_queue);
+   void enqueueSpawn(const char* script_name);
    /* Enqueues a script instance to be executed when runExecQueue() is called. */
-   void enqueueExec(ScriptView scriptview, unsigned queue);
+   void enqueueExec(ScriptInterface* script, unsigned queue);
    /* Enqueues a script instance to be killed and removed when runKillQueue() is called. */
-   void enqueueKill(ScriptView scriptview);
+   void enqueueKill(ScriptInterface* script);
 
    /* Spawns all scripts (or sub classes) queued for spawning with spawnScriptEnqueue(). */
-   std::vector<ScriptView> runSpawnQueue();
+   std::vector<ScriptInterface*> runSpawnQueue();
    /* Executes all currently enqueued scripts in the specified queue, and dequeues them. This will call the 
       runExec() method on every active script.
    */
