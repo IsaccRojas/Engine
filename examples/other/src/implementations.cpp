@@ -9,10 +9,7 @@ GlobalResources::GlobalResources(EntityManager* entitymanager, EntityScriptExecu
 // --------------------------------------------------------------------------------------------------------------------------
 
 void SpellInterface::_init() { _initSpell(); }
-void SpellInterface::_exec() {
-    _execSpell();
-    enqueueExec();
-}
+void SpellInterface::_exec() { _execSpell(); }
 void SpellInterface::_kill() { _killSpell(); }
 void SpellInterface::_update() { _updateSpell(); }
 SpellInterface::SpellInterface() : ScriptInterface(), Resource(), pos(glm::vec3(0.0f)), dir(glm::vec3(0.0f)) {}
@@ -93,7 +90,7 @@ void ES_Player::_execEntity() {
     checkCasts();
 
     if (resource()->input->get_space())
-        enqueueKill();
+        entity().kill();
 }
 
 void ES_Player::_killEntity() {}
@@ -150,9 +147,9 @@ void ES_Chaser::_execEntity() {
             ++group_player_iter
         ) {
             // store and lockout player if it is not kill enqueued
-            if (!((*group_player_iter)->entityscript()->getKillEnqueued())) {
+            if (!((*group_player_iter)->entityscripts()[0]->getKillEnqueued())) {
                 _target = (*group_player_iter);
-                _target->entityscript()->lockout(&this->key());
+                _target->entityscripts()[0]->lockout(&this->key());
                 break;
             }
         }
@@ -167,8 +164,8 @@ void ES_Chaser::_execEntity() {
             pos += speed * glm::normalize(dir);
         
         // lose reference and unlock player if it is kill enqueued
-        if (_target->entityscript()->getKillEnqueued()) {
-            _target->entityscript()->unlock(&this->key());
+        if (_target->entityscripts()[0]->getKillEnqueued()) {
+            _target->entityscripts()[0]->unlock(&this->key());
             _target = nullptr;
         }
     }
@@ -177,7 +174,7 @@ void ES_Chaser::_execEntity() {
 void ES_Chaser::_killEntity() {
     // unlock target in case it is stored
     if (_target)
-        _target->entityscript()->unlock(&this->key());
+        _target->entityscripts()[0]->unlock(&this->key());
 }
 
 void ES_Chaser::_updateEntity() {}
@@ -197,20 +194,20 @@ void ES_Lifetime::_execEntity() {
     if (_target) {
         entity().globaltransform().pos = _target->globaltransform().pos;
 
-        if (_target->entityscript()->getKillEnqueued()) {
-            _target->entityscript()->unlock(&key());
+        if (_target->entityscripts()[0]->getKillEnqueued()) {
+            _target->entityscripts()[0]->unlock(&key());
             _target = nullptr;
         }
     } else
         entity().globaltransform().pos += vel;
 
     if (lifetime <= 0)
-        enqueueKill();
+        entity().kill();
 }
 
 void ES_Lifetime::_killEntity() {
     if (_target)
-        _target->entityscript()->unlock(&key());
+        _target->entityscripts()[0]->unlock(&key());
 }
 
 void ES_Lifetime::_updateEntity() {}
@@ -218,7 +215,7 @@ void ES_Lifetime::_updateEntity() {}
 void ES_Lifetime::_receive(Entity *other, std::string message) {
     if (message == "target") {
         _target = other;
-        _target->entityscript()->lockout(&key());
+        _target->entityscripts()[0]->lockout(&key());
     }
 }
 void ES_Lifetime::_collide(Entity *other) {}
