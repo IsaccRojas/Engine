@@ -51,11 +51,11 @@ void EntityScriptInterface::collide(Entity* entity) {
     _collide(entity);
 }
 
-void EntityScriptInterface::insertNullableRef(EntityScriptInterface** ref) {
+void EntityScriptInterface::attachNullableRef(EntityScriptInterface** ref) {
     _nullablerefs.insert(ref);
 }
 
-void EntityScriptInterface::eraseNullableRef(EntityScriptInterface** ref) {
+void EntityScriptInterface::detachNullableRef(EntityScriptInterface** ref) {
     _nullablerefs.erase(ref);
 }
 
@@ -217,6 +217,14 @@ Transform EntityCollider::getPrevAppliedTransform() {
     return _prev_applied_transform;
 }
 
+void EntityCollider::attachNullableEntityScript(EntityScriptInterface** script) {
+    _scripts.insert(script);
+}
+
+void EntityCollider::detachNullableEntityScript(EntityScriptInterface** script) {
+    _scripts.erase(script);
+}
+
 FilterState& EntityCollider::filterstate() { return _filterstate; }
 Entity& EntityCollider::entity() {return *_entity; }
 bool& EntityCollider::collision_enabled() { return _collision_enabled; }
@@ -287,7 +295,7 @@ void CollisionSpace::detectCollisionAABB() {
 
         // get Collider and skip if scale is zeroed out
         EntityCollider* c1 = *iter1;
-        if (!(c1->collision_enabled()) || (c1->_scale == glm::vec3(0.0f)))
+        if (!(c1->_collision_enabled) || (c1->_scale == glm::vec3(0.0f)))
             continue;
 
         auto iter2 = iter1;
@@ -296,12 +304,12 @@ void CollisionSpace::detectCollisionAABB() {
 
             // get other T and skip if scale is zeroed out (check t1's enable flag again in case it was unset this outer loop iteration)
             EntityCollider* c2 = *iter2;
-            if (!(c2->collision_enabled()) || (c2->_scale == glm::vec3(0.0f)))
+            if (!(c2->_collision_enabled) || (c2->_scale == glm::vec3(0.0f)))
                 continue;
 
             // test filters against each other's IDs
-            bool f1 = c1->filterstate().hasFilter();
-            bool f2 = c2->filterstate().hasFilter();
+            bool f1 = c1->_filterstate.hasFilter();
+            bool f2 = c2->_filterstate.hasFilter();
             
             // if both have a filter, collide if both pass
             // if neither have a filter, collide
@@ -311,13 +319,20 @@ void CollisionSpace::detectCollisionAABB() {
 
             if (
                 (!f1 && !f2) ||
-                    (c1->filterstate().pass(c2->filterstate().id()) &&
-                    c2->filterstate().pass(c1->filterstate().id()))
+                    (c1->_filterstate.pass(c2->_filterstate.id()) &&
+                    c2->_filterstate.pass(c1->_filterstate.id()))
             ) {
                 // detect and handle collision
                 if (computeCollisionAABB({c1->_pos, c1->_scale}, {c2->_pos, c2->_scale})) {
-                    c1->entity().entityscript()->collide(&(c2->entity()));
-                    c2->entity().entityscript()->collide(&(c1->entity()));
+                    // call collider on all of c1's attached scripts with c2's entity as arg
+                    for (auto& es : c1->_scripts)
+                        if (es != nullptr)
+                            (*es)->collide(c2->_entity);
+                    
+                    // call collider on all of c2's attached scripts with c1's entity as arg
+                    for (auto& es : c2->_scripts)
+                        if (es != nullptr)
+                            (*es)->collide(c1->_entity);
                 }
             }
 
@@ -396,6 +411,17 @@ void EntityManager::uninit() {
 }
 
 void EntityManager::addEntity(EntityInfo info, const char* name) {
+    // check if number of colliders matches number of attachment vectors
+    if (info.entitycollider_names.size() != info.entitycollider_attachments.size())
+        throw std::runtime_error("EntityInfo EntityCollider initializer list size is not equal to attachments initializer list size");
+    
+    // check if any index in attachment vector exceeds amount of entityscripts that will be instantiated with this EntityInfo
+    for (auto &a : info.entitycollider_attachments)
+        for (auto &i : a)
+            if (i >= info.entityscript_names.size())
+                throw std::runtime_error("EntityInfo has attachment index greater than EntityScript initializer list size");
+
+    // insert info and create group if it does not exist
     _entityinfos[name] = info;
     if (_entities.find(info.group) == _entities.end()) {
         _entity_group_names.push_back(info.group);
@@ -410,7 +436,7 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     // instantiate each EntityScriptInterface in info and push to entity's storage
     for (const std::string& esn : ei.entityscript_names) {
         entity->_entityscripts.push_back(_entityscriptexecutor->spawnEntityScript(esn.c_str(), entity));
-        entity->_entityscripts.back()->insertNullableRef(&(entity->_entityscripts.back()));
+        entity->_entityscripts.back()->attachNullableRef(&(entity->_entityscripts.back()));
     }
 
     // instantiate each Quad in info and push to entity's storage
@@ -419,9 +445,16 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
         entity->_quads.push_back(_glenv->getQuad(entity->_quad_ids.back()));
     }
 
-    // instantiate each EntityCollider in info and push to entity's storage
-    for (const std::string& ecn : ei.entitycollider_names)
-        entity->_entitycolliders.push_back(_collisionspace->spawnCollider(ecn.c_str(), entity, transform));
+    // instantiate each EntityCollider in info and push to entity's storage (size match guaranteed by addEntity())
+    auto ecn_iter = ei.entitycollider_names.begin();
+    auto eca_iter = ei.entitycollider_attachments.begin();
+    for (; ecn_iter != ei.entitycollider_names.end(); ecn_iter++, eca_iter++) {
+        entity->_entitycolliders.push_back(_collisionspace->spawnCollider(ecn_iter->c_str(), entity, transform));
+
+        // attach scripts
+        for (auto &i : *eca_iter)
+            entity->_entitycolliders.back()->attachNullableEntityScript(&(entity->_entityscripts[i]));
+    }
 
     entity->_entity_name = name;
     entity->_this_iter = _entities[ei.group.c_str()].push_back(entity);

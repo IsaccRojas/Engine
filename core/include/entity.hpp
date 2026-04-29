@@ -64,10 +64,10 @@ public:
    void collide(Entity* entity);
 
    /* Inserts reference to pointer to EntityScriptInterface that is nulled on invocation of this instance's kill method. */
-   void insertNullableRef(EntityScriptInterface** ref);
+   void attachNullableRef(EntityScriptInterface** ref);
 
    /* Removes reference to pointer to EntityScriptInterface. */
-   void eraseNullableRef(EntityScriptInterface** ref);
+   void detachNullableRef(EntityScriptInterface** ref);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -222,7 +222,9 @@ class EntityCollider {
    glm::vec3 _scale;
    Transform _prev_applied_transform;
 
+   // containing Entity, and scripts to invoke collision method on
    Entity* _entity;
+   std::unordered_set<EntityScriptInterface**> _scripts;
 
    EntityCollider(EntityCollider&& other);
    EntityCollider();
@@ -248,6 +250,12 @@ public:
 
    /* Get last applied Transform */
    Transform getPrevAppliedTransform();
+
+   /* Attaches a nullable EntityScriptInterface reference to call collision method on */
+   void attachNullableEntityScript(EntityScriptInterface** script);
+
+   /* Detaches a nullable EntityScriptInterface reference */
+   void detachNullableEntityScript(EntityScriptInterface** script);
 
    FilterState& filterstate();
    Entity& entity();
@@ -312,11 +320,22 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+/* class EntityInfo
+   Specifies information for instantiating Entities.
+
+   group - named group for Entity to be inserted into; created if it does not already exist
+   entityscript_names - names of EntityScriptInterfaces to use for script instantiation, in order
+   quad_names - names of QuadInfos to use for Quad instantiation, in order
+   entitycollider_names - names of ColliderInfos to use for Collider instantiation, in order
+   entitycollider_attachments - indices per collider to use of instantiated scripts to attach to colliders
+
+*/
 struct EntityInfo {
    std::string group;
    std::list<std::string> entityscript_names;
    std::list<std::string> quad_names;
    std::list<std::string> entitycollider_names;
+   std::list<std::vector<unsigned>> entitycollider_attachments;
 };
 
 class EntityManager {
