@@ -9,6 +9,7 @@ ScriptInterface::ScriptInterface() :
     _executor(nullptr),
     _scriptallocator(nullptr),
     _preferred_queue(-1),
+    _auto_enqueue(false),
     _exec_enqueued(false), 
     _kill_enqueued(false),
     _kill_started(false),
@@ -22,6 +23,7 @@ ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
         _executor = other._executor;
         _this_iter = other._this_iter;
         _preferred_queue = other._preferred_queue;
+        _auto_enqueue = other._auto_enqueue;
         _exec_enqueued = other._exec_enqueued;
         _kill_enqueued = other._kill_enqueued;
         _kill_started = other._kill_started;
@@ -30,6 +32,7 @@ ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
         _keys_count = other._keys_count;
         other._executor = nullptr;
         other._preferred_queue = -1;
+        other._auto_enqueue = false;
         other._exec_enqueued = false;
         other._exec_enqueued = false;
         other._kill_started = false;
@@ -48,6 +51,7 @@ void ScriptInterface::runInit() {
 void ScriptInterface::runExec() {
     if (_executor)
         _exec();
+    enqueueExec();
 }
 
 void ScriptInterface::runKill() {
@@ -61,6 +65,7 @@ void ScriptInterface::runUpdate() {
 }
 
 int& ScriptInterface::preferred_queue() { return _preferred_queue; }
+bool& ScriptInterface::auto_enqueue() { return _auto_enqueue; }
 bool ScriptInterface::getExecEnqueued() { return _exec_enqueued; }
 bool ScriptInterface::getKillEnqueued() { return _kill_enqueued; }
 bool ScriptInterface::getKillStarted() { return _kill_started; }
@@ -158,6 +163,7 @@ void ScriptExecutor::_setupScript(ScriptInterface* script, const char* script_na
     script->_scriptallocator = scriptallocator;
     script->_this_iter = _scripts.push_back(script);
     script->_preferred_queue = info.preferred_queue;
+    script->_auto_enqueue = info.auto_enqueue;
     script->_script_name = script_name;
 
     // store in allocator

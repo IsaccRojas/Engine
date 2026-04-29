@@ -39,6 +39,7 @@ class ScriptInterface {
    ScriptAllocatorInterface* _scriptallocator;
    std::list<ScriptInterface*>::iterator _this_iter;
    int _preferred_queue;
+   bool _auto_enqueue;
    bool _exec_enqueued;
    bool _kill_enqueued; 
    bool _kill_started;
@@ -93,6 +94,7 @@ public:
    /* Gets various internal flags used by ScriptExecutors to control state.
    */
    int& preferred_queue();
+   bool& auto_enqueue();
    bool getExecEnqueued();
    bool getKillEnqueued();
    bool getKillStarted();
@@ -143,6 +145,7 @@ public:
 struct ScriptInfo {
    ScriptAllocatorInterface* allocator;
    int preferred_queue;
+   bool auto_enqueue;
    std::function<void(ScriptInterface*)> spawn_callback;
    std::function<void(ScriptInterface*)> remove_callback;
    // default copy assignment/construction are fine

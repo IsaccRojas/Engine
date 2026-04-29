@@ -21,6 +21,7 @@ class EntityScriptInterface : public ScriptInterface {
    friend EntityScriptExecutor;
 
    Entity* _entity;
+   std::unordered_set<EntityScriptInterface**> _nullablerefs;
 
    // called by execution environment
    void _init() override;
@@ -57,8 +58,16 @@ public:
    EntityScriptInterface& operator=(const EntityScriptInterface& other) = delete;
 
    Entity& entity();
+
    void receive(Entity* entity, std::string message);
+   
    void collide(Entity* entity);
+
+   /* Inserts reference to pointer to EntityScriptInterface that is nulled on invocation of this instance's kill method. */
+   void insertNullableRef(EntityScriptInterface** ref);
+
+   /* Removes reference to pointer to EntityScriptInterface. */
+   void eraseNullableRef(EntityScriptInterface** ref);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -67,6 +76,7 @@ public:
 struct EntityScriptInfo {
    EntityScriptAllocatorInterface* allocator;
    int preferred_queue;
+   bool auto_enqueue;
    std::function<void(ScriptInterface*)> spawn_callback;
    std::function<void(ScriptInterface*)> remove_callback;
    // default copy assignment/construction are fine
@@ -139,12 +149,12 @@ class Entity {
    std::list<Entity*>::iterator _this_iter;
    std::string _group;
 
-   EntityScriptInterface* _entityscript;
+   std::vector<EntityScriptInterface*> _entityscripts;
    std::vector<unsigned> _quad_ids;
    std::vector<Quad*> _quads;
    std::vector<EntityCollider*> _entitycolliders;
 
-   bool _script_kill_started;
+   bool _kill_started;
 
    Transform _globaltransform;
 
@@ -155,14 +165,19 @@ public:
 
    //TODO: revise copy/move semantics
 
-   /* Checks if script was killed, enabling its removal from its manager. */
-   void checkScriptStatus();
-
-   const char* getName();
-   EntityScriptInterface* entityscript();
+   /* Flags Entity for to be removed from owning EntityManager, and kill enqueues all contained scripts. */
+   void kill();
+   
+   /* Entries may be nulled by removal of individual instances from owners. */
+   std::vector<EntityScriptInterface*>& entityscripts();
    std::vector<Quad*>& quads();
    std::vector<EntityCollider*>& entitycolliders();
+
    Transform& globaltransform();
+
+   const char* getName();
+   const char* getGroup();
+   bool getKillStarted();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -299,8 +314,7 @@ public:
 
 struct EntityInfo {
    std::string group;
-   std::string entityscript_name;
-   bool auto_enqueue;
+   std::list<std::string> entityscript_names;
    std::list<std::string> quad_names;
    std::list<std::string> entitycollider_names;
 };

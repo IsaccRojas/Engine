@@ -29,8 +29,10 @@ void EntityScriptInterface::_exec() {
 
 void EntityScriptInterface::_kill() {
     _killEntity();
-    if (_entity)
-        _entity->checkScriptStatus();
+
+    // null all inserted nullable references
+    for (auto &r : _nullablerefs)
+        *r = nullptr;
 }
 
 void EntityScriptInterface::_update() {
@@ -47,6 +49,14 @@ void EntityScriptInterface::receive(Entity* entity, std::string message) {
 
 void EntityScriptInterface::collide(Entity* entity) {
     _collide(entity);
+}
+
+void EntityScriptInterface::insertNullableRef(EntityScriptInterface** ref) {
+    _nullablerefs.insert(ref);
+}
+
+void EntityScriptInterface::eraseNullableRef(EntityScriptInterface** ref) {
+    _nullablerefs.erase(ref);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -90,7 +100,13 @@ void EntityScriptExecutor::uninit() {
 
 void EntityScriptExecutor::addEntityScript(EntityScriptInfo entityscriptinfo, const char* name) {
     if (!hasAdded(name)) {
-        ScriptExecutor::addScript(ScriptInfo{entityscriptinfo.allocator, entityscriptinfo.preferred_queue, entityscriptinfo.spawn_callback, entityscriptinfo.remove_callback}, name);
+        ScriptExecutor::addScript(ScriptInfo{
+            entityscriptinfo.allocator, 
+            entityscriptinfo.preferred_queue, 
+            entityscriptinfo.auto_enqueue, 
+            entityscriptinfo.spawn_callback, 
+            entityscriptinfo.remove_callback
+        }, name);
         _entityscriptinfos[name] = entityscriptinfo;
     } else
         throw std::runtime_error("Attempt to add already added name");
@@ -114,18 +130,26 @@ void EntityScriptExecutor::enqueueSpawnEntityScript(const char* entityscript_nam
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-Entity::Entity() : _entitymanager(nullptr), _entityscript(nullptr), _script_kill_started(false) {}
+Entity::Entity() : _entitymanager(nullptr), _kill_started(false) {}
 Entity::~Entity() {}
 
-void Entity::checkScriptStatus() {
-    _script_kill_started = _entityscript->getKillStarted();
+void Entity::kill() {
+    _kill_started = true;
+    for (auto& es : _entityscripts)
+        es->enqueueKill();
 }
 
-const char* Entity::getName() { return _entity_name.c_str(); }
+std::vector<EntityScriptInterface*>& Entity::entityscripts() { return _entityscripts; }
 std::vector<Quad*>& Entity::quads() { return _quads; }
 std::vector<EntityCollider*>& Entity::entitycolliders() { return _entitycolliders; }
-EntityScriptInterface* Entity::entityscript() { return _entityscript; }
+
 Transform& Entity::globaltransform() { return _globaltransform; }
+
+const char* Entity::getName() { return _entity_name.c_str(); }
+
+const char* Entity::getGroup() { return _group.c_str(); }
+
+bool Entity::getKillStarted() { return _kill_started; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -383,6 +407,12 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     EntityInfo& ei = _entityinfos[name];
     Entity* entity = new Entity();
 
+    // instantiate each EntityScriptInterface in info and push to entity's storage
+    for (const std::string& esn : ei.entityscript_names) {
+        entity->_entityscripts.push_back(_entityscriptexecutor->spawnEntityScript(esn.c_str(), entity));
+        entity->_entityscripts.back()->insertNullableRef(&(entity->_entityscripts.back()));
+    }
+
     // instantiate each Quad in info and push to entity's storage
     for (const std::string& qn : ei.quad_names) {
         entity->_quad_ids.push_back(_glenv->genQuad(qn.c_str(), transform));
@@ -398,9 +428,6 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     entity->_entitymanager = this;
     entity->_globaltransform = transform;
     
-    // instantiate EntityScriptInterface in info and push to entity's storage
-    entity->_entityscript = _entityscriptexecutor->spawnEntityScript(ei.entityscript_name.c_str(), entity);
-    
     return entity;
 }
 
@@ -413,15 +440,21 @@ void EntityManager::checkEntities() {
             auto& entity = *iter;
 
             // check if entity needs to be removed
-            if (entity->_script_kill_started) {
-                remove_queue.push(entity);
+            if (entity->getKillStarted()) {
+                // check if all scripts nulled
+                bool non_null_found = false;
+                for (auto &es : entity->entityscripts()) {
+                    if (es != nullptr) {
+                        non_null_found = true;
+                        break;
+                    }
+                }
+
+                if (!non_null_found)
+                    remove_queue.push(entity);
+                
                 continue;
             }
-
-            // check if script needs to be enqueued
-            EntityInfo &ei = _entityinfos[entity->getName()];
-            if ((!(entity->entityscript()->getExecEnqueued())) && ei.auto_enqueue)
-                entity->entityscript()->enqueueExec();
 
             // update transforms
             for (auto &q : entity->quads()) {
