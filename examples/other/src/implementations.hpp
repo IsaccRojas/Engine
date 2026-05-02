@@ -38,6 +38,20 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+class ES_Correction : public EntityScriptInterface, public Resource<GlobalResources> {
+    void _initEntity() override;
+    void _execEntity() override;
+    void _killEntity() override;
+    void _updateEntity() override;
+    void _receive(Entity* other, std::string message) override;
+    void _collide(Entity* other) override;
+public:
+    ES_Correction();
+    unsigned collider_index;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 enum CastType {CASTTYPE_TOME, CASTTYPE_STAVE};
 /* struct Castable
    source - can be used to avoid casting twice
@@ -145,6 +159,12 @@ struct GlobalResources {
     RefContainer<SpellInterface> container_Spells;
 
     std::vector<std::vector<TileInfo>> map;
+    int pixel_width;
+    int pixel_height;
+    int tile_rows;
+    int tile_columns;
+    int unit_pixel_width;
+    int unit_pixel_height;
 };
 
 #endif

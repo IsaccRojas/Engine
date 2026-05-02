@@ -216,15 +216,19 @@ class EntityCollider {
 
    // physics variables
    bool _collision_enabled;
+   bool _transformation_is_reset;
    glm::vec3 _base_pos;
    glm::vec3 _base_scale;
-   glm::vec3 _pos;
-   glm::vec3 _scale;
-   Transform _prev_applied_transform;
+   glm::vec3 _cur_pos;
+   glm::vec3 _cur_scale;
+   glm::vec3 _prev_pos;
+   glm::vec3 _prev_scale;
 
    // containing Entity, and scripts to invoke collision method on
    Entity* _entity;
    std::unordered_set<EntityScriptInterface**> _scripts;
+
+   void _storePrevTransformation();
 
    EntityCollider(EntityCollider&& other);
    EntityCollider();
@@ -248,8 +252,8 @@ public:
    /* Get current position and scale as a Transform */
    Transform getCurrentTransformation();
 
-   /* Get last applied Transform */
-   Transform getPrevAppliedTransform();
+   /* Get previous transformation of position and scale as a Transform */
+   Transform getPrevTransformation();
 
    /* Attaches a nullable EntityScriptInterface reference to call collision method on */
    void attachNullableEntityScript(EntityScriptInterface** script);

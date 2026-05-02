@@ -16,6 +16,68 @@ SpellInterface::SpellInterface() : ScriptInterface(), Resource(), pos(glm::vec3(
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+void ES_Correction::_initEntity() {}
+void ES_Correction::_execEntity() {
+    /*
+        assume Tile and Collider are both squares and the same size
+        assume Tile does not move
+    */
+
+    float pixel_width = resource()->pixel_width;
+    float pixel_height = resource()->pixel_height;
+    float tile_rows = resource()->tile_rows;
+    float tile_columns = resource()->tile_columns;
+    float unit_pixel_width = resource()->unit_pixel_width;
+    float unit_pixel_height = resource()->unit_pixel_height;
+    glm::vec3 nontile_pos = entity().entitycolliders()[collider_index]->getCurrentTransformation().pos;
+    glm::vec2 nontile_coord = glm::vec2(nontile_pos.x, nontile_pos.y);
+
+    // match position orientation to tile orientation
+    nontile_coord.y *= -1.0f;
+    nontile_coord += glm::vec2(pixel_width, pixel_height) / 2.0f;
+
+    // get position ratio
+    nontile_coord.x = nontile_coord.x / float(tile_columns * unit_pixel_width);
+    nontile_coord.y = nontile_coord.y / float(tile_rows * unit_pixel_height);
+
+    // scale position ratio into map position, and floor into map coordinates
+    nontile_coord *= glm::floor(glm::vec2(tile_columns, tile_rows));
+
+    // TODO: add in like this to player entity, to test it
+    std::cout << "(" << nontile_coord.x << ", " << nontile_coord.y << ")" << std::endl;
+
+    /*
+    // check nearest tiles
+    */
+
+    /*
+    d = nt.p - t.p
+    if abs(d.x) >= abs(d.y):
+        // horizontal collision
+        if nt.p.x >= t.p.x:
+            // nt is to the right
+            nt.p.x += (t.p.x + s) - nt.p.x
+        else:
+            // nt is to the left
+            nt.p.x -= (t.p.x + s) - nt.p.x
+    else
+        // vertical collision
+        if nt.p.y >= t.p.y:
+            // nt is above
+            nt.p.y += (t.p.y + s) - nt.p.y;
+        else:
+            // nt is below
+            nt.p.y -= (t.p.y + s) - nt.p.y;
+    */
+}
+void ES_Correction::_killEntity() {}
+void ES_Correction::_updateEntity() {}
+void ES_Correction::_receive(Entity *other, std::string message) {}
+void ES_Correction::_collide(Entity *other) {}
+ES_Correction::ES_Correction() : EntityScriptInterface(), Resource(), collider_index(0) {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 void Spell_LightBallSpell::_initSpell() {}
 
 void Spell_LightBallSpell::_execSpell() {

@@ -24,6 +24,7 @@ struct CoreResources {
 
     GlobalResources globalresources;
 
+    EntityScriptResourceProvider<ES_Correction, GlobalResources, ES_Correction> provider_Correction;
     EntityScriptResourceProvider<ES_Player, GlobalResources, ES_Player> provider_Player;
     EntityScriptResourceProvider<ES_Chaser, GlobalResources, ES_Chaser> provider_Chaser;
     GenericEntityScriptProvider<ES_Lifetime> provider_Lifetime;
