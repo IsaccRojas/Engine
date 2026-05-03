@@ -31,7 +31,7 @@ void EntityScriptInterface::_kill() {
     _killEntity();
 
     // null all inserted nullable references
-    for (auto &r : _nullablerefs)
+    for (EntityScriptInterface** r : _nullablerefs)
         *r = nullptr;
 }
 
@@ -134,9 +134,12 @@ Entity::Entity() : _entitymanager(nullptr), _kill_started(false) {}
 Entity::~Entity() {}
 
 void Entity::kill() {
-    _kill_started = true;
-    for (auto& es : _entityscripts)
-        es->enqueueKill();
+    if (!_kill_started) {
+        _kill_started = true;
+        for (auto& es : _entityscripts)
+            if (es != nullptr)
+                es->enqueueKill();
+    }
 }
 
 std::vector<EntityScriptInterface*>& Entity::entityscripts() { return _entityscripts; }
@@ -452,6 +455,12 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     EntityInfo& ei = _entityinfos[name];
     Entity* entity = new Entity();
 
+    // reserve memory for each stored vector to guarantee memory addresses
+    entity->_entityscripts.reserve(ei.entityscript_names.size());
+    entity->_quad_ids.reserve(ei.quad_names.size());
+    entity->_quads.reserve(ei.quad_names.size());
+    entity->_entitycolliders.reserve(ei.entitycollider_names.size());
+
     // instantiate each EntityScriptInterface in info and push to entity's storage
     for (const std::string& esn : ei.entityscript_names) {
         entity->_entityscripts.push_back(_entityscriptexecutor->spawnEntityScript(esn.c_str(), entity));
@@ -557,6 +566,10 @@ bool computeCollisionAABB(Transform transf1, Transform transf2) {
         return true;
     return false;
 }
+
+glm::vec3 to_vec3(glm::vec2 v, float z) { return glm::vec3(v.x, v.y, z); }
+
+glm::vec2 to_vec2(glm::vec3 v) { return glm::vec2(v.x, v.y); }
 
 glm::vec3 random_angle(glm::vec3 v, float deg_range) {
     if (deg_range == 0.0f)

@@ -119,6 +119,12 @@ void initializeAssets(CoreResources *core) {
             core->globalresources.map.back().push_back(TileInfo{rand() % 2, 0});
     }
 
+    // TODO: remove, just for forcing center to be clear
+    core->globalresources.map[7][7].value = 0;
+    core->globalresources.map[7][8].value = 0;
+    core->globalresources.map[8][7].value = 0;
+    core->globalresources.map[8][8].value = 0;
+
     // create tile graphics
     auto &map = core->globalresources.map;
     for (unsigned r = 0; r < TILE_ROWS; r++)

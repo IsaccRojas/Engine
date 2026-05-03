@@ -23,53 +23,73 @@ void ES_Correction::_execEntity() {
         assume Tile does not move
     */
 
-    float pixel_width = resource()->pixel_width;
-    float pixel_height = resource()->pixel_height;
-    float tile_rows = resource()->tile_rows;
-    float tile_columns = resource()->tile_columns;
-    float unit_pixel_width = resource()->unit_pixel_width;
-    float unit_pixel_height = resource()->unit_pixel_height;
-    glm::vec3 nontile_pos = entity().entitycolliders()[collider_index]->getCurrentTransformation().pos;
-    glm::vec2 nontile_coord = glm::vec2(nontile_pos.x, nontile_pos.y);
+    glm::vec2 pixel_dimensions(resource()->pixel_width, resource()->pixel_height);
+    glm::vec2 tile_dimensions(resource()->tile_rows, resource()->tile_columns);
+    glm::vec2 unit_dimensions(resource()->unit_pixel_width, resource()->unit_pixel_height);
+    glm::vec3 base_nontile_pos = entity().entitycolliders()[collider_index]->getCurrentTransformation().pos;
 
-    // match position orientation to tile orientation
-    nontile_coord.y *= -1.0f;
-    nontile_coord += glm::vec2(pixel_width, pixel_height) / 2.0f;
-
-    // get position ratio
-    nontile_coord.x = nontile_coord.x / float(tile_columns * unit_pixel_width);
-    nontile_coord.y = nontile_coord.y / float(tile_rows * unit_pixel_height);
-
-    // scale position ratio into map position, and floor into map coordinates
-    nontile_coord *= glm::vec2(tile_columns, tile_rows);
-    nontile_coord = glm::floor(nontile_coord);
+    // transform pixel position into tile coordinate
+    glm::vec2 nontile_coord = to_vec2(base_nontile_pos);
+    nontile_coord.y *= -1.0f;                   // invert y
+    nontile_coord += pixel_dimensions / 2.0f;   // shift pixel origin to tile origin
+    nontile_coord /= pixel_dimensions;          // scale to ratio
+    nontile_coord *= tile_dimensions;           // scale to coord
+    nontile_coord = glm::floor(nontile_coord);  // floor
 
     // TODO: add in like this to player entity, to test it
     std::cout << "(" << nontile_coord.x << ", " << nontile_coord.y << ")" << std::endl;
 
-    /*
-    // check nearest tiles
-    */
+    // check tiles in 3x3 space centered on nontile
+    glm::vec2 tile_pos;
+    glm::vec3 final_nontile_pos = base_nontile_pos;
+    for (int x = nontile_coord.x - 1; x <= nontile_coord.x + 1; x++) {
+        if (x < 0 || x >= tile_dimensions.x)
+            continue;
+        for (int y = nontile_coord.y - 1; y <= nontile_coord.y + 1; y++) {
+            if (y < 0 || y >= tile_dimensions.y)
+                continue;
+            
+            if (resource()->map[y][x].value <= 0)
+                continue;
+            
+            // transform tile coordinate into pixel position
+            tile_pos = glm::vec2(x, y);             // already unfloored
+            tile_pos /= tile_dimensions;            // scale to ratio
+            tile_pos *= pixel_dimensions;           // scale to position
+            tile_pos -= pixel_dimensions / 2.0f;    // shift tile origin to pixel origin
+            tile_pos.y *= -1.0f;                    // invert y
+            
+            // detect collision
+            if (!computeCollisionAABB(
+                Transform{final_nontile_pos, to_vec3(unit_dimensions, 1.0f)},
+                Transform{to_vec3(tile_pos, 0.0f), to_vec3(unit_dimensions, 1.0f)}
+            ))
+                continue;
 
-    /*
-    d = nt.p - t.p
-    if abs(d.x) >= abs(d.y):
-        // horizontal collision
-        if nt.p.x >= t.p.x:
-            // nt is to the right
-            nt.p.x += (t.p.x + s) - nt.p.x
-        else:
-            // nt is to the left
-            nt.p.x -= (t.p.x + s) - nt.p.x
-    else
-        // vertical collision
-        if nt.p.y >= t.p.y:
-            // nt is above
-            nt.p.y += (t.p.y + s) - nt.p.y;
-        else:
-            // nt is below
-            nt.p.y -= (t.p.y + s) - nt.p.y;
-    */
+            // determine direction of collision and correction
+            glm::vec2 dist = to_vec2(final_nontile_pos) - tile_pos;
+            if (glm::abs(dist.x) >= glm::abs(dist.y)) {
+                // horizontal collision
+                if (final_nontile_pos.x >= tile_pos.x)
+                    // nt is to the right
+                    final_nontile_pos.x += (tile_pos.x + unit_dimensions.x) - final_nontile_pos.x;
+                else
+                    // nt is to the left
+                    final_nontile_pos.x -= (tile_pos.x + unit_dimensions.x) - final_nontile_pos.x;
+            } else {
+                // vertical collision
+                if (final_nontile_pos.y >= tile_pos.y)
+                    // nt is above
+                    final_nontile_pos.y += (tile_pos.y + unit_dimensions.y) - final_nontile_pos.y;
+                else
+                    // nt is below
+                    final_nontile_pos.y -= (tile_pos.y + unit_dimensions.y) - final_nontile_pos.y;
+            }
+        }
+    }
+
+    // apply final shift
+    entity().globaltransform().pos += final_nontile_pos - base_nontile_pos;
 }
 void ES_Correction::_killEntity() {}
 void ES_Correction::_updateEntity() {}
