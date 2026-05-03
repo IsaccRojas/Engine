@@ -134,7 +134,7 @@ void initializeAssets(CoreResources *core) {
                     "Quad_SolidTile",
                     Transform{glm::vec3(
                         ((c * UNIT_PIXEL_WIDTH) + (UNIT_PIXEL_WIDTH / 2.0f)) - (PIXEL_HEIGHT / 2.0f),
-                        ((r * UNIT_PIXEL_HEIGHT) + (UNIT_PIXEL_HEIGHT / 2.0f)) - (PIXEL_WIDTH / 2.0f), 
+                        -1.0f * (((r * UNIT_PIXEL_HEIGHT) + (UNIT_PIXEL_HEIGHT / 2.0f)) - (PIXEL_WIDTH / 2.0f)), 
                         -1.0f
                     ), glm::vec3(1.0f)}
                 );

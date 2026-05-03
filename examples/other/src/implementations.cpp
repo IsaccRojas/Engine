@@ -24,7 +24,7 @@ void ES_Correction::_execEntity() {
     */
 
     glm::vec2 pixel_dimensions(resource()->pixel_width, resource()->pixel_height);
-    glm::vec2 tile_dimensions(resource()->tile_rows, resource()->tile_columns);
+    glm::vec2 tile_dimensions(resource()->tile_columns, resource()->tile_rows);
     glm::vec2 unit_dimensions(resource()->unit_pixel_width, resource()->unit_pixel_height);
     glm::vec3 base_nontile_pos = entity().entitycolliders()[collider_index]->getCurrentTransformation().pos;
 
@@ -37,7 +37,7 @@ void ES_Correction::_execEntity() {
     nontile_coord = glm::floor(nontile_coord);  // floor
 
     // TODO: add in like this to player entity, to test it
-    std::cout << "(" << nontile_coord.x << ", " << nontile_coord.y << ")" << std::endl;
+    //std::cout << "(" << nontile_coord.x << ", " << nontile_coord.y << ")" << std::endl;
 
     // check tiles in 3x3 space centered on nontile
     glm::vec2 tile_pos;
@@ -53,7 +53,7 @@ void ES_Correction::_execEntity() {
                 continue;
             
             // transform tile coordinate into pixel position
-            tile_pos = glm::vec2(x, y);             // already unfloored
+            tile_pos = glm::vec2(x, y) + 0.5f;      // adjust to centers
             tile_pos /= tile_dimensions;            // scale to ratio
             tile_pos *= pixel_dimensions;           // scale to position
             tile_pos -= pixel_dimensions / 2.0f;    // shift tile origin to pixel origin
@@ -75,7 +75,7 @@ void ES_Correction::_execEntity() {
                     final_nontile_pos.x += (tile_pos.x + unit_dimensions.x) - final_nontile_pos.x;
                 else
                     // nt is to the left
-                    final_nontile_pos.x -= (tile_pos.x + unit_dimensions.x) - final_nontile_pos.x;
+                    final_nontile_pos.x -= final_nontile_pos.x - (tile_pos.x - unit_dimensions.x);
             } else {
                 // vertical collision
                 if (final_nontile_pos.y >= tile_pos.y)
@@ -83,8 +83,32 @@ void ES_Correction::_execEntity() {
                     final_nontile_pos.y += (tile_pos.y + unit_dimensions.y) - final_nontile_pos.y;
                 else
                     // nt is below
-                    final_nontile_pos.y -= (tile_pos.y + unit_dimensions.y) - final_nontile_pos.y;
+                    final_nontile_pos.y -= final_nontile_pos.y - (tile_pos.y - unit_dimensions.y);
             }
+            
+            std::cout 
+                << "collision detected between nontile at (" 
+                << nontile_coord.x 
+                << ", " 
+                << nontile_coord.y 
+                << ") and tile at (" 
+                << x
+                << ", "
+                << y
+                << ") [tile pixel positon ("
+                << tile_pos.x
+                << ", "
+                << tile_pos.y
+                << ")]; correcting nontile pixel position ("
+                << base_nontile_pos.x
+                << ", "
+                << base_nontile_pos.y
+                << ") with correction ("
+                << final_nontile_pos.x - base_nontile_pos.x
+                << ", "
+                << final_nontile_pos.y - base_nontile_pos.y
+                << ")"
+                << std::endl;
         }
     }
 
