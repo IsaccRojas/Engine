@@ -41,7 +41,8 @@ void ES_Correction::_execEntity() {
     nontile_coord.y = nontile_coord.y / float(tile_rows * unit_pixel_height);
 
     // scale position ratio into map position, and floor into map coordinates
-    nontile_coord *= glm::floor(glm::vec2(tile_columns, tile_rows));
+    nontile_coord *= glm::vec2(tile_columns, tile_rows);
+    nontile_coord = glm::floor(nontile_coord);
 
     // TODO: add in like this to player entity, to test it
     std::cout << "(" << nontile_coord.x << ", " << nontile_coord.y << ")" << std::endl;
