@@ -38,6 +38,10 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+/*
+    Assumes Tile and Collider are both squares and the same size
+    Assumes Tile does not move
+*/
 class ES_Correction : public EntityScriptInterface, public Resource<GlobalResources> {
     void _initEntity() override;
     void _execEntity() override;
