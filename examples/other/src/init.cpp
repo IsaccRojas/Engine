@@ -8,8 +8,8 @@ const unsigned EXECUTION_QUEUES = 2;
 
 const unsigned WINDOW_WIDTH = 512;
 const unsigned WINDOW_HEIGHT = 512;
-const unsigned PIXEL_WIDTH = WINDOW_WIDTH / 2;
-const unsigned PIXEL_HEIGHT = WINDOW_HEIGHT / 2;
+const unsigned VIEW_PIXEL_WIDTH = WINDOW_WIDTH / 2;
+const unsigned VIEW_PIXEL_HEIGHT = WINDOW_HEIGHT / 2;
 const unsigned PIXEL_LEVELS = 16;
 const unsigned UNIT_PIXEL_WIDTH = 16;
 const unsigned UNIT_PIXEL_HEIGHT = 16;
@@ -45,7 +45,7 @@ void initializeCore(CoreResources *core) {
     GLUtil::glinit(true);
 
     std::cout << "Setting up GLFWInput" << std::endl;
-    core->glfwinput.setWindow(core->glfwstate.getWindowHandle(), PIXEL_WIDTH, PIXEL_HEIGHT);
+    core->glfwinput.setWindow(core->glfwstate.getWindowHandle(), VIEW_PIXEL_WIDTH, VIEW_PIXEL_HEIGHT);
 
     // get animation and filter maps
     std::cout << "Loading Animations and Filters" << std::endl;
@@ -63,12 +63,12 @@ void initializeCore(CoreResources *core) {
     core->glenv.setTexture(Image("gfx/sprites2.png"), 0, 0, 0);
     
     // set up view and projection matrices
-    float halfwidth = float(PIXEL_WIDTH) * 0.5f;
-    float halfheight = float(PIXEL_HEIGHT) * 0.5f;
-    core->glenv.setView(glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+    float halfwidth = float(VIEW_PIXEL_WIDTH) * 0.5f;
+    float halfheight = float(VIEW_PIXEL_HEIGHT) * 0.5f;
+    core->glenv.setView(glm::lookAt(glm::vec3(32.0f, 32.0f, 1.0f), glm::vec3(32.0f, 32.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
     core->glenv.setProj(glm::ortho(-1.0f * halfwidth, halfwidth, -1.0f * halfheight, halfheight, 0.0f, float(PIXEL_LEVELS)));
     core->glenv.setWindowSpace(WINDOW_WIDTH, WINDOW_HEIGHT);
-    core->glenv.setPixelSpace(PIXEL_WIDTH, PIXEL_HEIGHT, PIXEL_LEVELS);
+    core->glenv.setPixelSpace(VIEW_PIXEL_WIDTH, VIEW_PIXEL_HEIGHT, PIXEL_LEVELS);
 
     // set up CollisionSpace
     std::cout << "Setting up CollisionSpace" << std::endl;
@@ -133,14 +133,14 @@ void initializeAssets(CoreResources *core) {
                 map[r][c].quad_id = core->glenv.genQuad(
                     "Quad_SolidTile",
                     Transform{glm::vec3(
-                        ((c * UNIT_PIXEL_WIDTH) + (UNIT_PIXEL_WIDTH / 2.0f)) - (PIXEL_HEIGHT / 2.0f),
-                        -1.0f * (((r * UNIT_PIXEL_HEIGHT) + (UNIT_PIXEL_HEIGHT / 2.0f)) - (PIXEL_WIDTH / 2.0f)), 
+                        ((c * UNIT_PIXEL_WIDTH) + (UNIT_PIXEL_WIDTH / 2.0f)) - ((TILE_COLUMNS * UNIT_PIXEL_WIDTH) / 2.0f),
+                        -1.0f * (((r * UNIT_PIXEL_HEIGHT) + (UNIT_PIXEL_HEIGHT / 2.0f)) - ((TILE_ROWS * UNIT_PIXEL_HEIGHT) / 2.0f)), 
                         -1.0f
                     ), glm::vec3(1.0f)}
                 );
     
-    core->globalresources.pixel_width = PIXEL_WIDTH;
-    core->globalresources.pixel_height = PIXEL_HEIGHT;
+    core->globalresources.view_pixel_width = VIEW_PIXEL_WIDTH;
+    core->globalresources.view_pixel_height = VIEW_PIXEL_HEIGHT;
     core->globalresources.tile_rows = TILE_ROWS;
     core->globalresources.tile_columns = TILE_COLUMNS;
     core->globalresources.unit_pixel_width = UNIT_PIXEL_WIDTH;

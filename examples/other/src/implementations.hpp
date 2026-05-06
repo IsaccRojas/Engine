@@ -163,8 +163,8 @@ struct GlobalResources {
     RefContainer<SpellInterface> container_Spells;
 
     std::vector<std::vector<TileInfo>> map;
-    int pixel_width;
-    int pixel_height;
+    int view_pixel_width;
+    int view_pixel_height;
     int tile_rows;
     int tile_columns;
     int unit_pixel_width;
