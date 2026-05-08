@@ -165,10 +165,12 @@ struct GlobalResources {
     std::vector<std::vector<TileInfo>> map;
     int view_pixel_width;
     int view_pixel_height;
-    int tile_rows;
-    int tile_columns;
     int unit_pixel_width;
     int unit_pixel_height;
+    int coord_width;
+    int coord_height;
+    int coord_origin_x;
+    int coord_origin_y;
 };
 
 #endif

@@ -13,8 +13,10 @@ const unsigned VIEW_PIXEL_HEIGHT = WINDOW_HEIGHT / 2;
 const unsigned PIXEL_LEVELS = 16;
 const unsigned UNIT_PIXEL_WIDTH = 16;
 const unsigned UNIT_PIXEL_HEIGHT = 16;
-const unsigned TILE_ROWS = 16;
-const unsigned TILE_COLUMNS = 16;
+const unsigned COORD_WIDTH = 16;
+const unsigned COORD_HEIGHT = 16;
+const int COORD_ORIGIN_X = 0;
+const int COORD_ORIGIN_Y = 0;
 
 const unsigned TEX_SPACE_WIDTH = 144;
 const unsigned TEX_SPACE_HEIGHT = 80;
@@ -65,7 +67,7 @@ void initializeCore(CoreResources *core) {
     // set up view and projection matrices
     float halfwidth = float(VIEW_PIXEL_WIDTH) * 0.5f;
     float halfheight = float(VIEW_PIXEL_HEIGHT) * 0.5f;
-    core->glenv.setView(glm::lookAt(glm::vec3(32.0f, 32.0f, 1.0f), glm::vec3(32.0f, 32.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+    core->glenv.setView(glm::lookAt(glm::vec3(128.0f, 128.0f, 1.0f), glm::vec3(128.0f, 128.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
     core->glenv.setProj(glm::ortho(-1.0f * halfwidth, halfwidth, -1.0f * halfheight, halfheight, 0.0f, float(PIXEL_LEVELS)));
     core->glenv.setWindowSpace(WINDOW_WIDTH, WINDOW_HEIGHT);
     core->glenv.setPixelSpace(VIEW_PIXEL_WIDTH, VIEW_PIXEL_HEIGHT, PIXEL_LEVELS);
@@ -113,9 +115,9 @@ void initializeAssets(CoreResources *core) {
     core->entitymanager.addEntity(EntityInfo{"Group_PlayerProjectile", {"ES_Lifetime"}, {"Quad_LightBall"}, {"EntityCollider_Player"}, {{0}}}, "Entity_LightBall");
 
     // initialize map
-    for (unsigned r = 0; r < TILE_ROWS; r++) {
+    for (unsigned x = 0; x < COORD_WIDTH; x++) {
         core->globalresources.map.push_back(std::vector<TileInfo>());
-        for (unsigned c = 0; c < TILE_COLUMNS; c++)
+        for (unsigned y = 0; y < COORD_HEIGHT; y++)
             core->globalresources.map.back().push_back(TileInfo{rand() % 2, 0});
     }
 
@@ -127,23 +129,24 @@ void initializeAssets(CoreResources *core) {
 
     // create tile graphics
     auto &map = core->globalresources.map;
-    for (unsigned r = 0; r < TILE_ROWS; r++)
-        for (unsigned c = 0; c < TILE_COLUMNS; c++)
-            if (map[r][c].value)
-                map[r][c].quad_id = core->glenv.genQuad(
+    for (unsigned x = 0; x < COORD_WIDTH; x++)
+        for (unsigned y = 0; y < COORD_HEIGHT; y++)
+            if (map[x][y].value)
+                map[x][y].quad_id = core->glenv.genQuad(
                     "Quad_SolidTile",
                     Transform{glm::vec3(
-                        ((c * UNIT_PIXEL_WIDTH) + (UNIT_PIXEL_WIDTH / 2.0f)) - ((TILE_COLUMNS * UNIT_PIXEL_WIDTH) / 2.0f),
-                        -1.0f * (((r * UNIT_PIXEL_HEIGHT) + (UNIT_PIXEL_HEIGHT / 2.0f)) - ((TILE_ROWS * UNIT_PIXEL_HEIGHT) / 2.0f)), 
+                        ((x * UNIT_PIXEL_WIDTH) + (UNIT_PIXEL_WIDTH / 2.0f)) + (COORD_ORIGIN_X * int(UNIT_PIXEL_WIDTH)),
+                        ((y * UNIT_PIXEL_HEIGHT) + (UNIT_PIXEL_HEIGHT / 2.0f)) + (COORD_ORIGIN_Y * int(UNIT_PIXEL_HEIGHT)), 
                         -1.0f
                     ), glm::vec3(1.0f)}
                 );
     
     core->globalresources.view_pixel_width = VIEW_PIXEL_WIDTH;
     core->globalresources.view_pixel_height = VIEW_PIXEL_HEIGHT;
-    core->globalresources.tile_rows = TILE_ROWS;
-    core->globalresources.tile_columns = TILE_COLUMNS;
     core->globalresources.unit_pixel_width = UNIT_PIXEL_WIDTH;
     core->globalresources.unit_pixel_height = UNIT_PIXEL_HEIGHT;
-
+    core->globalresources.coord_width = COORD_WIDTH;
+    core->globalresources.coord_height = COORD_HEIGHT;
+    core->globalresources.coord_origin_x = COORD_ORIGIN_X;
+    core->globalresources.coord_origin_y = COORD_ORIGIN_Y;
 }

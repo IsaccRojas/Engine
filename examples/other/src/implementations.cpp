@@ -18,17 +18,17 @@ SpellInterface::SpellInterface() : ScriptInterface(), Resource(), pos(glm::vec3(
 
 void ES_Correction::_initEntity() {}
 void ES_Correction::_execEntity() {
-    glm::vec2 total_tile_coord_dimensions(resource()->tile_columns, resource()->tile_rows);
     glm::vec2 unit_pixel_dimensions(resource()->unit_pixel_width, resource()->unit_pixel_height);
-    glm::vec2 total_tile_pixel_dimensions = total_tile_coord_dimensions * unit_pixel_dimensions;
+    glm::vec2 coord_dimensions(resource()->coord_width, resource()->coord_height);
+    glm::vec2 coord_origin(resource()->coord_origin_x, resource()->coord_origin_y);
+    glm::vec2 coord_pixel_dimensions = coord_dimensions * unit_pixel_dimensions;
     glm::vec3 base_nontile_pos = entity().entitycolliders()[collider_index]->getCurrentTransformation().pos;
 
     // transform pixel position into tile coordinate
     glm::vec2 nontile_coord = to_vec2(base_nontile_pos);
-    nontile_coord.y *= -1.0f;                               // invert y
-    nontile_coord += total_tile_pixel_dimensions / 2.0f;    // shift pixel origin to tile origin
-    nontile_coord /= total_tile_pixel_dimensions;           // scale to ratio
-    nontile_coord *= total_tile_coord_dimensions;           // scale to coord
+    nontile_coord -= coord_origin * unit_pixel_dimensions;  // shift pixel origin to tile origin
+    nontile_coord /= coord_pixel_dimensions;                // scale to ratio
+    nontile_coord *= coord_dimensions;                      // scale to coord
     nontile_coord = glm::floor(nontile_coord);              // floor
 
     // check tiles in 3x3 space centered on nontile
@@ -39,18 +39,17 @@ void ES_Correction::_execEntity() {
     std::vector<glm::vec2> tile_positions{{0, 1}, {-1, 0}, {1, 0}, {0, -1}, {-1, 1}, {1, 1}, {-1, -1}, {1, -1}};
     for (auto &relative_tile_pos : tile_positions) {
         tile_pos = nontile_coord + relative_tile_pos;
-        if (tile_pos.x < 0 || tile_pos.x >= total_tile_coord_dimensions.x || tile_pos.y < 0 || tile_pos.y >= total_tile_coord_dimensions.y)
+        if (tile_pos.x < 0 || tile_pos.x >= coord_dimensions.x || tile_pos.y < 0 || tile_pos.y >= coord_dimensions.y)
             continue;
 
-        if (resource()->map[tile_pos.y][tile_pos.x].value <= 0)
+        if (resource()->map[tile_pos.x][tile_pos.y].value <= 0)
             continue;
         
         // transform tile coordinate into pixel position
-        tile_pos += 0.5f;                               // adjust to centers
-        tile_pos /= total_tile_coord_dimensions;        // scale to ratio
-        tile_pos *= total_tile_pixel_dimensions;        // scale to position
-        tile_pos -= total_tile_pixel_dimensions / 2.0f; // shift tile origin to pixel origin
-        tile_pos.y *= -1.0f;                            // invert y
+        tile_pos += 0.5f;                                   // adjust to centers
+        tile_pos /= coord_dimensions;                       // scale to ratio
+        tile_pos *= coord_pixel_dimensions;                 // scale to position
+        tile_pos += coord_origin * unit_pixel_dimensions;   // shift tile origin to pixel origin
         
         // detect collision
         if (!computeCollisionAABB(
