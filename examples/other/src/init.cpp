@@ -15,8 +15,10 @@ const unsigned UNIT_PIXEL_WIDTH = 16;
 const unsigned UNIT_PIXEL_HEIGHT = 16;
 const unsigned COORD_WIDTH = 16;
 const unsigned COORD_HEIGHT = 16;
-const int COORD_ORIGIN_X = 0;
-const int COORD_ORIGIN_Y = 0;
+
+// tile 0, 0 would be located above and to the right of this position
+const int COORD_ORIGIN_PIXEL_X = 0;
+const int COORD_ORIGIN_PIXEL_Y = 0;
 
 const unsigned TEX_SPACE_WIDTH = 144;
 const unsigned TEX_SPACE_HEIGHT = 80;
@@ -135,18 +137,15 @@ void initializeAssets(CoreResources *core) {
                 map[x][y].quad_id = core->glenv.genQuad(
                     "Quad_SolidTile",
                     Transform{glm::vec3(
-                        ((x * UNIT_PIXEL_WIDTH) + (UNIT_PIXEL_WIDTH / 2.0f)) + (COORD_ORIGIN_X * int(UNIT_PIXEL_WIDTH)),
-                        ((y * UNIT_PIXEL_HEIGHT) + (UNIT_PIXEL_HEIGHT / 2.0f)) + (COORD_ORIGIN_Y * int(UNIT_PIXEL_HEIGHT)), 
+                        ((x * UNIT_PIXEL_WIDTH) + (UNIT_PIXEL_WIDTH / 2.0f)) + COORD_ORIGIN_PIXEL_X,
+                        ((y * UNIT_PIXEL_HEIGHT) + (UNIT_PIXEL_HEIGHT / 2.0f)) + COORD_ORIGIN_PIXEL_Y, 
                         -1.0f
                     ), glm::vec3(1.0f)}
                 );
     
-    core->globalresources.view_pixel_width = VIEW_PIXEL_WIDTH;
-    core->globalresources.view_pixel_height = VIEW_PIXEL_HEIGHT;
-    core->globalresources.unit_pixel_width = UNIT_PIXEL_WIDTH;
-    core->globalresources.unit_pixel_height = UNIT_PIXEL_HEIGHT;
-    core->globalresources.coord_width = COORD_WIDTH;
-    core->globalresources.coord_height = COORD_HEIGHT;
-    core->globalresources.coord_origin_x = COORD_ORIGIN_X;
-    core->globalresources.coord_origin_y = COORD_ORIGIN_Y;
+    core->globalresources.mapinfo = MapInfo{
+        glm::vec2(UNIT_PIXEL_WIDTH, UNIT_PIXEL_HEIGHT),
+        glm::vec2(COORD_WIDTH, COORD_HEIGHT),
+        glm::vec2(COORD_ORIGIN_PIXEL_X, COORD_ORIGIN_PIXEL_Y)
+    };
 }

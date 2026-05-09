@@ -8,6 +8,32 @@ GlobalResources::GlobalResources(EntityManager* entitymanager, EntityScriptExecu
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+glm::vec2 MapInfo::toCoords(glm::vec2 v) {
+    glm::vec2 coord_pixel_dimensions = coord_dimensions * unit_pixel_dimensions;
+    glm::vec2 v_coords = v;
+
+    v_coords -= coord_origin;           // shift pixel origin to coord origin
+    v_coords /= coord_pixel_dimensions; // scale to ratio
+    v_coords *= coord_dimensions;       // scale to coord
+    v_coords = glm::floor(v_coords);    // floor
+
+    return v_coords;
+}
+
+glm::vec2 MapInfo::toPixels(glm::vec2 v) {
+    glm::vec2 coord_pixel_dimensions = coord_dimensions * unit_pixel_dimensions;
+    glm::vec2 v_pixels = v;
+
+    v_pixels += 0.5f;                   // adjust to centers
+    v_pixels /= coord_dimensions;       // scale to ratio
+    v_pixels *= coord_pixel_dimensions; // scale to position
+    v_pixels += coord_origin;           // shift coord origin to pixel origin
+
+    return v_pixels;
+}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 void SpellInterface::_init() { _initSpell(); }
 void SpellInterface::_exec() { _execSpell(); }
 void SpellInterface::_kill() { _killSpell(); }
@@ -18,43 +44,31 @@ SpellInterface::SpellInterface() : ScriptInterface(), Resource(), pos(glm::vec3(
 
 void ES_Correction::_initEntity() {}
 void ES_Correction::_execEntity() {
-    glm::vec2 unit_pixel_dimensions(resource()->unit_pixel_width, resource()->unit_pixel_height);
-    glm::vec2 coord_dimensions(resource()->coord_width, resource()->coord_height);
-    glm::vec2 coord_origin(resource()->coord_origin_x, resource()->coord_origin_y);
-    glm::vec2 coord_pixel_dimensions = coord_dimensions * unit_pixel_dimensions;
+    MapInfo &mi = resource()->mapinfo;
+
     glm::vec3 base_nontile_pos = entity().entitycolliders()[collider_index]->getCurrentTransformation().pos;
+    glm::vec2 nontile_coord = mi.toCoords(to_vec2(base_nontile_pos));
 
-    // transform pixel position into tile coordinate
-    glm::vec2 nontile_coord = to_vec2(base_nontile_pos);
-    nontile_coord -= coord_origin * unit_pixel_dimensions;  // shift pixel origin to tile origin
-    nontile_coord /= coord_pixel_dimensions;                // scale to ratio
-    nontile_coord *= coord_dimensions;                      // scale to coord
-    nontile_coord = glm::floor(nontile_coord);              // floor
-
-    // check tiles in 3x3 space centered on nontile
+    // check tiles in 3x3 space centered on nontile; do sides first, then corners
     glm::vec2 tile_pos;
     glm::vec3 final_nontile_pos = base_nontile_pos;
-
-    // do sides first, then corners
     std::vector<glm::vec2> tile_positions{{0, 1}, {-1, 0}, {1, 0}, {0, -1}, {-1, 1}, {1, 1}, {-1, -1}, {1, -1}};
     for (auto &relative_tile_pos : tile_positions) {
         tile_pos = nontile_coord + relative_tile_pos;
-        if (tile_pos.x < 0 || tile_pos.x >= coord_dimensions.x || tile_pos.y < 0 || tile_pos.y >= coord_dimensions.y)
+
+        // skip if tile position is outside of map range
+        if (tile_pos.x < 0 || tile_pos.x >= mi.coord_dimensions.x || tile_pos.y < 0 || tile_pos.y >= mi.coord_dimensions.y)
             continue;
 
+        // check if tile value should cause correction
         if (resource()->map[tile_pos.x][tile_pos.y].value <= 0)
             continue;
         
-        // transform tile coordinate into pixel position
-        tile_pos += 0.5f;                                   // adjust to centers
-        tile_pos /= coord_dimensions;                       // scale to ratio
-        tile_pos *= coord_pixel_dimensions;                 // scale to position
-        tile_pos += coord_origin * unit_pixel_dimensions;   // shift tile origin to pixel origin
-        
         // detect collision
+        tile_pos = mi.toPixels(tile_pos);
         if (!computeCollisionAABB(
-            Transform{final_nontile_pos, to_vec3(unit_pixel_dimensions, 1.0f)},
-            Transform{to_vec3(tile_pos, 0.0f), to_vec3(unit_pixel_dimensions, 1.0f)}
+            Transform{final_nontile_pos, to_vec3(mi.unit_pixel_dimensions, 1.0f)},
+            Transform{to_vec3(tile_pos, 0.0f), to_vec3(mi.unit_pixel_dimensions, 1.0f)}
         ))
             continue;
 
@@ -64,18 +78,18 @@ void ES_Correction::_execEntity() {
             // horizontal collision
             if (final_nontile_pos.x >= tile_pos.x)
                 // nt is to the right
-                final_nontile_pos.x += (tile_pos.x + unit_pixel_dimensions.x) - final_nontile_pos.x;
+                final_nontile_pos.x += (tile_pos.x + mi.unit_pixel_dimensions.x) - final_nontile_pos.x;
             else
                 // nt is to the left
-                final_nontile_pos.x -= final_nontile_pos.x - (tile_pos.x - unit_pixel_dimensions.x);
+                final_nontile_pos.x -= final_nontile_pos.x - (tile_pos.x - mi.unit_pixel_dimensions.x);
         } else {
             // vertical collision
             if (final_nontile_pos.y >= tile_pos.y)
                 // nt is above
-                final_nontile_pos.y += (tile_pos.y + unit_pixel_dimensions.y) - final_nontile_pos.y;
+                final_nontile_pos.y += (tile_pos.y + mi.unit_pixel_dimensions.y) - final_nontile_pos.y;
             else
                 // nt is below
-                final_nontile_pos.y -= final_nontile_pos.y - (tile_pos.y - unit_pixel_dimensions.y);
+                final_nontile_pos.y -= final_nontile_pos.y - (tile_pos.y - mi.unit_pixel_dimensions.y);
         }
     }
 

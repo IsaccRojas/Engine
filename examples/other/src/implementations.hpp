@@ -147,6 +147,14 @@ struct TileInfo {
     int quad_id;
 };
 
+struct MapInfo {
+    glm::vec2 unit_pixel_dimensions;
+    glm::vec2 coord_dimensions;
+    glm::vec2 coord_origin;
+    glm::vec2 toCoords(glm::vec2 v);
+    glm::vec2 toPixels(glm::vec2 v);
+};
+
 /* struct Global Resources
    Aggregates resources for classes with Resource<GlobalResources> inherited to access.
 */
@@ -162,15 +170,8 @@ struct GlobalResources {
     RefContainer<ES_Lifetime> container_Lifetime;
     RefContainer<SpellInterface> container_Spells;
 
+    MapInfo mapinfo;
     std::vector<std::vector<TileInfo>> map;
-    int view_pixel_width;
-    int view_pixel_height;
-    int unit_pixel_width;
-    int unit_pixel_height;
-    int coord_width;
-    int coord_height;
-    int coord_origin_x;
-    int coord_origin_y;
 };
 
 #endif
