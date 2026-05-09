@@ -47,7 +47,7 @@ void ES_Correction::_execEntity() {
     MapInfo &mi = resource()->mapinfo;
 
     glm::vec3 base_nontile_pos = entity().entitycolliders()[collider_index]->getCurrentTransformation().pos;
-    glm::vec2 nontile_coord = mi.toCoords(to_vec2(base_nontile_pos));
+    glm::vec2 nontile_coord = mi.toCoords(toVec2(base_nontile_pos));
 
     // check tiles in 3x3 space centered on nontile; do sides first, then corners
     glm::vec2 tile_pos;
@@ -67,13 +67,13 @@ void ES_Correction::_execEntity() {
         // detect collision
         tile_pos = mi.toPixels(tile_pos);
         if (!computeCollisionAABB(
-            Transform{final_nontile_pos, to_vec3(mi.unit_pixel_dimensions, 1.0f)},
-            Transform{to_vec3(tile_pos, 0.0f), to_vec3(mi.unit_pixel_dimensions, 1.0f)}
+            Transform{final_nontile_pos, toVec3(mi.unit_pixel_dimensions, 1.0f)},
+            Transform{toVec3(tile_pos, 0.0f), toVec3(mi.unit_pixel_dimensions, 1.0f)}
         ))
             continue;
 
         // determine direction of collision and correction
-        glm::vec2 dist = to_vec2(final_nontile_pos) - tile_pos;
+        glm::vec2 dist = toVec2(final_nontile_pos) - tile_pos;
         if (glm::abs(dist.x) >= glm::abs(dist.y)) {
             // horizontal collision
             if (final_nontile_pos.x >= tile_pos.x)

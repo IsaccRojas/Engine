@@ -440,12 +440,12 @@ public:
 
 bool computeCollisionAABB(Transform transf1, Transform transf2);
 
-glm::vec3 to_vec3(glm::vec2 v, float z);
+glm::vec3 toVec3(glm::vec2 v, float z);
 
-glm::vec2 to_vec2(glm::vec3 v);
+glm::vec2 toVec2(glm::vec3 v);
 
-glm::vec3 random_angle(glm::vec3 v, float deg_range);
+glm::vec3 randomAngle(glm::vec3 v, float deg_range);
 
-bool is_even(int x);
+bool isEven(int x);
 
 #endif

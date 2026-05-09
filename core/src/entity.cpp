@@ -567,16 +567,16 @@ bool computeCollisionAABB(Transform transf1, Transform transf2) {
     return false;
 }
 
-glm::vec3 to_vec3(glm::vec2 v, float z) { return glm::vec3(v.x, v.y, z); }
+glm::vec3 toVec3(glm::vec2 v, float z) { return glm::vec3(v.x, v.y, z); }
 
-glm::vec2 to_vec2(glm::vec3 v) { return glm::vec2(v.x, v.y); }
+glm::vec2 toVec2(glm::vec3 v) { return glm::vec2(v.x, v.y); }
 
-glm::vec3 random_angle(glm::vec3 v, float deg_range) {
+glm::vec3 randomAngle(glm::vec3 v, float deg_range) {
     if (deg_range == 0.0f)
         return v;
     return glm::rotate(v, glm::radians((-1.0f * deg_range) + float(rand() % int(deg_range * 2.0f))), glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
-bool is_even(int x) {
+bool isEven(int x) {
     return (float(x) / 2.0f) == glm::floor(float(x) / 2.0f);
 }

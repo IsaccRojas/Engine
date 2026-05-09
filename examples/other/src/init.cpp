@@ -13,8 +13,8 @@ const unsigned VIEW_PIXEL_HEIGHT = WINDOW_HEIGHT / 2;
 const unsigned PIXEL_LEVELS = 16;
 const unsigned UNIT_PIXEL_WIDTH = 16;
 const unsigned UNIT_PIXEL_HEIGHT = 16;
-const unsigned COORD_WIDTH = 16;
-const unsigned COORD_HEIGHT = 16;
+const unsigned COORD_WIDTH = 15;
+const unsigned COORD_HEIGHT = 13;
 
 // tile 0, 0 would be located above and to the right of this position
 const int COORD_ORIGIN_PIXEL_X = 0;
@@ -69,7 +69,9 @@ void initializeCore(CoreResources *core) {
     // set up view and projection matrices
     float halfwidth = float(VIEW_PIXEL_WIDTH) * 0.5f;
     float halfheight = float(VIEW_PIXEL_HEIGHT) * 0.5f;
-    core->glenv.setView(glm::lookAt(glm::vec3(128.0f, 128.0f, 1.0f), glm::vec3(128.0f, 128.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+    float camera_x = (UNIT_PIXEL_WIDTH * 7) + (UNIT_PIXEL_WIDTH / 2.0f);
+    float camera_y = (UNIT_PIXEL_HEIGHT * 6) + (UNIT_PIXEL_HEIGHT / 2.0f);
+    core->glenv.setView(glm::lookAt(glm::vec3(camera_x, camera_y, 1.0f), glm::vec3(camera_x, camera_y, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
     core->glenv.setProj(glm::ortho(-1.0f * halfwidth, halfwidth, -1.0f * halfheight, halfheight, 0.0f, float(PIXEL_LEVELS)));
     core->glenv.setWindowSpace(WINDOW_WIDTH, WINDOW_HEIGHT);
     core->glenv.setPixelSpace(VIEW_PIXEL_WIDTH, VIEW_PIXEL_HEIGHT, PIXEL_LEVELS);
@@ -119,22 +121,19 @@ void initializeAssets(CoreResources *core) {
     // initialize map
     for (unsigned x = 0; x < COORD_WIDTH; x++) {
         core->globalresources.map.push_back(std::vector<TileInfo>());
-        for (unsigned y = 0; y < COORD_HEIGHT; y++)
-            core->globalresources.map.back().push_back(TileInfo{rand() % 2, 0});
-    }
+        for (unsigned y = 0; y < COORD_HEIGHT; y++) {
+            core->globalresources.map.back().push_back(TileInfo{-1, -1});
+            TileInfo& tile = core->globalresources.map.back().back();
 
-    // TODO: remove, just for forcing center to be clear
-    core->globalresources.map[7][7].value = 0;
-    core->globalresources.map[7][8].value = 0;
-    core->globalresources.map[8][7].value = 0;
-    core->globalresources.map[8][8].value = 0;
-
-    // create tile graphics
-    auto &map = core->globalresources.map;
-    for (unsigned x = 0; x < COORD_WIDTH; x++)
-        for (unsigned y = 0; y < COORD_HEIGHT; y++)
-            if (map[x][y].value)
-                map[x][y].quad_id = core->glenv.genQuad(
+            // solid if on edge or both coordinates are even
+            if (x == 0 || x == COORD_WIDTH - 1 || y == 0 || y == COORD_HEIGHT - 1 || (isEven(x) && isEven(y)))
+                tile.value = 1;
+            else
+                tile.value = 0;
+            
+            // create graphic
+            if (tile.value > 0)
+                tile.quad_id = core->glenv.genQuad(
                     "Quad_SolidTile",
                     Transform{glm::vec3(
                         ((x * UNIT_PIXEL_WIDTH) + (UNIT_PIXEL_WIDTH / 2.0f)) + COORD_ORIGIN_PIXEL_X,
@@ -142,6 +141,8 @@ void initializeAssets(CoreResources *core) {
                         -1.0f
                     ), glm::vec3(1.0f)}
                 );
+        }
+    }
     
     core->globalresources.mapinfo = MapInfo{
         glm::vec2(UNIT_PIXEL_WIDTH, UNIT_PIXEL_HEIGHT),
