@@ -153,6 +153,7 @@ struct MapInfo {
     glm::vec2 coord_origin;
     glm::vec2 toCoords(glm::vec2 v);
     glm::vec2 toPixels(glm::vec2 v);
+    bool isValid(glm::vec2 v);
 };
 
 /* struct Global Resources

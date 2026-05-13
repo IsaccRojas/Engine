@@ -32,6 +32,10 @@ glm::vec2 MapInfo::toPixels(glm::vec2 v) {
     return v_pixels;
 }
 
+bool MapInfo::isValid(glm::vec2 v) {
+    return (v.x >= 0 && v.x < coord_dimensions.x && v.y >= 0 && v.y < coord_dimensions.y);
+}
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 void SpellInterface::_init() { _initSpell(); }
@@ -46,18 +50,27 @@ void ES_Correction::_initEntity() {}
 void ES_Correction::_execEntity() {
     MapInfo &mi = resource()->mapinfo;
 
-    glm::vec3 base_nontile_pos = entity().entitycolliders()[collider_index]->getCurrentTransformation().pos;
+    glm::vec3 base_nontile_pos = entity().globaltransform().pos;
+    glm::vec3 base_nontile_prev_pos = entity().entitycolliders()[collider_index]->getPrevTransformation().pos;
+    glm::vec3 base_nontile_vel = base_nontile_pos - base_nontile_prev_pos;
+    glm::vec2 base_nontile_dir = toVec2(glm::length(base_nontile_vel) == 0 ? glm::vec3(0.0f) : glm::normalize(base_nontile_vel));
     glm::vec2 nontile_coord = mi.toCoords(toVec2(base_nontile_pos));
 
     // check tiles in 3x3 space centered on nontile; do sides first, then corners
     glm::vec2 tile_pos;
+    glm::vec2 tile_in_dir;
     glm::vec3 final_nontile_pos = base_nontile_pos;
+    bool can_assist;
     std::vector<glm::vec2> tile_positions{{0, 1}, {-1, 0}, {1, 0}, {0, -1}, {-1, 1}, {1, 1}, {-1, -1}, {1, -1}};
     for (auto &relative_tile_pos : tile_positions) {
         tile_pos = nontile_coord + relative_tile_pos;
+        tile_in_dir = nontile_coord + base_nontile_dir;
 
+        // check if tile in direction of travel is solid; only used if travel is only along one axis
+        can_assist = (mi.isValid(tile_in_dir) && resource()->map[tile_in_dir.x][tile_in_dir.y].value <= 0);
+        
         // skip if tile position is outside of map range
-        if (tile_pos.x < 0 || tile_pos.x >= mi.coord_dimensions.x || tile_pos.y < 0 || tile_pos.y >= mi.coord_dimensions.y)
+        if (!mi.isValid(tile_pos))
             continue;
 
         // check if tile value should cause correction
@@ -76,20 +89,51 @@ void ES_Correction::_execEntity() {
         glm::vec2 dist = toVec2(final_nontile_pos) - tile_pos;
         if (glm::abs(dist.x) >= glm::abs(dist.y)) {
             // horizontal collision
-            if (final_nontile_pos.x >= tile_pos.x)
+            if (final_nontile_pos.x >= tile_pos.x) {
                 // nt is to the right
                 final_nontile_pos.x += (tile_pos.x + mi.unit_pixel_dimensions.x) - final_nontile_pos.x;
-            else
+
+                // check if moving straight left
+                if (can_assist && base_nontile_dir == glm::vec2(-1.0f, 0.0f)) {
+                    // get assist (1 pixel)
+                    float a = (base_nontile_pos.y - tile_pos.y > 0) ? 1.0f : 0.0f;
+                    final_nontile_pos.y += a;
+                    
+                }
+            } else {
                 // nt is to the left
                 final_nontile_pos.x -= final_nontile_pos.x - (tile_pos.x - mi.unit_pixel_dimensions.x);
+
+                // check if moving straight right
+                if (can_assist && base_nontile_dir == glm::vec2(1.0f, 0.0f)) {
+                    // get assist (1 pixel)
+                    float a = (base_nontile_pos.y - tile_pos.y > 0) ? 1.0f : 0.0f;
+                    final_nontile_pos.y += a;
+                }
+            }
         } else {
             // vertical collision
-            if (final_nontile_pos.y >= tile_pos.y)
+            if (final_nontile_pos.y >= tile_pos.y) {
                 // nt is above
                 final_nontile_pos.y += (tile_pos.y + mi.unit_pixel_dimensions.y) - final_nontile_pos.y;
-            else
+
+                // check if moving straight down
+                if (can_assist && base_nontile_dir == glm::vec2(0.0f, -1.0f)) {
+                    // get assist (1 pixel)
+                    float a = (base_nontile_pos.x - tile_pos.x > 0) ? 1.0f : 0.0f;
+                    final_nontile_pos.x += a;
+                }
+            } else {
                 // nt is below
                 final_nontile_pos.y -= final_nontile_pos.y - (tile_pos.y - mi.unit_pixel_dimensions.y);
+
+                // check if moving straight up
+                if (can_assist && base_nontile_dir == glm::vec2(0.0f, 1.0f)) {
+                    // get assist (1 pixel)
+                    float a = (base_nontile_pos.x - tile_pos.x > 0) ? 1.0f : 0.0f;
+                    final_nontile_pos.x += a;
+                }
+            }
         }
     }
 
