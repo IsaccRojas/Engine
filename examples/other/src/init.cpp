@@ -131,6 +131,16 @@ void initializeAssets(CoreResources *core) {
             else
                 tile.value = 0;
             
+            if (
+                (x == 6 && y == 4) ||
+                (x == 6 && y == 6) ||
+                (x == 6 && y == 8) ||
+                (x == 8 && y == 4) ||
+                (x == 8 && y == 6) ||
+                (x == 8 && y == 8)
+            )
+                tile.value = 0;
+            
             // create graphic
             if (tile.value > 0)
                 tile.quad_id = core->glenv.genQuad(
