@@ -448,4 +448,7 @@ glm::vec3 randomAngle(glm::vec3 v, float deg_range);
 
 bool isEven(int x);
 
+/* Returns the value with the lower absolute value. */
+float absMin(float a, float b);
+
 #endif

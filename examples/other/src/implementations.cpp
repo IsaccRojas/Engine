@@ -58,16 +58,18 @@ void ES_Correction::_execEntity() {
 
     // check tiles in 3x3 space centered on nontile; do sides first, then corners
     glm::vec2 tile_pos;
-    glm::vec2 tile_in_dir;
+    glm::vec2 tile_in_dir_coord;
+    glm::vec2 tile_in_dir_pos;
     glm::vec3 final_nontile_pos = base_nontile_pos;
     bool can_assist;
     std::vector<glm::vec2> tile_positions{{0, 1}, {-1, 0}, {1, 0}, {0, -1}, {-1, 1}, {1, 1}, {-1, -1}, {1, -1}};
     for (auto &relative_tile_pos : tile_positions) {
         tile_pos = nontile_coord + relative_tile_pos;
-        tile_in_dir = nontile_coord + base_nontile_dir;
+        tile_in_dir_coord = nontile_coord + base_nontile_dir;
+        tile_in_dir_pos = mi.toPixels(tile_in_dir_coord);
 
         // check if tile in direction of travel is solid; only used if travel is only along one axis
-        can_assist = (mi.isValid(tile_in_dir) && resource()->map[tile_in_dir.x][tile_in_dir.y].value <= 0);
+        can_assist = (mi.isValid(tile_in_dir_coord) && resource()->map[tile_in_dir_coord.x][tile_in_dir_coord.y].value <= 0);
         
         // skip if tile position is outside of map range
         if (!mi.isValid(tile_pos))
@@ -95,10 +97,9 @@ void ES_Correction::_execEntity() {
 
                 // check if moving straight left
                 if (can_assist && base_nontile_dir == glm::vec2(-1.0f, 0.0f)) {
-                    // get assist (1 pixel)
-                    float a = (base_nontile_pos.y - tile_pos.y > 0) ? 1.0f : 0.0f;
-                    final_nontile_pos.y += a;
-                    
+                    // apply lesser of difference of position and +/- 1.0f in terms of absolute value
+                    float diff = tile_in_dir_pos.y - base_nontile_pos.y;
+                    final_nontile_pos.y += absMin(diff, diff / abs(diff));   
                 }
             } else {
                 // nt is to the left
@@ -106,9 +107,9 @@ void ES_Correction::_execEntity() {
 
                 // check if moving straight right
                 if (can_assist && base_nontile_dir == glm::vec2(1.0f, 0.0f)) {
-                    // get assist (1 pixel)
-                    float a = (base_nontile_pos.y - tile_pos.y > 0) ? 1.0f : 0.0f;
-                    final_nontile_pos.y += a;
+                    // apply lesser of difference of position and +/- 1.0f in terms of absolute value
+                    float diff = tile_in_dir_pos.y - base_nontile_pos.y;
+                    final_nontile_pos.y += absMin(diff, diff / abs(diff));   
                 }
             }
         } else {
@@ -119,9 +120,9 @@ void ES_Correction::_execEntity() {
 
                 // check if moving straight down
                 if (can_assist && base_nontile_dir == glm::vec2(0.0f, -1.0f)) {
-                    // get assist (1 pixel)
-                    float a = (base_nontile_pos.x - tile_pos.x > 0) ? 1.0f : 0.0f;
-                    final_nontile_pos.x += a;
+                    // apply lesser of difference of position and +/- 1.0f in terms of absolute value
+                    float diff = tile_in_dir_pos.x - base_nontile_pos.x;
+                    final_nontile_pos.x += absMin(diff, diff / abs(diff));   
                 }
             } else {
                 // nt is below
@@ -129,9 +130,9 @@ void ES_Correction::_execEntity() {
 
                 // check if moving straight up
                 if (can_assist && base_nontile_dir == glm::vec2(0.0f, 1.0f)) {
-                    // get assist (1 pixel)
-                    float a = (base_nontile_pos.x - tile_pos.x > 0) ? 1.0f : 0.0f;
-                    final_nontile_pos.x += a;
+                    // apply lesser of difference of position and +/- 1.0f in terms of absolute value
+                    float diff = tile_in_dir_pos.x - base_nontile_pos.x;
+                    final_nontile_pos.x += absMin(diff, diff / abs(diff));   
                 }
             }
         }

@@ -580,3 +580,7 @@ glm::vec3 randomAngle(glm::vec3 v, float deg_range) {
 bool isEven(int x) {
     return (float(x) / 2.0f) == glm::floor(float(x) / 2.0f);
 }
+
+float absMin(float a, float b) {
+    return (glm::min(glm::abs(a), glm::abs(b)) == glm::abs(a)) ? a : b;
+}
