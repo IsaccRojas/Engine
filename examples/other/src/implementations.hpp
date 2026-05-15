@@ -52,6 +52,7 @@ class ES_Correction : public EntityScriptInterface, public Resource<GlobalResour
 public:
     ES_Correction();
     unsigned collider_index;
+    float assist_speed;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

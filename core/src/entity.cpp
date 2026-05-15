@@ -582,5 +582,5 @@ bool isEven(int x) {
 }
 
 float absMin(float a, float b) {
-    return (glm::min(glm::abs(a), glm::abs(b)) == glm::abs(a)) ? a : b;
+    return (glm::abs(a) >= glm::abs(b)) ? b : a;
 }

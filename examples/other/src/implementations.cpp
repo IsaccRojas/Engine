@@ -99,7 +99,7 @@ void ES_Correction::_execEntity() {
                 if (can_assist && base_nontile_dir == glm::vec2(-1.0f, 0.0f)) {
                     // apply lesser of difference of position and +/- 1.0f in terms of absolute value
                     float diff = tile_in_dir_pos.y - base_nontile_pos.y;
-                    final_nontile_pos.y += absMin(diff, diff / abs(diff));   
+                    final_nontile_pos.y += absMin(diff, assist_speed * (diff / abs(diff)));
                 }
             } else {
                 // nt is to the left
@@ -109,7 +109,7 @@ void ES_Correction::_execEntity() {
                 if (can_assist && base_nontile_dir == glm::vec2(1.0f, 0.0f)) {
                     // apply lesser of difference of position and +/- 1.0f in terms of absolute value
                     float diff = tile_in_dir_pos.y - base_nontile_pos.y;
-                    final_nontile_pos.y += absMin(diff, diff / abs(diff));   
+                    final_nontile_pos.y += absMin(diff, assist_speed * (diff / abs(diff)));
                 }
             }
         } else {
@@ -122,7 +122,7 @@ void ES_Correction::_execEntity() {
                 if (can_assist && base_nontile_dir == glm::vec2(0.0f, -1.0f)) {
                     // apply lesser of difference of position and +/- 1.0f in terms of absolute value
                     float diff = tile_in_dir_pos.x - base_nontile_pos.x;
-                    final_nontile_pos.x += absMin(diff, diff / abs(diff));   
+                    final_nontile_pos.x += absMin(diff, assist_speed * (diff / abs(diff)));
                 }
             } else {
                 // nt is below
@@ -132,7 +132,7 @@ void ES_Correction::_execEntity() {
                 if (can_assist && base_nontile_dir == glm::vec2(0.0f, 1.0f)) {
                     // apply lesser of difference of position and +/- 1.0f in terms of absolute value
                     float diff = tile_in_dir_pos.x - base_nontile_pos.x;
-                    final_nontile_pos.x += absMin(diff, diff / abs(diff));   
+                    final_nontile_pos.x += absMin(diff, assist_speed * (diff / abs(diff)));
                 }
             }
         }
@@ -145,7 +145,7 @@ void ES_Correction::_killEntity() {}
 void ES_Correction::_updateEntity() {}
 void ES_Correction::_receive(Entity *other, std::string message) {}
 void ES_Correction::_collide(Entity *other) {}
-ES_Correction::ES_Correction() : EntityScriptInterface(), Resource(), collider_index(0) {}
+ES_Correction::ES_Correction() : EntityScriptInterface(), Resource(), collider_index(0), assist_speed(1.0f) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
