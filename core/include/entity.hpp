@@ -157,6 +157,7 @@ class Entity {
    bool _kill_started;
 
    Transform _globaltransform;
+   Transform _prevglobaltransform;
 
    Entity();
 
@@ -173,7 +174,10 @@ public:
    std::vector<Quad*>& quads();
    std::vector<EntityCollider*>& entitycolliders();
 
+   /* Current global transform. */
    Transform& globaltransform();
+   /* Global transform at the time of the last invocation of update() on an owning EntityManager. */
+   Transform getPrevGlobalTransform();
 
    const char* getName();
    const char* getGroup();
@@ -439,6 +443,11 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 bool computeCollisionAABB(Transform transf1, Transform transf2);
+
+/* Returns AABB distance along specified axis; if multiple components of axis are set, prioritizes x, then y, then z. 
+   Returns 0 if none are set.
+*/
+float computeDistanceAABB(Transform transf1, Transform transf2, glm::bvec3 axis);
 
 glm::vec3 toVec3(glm::vec2 v, float z);
 

@@ -8,7 +8,7 @@ GlobalResources::GlobalResources(EntityManager* entitymanager, EntityScriptExecu
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-glm::vec2 MapInfo::toCoords(glm::vec2 v) {
+glm::ivec2 MapInfo::toCoords(glm::vec2 v) {
     glm::vec2 coord_pixel_dimensions = coord_dimensions * unit_pixel_dimensions;
     glm::vec2 v_coords = v;
 
@@ -20,7 +20,7 @@ glm::vec2 MapInfo::toCoords(glm::vec2 v) {
     return v_coords;
 }
 
-glm::vec2 MapInfo::toPixels(glm::vec2 v) {
+glm::vec2 MapInfo::toPixels(glm::ivec2 v) {
     glm::vec2 coord_pixel_dimensions = coord_dimensions * unit_pixel_dimensions;
     glm::vec2 v_pixels = v;
 
@@ -51,7 +51,7 @@ void ES_Correction::_execEntity() {
     MapInfo &mi = resource()->mapinfo;
 
     glm::vec3 base_nontile_pos = entity().globaltransform().pos;
-    glm::vec3 base_nontile_prev_pos = entity().entitycolliders()[collider_index]->getPrevTransformation().pos;
+    glm::vec3 base_nontile_prev_pos = entity().getPrevGlobalTransform().pos;
     glm::vec3 base_nontile_vel = base_nontile_pos - base_nontile_prev_pos;
     glm::vec2 base_nontile_dir = toVec2(glm::length(base_nontile_vel) == 0 ? glm::vec3(0.0f) : glm::normalize(base_nontile_vel));
     glm::vec2 nontile_coord = mi.toCoords(toVec2(base_nontile_pos));
@@ -145,7 +145,7 @@ void ES_Correction::_killEntity() {}
 void ES_Correction::_updateEntity() {}
 void ES_Correction::_receive(Entity *other, std::string message) {}
 void ES_Correction::_collide(Entity *other) {}
-ES_Correction::ES_Correction() : EntityScriptInterface(), Resource(), collider_index(0), assist_speed(1.0f) {}
+ES_Correction::ES_Correction() : EntityScriptInterface(), Resource(), collider_index(0), assist_speed(0.5f) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -187,11 +187,14 @@ void ES_Player::_execEntity() {
 
     glm::vec3 &pos = entity().globaltransform().pos;
 
+    // get velocity as sum of input directions
     glm::vec3 vel = glm::vec3(
         float(-1.0f * resource()->input->get_a()) + float(resource()->input->get_d()),
         float(-1.0f * resource()->input->get_s()) + float(resource()->input->get_w()),
         0.0f
     );
+    
+    // normalize velocity length to speed
     if (glm::length(vel))
         vel = _speed * glm::normalize(vel);
 

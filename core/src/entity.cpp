@@ -147,6 +147,7 @@ std::vector<Quad*>& Entity::quads() { return _quads; }
 std::vector<EntityCollider*>& Entity::entitycolliders() { return _entitycolliders; }
 
 Transform& Entity::globaltransform() { return _globaltransform; }
+Transform Entity::getPrevGlobalTransform() { return _prevglobaltransform; }
 
 const char* Entity::getName() { return _entity_name.c_str(); }
 
@@ -488,6 +489,7 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     entity->_this_iter = _entities[ei.group.c_str()].push_back(entity);
     entity->_entitymanager = this;
     entity->_globaltransform = transform;
+    entity->_prevglobaltransform = transform;
     
     return entity;
 }
@@ -518,6 +520,7 @@ void EntityManager::checkEntities() {
             }
 
             // update transforms
+            entity->_prevglobaltransform = entity->globaltransform();
             for (auto &q : entity->quads()) {
                 q->resetTransformation();
                 q->applyTransform(entity->globaltransform());
@@ -565,6 +568,31 @@ bool computeCollisionAABB(Transform transf1, Transform transf2) {
     if (coll_x_space < 0.0f && coll_y_space < 0.0f && coll_z_space < 0.0f)
         return true;
     return false;
+}
+
+float computeDistanceAABB(Transform transf1, Transform transf2, glm::bvec3 axis) {
+    glm::vec3& pos1 = transf1.pos;
+    glm::vec3& dim1 = transf1.scale;
+    glm::vec3& pos2 = transf2.pos;
+    glm::vec3& dim2 = transf2.scale;
+
+    // get current collision
+    if (axis.x) {
+        float coll_x_space = glm::abs(pos1.x - pos2.x) - ((dim1.x + dim2.x) / 2.0f);
+        return coll_x_space;
+    }
+
+    if (axis.y) {
+        float coll_y_space = glm::abs(pos1.y - pos2.y) - ((dim1.y + dim2.y) / 2.0f);
+        return coll_y_space;
+    }
+    
+    if (axis.z) {
+        float coll_z_space = glm::abs(pos1.z - pos2.z) - ((dim1.z + dim2.z) / 2.0f);
+        return coll_z_space;
+    }
+
+    return 0.0f;
 }
 
 glm::vec3 toVec3(glm::vec2 v, float z) { return glm::vec3(v.x, v.y, z); }
