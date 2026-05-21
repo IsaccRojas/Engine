@@ -11,8 +11,8 @@
 
 /* Primary program execution loop.
 */
-void loop(CoreResources *core);
+void loop(CoreResources* core);
 
-void checkTileCollision(CoreResources *core);
+void genLevel(CoreResources* core);
 
 #endif

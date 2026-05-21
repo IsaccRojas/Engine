@@ -457,23 +457,17 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     Entity* entity = new Entity();
 
     // reserve memory for each stored vector to guarantee memory addresses
-    entity->_entityscripts.reserve(ei.entityscript_names.size());
     entity->_quad_ids.reserve(ei.quad_names.size());
     entity->_quads.reserve(ei.quad_names.size());
     entity->_entitycolliders.reserve(ei.entitycollider_names.size());
-
-    // instantiate each EntityScriptInterface in info and push to entity's storage
-    for (const std::string& esn : ei.entityscript_names) {
-        entity->_entityscripts.push_back(_entityscriptexecutor->spawnEntityScript(esn.c_str(), entity));
-        entity->_entityscripts.back()->attachNullableRef(&(entity->_entityscripts.back()));
-    }
+    entity->_entityscripts.resize(ei.entityscript_names.size());
 
     // instantiate each Quad in info and push to entity's storage
     for (const std::string& qn : ei.quad_names) {
         entity->_quad_ids.push_back(_glenv->genQuad(qn.c_str(), transform));
         entity->_quads.push_back(_glenv->getQuad(entity->_quad_ids.back()));
     }
-
+    
     // instantiate each EntityCollider in info and push to entity's storage (size match guaranteed by addEntity())
     auto ecn_iter = ei.entitycollider_names.begin();
     auto eca_iter = ei.entitycollider_attachments.begin();
@@ -483,6 +477,14 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
         // attach scripts
         for (auto &i : *eca_iter)
             entity->_entitycolliders.back()->attachNullableEntityScript(&(entity->_entityscripts[i]));
+    }
+
+    // instantiate each EntityScriptInterface in info and push to entity's storage
+    auto esn_iter = ei.entityscript_names.begin();
+    int i = 0;
+    for (; esn_iter != ei.entityscript_names.end(); esn_iter++, i++) {
+        entity->_entityscripts[i] = _entityscriptexecutor->spawnEntityScript(esn_iter->c_str(), entity);
+        entity->_entityscripts[i]->attachNullableRef(&(entity->_entityscripts[i]));
     }
 
     entity->_entity_name = name;

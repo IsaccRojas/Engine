@@ -1,7 +1,7 @@
 {
-	"name" : "Filter_Player",
-    "id" : 0,
-    "whitelist" : [1, 2],
+	"name" : "Filter_Interactable",
+    "id" : 2,
+    "whitelist" : [0],
     "blacklist" : [],
     "correctionWhitelist" : [],
     "correctionBlacklist" : []

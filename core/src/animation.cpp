@@ -80,13 +80,14 @@ void AnimationState::setAnimation(Animation* animation) {
     
     _step = 0;
     _frame_state = 0;
-    _cycle_state = _animation->firstCycleName();
     _completed = false;
 
     if (_animation) {
+        _cycle_state = "default";
         _current_cycle = &(_animation->cycle(_cycle_state.c_str()));
         _current_frame = &(_current_cycle->frame(_frame_state));
     } else {
+        _cycle_state = "";
         _current_cycle = nullptr;
         _current_frame = nullptr;
     }

@@ -3,7 +3,8 @@
 GlobalResources::GlobalResources(EntityManager* entitymanager, EntityScriptExecutor* entityscriptexecutor, GLFWInput* glfwinput) : 
     manager(entitymanager),
     executor(entityscriptexecutor),
-    input(glfwinput)
+    input(glfwinput),
+    stairs_entered(false)
 {}
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -357,3 +358,43 @@ void ES_Lifetime::_receive(Entity *other, std::string message) {
 void ES_Lifetime::_collide(Entity *other) {}
 
 ES_Lifetime::ES_Lifetime() : EntityScriptInterface(), _target(nullptr), lifetime(0), vel(glm::vec3(0.0f)) {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void ES_Pickup::_initEntity() {}
+void ES_Pickup::_execEntity() {}
+void ES_Pickup::_killEntity() {}
+void ES_Pickup::_updateEntity() {}
+void ES_Pickup::_receive(Entity *other, std::string message) {}
+
+void ES_Pickup::_collide(Entity *other) {
+    auto& i = resource()->inventory;
+    if (i.find(item_name) != i.end())
+        i[item_name] += 1;
+    entity().kill();
+}
+
+ES_Pickup::ES_Pickup() : EntityScriptInterface(), Resource(), item_name("") {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void ES_Stairs::_initEntity() {}
+void ES_Stairs::_execEntity() {}
+void ES_Stairs::_killEntity() {}
+void ES_Stairs::_updateEntity() {}
+void ES_Stairs::_receive(Entity *other, std::string message) {}
+void ES_Stairs::_collide(Entity *other) {
+    GlobalResources* gr = resource();
+    if (gr->input->get_e()) {
+        if (_stairs_locked) {
+            if (gr->inventory["key"] > 0) {
+                gr->inventory["key"]--;
+                _stairs_locked = false;
+                entity().quads()[0]->animationstate().setCycleState("unlocked");
+            }
+        } else
+            gr->stairs_entered = true;
+    }
+}
+
+ES_Stairs::ES_Stairs() : EntityScriptInterface(), Resource(), _stairs_locked(true) {}

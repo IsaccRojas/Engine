@@ -143,6 +143,44 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+/*
+    Entity Script Pickup
+    Upon collision, increments the name on the GlobalResources' inventory map and kills itself
+
+    std::string item_name - name to increment in GlobalResources' inventory
+*/
+class ES_Pickup : public EntityScriptInterface, public Resource<GlobalResources> {
+    void _initEntity() override;
+    void _execEntity() override;
+    void _killEntity() override;
+    void _updateEntity() override;
+    void _receive(Entity *other, std::string message) override;
+    void _collide(Entity *other) override;
+public:
+    ES_Pickup();
+    std::string item_name;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+/*
+    Entity Script Stairs
+    Interactable stairs.
+*/
+class ES_Stairs : public EntityScriptInterface, public Resource<GlobalResources> {
+    bool _stairs_locked;
+    void _initEntity() override;
+    void _execEntity() override;
+    void _killEntity() override;
+    void _updateEntity() override;
+    void _receive(Entity *other, std::string message) override;
+    void _collide(Entity *other) override;
+public:
+    ES_Stairs();
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 struct TileInfo {
     int value;
     int quad_id;
@@ -171,9 +209,12 @@ struct GlobalResources {
     RefContainer<ES_Chaser> container_Chaser;
     RefContainer<ES_Lifetime> container_Lifetime;
     RefContainer<SpellInterface> container_Spells;
+    RefContainer<ES_Pickup> container_Pickup;
 
     MapInfo mapinfo;
     std::vector<std::vector<TileInfo>> map;
+    std::unordered_map<std::string, int> inventory;
+    bool stairs_entered;
 };
 
 #endif

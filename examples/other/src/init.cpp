@@ -31,12 +31,15 @@ CoreResources::CoreResources() :
     provider_Correction(&globalresources),
     provider_Player(&globalresources),
     provider_Chaser(&globalresources),
+    provider_Pickup(&globalresources),
+    provider_Stairs(&globalresources),
     provider_Lifetime(),
     provider_Spell_LightBallSpell(&globalresources)
 {
     provider_Player.attach(&globalresources.container_Player);
     provider_Chaser.attach(&globalresources.container_Chaser);
     provider_Lifetime.attach(&globalresources.container_Lifetime);
+    provider_Pickup.attach(&globalresources.container_Pickup);
     provider_Spell_LightBallSpell.attach(&globalresources.container_Spells);
 }
 
@@ -101,15 +104,20 @@ void initializeAssets(CoreResources *core) {
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), 2.0f * unit_scale, glm::vec4(1.0f), core->animations["Animation_Slash"]}, "Quad_Slash");
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_LightBall"]}, "Quad_LightBall");
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_SolidTile"]}, "Quad_SolidTile");
+    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_Key"]}, "Quad_Key");
+    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_Stairs"]}, "Quad_Stairs");
 
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_Player"]}, "EntityCollider_Player");
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_Enemy"]}, "EntityCollider_Enemy");
+    core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), (0.85f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_Interactable"]}, "EntityCollider_Interactable");
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), glm::vec3(1.0f, 1.0f, 1.0f), core->filters["Filter_Player"]}, "EntityCollider_Hitbox");
 
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Correction, 1, true, nullptr, nullptr}, "ES_Correction");
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Player, 0, true, nullptr, nullptr}, "ES_Player");
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Chaser, 0, true, nullptr, nullptr}, "ES_Chaser");
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Lifetime, 0, true, nullptr, nullptr}, "ES_Lifetime");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Pickup, 0, true, nullptr, nullptr}, "ES_Pickup");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Stairs, 0, true, nullptr, nullptr}, "ES_Stairs");
     core->entityscriptexecutor.addScript(ScriptInfo{&core->provider_Spell_LightBallSpell, 1, true, nullptr, nullptr}, "Spell_LightBallSpell");
     
     core->entitymanager.addEntity(EntityInfo{"Group_Player", {"ES_Player", "ES_Correction"}, {"Quad_Player"}, {"EntityCollider_Player"}, {{0}}}, "Entity_Player");
@@ -117,45 +125,14 @@ void initializeAssets(CoreResources *core) {
     core->entitymanager.addEntity(EntityInfo{"Group_Hitbox", {"ES_Lifetime"}, {}, {"EntityCollider_Hitbox"}, {{0}}}, "Entity_Hitbox");
     core->entitymanager.addEntity(EntityInfo{"Group_Effect", {"ES_Lifetime"}, {"Quad_Slash"}, {}, {}}, "Entity_Slash");
     core->entitymanager.addEntity(EntityInfo{"Group_PlayerProjectile", {"ES_Lifetime"}, {"Quad_LightBall"}, {"EntityCollider_Player"}, {{0}}}, "Entity_LightBall");
+    core->entitymanager.addEntity(EntityInfo{"Group_Pickup", {"ES_Pickup"}, {"Quad_Key"}, {"EntityCollider_Interactable"}, {{0}}}, "Entity_Key");
+    core->entitymanager.addEntity(EntityInfo{"Group_Stairs", {"ES_Stairs"}, {"Quad_Stairs"}, {"EntityCollider_Interactable"}, {{0}}}, "Entity_Stairs");
 
     // initialize map
     for (unsigned x = 0; x < COORD_WIDTH; x++) {
         core->globalresources.map.push_back(std::vector<TileInfo>());
-        for (unsigned y = 0; y < COORD_HEIGHT; y++) {
+        for (unsigned y = 0; y < COORD_HEIGHT; y++)
             core->globalresources.map.back().push_back(TileInfo{-1, -1});
-            TileInfo& tile = core->globalresources.map.back().back();
-
-            // solid if on edge or both coordinates are even
-            if (x == 0 || x == COORD_WIDTH - 1 || y == 0 || y == COORD_HEIGHT - 1 || (isEven(x) && isEven(y)))
-                tile.value = 1;
-            else
-                tile.value = 0;
-            
-            if (
-                (x == 2 && y == 2) ||
-                (x == 4 && y == 2) ||
-                (x == 2 && y == 4) ||
-                (x == 4 && y == 4) ||
-                (x == 6 && y == 4) ||
-                (x == 6 && y == 6) ||
-                (x == 6 && y == 8) ||
-                (x == 8 && y == 4) ||
-                (x == 8 && y == 6) ||
-                (x == 8 && y == 8)
-            )
-                tile.value = 0;
-            
-            // create graphic
-            if (tile.value > 0)
-                tile.quad_id = core->glenv.genQuad(
-                    "Quad_SolidTile",
-                    Transform{glm::vec3(
-                        ((x * UNIT_PIXEL_WIDTH) + (UNIT_PIXEL_WIDTH / 2.0f)) + COORD_ORIGIN_PIXEL_X,
-                        ((y * UNIT_PIXEL_HEIGHT) + (UNIT_PIXEL_HEIGHT / 2.0f)) + COORD_ORIGIN_PIXEL_Y, 
-                        -1.0f
-                    ), glm::vec3(1.0f)}
-                );
-        }
     }
     
     core->globalresources.mapinfo = MapInfo{
@@ -163,4 +140,6 @@ void initializeAssets(CoreResources *core) {
         glm::vec2(COORD_WIDTH, COORD_HEIGHT),
         glm::vec2(COORD_ORIGIN_PIXEL_X, COORD_ORIGIN_PIXEL_Y)
     };
+
+    core->globalresources.inventory["key"] = 0;
 }
