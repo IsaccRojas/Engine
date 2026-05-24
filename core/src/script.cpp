@@ -245,7 +245,7 @@ void ScriptExecutor::enqueueSpawn(const char* script_name) {
 
 void ScriptExecutor::enqueueExec(ScriptInterface* script, unsigned queue) {
     if (queue >= _queuepairs.size())
-        throw std::out_of_range("Execution queue index out of range");
+        throw std::out_of_range("Attempt to enqueue into ScriptExecutor for execution with queue index out of range");
 
     if (!(script->_exec_enqueued || script->_kill_enqueued)) {
         // push to specified pair
@@ -277,7 +277,7 @@ std::vector<ScriptInterface*> ScriptExecutor::runSpawnQueue() {
 void ScriptExecutor::runExecQueue(unsigned queue) {
     // check bounds
     if (queue >= _queuepairs.size())
-        throw std::out_of_range("Execution queue index out of range");
+        throw std::out_of_range("Attempt to run execution queue with index out of range");
     
     std::queue<ScriptInterface*>& push_execqueue = _queuepairs[queue]._push_execqueue;
     std::queue<ScriptInterface*>& run_execqueue = _queuepairs[queue]._run_execqueue;

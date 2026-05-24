@@ -215,6 +215,8 @@ struct GlobalResources {
     std::vector<std::vector<TileInfo>> map;
     std::unordered_map<std::string, int> inventory;
     bool stairs_entered;
+    bool level_generated;
+    bool level_clear_started;
 };
 
 #endif

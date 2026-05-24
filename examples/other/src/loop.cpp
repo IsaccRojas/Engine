@@ -1,10 +1,43 @@
 #include "loop.hpp"
 
 void loop(CoreResources* core) {
-    genLevel(core);
-    
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(core->glfwstate.getWindowHandle()) && !core->glfwinput.get_esc()) {
+        /*
+        std::cout 
+            << core->globalresources.level_clear_started
+            << " "
+            << core->globalresources.level_generated
+            << " "
+            << core->globalresources.stairs_entered
+            << " ("
+            << core->entitymanager.groupSize("Group_Spawnable")
+            << ")"
+            << std::endl;
+        */
+        
+        // poll for entities if level clear started; else, initiate generation or clear as needed
+        if (core->globalresources.level_clear_started) {
+            if (!core->entitymanager.groupSize("Group_Spawnable")) {
+                core->globalresources.level_generated = false;
+                core->globalresources.level_clear_started = false;
+            }
+
+        } else {
+            // generate level if none generated; else, check if level needs to be cleared
+            if (!core->globalresources.level_generated) {
+                genLevel(core);
+                core->globalresources.level_generated = true;
+
+            } else {
+                if (core->globalresources.stairs_entered) {
+                    clearLevel(core);
+                    core->globalresources.stairs_entered = false;
+                    core->globalresources.level_clear_started = true;
+                }
+            }
+        }
+
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -29,7 +62,42 @@ void loop(CoreResources* core) {
     std::cout << "Ending loop" << std::endl;
 }
 
+void clearLevel(CoreResources* core) {
+    // remove existing map and entities
+    if (!core->globalresources.level_generated)
+        throw std::runtime_error("Attempt to clear level when none is generated");
+
+    // remove existing map and entities
+    if (core->globalresources.level_clear_started)
+        throw std::runtime_error("Attempt to clear level when clear is already in progress");
+    
+    auto& m = core->globalresources.map;
+    auto& mi = core->globalresources.mapinfo;
+
+    // remove quads and unset tile fields
+    for (unsigned x = 0; x < mi.coord_dimensions.x; x++) {
+        for (unsigned y = 0; y < mi.coord_dimensions.y; y++) {
+            TileInfo& tile = m[x][y];
+
+            if (tile.quad_id >= 0)
+                core->glenv.remove(tile.quad_id);
+            tile.value = -1;
+            tile.quad_id = -1;
+        }
+    }
+
+    // kill all entities
+    for (auto iter = core->entitymanager.groupBegin("Group_Spawnable"); iter != core->entitymanager.groupEnd("Group_Spawnable"); iter++)
+        (*iter)->kill();
+}
+
 void genLevel(CoreResources* core) {
+    if (core->globalresources.level_generated)
+        throw std::runtime_error("Attempt to generate level when it already exists");
+
+    if (core->globalresources.level_clear_started)
+        throw std::runtime_error("Attempt to generate level when level clearing is in progress");
+    
     auto& m = core->globalresources.map;
     auto& mi = core->globalresources.mapinfo;
 

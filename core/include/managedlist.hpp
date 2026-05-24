@@ -46,8 +46,8 @@ public:
     */
     void erase(typename std::list<T*>::iterator elem) {
         T* t = *elem;
-        delete t;
         _Ts.erase(elem);
+        delete t;
     }
 
     /* Returns internal list begin() iterator. */

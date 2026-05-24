@@ -386,6 +386,8 @@ public:
    std::list<Entity*>::iterator groupBegin(const char* group);
 
    std::list<Entity*>::iterator groupEnd(const char* group);
+
+   unsigned groupSize(const char* group);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

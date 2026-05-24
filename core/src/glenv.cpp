@@ -363,7 +363,7 @@ unsigned GLEnv::genQuad(const char* quad_name, Transform transform) {
 
 void GLEnv::remove(unsigned offset) {
     if (offset >= _quad_offsets.size())
-        throw std::out_of_range("Index out of range");
+        throw std::out_of_range("Attempt to remove from GLEnv with index out of range");
 
     // call _quad_offsets to make the offset usable again
     _quad_offsets.remove(offset);
@@ -419,7 +419,7 @@ void GLEnv::drawQuads() {
 
 Quad *GLEnv::getQuad(unsigned offset) {
     if (offset >= _quad_offsets.size())
-        throw std::out_of_range("Index out of range");
+        throw std::out_of_range("Attempt to get quad from GLEnv with index out of range");
 
     if (_quad_offsets.at(offset))
         return &_quads[offset];

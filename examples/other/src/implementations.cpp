@@ -4,7 +4,9 @@ GlobalResources::GlobalResources(EntityManager* entitymanager, EntityScriptExecu
     manager(entitymanager),
     executor(entityscriptexecutor),
     input(glfwinput),
-    stairs_entered(false)
+    stairs_entered(false),
+    level_generated(false),
+    level_clear_started(false)
 {}
 
 // --------------------------------------------------------------------------------------------------------------------------

@@ -13,6 +13,8 @@
 */
 void loop(CoreResources* core);
 
+void clearLevel(CoreResources* core);
+
 void genLevel(CoreResources* core);
 
 #endif

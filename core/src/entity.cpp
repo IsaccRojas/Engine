@@ -376,7 +376,7 @@ void EntityManager::_removeEntity(Entity* entity) {
     for (EntityCollider* collider : entity->_entitycolliders)
         _collisionspace->erase(collider);
 
-    _entities[entity->_group.c_str()].erase(entity->_this_iter);
+    _entities[entity->_group].erase(entity->_this_iter);
 }
 
 EntityManager::EntityManager(EntityScriptExecutor* entityscriptexecutor, GLEnv* glenv, CollisionSpace* collisionspace) : _initialized(false) { init(entityscriptexecutor, glenv, collisionspace); }
@@ -488,8 +488,9 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     }
 
     entity->_entity_name = name;
-    entity->_this_iter = _entities[ei.group.c_str()].push_back(entity);
     entity->_entitymanager = this;
+    entity->_this_iter = _entities[ei.group].push_back(entity);
+    entity->_group = ei.group;
     entity->_globaltransform = transform;
     entity->_prevglobaltransform = transform;
     
@@ -552,6 +553,12 @@ std::list<Entity*>::iterator EntityManager::groupEnd(const char *group) {
     if (_entities.find(group) == _entities.end())
         throw std::runtime_error(std::string("Attempt to get end iterator of nonexistent group ") + group);
     return _entities[group].end();
+}
+
+unsigned EntityManager::groupSize(const char* group) {
+    if (_entities.find(group) == _entities.end())
+        throw std::runtime_error(std::string("Attempt to get size of nonexistent group ") + group);
+    return _entities[group].size();
 }
 
 // --------------------------------------------------------------------------------------------------------------------------

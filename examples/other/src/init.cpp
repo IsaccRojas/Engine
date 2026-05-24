@@ -120,13 +120,13 @@ void initializeAssets(CoreResources *core) {
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Stairs, 0, true, nullptr, nullptr}, "ES_Stairs");
     core->entityscriptexecutor.addScript(ScriptInfo{&core->provider_Spell_LightBallSpell, 1, true, nullptr, nullptr}, "Spell_LightBallSpell");
     
-    core->entitymanager.addEntity(EntityInfo{"Group_Player", {"ES_Player", "ES_Correction"}, {"Quad_Player"}, {"EntityCollider_Player"}, {{0}}}, "Entity_Player");
-    core->entitymanager.addEntity(EntityInfo{"Group_Enemy", {"ES_Chaser"}, {"Quad_BasicEnemy"}, {"EntityCollider_Enemy"}, {{0}}}, "Entity_BasicEnemy");
-    core->entitymanager.addEntity(EntityInfo{"Group_Hitbox", {"ES_Lifetime"}, {}, {"EntityCollider_Hitbox"}, {{0}}}, "Entity_Hitbox");
-    core->entitymanager.addEntity(EntityInfo{"Group_Effect", {"ES_Lifetime"}, {"Quad_Slash"}, {}, {}}, "Entity_Slash");
-    core->entitymanager.addEntity(EntityInfo{"Group_PlayerProjectile", {"ES_Lifetime"}, {"Quad_LightBall"}, {"EntityCollider_Player"}, {{0}}}, "Entity_LightBall");
-    core->entitymanager.addEntity(EntityInfo{"Group_Pickup", {"ES_Pickup"}, {"Quad_Key"}, {"EntityCollider_Interactable"}, {{0}}}, "Entity_Key");
-    core->entitymanager.addEntity(EntityInfo{"Group_Stairs", {"ES_Stairs"}, {"Quad_Stairs"}, {"EntityCollider_Interactable"}, {{0}}}, "Entity_Stairs");
+    core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Player", "ES_Correction"}, {"Quad_Player"}, {"EntityCollider_Player"}, {{0}}}, "Entity_Player");
+    core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Chaser"}, {"Quad_BasicEnemy"}, {"EntityCollider_Enemy"}, {{0}}}, "Entity_BasicEnemy");
+    core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {}, {"EntityCollider_Hitbox"}, {{0}}}, "Entity_Hitbox");
+    core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {"Quad_Slash"}, {}, {}}, "Entity_Slash");
+    core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {"Quad_LightBall"}, {"EntityCollider_Player"}, {{0}}}, "Entity_LightBall");
+    core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Pickup"}, {"Quad_Key"}, {"EntityCollider_Interactable"}, {{0}}}, "Entity_Key");
+    core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Stairs"}, {"Quad_Stairs"}, {"EntityCollider_Interactable"}, {{0}}}, "Entity_Stairs");
 
     // initialize map
     for (unsigned x = 0; x < COORD_WIDTH; x++) {
