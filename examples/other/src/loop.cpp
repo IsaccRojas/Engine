@@ -79,10 +79,14 @@ void clearLevel(CoreResources* core) {
         for (unsigned y = 0; y < mi.coord_dimensions.y; y++) {
             TileInfo& tile = m[x][y];
 
-            if (tile.quad_id >= 0)
-                core->glenv.remove(tile.quad_id);
+            if (tile.quad_id_lower >= 0)
+                core->glenv.remove(tile.quad_id_lower);
+            if (tile.quad_id_upper >= 0)
+                core->glenv.remove(tile.quad_id_upper);
+
             tile.value = -1;
-            tile.quad_id = -1;
+            tile.quad_id_lower = -1;
+            tile.quad_id_upper = -1;
         }
     }
 
@@ -109,33 +113,49 @@ void genLevel(CoreResources* core) {
             // solid if on edge or both coordinates are even
             if (x == 0 || x == mi.coord_dimensions.x - 1 || y == 0 || y == mi.coord_dimensions.y - 1 || (isEven(x) && isEven(y)))
                 tile.value = 1;
-            else
-                tile.value = 0;
+            else {
+                if (rand() % 4 == 0)
+                    tile.value = 2;
+                else
+                    tile.value = 0;
+            }
             
-            if (
-                (x == 2 && y == 2) ||
-                (x == 4 && y == 2) ||
-                (x == 2 && y == 4) ||
-                (x == 4 && y == 4) ||
-                (x == 6 && y == 4) ||
-                (x == 6 && y == 6) ||
-                (x == 6 && y == 8) ||
-                (x == 8 && y == 4) ||
-                (x == 8 && y == 6) ||
-                (x == 8 && y == 8)
-            )
-                tile.value = 0;
-             
-            // create graphic
-            if (tile.value > 0)
-                tile.quad_id = core->glenv.genQuad(
-                    "Quad_SolidTile",
-                    Transform{glm::vec3(
-                        ((x * mi.unit_pixel_dimensions.x) + (mi.unit_pixel_dimensions.x / 2.0f)) + mi.coord_origin.x,
-                        ((y * mi.unit_pixel_dimensions.y) + (mi.unit_pixel_dimensions.y / 2.0f)) + mi.coord_origin.y, 
-                        -1.0f
-                    ), glm::vec3(1.0f)}
-                );
+            // create graphics
+            tile.quad_id_lower = core->glenv.genQuad("Quad_Tile",
+                Transform{glm::vec3(
+                    ((x * mi.unit_pixel_dimensions.x) + (mi.unit_pixel_dimensions.x / 2.0f)) + mi.coord_origin.x,
+                    ((y * mi.unit_pixel_dimensions.y) + (mi.unit_pixel_dimensions.y / 2.0f)) + mi.coord_origin.y, 
+                    -2.0f
+                ), glm::vec3(1.0f)}
+            );
+            tile.quad_id_upper = core->glenv.genQuad("Quad_Tile",
+                Transform{glm::vec3(
+                    ((x * mi.unit_pixel_dimensions.x) + (mi.unit_pixel_dimensions.x / 2.0f)) + mi.coord_origin.x,
+                    ((y * mi.unit_pixel_dimensions.y) + (mi.unit_pixel_dimensions.y / 2.0f)) + mi.coord_origin.y, 
+                    -1.0f
+                ), glm::vec3(1.0f)}
+            );
+
+            Quad *q_lower = core->glenv.getQuad(tile.quad_id_lower);
+            Quad *q_upper = core->glenv.getQuad(tile.quad_id_upper);
+
+            // set lower tile graphic
+            if (isEven(x + y))
+                q_lower->animationstate().setCycleState("dark_floor");
+            else
+                q_lower->animationstate().setCycleState("light_floor");
+
+            // set upper tile graphic
+            if (tile.value > 0) {
+                if (tile.value == 1)
+                    q_upper->animationstate().setCycleState("stud");
+                else
+                    q_upper->animationstate().setCycleState("brick");
+            } else
+                q_upper->animationstate().setCycleState("air");
+            
+            q_lower->writeAnimation();
+            q_upper->writeAnimation();
         }
     }
 

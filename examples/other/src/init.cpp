@@ -20,9 +20,9 @@ const unsigned COORD_HEIGHT = 13;
 const int COORD_ORIGIN_PIXEL_X = 0;
 const int COORD_ORIGIN_PIXEL_Y = 0;
 
-const unsigned TEX_SPACE_WIDTH = 144;
+const unsigned TEX_SPACE_WIDTH = 224;
 const unsigned TEX_SPACE_HEIGHT = 80;
-const unsigned TEX_SPACE_LEVELS = 3;
+const unsigned TEX_SPACE_LEVELS = 2;
 
 const float CLEAR_COLOR_GRAY = 0.0f;
 
@@ -67,7 +67,8 @@ void initializeCore(CoreResources *core) {
     std::cout << "Setting up GLEnv" << std::endl;
     core->glenv.init(MAX_COUNT);
     core->glenv.setTexArray(TEX_SPACE_WIDTH, TEX_SPACE_HEIGHT, TEX_SPACE_LEVELS);
-    core->glenv.setTexture(Image("gfx/sprites2.png"), 0, 0, 0);
+    core->glenv.setTexture(Image("gfx/sprites.png"), 0, 0, 0);
+    core->glenv.setTexture(Image("gfx/tiles.png"), 0, 0, 1);
     
     // set up view and projection matrices
     float halfwidth = float(VIEW_PIXEL_WIDTH) * 0.5f;
@@ -103,7 +104,7 @@ void initializeAssets(CoreResources *core) {
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_BasicEnemy"]}, "Quad_BasicEnemy");
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), 2.0f * unit_scale, glm::vec4(1.0f), core->animations["Animation_Slash"]}, "Quad_Slash");
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_LightBall"]}, "Quad_LightBall");
-    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_SolidTile"]}, "Quad_SolidTile");
+    core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_Tile"]}, "Quad_Tile");
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_Key"]}, "Quad_Key");
     core->glenv.addQuad(QuadInfo{glm::vec3(0.0f), unit_scale, glm::vec4(1.0f), core->animations["Animation_Stairs"]}, "Quad_Stairs");
 

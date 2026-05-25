@@ -183,7 +183,8 @@ public:
 
 struct TileInfo {
     int value;
-    int quad_id;
+    int quad_id_lower;
+    int quad_id_upper;
 };
 
 struct MapInfo {
