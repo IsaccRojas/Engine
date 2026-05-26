@@ -1,0 +1,8 @@
+{
+	"name" : "Filter_BreakableTile",
+    "id" : 3,
+    "whitelist" : [3],
+    "blacklist" : [],
+    "correctionWhitelist" : [],
+    "correctionBlacklist" : []
+}

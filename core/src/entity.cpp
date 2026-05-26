@@ -479,6 +479,14 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
             entity->_entitycolliders.back()->attachNullableEntityScript(&(entity->_entityscripts[i]));
     }
 
+    // initialize fields before running init methods
+    entity->_entity_name = name;
+    entity->_entitymanager = this;
+    entity->_this_iter = _entities[ei.group].push_back(entity);
+    entity->_group = ei.group;
+    entity->_globaltransform = transform;
+    entity->_prevglobaltransform = transform;
+
     // instantiate each EntityScriptInterface in info and push to entity's storage
     auto esn_iter = ei.entityscript_names.begin();
     int i = 0;
@@ -486,13 +494,6 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
         entity->_entityscripts[i] = _entityscriptexecutor->spawnEntityScript(esn_iter->c_str(), entity);
         entity->_entityscripts[i]->attachNullableRef(&(entity->_entityscripts[i]));
     }
-
-    entity->_entity_name = name;
-    entity->_entitymanager = this;
-    entity->_this_iter = _entities[ei.group].push_back(entity);
-    entity->_group = ei.group;
-    entity->_globaltransform = transform;
-    entity->_prevglobaltransform = transform;
     
     return entity;
 }

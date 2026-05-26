@@ -400,3 +400,28 @@ void ES_Stairs::_collide(Entity *other) {
 }
 
 ES_Stairs::ES_Stairs() : EntityScriptInterface(), Resource(), _stairs_locked(true) {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void ES_BreakableTile::_initEntity() {
+    entity().quads()[0]->animationstate().setCycleState("brick");
+
+    auto& mi = resource()->mapinfo;
+    auto& m = resource()->map;
+    
+    _initial_coords = mi.toCoords(toVec2(entity().globaltransform().pos));
+    _prev_tile_state = m[_initial_coords.x][_initial_coords.y].value;
+    m[_initial_coords.x][_initial_coords.y].value = 1;
+}
+void ES_BreakableTile::_execEntity() {
+    if (health <= 0)
+        entity().kill();
+}
+void ES_BreakableTile::_killEntity() {
+    resource()->map[_initial_coords.x][_initial_coords.y].value = _prev_tile_state;
+}
+void ES_BreakableTile::_updateEntity() {}
+void ES_BreakableTile::_receive(Entity *other, std::string message) {}
+void ES_BreakableTile::_collide(Entity *other) {}
+
+ES_BreakableTile::ES_BreakableTile() : EntityScriptInterface(), Resource(), _prev_tile_state(-1), _initial_coords(0), health(1) {}

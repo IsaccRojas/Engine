@@ -33,6 +33,7 @@ CoreResources::CoreResources() :
     provider_Chaser(&globalresources),
     provider_Pickup(&globalresources),
     provider_Stairs(&globalresources),
+    provider_BreakableTile(&globalresources),
     provider_Lifetime(),
     provider_Spell_LightBallSpell(&globalresources)
 {
@@ -112,6 +113,7 @@ void initializeAssets(CoreResources *core) {
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_Enemy"]}, "EntityCollider_Enemy");
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), (0.85f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_Interactable"]}, "EntityCollider_Interactable");
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), glm::vec3(1.0f, 1.0f, 1.0f), core->filters["Filter_Player"]}, "EntityCollider_Hitbox");
+    core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_BreakableTile"]}, "EntityCollider_BreakableTile");
 
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Correction, 1, true, nullptr, nullptr}, "ES_Correction");
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Player, 0, true, nullptr, nullptr}, "ES_Player");
@@ -119,6 +121,7 @@ void initializeAssets(CoreResources *core) {
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Lifetime, 0, true, nullptr, nullptr}, "ES_Lifetime");
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Pickup, 0, true, nullptr, nullptr}, "ES_Pickup");
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Stairs, 0, true, nullptr, nullptr}, "ES_Stairs");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_BreakableTile, 0, true, nullptr, nullptr}, "ES_BreakableTile");
     core->entityscriptexecutor.addScript(ScriptInfo{&core->provider_Spell_LightBallSpell, 1, true, nullptr, nullptr}, "Spell_LightBallSpell");
     
     core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Player", "ES_Correction"}, {"Quad_Player"}, {"EntityCollider_Player"}, {{0}}}, "Entity_Player");
@@ -128,6 +131,7 @@ void initializeAssets(CoreResources *core) {
     core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {"Quad_LightBall"}, {"EntityCollider_Player"}, {{0}}}, "Entity_LightBall");
     core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Pickup"}, {"Quad_Key"}, {"EntityCollider_Interactable"}, {{0}}}, "Entity_Key");
     core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Stairs"}, {"Quad_Stairs"}, {"EntityCollider_Interactable"}, {{0}}}, "Entity_Stairs");
+    core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_BreakableTile"}, {"Quad_Tile"}, {"EntityCollider_BreakableTile"}, {{0}}}, "Entity_BreakableTile");
 
     // initialize map
     for (unsigned x = 0; x < COORD_WIDTH; x++) {

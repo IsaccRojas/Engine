@@ -111,14 +111,9 @@ void genLevel(CoreResources* core) {
             TileInfo& tile = m[x][y];
 
             // solid if on edge or both coordinates are even
-            if (x == 0 || x == mi.coord_dimensions.x - 1 || y == 0 || y == mi.coord_dimensions.y - 1 || (isEven(x) && isEven(y)))
+            bool fixed_solid = (x == 0 || x == mi.coord_dimensions.x - 1 || y == 0 || y == mi.coord_dimensions.y - 1 || (isEven(x) && isEven(y)));
+            if (fixed_solid)
                 tile.value = 1;
-            else {
-                if (rand() % 4 == 0)
-                    tile.value = 2;
-                else
-                    tile.value = 0;
-            }
             
             // create graphics
             tile.quad_id_lower = core->glenv.genQuad("Quad_Tile",
@@ -156,14 +151,44 @@ void genLevel(CoreResources* core) {
             
             q_lower->writeAnimation();
             q_upper->writeAnimation();
+
+            // spawn bricks
+            if (!fixed_solid && (rand() % 4 == 0))
+                core->entitymanager.spawnEntity("Entity_BreakableTile", Transform{toVec3(mi.toPixels(glm::uvec2(x, y)), 0.0f), glm::vec3(1.0f)});
         }
     }
 
-    core->entitymanager.spawnEntity("Entity_Player", Transform{glm::vec3(128.0f, 128.0f, 0.0f), glm::vec3(1.0f)});
-    //core->entitymanager.spawnEntity("Entity_BasicEnemy",Transform{glm::vec3(32.0f, 0.0f, 0.0f), glm::vec3(1.0f)});
+    // try to place player randomly
+    glm::uvec2 player_pos;
+    while (true) {
+        player_pos.x = (rand() % unsigned(mi.coord_dimensions.x - 1)) + 1;
+        player_pos.y = (rand() % unsigned(mi.coord_dimensions.y - 1)) + 1;
+        if (m[player_pos.x][player_pos.y].value > 0)
+            continue;
+        core->entitymanager.spawnEntity("Entity_Player", Transform{toVec3(mi.toPixels(player_pos), 0.0f), glm::vec3(1.0f)});
+        break;
+    }
 
-    core->entitymanager.spawnEntity("Entity_Key", Transform{toVec3(core->globalresources.mapinfo.toPixels(glm::ivec2(1, 1)), 0.0f), glm::vec3(1.0f)});
-    core->globalresources.container_Pickup.getLastInstance()->item_name = "key";
+    // try to place key randomly
+    glm::uvec2 key_pos;
+    while (true) {
+        key_pos.x = (rand() % unsigned(mi.coord_dimensions.x - 1)) + 1;
+        key_pos.y = (rand() % unsigned(mi.coord_dimensions.y - 1)) + 1;
+        if (m[key_pos.x][key_pos.y].value > 0 || key_pos == player_pos)
+            continue;
+        core->entitymanager.spawnEntity("Entity_Key", Transform{toVec3(mi.toPixels(key_pos), 0.0f), glm::vec3(1.0f)});
+        core->globalresources.container_Pickup.getLastInstance()->item_name = "key";
+        break;
+    }
 
-    core->entitymanager.spawnEntity("Entity_Stairs", Transform{toVec3(core->globalresources.mapinfo.toPixels(glm::ivec2(1, 10)), 0.0f), glm::vec3(1.0f)});
+    // try to place stairs randomly
+    glm::uvec2 stairs_pos;
+    while (true) {
+        stairs_pos.x = (rand() % unsigned(mi.coord_dimensions.x - 1)) + 1;
+        stairs_pos.y = (rand() % unsigned(mi.coord_dimensions.y - 1)) + 1;
+        if (m[stairs_pos.x][stairs_pos.y].value > 0 || stairs_pos == player_pos || stairs_pos == key_pos)
+            continue;
+        core->entitymanager.spawnEntity("Entity_Stairs", Transform{toVec3(mi.toPixels(stairs_pos), 0.0f), glm::vec3(1.0f)});
+        break;
+    }
 }

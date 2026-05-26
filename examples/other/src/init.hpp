@@ -29,6 +29,7 @@ struct CoreResources {
     EntityScriptResourceProvider<ES_Chaser, GlobalResources, ES_Chaser> provider_Chaser;
     EntityScriptResourceProvider<ES_Pickup, GlobalResources, ES_Pickup> provider_Pickup;
     EntityScriptResourceProvider<ES_Stairs, GlobalResources, ES_Stairs> provider_Stairs;
+    EntityScriptResourceProvider<ES_BreakableTile, GlobalResources, ES_BreakableTile> provider_BreakableTile;
     GenericEntityScriptProvider<ES_Lifetime> provider_Lifetime;
     ScriptResourceProvider<Spell_LightBallSpell, GlobalResources, SpellInterface> provider_Spell_LightBallSpell;
 };

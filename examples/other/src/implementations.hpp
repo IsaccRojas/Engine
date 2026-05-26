@@ -181,6 +181,27 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+/*
+    Entity Script BreakableTile
+    Breakable tile behavior. Does not move and can be destroyed.
+    Sets the coordinate tile it spawns on to a solid state, and reverts it to its original state after being destroyed.
+*/
+class ES_BreakableTile : public EntityScriptInterface, public Resource<GlobalResources> {
+    int _prev_tile_state;
+    glm::uvec2 _initial_coords;
+    void _initEntity() override;
+    void _execEntity() override;
+    void _killEntity() override;
+    void _updateEntity() override;
+    void _receive(Entity *other, std::string message) override;
+    void _collide(Entity *other) override;
+public:
+    ES_BreakableTile();
+    unsigned health;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 struct TileInfo {
     int value;
     int quad_id_lower;
