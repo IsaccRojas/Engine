@@ -143,6 +143,8 @@ public:
 class Entity {
    friend EntityManager;
 
+   std::unordered_set<Entity**> _nullablerefs;
+
    std::string _entity_name;
 
    EntityManager* _entitymanager;
@@ -178,6 +180,12 @@ public:
    Transform& globaltransform();
    /* Global transform at the time of the last invocation of update() on an owning EntityManager. */
    Transform getPrevGlobalTransform();
+
+   /* Attaches a nullable Entity reference to null on kill */
+   void attachNullableEntity(Entity** ref);
+
+   /* Detaches a nullable Entity reference to null on kill */
+   void detachNullableEntity(Entity** ref);
 
    const char* getName();
    const char* getGroup();
@@ -336,7 +344,7 @@ public:
    quad_names - names of QuadInfos to use for Quad instantiation, in order
    entitycollider_names - names of ColliderInfos to use for Collider instantiation, in order
    entitycollider_attachments - indices per collider to use of instantiated scripts to attach to colliders
-
+   spawn_callback - callback to call when spawning an instance
 */
 struct EntityInfo {
    std::string group;
@@ -344,6 +352,7 @@ struct EntityInfo {
    std::list<std::string> quad_names;
    std::list<std::string> entitycollider_names;
    std::list<std::vector<unsigned>> entitycollider_attachments;
+   std::function<void(Entity*)> spawn_callback;
 };
 
 class EntityManager {

@@ -197,13 +197,16 @@ void ES_Player::_execEntity() {
         0.0f
     );
     
-    // normalize velocity length to speed
-    if (glm::length(vel))
+    // normalize velocity length to speed and update last input direction, if non-zero length
+    if (glm::length(vel)) {
+        _last_input_dir = vel;
         vel = _speed * glm::normalize(vel);
+    }
 
     pos += vel;
     
     if (_cast_cooldown <= 0.0f && resource()->input->get_m1()) {
+        /*
         // select first cast for now
         Castable &castable = *(_castables.begin());
         
@@ -222,7 +225,16 @@ void ES_Player::_execEntity() {
             _casts.back().source = &castable;
             _cast_cooldown = _cast_cooldown_max;
         }
+        */
+
+        resource()->manager->spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
+        ES_Lifetime* es_lifetime = resource()->container_Lifetime.getLastInstance();
+        es_lifetime->lifetime = 90;
+        es_lifetime->vel = 1.0f * _last_input_dir;
+
+        _cast_cooldown = _cast_cooldown_max;
     }
+
     if (_cast_cooldown > 0.0f)
         _cast_cooldown -= 1.0f;
     
@@ -247,7 +259,8 @@ ES_Player::ES_Player() :
     _hurt_cooldown(0.0f),
     _cast_cooldown_max(24.0f),
     _cast_cooldown(0.0f),
-    _speed(0.5f)
+    _speed(0.5f),
+    _last_input_dir(0.0f, 1.0f, 0.0f)
 {}
 
 void ES_Player::checkCasts() {
@@ -325,39 +338,33 @@ ES_Chaser::ES_Chaser() : EntityScriptInterface(), Resource(), _target(nullptr) {
 // --------------------------------------------------------------------------------------------------------------------------
 
 void ES_Lifetime::_initEntity() {}
-
 void ES_Lifetime::_execEntity() {
     if (lifetime > 0)
         lifetime--;
     
-    if (_target) {
+    if (_target)
         entity().globaltransform().pos = _target->globaltransform().pos;
-
-        if (_target->entityscripts()[0]->getKillEnqueued()) {
-            _target->entityscripts()[0]->unlock(&key());
-            _target = nullptr;
-        }
-    } else
+    else
         entity().globaltransform().pos += vel;
 
     if (lifetime <= 0)
         entity().kill();
 }
-
 void ES_Lifetime::_killEntity() {
     if (_target)
         _target->entityscripts()[0]->unlock(&key());
 }
-
 void ES_Lifetime::_updateEntity() {}
-
 void ES_Lifetime::_receive(Entity *other, std::string message) {
     if (message == "target") {
         _target = other;
-        _target->entityscripts()[0]->lockout(&key());
+        if (_target)
+            _target->attachNullableEntity(&_target);
     }
 }
-void ES_Lifetime::_collide(Entity *other) {}
+void ES_Lifetime::_collide(Entity *other) {
+    entity().kill();
+}
 
 ES_Lifetime::ES_Lifetime() : EntityScriptInterface(), _target(nullptr), lifetime(0), vel(glm::vec3(0.0f)) {}
 
@@ -413,10 +420,7 @@ void ES_BreakableTile::_initEntity() {
     _prev_tile_state = m[_initial_coords.x][_initial_coords.y].value;
     m[_initial_coords.x][_initial_coords.y].value = 1;
 }
-void ES_BreakableTile::_execEntity() {
-    if (health <= 0)
-        entity().kill();
-}
+void ES_BreakableTile::_execEntity() {}
 void ES_BreakableTile::_killEntity() {
     resource()->map[_initial_coords.x][_initial_coords.y].value = _prev_tile_state;
 }

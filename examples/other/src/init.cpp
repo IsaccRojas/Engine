@@ -112,7 +112,7 @@ void initializeAssets(CoreResources *core) {
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_Player"]}, "EntityCollider_Player");
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_Enemy"]}, "EntityCollider_Enemy");
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), (0.85f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_Interactable"]}, "EntityCollider_Interactable");
-    core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), glm::vec3(1.0f, 1.0f, 1.0f), core->filters["Filter_Player"]}, "EntityCollider_Hitbox");
+    core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_PlayerHitbox"]}, "EntityCollider_PlayerHitbox");
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_BreakableTile"]}, "EntityCollider_BreakableTile");
 
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Correction, 1, true, nullptr, nullptr}, "ES_Correction");
@@ -121,14 +121,14 @@ void initializeAssets(CoreResources *core) {
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Lifetime, 0, true, nullptr, nullptr}, "ES_Lifetime");
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Pickup, 0, true, nullptr, nullptr}, "ES_Pickup");
     core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Stairs, 0, true, nullptr, nullptr}, "ES_Stairs");
-    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_BreakableTile, 0, true, nullptr, nullptr}, "ES_BreakableTile");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_BreakableTile, 0, false, nullptr, nullptr}, "ES_BreakableTile");
     core->entityscriptexecutor.addScript(ScriptInfo{&core->provider_Spell_LightBallSpell, 1, true, nullptr, nullptr}, "Spell_LightBallSpell");
     
     core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Player", "ES_Correction"}, {"Quad_Player"}, {"EntityCollider_Player"}, {{0}}}, "Entity_Player");
     core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Chaser"}, {"Quad_BasicEnemy"}, {"EntityCollider_Enemy"}, {{0}}}, "Entity_BasicEnemy");
-    core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {}, {"EntityCollider_Hitbox"}, {{0}}}, "Entity_Hitbox");
+    core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {}, {"EntityCollider_PlayerHitbox"}, {{0}}}, "Entity_GenericPlayerHitbox");
     core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {"Quad_Slash"}, {}, {}}, "Entity_Slash");
-    core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {"Quad_LightBall"}, {"EntityCollider_Player"}, {{0}}}, "Entity_LightBall");
+    core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {"Quad_LightBall"}, {"EntityCollider_PlayerHitbox"}, {{0}}}, "Entity_LightBall");
     core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Pickup"}, {"Quad_Key"}, {"EntityCollider_Interactable"}, {{0}}}, "Entity_Key");
     core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Stairs"}, {"Quad_Stairs"}, {"EntityCollider_Interactable"}, {{0}}}, "Entity_Stairs");
     core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_BreakableTile"}, {"Quad_Tile"}, {"EntityCollider_BreakableTile"}, {{0}}}, "Entity_BreakableTile");

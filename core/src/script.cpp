@@ -169,8 +169,8 @@ void ScriptExecutor::_setupScript(ScriptInterface* script, const char* script_na
     // store in allocator
     scriptallocator->_insertReference(script);
 
-    // enqueue if non-negative queue provided
-    if (script->preferred_queue() >= 0)
+    // enqueue if auto-enqueue set, and non-negative queue provided
+    if (script->auto_enqueue() && script->preferred_queue() >= 0)
         enqueueExec(script, script->preferred_queue());
     
     // try spawn callback if it exists

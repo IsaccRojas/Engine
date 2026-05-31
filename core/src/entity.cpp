@@ -139,6 +139,10 @@ void Entity::kill() {
         for (auto& es : _entityscripts)
             if (es != nullptr)
                 es->enqueueKill();
+            
+        // null all inserted nullable references
+        for (Entity** r : _nullablerefs)
+            *r = nullptr;
     }
 }
 
@@ -148,6 +152,14 @@ std::vector<EntityCollider*>& Entity::entitycolliders() { return _entitycollider
 
 Transform& Entity::globaltransform() { return _globaltransform; }
 Transform Entity::getPrevGlobalTransform() { return _prevglobaltransform; }
+
+void Entity::attachNullableEntity(Entity** ref) {
+    _nullablerefs.insert(ref);
+}
+
+void Entity::detachNullableEntity(Entity** ref) {
+    _nullablerefs.erase(ref);
+}
 
 const char* Entity::getName() { return _entity_name.c_str(); }
 
@@ -494,6 +506,9 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
         entity->_entityscripts[i] = _entityscriptexecutor->spawnEntityScript(esn_iter->c_str(), entity);
         entity->_entityscripts[i]->attachNullableRef(&(entity->_entityscripts[i]));
     }
+
+    if (ei.spawn_callback)
+        ei.spawn_callback(entity);
     
     return entity;
 }

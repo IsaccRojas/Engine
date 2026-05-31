@@ -89,6 +89,7 @@ class ES_Player : public EntityScriptInterface, public Resource<GlobalResources>
     float _cast_cooldown_max;
     float _cast_cooldown;
     float _speed;
+    glm::vec3 _last_input_dir;
     void _initEntity() override;
     void _execEntity() override;
     void _killEntity() override;

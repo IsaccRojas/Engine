@@ -1,7 +1,7 @@
 {
 	"name" : "Filter_Enemy",
     "id" : 1,
-    "whitelist" : [0],
+    "whitelist" : [0, 4],
     "blacklist" : [],
     "correctionWhitelist" : [],
     "correctionBlacklist" : []

@@ -1,7 +1,7 @@
 {
-	"name" : "Filter_BreakableTile",
-    "id" : 3,
-    "whitelist" : [4],
+	"name" : "Filter_PlayerHitbox",
+    "id" : 4,
+    "whitelist" : [1, 3],
     "blacklist" : [],
     "correctionWhitelist" : [],
     "correctionBlacklist" : []
