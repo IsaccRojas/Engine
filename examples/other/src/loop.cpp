@@ -111,7 +111,8 @@ void genLevel(CoreResources* core) {
             TileInfo& tile = m[x][y];
 
             // solid if on edge or both coordinates are even
-            bool fixed_solid = (x == 0 || x == mi.coord_dimensions.x - 1 || y == 0 || y == mi.coord_dimensions.y - 1 || (isEven(x) && isEven(y)));
+            // (isEven(x) && isEven(y)) -- for inner tiles
+            bool fixed_solid = (x == 0 || x == mi.coord_dimensions.x - 1 || y == 0 || y == mi.coord_dimensions.y - 1);
             if (fixed_solid)
                 tile.value = 1;
             
@@ -153,7 +154,7 @@ void genLevel(CoreResources* core) {
             q_upper->writeAnimation();
 
             // spawn bricks
-            if (!fixed_solid && (rand() % 4 == 0))
+            if (!fixed_solid && (rand() % 4 == 0) && false)
                 core->entitymanager.spawnEntity("Entity_BreakableTile", Transform{toVec3(mi.toPixels(glm::uvec2(x, y)), 0.0f), glm::vec3(1.0f)});
         }
     }
@@ -189,6 +190,17 @@ void genLevel(CoreResources* core) {
         if (m[stairs_pos.x][stairs_pos.y].value > 0 || stairs_pos == player_pos || stairs_pos == key_pos)
             continue;
         core->entitymanager.spawnEntity("Entity_Stairs", Transform{toVec3(mi.toPixels(stairs_pos), 0.0f), glm::vec3(1.0f)});
+        break;
+    }
+
+    // try to place enemy randomly
+    glm::uvec2 enemy_pos;
+    while (true) {
+        enemy_pos.x = (rand() % unsigned(mi.coord_dimensions.x - 1)) + 1;
+        enemy_pos.y = (rand() % unsigned(mi.coord_dimensions.y - 1)) + 1;
+        if (m[enemy_pos.x][enemy_pos.y].value > 0 || enemy_pos == player_pos || enemy_pos == key_pos || enemy_pos == stairs_pos)
+            continue;
+        core->entitymanager.spawnEntity("Entity_BasicEnemy", Transform{toVec3(mi.toPixels(enemy_pos), 0.0f), glm::vec3(1.0f)});
         break;
     }
 }

@@ -26,7 +26,7 @@ struct CoreResources {
 
     EntityScriptResourceProvider<ES_Correction, GlobalResources, ES_Correction> provider_Correction;
     EntityScriptResourceProvider<ES_Player, GlobalResources, ES_Player> provider_Player;
-    EntityScriptResourceProvider<ES_Chaser, GlobalResources, ES_Chaser> provider_Chaser;
+    EntityScriptResourceProvider<ES_Mover, GlobalResources, ES_Mover> provider_Mover;
     EntityScriptResourceProvider<ES_Pickup, GlobalResources, ES_Pickup> provider_Pickup;
     EntityScriptResourceProvider<ES_Stairs, GlobalResources, ES_Stairs> provider_Stairs;
     EntityScriptResourceProvider<ES_BreakableTile, GlobalResources, ES_BreakableTile> provider_BreakableTile;

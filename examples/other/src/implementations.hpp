@@ -104,11 +104,10 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 /*
-    class Chaser
+    class Mover
     Chases assigned target directly.
 */
-class ES_Chaser : public EntityScriptInterface, public Resource<GlobalResources> {
-    Entity *_target;
+class ES_Mover : public EntityScriptInterface, public Resource<GlobalResources> {
     void _initEntity() override;
     void _execEntity() override;
     void _killEntity() override;
@@ -116,7 +115,7 @@ class ES_Chaser : public EntityScriptInterface, public Resource<GlobalResources>
     void _receive(Entity *other, std::string message) override;
     void _collide(Entity *other) override;
 public:
-    ES_Chaser();
+    ES_Mover();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -229,7 +228,7 @@ struct GlobalResources {
     GLFWInput* input;
     
     RefContainer<ES_Player> container_Player;
-    RefContainer<ES_Chaser> container_Chaser;
+    RefContainer<ES_Mover> container_Mover;
     RefContainer<ES_Lifetime> container_Lifetime;
     RefContainer<SpellInterface> container_Spells;
     RefContainer<ES_Pickup> container_Pickup;

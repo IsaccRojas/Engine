@@ -205,7 +205,7 @@ void ES_Player::_execEntity() {
 
     pos += vel;
     
-    if (_cast_cooldown <= 0.0f && resource()->input->get_m1()) {
+    if (_cast_cooldown <= 0.0f && resource()->input->get_space()) {
         /*
         // select first cast for now
         Castable &castable = *(_castables.begin());
@@ -240,7 +240,7 @@ void ES_Player::_execEntity() {
     
     checkCasts();
 
-    if (resource()->input->get_space())
+    if (false)
         entity().kill();
 }
 
@@ -287,53 +287,14 @@ void ES_Player::checkCasts() {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Chaser::_initEntity() {}
+void ES_Mover::_initEntity() {}
+void ES_Mover::_execEntity() {}
+void ES_Mover::_killEntity() {}
+void ES_Mover::_updateEntity() {}
+void ES_Mover::_receive(Entity *other, std::string message) {}
+void ES_Mover::_collide(Entity *other) {}
 
-void ES_Chaser::_execEntity() {
-    // find target if one is not stored
-    if (!_target)
-        // iterate on all players
-        for (
-            auto group_player_iter = resource()->manager->groupBegin("Group_Player");
-            group_player_iter != resource()->manager->groupEnd("Group_Player");
-            ++group_player_iter
-        ) {
-            // store and lockout player if it is not kill enqueued
-            if (!((*group_player_iter)->entityscripts()[0]->getKillEnqueued())) {
-                _target = (*group_player_iter);
-                _target->entityscripts()[0]->lockout(&this->key());
-                break;
-            }
-        }
-    
-    glm::vec3 &pos = entity().globaltransform().pos;
-
-    // chase target if one is stored
-    if (_target) {
-        float speed = 0.25f;
-        glm::vec3 dir = _target->globaltransform().pos - pos;
-        if (glm::length(dir))
-            pos += speed * glm::normalize(dir);
-        
-        // lose reference and unlock player if it is kill enqueued
-        if (_target->entityscripts()[0]->getKillEnqueued()) {
-            _target->entityscripts()[0]->unlock(&this->key());
-            _target = nullptr;
-        }
-    }
-}
-
-void ES_Chaser::_killEntity() {
-    // unlock target in case it is stored
-    if (_target)
-        _target->entityscripts()[0]->unlock(&this->key());
-}
-
-void ES_Chaser::_updateEntity() {}
-void ES_Chaser::_receive(Entity *other, std::string message) {}
-void ES_Chaser::_collide(Entity *other) {}
-
-ES_Chaser::ES_Chaser() : EntityScriptInterface(), Resource(), _target(nullptr) {}
+ES_Mover::ES_Mover() : EntityScriptInterface(), Resource() {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -346,14 +307,11 @@ void ES_Lifetime::_execEntity() {
         entity().globaltransform().pos = _target->globaltransform().pos;
     else
         entity().globaltransform().pos += vel;
-
+    
     if (lifetime <= 0)
         entity().kill();
 }
-void ES_Lifetime::_killEntity() {
-    if (_target)
-        _target->entityscripts()[0]->unlock(&key());
-}
+void ES_Lifetime::_killEntity() {}
 void ES_Lifetime::_updateEntity() {}
 void ES_Lifetime::_receive(Entity *other, std::string message) {
     if (message == "target") {
@@ -426,6 +384,10 @@ void ES_BreakableTile::_killEntity() {
 }
 void ES_BreakableTile::_updateEntity() {}
 void ES_BreakableTile::_receive(Entity *other, std::string message) {}
-void ES_BreakableTile::_collide(Entity *other) {}
+void ES_BreakableTile::_collide(Entity *other) {
+    health--;
+    if (health <= 0)
+        entity().kill();
+}
 
-ES_BreakableTile::ES_BreakableTile() : EntityScriptInterface(), Resource(), _prev_tile_state(-1), _initial_coords(0), health(1) {}
+ES_BreakableTile::ES_BreakableTile() : EntityScriptInterface(), Resource(), _prev_tile_state(-1), _initial_coords(0), health(10) {}
