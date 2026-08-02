@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <vector>
 #include <memory>
+#include <list>
 
 template <class T>
 class RefContainer;
@@ -17,20 +18,35 @@ class RefContainer;
 template<class T>
 class RefReceiverInterface {
 public:
+    virtual ~RefReceiverInterface() {}
     virtual void receiveInstance(T* t) = 0;
     virtual void receiveInstanceAddr(void* vt) = 0;
 };
 
+/* class RefReceiverConverter<BaseT, ConvertT>
+   Templated converter class that wraps a RefReceiverInterface reference of type BaseT with implementations of 
+   RefReceiverInterface of type ConvertT.
+   BaseT - Base type of receiver
+   ConvertT - Type to convert into BaseT
+*/
 template<class BaseT, class ConvertT>
 class RefReceiverConverter : public RefReceiverInterface<ConvertT> {
 	RefReceiverInterface<BaseT>* _refreceiver;
 public:
 	RefReceiverConverter(RefReceiverInterface<BaseT>* refreceiver) : _refreceiver(refreceiver) {}
+    RefReceiverConverter() : _refreceiver(nullptr) {}
 	void receiveInstance(ConvertT* t) override {
+        if (!_refreceiver)
+            throw std::runtime_error("Attempt to receive instance on converter with null receiver reference");
 		_refreceiver->receiveInstance(t);
 	}
     void receiveInstanceAddr(void* vt) override {
+        if (!_refreceiver)
+            throw std::runtime_error("Attempt to receive instance handle with null receiver reference");
         _refreceiver->receiveInstanceAddr(vt);
+    }
+    void setReceiver(RefReceiverInterface<BaseT>* refreceiver) {
+        _refreceiver = refreceiver;
     }
 };
 
@@ -43,7 +59,7 @@ public:
 */
 template<class T>
 class RefContainer : public RefReceiverInterface<T> {
-    std::unordered_map<void*, T*> _Ts;
+    std::unordered_map<uintptr_t, T*> _Ts;
     T* _last_inst;
 
 public:
@@ -51,13 +67,13 @@ public:
 
     /* Stores instance passed. */
     void receiveInstance(T* t) override {
-        _Ts[t] = t;
+        _Ts[reinterpret_cast<uintptr_t>(t)] = t;
         _last_inst = t;
     }
 
     /* Removes instance passed. */
     void receiveInstanceAddr(void* vt) override {
-        _Ts.erase(vt);
+        _Ts.erase(reinterpret_cast<uintptr_t>(vt));
         if (vt == (void*)(_last_inst))
             _last_inst = nullptr;
     }
@@ -104,20 +120,51 @@ public:
 */
 template<class T>
 class RefProvider : RefReceiverInterface<T> {
-    std::unordered_set<RefReceiverInterface<T>*> _refreceivers;
+    struct _ConverterData {
+        RefReceiverInterface<T>* converter;
+        uintptr_t inner_receiver;
+    };
+
+    // attached receivers and converters
+    std::unordered_set<RefReceiverInterface<T>*> _receivers;
+    std::list<_ConverterData> _converters;
 
     void _passToReceivers(T* t) {
-        for (auto& refreceiver : _refreceivers)
-            refreceiver->receiveInstance(t);
+        for (auto& r : _receivers)
+            r->receiveInstance(t);
+        for (auto& c : _converters)
+            c.converter->receiveInstance(t);
     };
 
     void _passToReceiversAddr(void* vt) {
-        for (auto& refreceiver : _refreceivers)
-            refreceiver->receiveInstanceAddr(vt);
+        for (auto& r : _receivers)
+            r->receiveInstanceAddr(vt);
+        for (auto& c : _converters)
+            c.converter->receiveInstanceAddr(vt);
     };
+
+    std::unordered_set<RefReceiverInterface<T>*>::iterator _getReceiverIter(void* refreceiver) {
+        // find handle whose inner uintptr_t value matches the provided receiver
+        for (auto iter = _receivers.begin(); iter != _receivers.end(); iter++)
+            if (reinterpret_cast<uintptr_t>(*iter) == reinterpret_cast<uintptr_t>(refreceiver))
+                return iter;
+        return _receivers.end();
+    }
+
+    std::list<_ConverterData>::iterator _getConverterDataIter(void* refreceiver) {
+        // find handle whose inner uintptr_t value matches the provided receiver
+        for (auto iter = _converters.begin(); iter != _converters.end(); iter++)
+            if (iter->inner_receiver == reinterpret_cast<uintptr_t>(refreceiver))
+                return iter;
+        return _converters.end();
+    }
 
 public:
     RefProvider() : RefReceiverInterface<T>() {}
+    ~RefProvider() {
+        for (auto& c : _converters)
+            delete c.converter;
+    }
 
     /* Passes instance to all attached RefReceivers. */
     void receiveInstance(T* t) override {
@@ -131,52 +178,40 @@ public:
 
     /* Attaches RefReceiver, which will receive instances passed to invocations of receiveInstance(T*) on this provider. */
     void attach(RefReceiverInterface<T>* refreceiver) {
-        _refreceivers.insert(refreceiver);
+        if (has(refreceiver))
+            throw std::runtime_error("Attempt to attach RefReceiver to Provider it was already attached to");
+
+        _receivers.insert(refreceiver);
+    }
+
+    /* Attaches RefReceiver of a specified compatible type. */
+    template<class U>
+    void attachType(RefReceiverInterface<U>* refreceiver) {
+        if (has(refreceiver))
+            throw std::runtime_error("Attempt to attach RefReceiver to Provider it was already attached to");
+
+        RefReceiverConverter<U, T>* converter = new RefReceiverConverter<U, T>(refreceiver);
+        _converters.push_back({converter, reinterpret_cast<uintptr_t>(refreceiver)});
     }
 
     /* Detaches RefReceiver, which will no longer receive instances from this provider. */
-    void detach(RefReceiverInterface<T>* refreceiver) {
-        _refreceivers.erase(refreceiver);
+    void detach(void* refreceiver) {
+        // try removing receiver first, then converter
+        auto iter = _getReceiverIter(refreceiver);
+        if (iter != _receivers.end())
+            _receivers.erase(iter);
+
+        else {
+            auto iter = _getConverterDataIter(refreceiver);
+            if (iter == _converters.end())
+                throw std::runtime_error("Attempt to detach RefReceiver from Provider it is not attached to");
+            
+            delete iter->converter;
+            _converters.erase(iter);
+        }
+    }
+
+    bool has(void* refreceiver) {
+        return ((_getReceiverIter(refreceiver) != _receivers.end()) || (_getConverterDataIter(refreceiver) != _converters.end()));
     }
 };
-
-class A {
-public:
-	virtual ~A() {}
-	virtual void print() { std::cout << "printing from A" << std::endl; }
-};
-
-class AA : public A {
-public:
-	~AA() {}
-	void print() override { std::cout << "printing from AA" << std::endl; }
-};
-
-class AB : public A {
-public:
-	~AB() {}
-	void print() override { std::cout << "printing from AB" << std::endl; }
-};
-
-int main()
-{
-    RefContainer<A> rc_a;
-    RefContainer<AB> rc_ab;
-    RefProvider<AB> rp_ab;
-
-    rp_ab.attach(new RefReceiverConverter<A, AB>(&rc_a));
-    rp_ab.attach(&rc_ab);
-
-    AB* ab = new AB;
-    
-    rp_ab.receiveInstance(ab);
-    
-    std::cout << "invoking from RefContainer<A>" << std::endl;
-    rc_a.getLastInstance()->print();
-
-    std::cout << "invoking from RefContainer<AB>" << std::endl;
-    rc_ab.getLastInstance()->print();
-
-    std::cout << "done" << std::endl;
-	return 0;
-}
