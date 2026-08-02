@@ -260,16 +260,15 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class ScriptProviderInterface<T, ...BaseTs>
+/* class ScriptProviderInterface<T>
    Templated implementation of the ScriptAllocatorInterface, that contains a RefProvider for passing allocations
    to attached receivers. The scope of any attached RefReceiverInterface must be equal to or a subset of this instance; 
    it is undefined behavior to make calls on this instance or attached receiver instances otherwise.
    T - type allocated; must be covariant of ScriptInterface
-   ...BaseTs - types to be supported to be passed to attached RefReceiverInterfaces; must be covariant of T and thus of ScriptInterface
 */
-template<class T, class ...BaseTs>
+template<class T>
 class ScriptProviderInterface : public ScriptAllocatorInterface {
-   RefProvider<T, BaseTs...> _refprovider;
+   RefProvider<T> _refprovider;
 
    ScriptInterface* _allocate() override {
       T* t = _providerAllocate();
@@ -288,13 +287,17 @@ protected:
 
 public:
    ScriptProviderInterface() {}
-   template<class U>
-   void attach(RefReceiverInterface<U>* refreceiver) {
+
+   void attach(RefReceiverInterface<T>* refreceiver) {
       _refprovider.attach(refreceiver);
    }
 
    template<class U>
-   void detach(RefReceiverInterface<U>* refreceiver) {
+   void attachType(RefReceiverInterface<U>* refreceiver) {
+      _refprovider.template attachType<U>(refreceiver);
+   }
+   
+   void detach(void* refreceiver) {
       _refprovider.detach(refreceiver);
    }
 };
@@ -303,7 +306,7 @@ public:
    Generic implementation of ScriptProviderInterface<T>. Allocates instances of T with default constructor.
 */
 template<class T>
-class GenericScriptProvider : public ScriptProviderInterface<T, T> {
+class GenericScriptProvider : public ScriptProviderInterface<T> {
    T* _providerAllocate() override { return new T; }
    void _providerOnDeallocation(ScriptInterface* script) override {}
 public:

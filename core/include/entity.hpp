@@ -401,16 +401,15 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class EntityScriptProviderInterface<T, ...BaseTs>
+/* class EntityScriptProviderInterface<T>
    Templated implementation of the EntityScriptAllocatorInterface, that contains a RefProvider for passing allocations
    to attached receivers. The scope of any attached RefReceiverInterface must be equal to or a subset of this instance; 
    it is undefined behavior to make calls on this instance or attached receiver instances otherwise.
    T - type allocated; must be covariant of EntityScriptInterface
-   ...BaseTs - types to be supported to be passed to attached RefReceiverInterfaces; must be covariant of T and thus of EntityScriptInterface
 */
-template<class T, class ...BaseTs>
+template<class T>
 class EntityScriptProviderInterface : public EntityScriptAllocatorInterface {
-    RefProvider<T, BaseTs...> _refprovider;
+    RefProvider<T> _refprovider;
 
     EntityScriptInterface* _allocate() override {
         T* t = _providerAllocate();
@@ -444,7 +443,7 @@ public:
    Generic implementation of EntityScriptProviderInterface<T>. Allocates instances of T with default constructor.
 */
 template<class T>
-class GenericEntityScriptProvider : public EntityScriptProviderInterface<T, T> {
+class GenericEntityScriptProvider : public EntityScriptProviderInterface<T> {
     T* _providerAllocate() override { return new T; }
     void _providerOnDeallocation(ScriptInterface* script) override {}
 public:
