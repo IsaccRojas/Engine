@@ -24,14 +24,14 @@ struct CoreResources {
 
     GlobalResources globalresources;
 
-    EntityScriptResourceProvider<ES_Correction, GlobalResources, ES_Correction> provider_Correction;
-    EntityScriptResourceProvider<ES_Player, GlobalResources, ES_Player> provider_Player;
-    EntityScriptResourceProvider<ES_Mover, GlobalResources, ES_Mover> provider_Mover;
-    EntityScriptResourceProvider<ES_Pickup, GlobalResources, ES_Pickup> provider_Pickup;
-    EntityScriptResourceProvider<ES_Stairs, GlobalResources, ES_Stairs> provider_Stairs;
-    EntityScriptResourceProvider<ES_BreakableTile, GlobalResources, ES_BreakableTile> provider_BreakableTile;
+    EntityScriptResourceProvider<ES_Correction, GlobalResources> provider_Correction;
+    EntityScriptResourceProvider<ES_Player, GlobalResources> provider_Player;
+    EntityScriptResourceProvider<ES_Mover, GlobalResources> provider_Mover;
+    EntityScriptResourceProvider<ES_Pickup, GlobalResources> provider_Pickup;
+    EntityScriptResourceProvider<ES_Stairs, GlobalResources> provider_Stairs;
+    EntityScriptResourceProvider<ES_BreakableTile, GlobalResources> provider_BreakableTile;
     GenericEntityScriptProvider<ES_Lifetime> provider_Lifetime;
-    ScriptResourceProvider<Spell_LightBallSpell, GlobalResources, SpellInterface> provider_Spell_LightBallSpell;
+    ScriptResourceProvider<Spell_LightBallSpell, GlobalResources> provider_Spell_LightBallSpell;
 };
 
 /* Initializes core library data structures.

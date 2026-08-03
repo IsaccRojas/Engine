@@ -41,7 +41,7 @@ CoreResources::CoreResources() :
     provider_Mover.attach(&globalresources.container_Mover);
     provider_Lifetime.attach(&globalresources.container_Lifetime);
     provider_Pickup.attach(&globalresources.container_Pickup);
-    provider_Spell_LightBallSpell.attach(&globalresources.container_Spells);
+    provider_Spell_LightBallSpell.attachType<SpellInterface>(&globalresources.container_Spells);
 }
 
 void initializeCore(CoreResources *core) {

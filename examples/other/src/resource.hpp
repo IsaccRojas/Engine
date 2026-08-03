@@ -24,8 +24,8 @@ public:
    U - type of resource made available
    ...SubTs - variadic argument for subtypes to support ScriptReceivers of
 */
-template<class T, typename U, class ...SubTs>
-class ScriptResourceProvider : public ScriptProviderInterface<T, SubTs...> {
+template<class T, typename U>
+class ScriptResourceProvider : public ScriptProviderInterface<T> {
     U* _resource;
     T* _providerAllocate() override {
         T* t = new T;
@@ -34,7 +34,7 @@ class ScriptResourceProvider : public ScriptProviderInterface<T, SubTs...> {
     }
     void _providerOnDeallocation(ScriptInterface* script) override {}
 public:
-    ScriptResourceProvider(U* resource) : ScriptProviderInterface<T, SubTs...>(), _resource(resource) {}
+    ScriptResourceProvider(U* resource) : ScriptProviderInterface<T>(), _resource(resource) {}
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -43,10 +43,9 @@ public:
    Templated implementation of EntityScriptProviderInterface that supports the Resource mixin with assignment on instantiation.
    T - type allocated; must be covariant of EntityScriptInterface
    U - type of resource made available
-   ...SubTs - variadic argument for subtypes to support ScriptReceivers of
 */
-template<class T, typename U, class ...SubTs>
-class EntityScriptResourceProvider : public EntityScriptProviderInterface<T, SubTs...> {
+template<class T, typename U>
+class EntityScriptResourceProvider : public EntityScriptProviderInterface<T> {
     U* _resource;
     T* _providerAllocate() override {
         T* t = new T;
@@ -55,7 +54,7 @@ class EntityScriptResourceProvider : public EntityScriptProviderInterface<T, Sub
     }
     void _providerOnDeallocation(ScriptInterface* script) override {}
 public:
-    EntityScriptResourceProvider(U* resource) : EntityScriptProviderInterface<T, SubTs...>(), _resource(resource) {}
+    EntityScriptResourceProvider(U* resource) : EntityScriptProviderInterface<T>(), _resource(resource) {}
 };
 
 #endif
