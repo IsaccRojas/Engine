@@ -274,11 +274,10 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class RefProvider<T, ...BaseTs>
+/* class RefProvider<T>
    Templated implementation of RefReceiverInterface, that can provide covariant type references of T to attached
    RefReceiverInterface references. Supported types for must be specified per the variadic template argument.
    T - type received as a reference
-   ...BaseTs - types to be supported to be passed to attached RefReceiverInterfaces; must be covariant of T
 */
 template<class T>
 class RefProvider : RefReceiverInterface<T> {
@@ -375,6 +374,26 @@ public:
 
     bool has(void* refreceiver) {
         return ((_getReceiverIter(refreceiver) != _receivers.end()) || (_getConverterDataIter(refreceiver) != _converters.end()));
+    }
+};
+
+template<class T>
+class RefProviderView {
+    RefProvider<T>* _provider;
+public:
+    RefProviderView(RefProvider<T>* provider) : _provider(provider) {}
+    
+    void attach(RefReceiverInterface<T>* refreceiver) {
+        _provider.attach(refreceiver);
+    }
+
+    template<class U>
+    void attachType(RefReceiverInterface<U>* refreceiver) {
+        _provider.attachType<U>(refreceiver);
+    }
+
+    void detach(void* refreceiver) {
+        _provider.detach(refreceiver);
     }
 };
 

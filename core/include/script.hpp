@@ -260,14 +260,14 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class ScriptProviderInterface<T>
+/* class ScriptAllocatorProviderInterface<T>
    Templated implementation of the ScriptAllocatorInterface, that contains a RefProvider for passing allocations
    to attached receivers. The scope of any attached RefReceiverInterface must be equal to or a subset of this instance; 
    it is undefined behavior to make calls on this instance or attached receiver instances otherwise.
    T - type allocated; must be covariant of ScriptInterface
 */
 template<class T>
-class ScriptProviderInterface : public ScriptAllocatorInterface {
+class ScriptAllocatorProviderInterface : public ScriptAllocatorInterface {
    RefProvider<T> _refprovider;
 
    ScriptInterface* _allocate() override {
@@ -288,17 +288,8 @@ protected:
 public:
    ScriptProviderInterface() {}
 
-   void attach(RefReceiverInterface<T>* refreceiver) {
-      _refprovider.attach(refreceiver);
-   }
-
-   template<class U>
-   void attachType(RefReceiverInterface<U>* refreceiver) {
-      _refprovider.template attachType<U>(refreceiver);
-   }
-   
-   void detach(void* refreceiver) {
-      _refprovider.detach(refreceiver);
+   RefProviderView<T> provider() {
+      return RefProviderView<T>(_refprovider);
    }
 };
 
