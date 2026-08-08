@@ -384,16 +384,16 @@ public:
     RefProviderView(RefProvider<T>* provider) : _provider(provider) {}
     
     void attach(RefReceiverInterface<T>* refreceiver) {
-        _provider.attach(refreceiver);
+        _provider->attach(refreceiver);
     }
 
     template<class U>
     void attachType(RefReceiverInterface<U>* refreceiver) {
-        _provider.attachType<U>(refreceiver);
+        _provider->template attachType<U>(refreceiver);
     }
 
     void detach(void* refreceiver) {
-        _provider.detach(refreceiver);
+        _provider->detach(refreceiver);
     }
 };
 

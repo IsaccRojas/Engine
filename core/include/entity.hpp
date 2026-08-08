@@ -401,53 +401,48 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class EntityScriptProviderInterface<T>
-   Templated implementation of the EntityScriptAllocatorInterface, that contains a RefProvider for passing allocations
+/* class ProvidingEntityScriptAllocatorInterface<T>
+   Templated implementation of the ProvidingEntityScriptAllocatorInterface, that contains a RefProvider for passing allocations
    to attached receivers. The scope of any attached RefReceiverInterface must be equal to or a subset of this instance; 
    it is undefined behavior to make calls on this instance or attached receiver instances otherwise.
    T - type allocated; must be covariant of EntityScriptInterface
 */
 template<class T>
-class EntityScriptProviderInterface : public EntityScriptAllocatorInterface {
-    RefProvider<T> _refprovider;
+class ProvidingEntityScriptAllocatorInterface : public EntityScriptAllocatorInterface {
+   RefProvider<T> _refprovider;
 
-    EntityScriptInterface* _allocate() override {
-        T* t = _providerAllocate();
-        _refprovider.receiveInstance(t);
-        return t;
-    }
+   EntityScriptInterface* _allocate() override {
+      T* t = _providingAllocate();
+      _refprovider.receiveInstance(t);
+      return t;
+   }
 
-    void _onDeallocation(ScriptInterface* script) override {
-        _providerOnDeallocation(script);
-        _refprovider.receiveInstanceAddr(script);
-    }
+   void _onDeallocation(ScriptInterface* script) override {
+      _providingOnDeallocation(script);
+      _refprovider.receiveInstanceAddr(script);
+   }
 
 protected:
-    virtual T* _providerAllocate() = 0;
-    virtual void _providerOnDeallocation(ScriptInterface* script) = 0;
+   virtual T* _providingAllocate() = 0;
+   virtual void _providingOnDeallocation(ScriptInterface* script) = 0;
 
 public:
-    EntityScriptProviderInterface() {}
-    template<class U>
-    void attach(RefReceiverInterface<U>* refreceiver) {
-        _refprovider.attach(refreceiver);
-    }
+   ProvidingEntityScriptAllocatorInterface() {}
 
-    template<class U>
-    void detach(RefReceiverInterface<U>* refreceiver) {
-        _refprovider.detach(refreceiver);
-    }
+   RefProviderView<T> provider() {
+      return RefProviderView<T>(_refprovider);
+   }
 };
 
 /* class GenericEntityScriptProvider<T>
    Generic implementation of EntityScriptProviderInterface<T>. Allocates instances of T with default constructor.
 */
 template<class T>
-class GenericEntityScriptProvider : public EntityScriptProviderInterface<T> {
-    T* _providerAllocate() override { return new T; }
-    void _providerOnDeallocation(ScriptInterface* script) override {}
+class GenericProvidingEntityScriptAllocator : public ProvidingEntityScriptAllocatorInterface<T> {
+   T* _providingAllocate() override { return new T; }
+   void _providingOnDeallocation(ScriptInterface* script) override {}
 public:
-    GenericEntityScriptProvider() {}
+   GenericProvidingEntityScriptAllocator() {}
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

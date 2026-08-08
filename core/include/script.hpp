@@ -260,48 +260,48 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class ScriptAllocatorProviderInterface<T>
+/* class ProvidingScriptAllocatorInterface<T>
    Templated implementation of the ScriptAllocatorInterface, that contains a RefProvider for passing allocations
    to attached receivers. The scope of any attached RefReceiverInterface must be equal to or a subset of this instance; 
    it is undefined behavior to make calls on this instance or attached receiver instances otherwise.
    T - type allocated; must be covariant of ScriptInterface
 */
 template<class T>
-class ScriptAllocatorProviderInterface : public ScriptAllocatorInterface {
+class ProvidingScriptAllocatorInterface : public ScriptAllocatorInterface {
    RefProvider<T> _refprovider;
 
    ScriptInterface* _allocate() override {
-      T* t = _providerAllocate();
+      T* t = _providingAllocate();
       _refprovider.receiveInstance(t);
       return t;
    }
 
    void _onDeallocation(ScriptInterface* script) override {
-      _providerOnDeallocation(script);
+      _providingOnDeallocation(script);
       _refprovider.receiveInstanceAddr(script);
    }
 
 protected:
-   virtual T* _providerAllocate() = 0;
-   virtual void _providerOnDeallocation(ScriptInterface* script) = 0;
+   virtual T* _providingAllocate() = 0;
+   virtual void _providingOnDeallocation(ScriptInterface* script) = 0;
 
 public:
-   ScriptProviderInterface() {}
+   ProvidingScriptAllocatorInterface() {}
 
    RefProviderView<T> provider() {
       return RefProviderView<T>(_refprovider);
    }
 };
 
-/* class GenericScriptProvider<T>
-   Generic implementation of ScriptProviderInterface<T>. Allocates instances of T with default constructor.
+/* class GenericProvidingScriptAllocator<T>
+   Generic implementation of ProvidingScriptAllocatorInterface<T>. Allocates instances of T with default constructor.
 */
 template<class T>
-class GenericScriptProvider : public ScriptProviderInterface<T> {
-   T* _providerAllocate() override { return new T; }
-   void _providerOnDeallocation(ScriptInterface* script) override {}
+class GenericProvidingScriptAllocator : public ProvidingScriptAllocatorInterface<T> {
+   T* _providingAllocate() override { return new T; }
+   void _providingOnDeallocation(ScriptInterface* script) override {}
 public:
-   GenericScriptProvider() {}
+   GenericProvidingScriptAllocator() {}
 };
 
 #endif
