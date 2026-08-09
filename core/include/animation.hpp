@@ -19,6 +19,8 @@ struct Frame {
     glm::vec3 texpos;
     glm::vec2 texsize;
     unsigned duration;
+    Frame(glm::vec3 textureposition, glm::vec2 texturesize, unsigned frameduration);
+    Frame();
 };
 
 /* class Cycle

@@ -289,7 +289,7 @@ public:
    ProvidingScriptAllocatorInterface() {}
 
    RefProviderView<T> provider() {
-      return RefProviderView<T>(_refprovider);
+      return RefProviderView<T>(&_refprovider);
    }
 };
 

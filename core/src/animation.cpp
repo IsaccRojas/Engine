@@ -1,5 +1,10 @@
 #include "../include/animation.hpp"
 
+Frame::Frame(glm::vec3 textureposition, glm::vec2 texturesize, unsigned frameduration) :
+    texpos(textureposition), texsize(texturesize), duration(frameduration)
+{}
+Frame::Frame() : duration(0) {}
+
 Cycle::Cycle(const char* name, bool loop, std::vector<Frame> frames) : _name(name), _loop(loop), _frames(frames) {}
 Cycle::Cycle() : _name(""), _loop(false) {}
 Cycle::~Cycle() { /* automatic destruction is fine */ }
