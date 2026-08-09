@@ -18,43 +18,42 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class ScriptResourcesProvider
-   Templated implementation of EntityScriptProviderInterface that supports the Resource mixin with assignment on instantiation.
+/* class ResourceScriptAllocator
+   Templated implementation of ProvidingScriptAllocatorInterface that supports the Resource mixin with assignment on instantiation.
    T - type allocated; must be covariant of ScriptInterface
    U - type of resource made available
-   ...SubTs - variadic argument for subtypes to support ScriptReceivers of
 */
 template<class T, typename U>
-class ScriptResourceProvider : public ScriptProviderInterface<T> {
+class ResourceScriptAllocator : public ProvidingScriptAllocatorInterface<T> {
     U* _resource;
-    T* _providerAllocate() override {
+    T* _providingAllocate() override {
         T* t = new T;
         t->Resource<U>::setResource(_resource);
         return t;
     }
-    void _providerOnDeallocation(ScriptInterface* script) override {}
+    void _providingOnDeallocation(ScriptInterface* script) override {}
 public:
-    ScriptResourceProvider(U* resource) : ScriptProviderInterface<T>(), _resource(resource) {}
+    ResourceScriptAllocator(U* resource) : ProvidingScriptAllocatorInterface<T>(), _resource(resource) {}
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class EntityScriptResourcesProvider
-   Templated implementation of EntityScriptProviderInterface that supports the Resource mixin with assignment on instantiation.
+/* class ResourceEntityScriptAllocator
+   Templated implementation of ProvidingEntityScriptAllocatorInterface that supports the Resource mixin with assignment on instantiation.
    T - type allocated; must be covariant of EntityScriptInterface
    U - type of resource made available
 */
 template<class T, typename U>
-class EntityScriptResourceProvider : public EntityScriptProviderInterface<T> {
+class ResourceEntityScriptAllocator : public ProvidingEntityScriptAllocatorInterface<T> {
     U* _resource;
-    T* _providerAllocate() override {
+    T* _providingAllocate() override {
         T* t = new T;
         t->Resource<U>::setResource(_resource);
         return t;
     }
-    void _providerOnDeallocation(ScriptInterface* script) override {}
+    void _providingOnDeallocation(ScriptInterface* script) override {}
 public:
-    EntityScriptResourceProvider(U* resource) : EntityScriptProviderInterface<T>(), _resource(resource) {}
+    ResourceEntityScriptAllocator(U* resource) : ProvidingEntityScriptAllocatorInterface<T>(), _resource(resource) {}
 };
 
 #endif

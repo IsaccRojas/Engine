@@ -18,6 +18,7 @@ SRCS = src/main.cpp
 SRCS += src/loop.cpp
 SRCS += src/init.cpp
 SRCS += src/implementations.cpp
+SRCS += src/animations.cpp
 
 all: out
 

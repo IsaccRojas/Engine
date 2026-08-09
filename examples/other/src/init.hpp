@@ -6,6 +6,7 @@
 #include "..\..\..\core\include\glfwinput.hpp"
 #include "..\..\..\core\include\entity.hpp"
 
+#include "animations.hpp"
 #include "implementations.hpp"
 
 struct CoreResources {
@@ -24,22 +25,20 @@ struct CoreResources {
 
     GlobalResources globalresources;
 
-    EntityScriptResourceProvider<ES_Correction, GlobalResources> provider_Correction;
-    EntityScriptResourceProvider<ES_Player, GlobalResources> provider_Player;
-    EntityScriptResourceProvider<ES_Mover, GlobalResources> provider_Mover;
-    EntityScriptResourceProvider<ES_Pickup, GlobalResources> provider_Pickup;
-    EntityScriptResourceProvider<ES_Stairs, GlobalResources> provider_Stairs;
-    EntityScriptResourceProvider<ES_BreakableTile, GlobalResources> provider_BreakableTile;
-    GenericEntityScriptProvider<ES_Lifetime> provider_Lifetime;
-    ScriptResourceProvider<Spell_LightBallSpell, GlobalResources> provider_Spell_LightBallSpell;
+    ResourceEntityScriptAllocator<ES_Correction, GlobalResources> allocator_Correction;
+    ResourceEntityScriptAllocator<ES_Player, GlobalResources> allocator_Player;
+    ResourceEntityScriptAllocator<ES_Mover, GlobalResources> allocator_Mover;
+    ResourceEntityScriptAllocator<ES_Pickup, GlobalResources> allocator_Pickup;
+    ResourceEntityScriptAllocator<ES_Stairs, GlobalResources> allocator_Stairs;
+    ResourceEntityScriptAllocator<ES_BreakableTile, GlobalResources> allocator_BreakableTile;
+    GenericProvidingEntityScriptAllocator<ES_Lifetime> allocator_Lifetime;
+    ResourceScriptAllocator<Spell_LightBallSpell, GlobalResources> allocator_Spell_LightBallSpell;
 };
 
-/* Initializes core library data structures.
-*/
+/* Initializes core library data structures. */
 void initializeCore(CoreResources *core);
 
-/* Initializes script, graphics, and collision assets.
-*/
+/* Initializes script, graphics, and collision assets. */
 void initializeAssets(CoreResources *core);
 
 #endif

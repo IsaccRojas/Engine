@@ -28,20 +28,20 @@ const float CLEAR_COLOR_GRAY = 0.0f;
 
 CoreResources::CoreResources() :
     globalresources(&(this->entitymanager), &(this->entityscriptexecutor), &(this->glfwinput)),
-    provider_Correction(&globalresources),
-    provider_Player(&globalresources),
-    provider_Mover(&globalresources),
-    provider_Pickup(&globalresources),
-    provider_Stairs(&globalresources),
-    provider_BreakableTile(&globalresources),
-    provider_Lifetime(),
-    provider_Spell_LightBallSpell(&globalresources)
+    allocator_Correction(&globalresources),
+    allocator_Player(&globalresources),
+    allocator_Mover(&globalresources),
+    allocator_Pickup(&globalresources),
+    allocator_Stairs(&globalresources),
+    allocator_BreakableTile(&globalresources),
+    allocator_Lifetime(),
+    allocator_Spell_LightBallSpell(&globalresources)
 {
-    provider_Player.attach(&globalresources.container_Player);
-    provider_Mover.attach(&globalresources.container_Mover);
-    provider_Lifetime.attach(&globalresources.container_Lifetime);
-    provider_Pickup.attach(&globalresources.container_Pickup);
-    provider_Spell_LightBallSpell.attachType<SpellInterface>(&globalresources.container_Spells);
+    allocator_Player.provider().attach(&globalresources.container_Player);
+    allocator_Mover.provider().attach(&globalresources.container_Mover);
+    allocator_Lifetime.provider().attach(&globalresources.container_Lifetime);
+    allocator_Pickup.provider().attach(&globalresources.container_Pickup);
+    allocator_Spell_LightBallSpell.provider().attachType<SpellInterface>(&globalresources.container_Spells);
 }
 
 void initializeCore(CoreResources *core) {
@@ -57,7 +57,7 @@ void initializeCore(CoreResources *core) {
 
     // get animation and filter maps
     std::cout << "Loading Animations and Filters" << std::endl;
-    core->animations = loadAnimations(ANIMATION_DIR);
+    core->animations = loadAnimations();
     core->filters = loadFilters(FILTER_DIR);
 
     // set up Executor
@@ -115,14 +115,14 @@ void initializeAssets(CoreResources *core) {
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_PlayerHitbox"]}, "EntityCollider_PlayerHitbox");
     core->collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), core->filters["Filter_BreakableTile"]}, "EntityCollider_BreakableTile");
 
-    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Correction, 1, true, nullptr, nullptr}, "ES_Correction");
-    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Player, 0, true, nullptr, nullptr}, "ES_Player");
-    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Mover, 0, true, nullptr, nullptr}, "ES_Mover");
-    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Lifetime, 0, true, nullptr, nullptr}, "ES_Lifetime");
-    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Pickup, 0, true, nullptr, nullptr}, "ES_Pickup");
-    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_Stairs, 0, true, nullptr, nullptr}, "ES_Stairs");
-    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->provider_BreakableTile, 0, false, nullptr, nullptr}, "ES_BreakableTile");
-    core->entityscriptexecutor.addScript(ScriptInfo{&core->provider_Spell_LightBallSpell, 1, true, nullptr, nullptr}, "Spell_LightBallSpell");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->allocator_Correction, 1, true, nullptr, nullptr}, "ES_Correction");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->allocator_Player, 0, true, nullptr, nullptr}, "ES_Player");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->allocator_Mover, 0, true, nullptr, nullptr}, "ES_Mover");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->allocator_Lifetime, 0, true, nullptr, nullptr}, "ES_Lifetime");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->allocator_Pickup, 0, true, nullptr, nullptr}, "ES_Pickup");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->allocator_Stairs, 0, true, nullptr, nullptr}, "ES_Stairs");
+    core->entityscriptexecutor.addEntityScript(EntityScriptInfo{&core->allocator_BreakableTile, 0, false, nullptr, nullptr}, "ES_BreakableTile");
+    core->entityscriptexecutor.addScript(ScriptInfo{&core->allocator_Spell_LightBallSpell, 1, true, nullptr, nullptr}, "Spell_LightBallSpell");
     
     core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Player", "ES_Correction"}, {"Quad_Player"}, {"EntityCollider_Player"}, {{0}}, nullptr}, "Entity_Player");
     core->entitymanager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Mover"}, {"Quad_BasicEnemy"}, {"EntityCollider_Enemy"}, {{0}}, nullptr}, "Entity_BasicEnemy");
