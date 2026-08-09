@@ -77,9 +77,9 @@ AnimationState::AnimationState() :
     _animation(nullptr),
     _current_cycle(nullptr),
     _current_frame(nullptr),
-    _step(0), 
-    _frame_state(0), 
+    _step(0),
     _cycle_state(0),
+    _frame_state(0),
     _completed(false)
 {}
 

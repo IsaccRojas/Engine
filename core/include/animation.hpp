@@ -116,7 +116,7 @@ public:
        for name future operations. Does nothing if the cycle provided is the same as the 
        current one.
     */
-    void AnimationState::setCycleState(unsigned i);
+    void setCycleState(unsigned i);
     void setCycleState(const char* name);
 
     /* Sets the animation frame, using the frame corresponding to the provided integer for
