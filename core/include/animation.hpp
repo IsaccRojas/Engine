@@ -8,72 +8,79 @@
 #include <filesystem>
 #include <fstream>
 #include "json.hpp"
-#include "util.hpp"
 
 /* struct Frame
    Represents a graphical frame; the data corresponding to a single "image" in an animation.
    - texpos - texture position
    - texsize - width and height of texture
-   - scale - scale to apply to instance using this data
    - duration - number of time steps this frame lasts
 */
 struct Frame {
     glm::vec3 texpos;
     glm::vec2 texsize;
-    glm::vec3 scale;
     unsigned duration;
 };
 
 /* class Cycle
-   Represents a set of frames that can be added or removed.
+   Represents a set of frames that form a cycle of images.
 */
 class Cycle {
-    std::vector<Frame> _frames;
+    std::string _name;
     bool _loop;
-    
+    std::vector<Frame> _frames;
 public:
-    Cycle(bool loop);
+    Cycle(const char* name, bool loop, std::vector<Frame> frames);
     Cycle();
     ~Cycle();
 
     // default copy assignment/construction are fine
 
-    /* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
-    corresponding to the desired order of the frames.
-    */
-    Cycle& addFrame(glm::vec3 texpos, glm::vec2 texsize, glm::vec3 scale, unsigned duration);
-    Cycle& addFrame(const Frame& frame);
+    /* Sets name of cycle. */
+    Cycle& setName(const char* name);
 
     /* Sets whether this cycle loops or not. */
-    void setLoop(bool loop);
+    Cycle& setLoop(bool loop);
+
+    /* Adds frame to end of cycle. */
+    Cycle& addFrame(const Frame& frame);
+
+    std::string name();
+
+    bool loop();
 
     Frame& frame(unsigned i);
 
     /* Returns number of frames contained in this cycle. */
     unsigned count() const;
-
-    bool loops() const;
 };
 
 /* class Animation
-   Represents a set of cycles that can be added or removed, collectively forming an animation.
+   Represents a set of cycles that form an animation.
 */
 class Animation {
-    std::unordered_map<std::string, Cycle> _cycles;
+    std::string _name;
+    std::vector<Cycle> _cycles;
+    
+    std::unordered_map<std::string, unsigned> _cycle_indices;
 public:
+    Animation(const char* name, std::vector<Cycle> cycles);
     Animation();
     ~Animation();
 
     // default copy assignment/construction are fine
 
-    /* Adds frame to cycle; added to the end of the cycle, so make sure to call this on frames
-    corresponding to the desired order of the frames.
-    */
-    Animation& addCycle(Cycle& cycle, const char* name);
+    /* Sets name of animation. */
+    Animation& setName(const char* name);
 
+    /* Adds cycle to end of animation. */
+    Animation& addCycle(const Cycle& cycle);
+
+    std::string name();
+
+    Cycle& cycle(unsigned i);
     Cycle& cycle(const char* name);
 
-    std::string firstCycleName();
+    unsigned cycleIndex(const char* name);
 
     /* Returns number of cycles contained in this animation. */
     unsigned count();
@@ -91,8 +98,8 @@ class AnimationState {
     unsigned _step;
 
     // variables for indexing cycle and animation, respectively
+    unsigned _cycle_state;
     unsigned _frame_state;
-    std::string _cycle_state;
     bool _completed;
 
 public:
@@ -105,15 +112,17 @@ public:
     /* Sets up instance to preserve state of provided animation. */
     void setAnimation(Animation* animation);
 
-    /* Sets the animation cycle, using the cycle corresponding to the provided integer for
-       future operations. Does nothing if the cycle provided is the same as the current one.
+    /* Sets the animation cycle, using the cycle corresponding to the provided integer or 
+       for name future operations. Does nothing if the cycle provided is the same as the 
+       current one.
     */
+    void AnimationState::setCycleState(unsigned i);
     void setCycleState(const char* name);
 
     /* Sets the animation frame, using the frame corresponding to the provided integer for
        future operations.
     */
-    void setFrameState(unsigned frame_state);
+    void setFrameState(unsigned i);
 
     /* Advances the cycle one step; will go to the next frame if the current frame's duration is
        exceeded; will loop or stop if last frame's duration is exceeded.
@@ -132,52 +141,5 @@ public:
     /* Returns whether the cycle has completed or not (always false if looping is set to true). */
     bool completed();
 };
-
-/* Searches the provided directory for .json files, and parses them to load animation data. Returns
-   an unordered map mapping .json file names (excluding the .json extension) to their defined
-   Animation data.
-
-   All .json files parsed are expected to have the following format:
-
-   e.g.
-   {
-        "name" : "example",
-        "cycles" : {
-            "cyclename1" : {
-                "frames" : {
-                    "framename1" : {
-                        "texpos" : [0.0, 1.0],
-                        "texsize" : [2.0, 3.0],
-                        "scale" : [4.0, 5.0, 6.0],
-                        "duration" : 4
-                    },
-                    "framename2" : {
-                        "texpos" : [7.0, 8.0],
-                        "texsize" : [9.0, 10.0],
-                        "scale" : [11.0, 12.0, 13.0],
-                        "duration" : 8
-                    }
-                    // ...
-                },
-                loop : true
-            },
-            "cyclename2" : {
-                "frames" : {
-                    "framename3" : {
-                        // ...
-                    }
-                    // ...
-                },
-                loop : false
-            }
-            // ...
-        }
-   }
-
-   An arbitrary number of objects corresponding to cycles can be defined in the "cycles" field. An
-   arbitrary number of objects corresponding to frames can be defined in the "frames" field of a "cycle"
-   object.
-*/
-std::unordered_map<std::string, Animation> loadAnimations(std::string dir);
 
 #endif
