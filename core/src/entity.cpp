@@ -513,7 +513,7 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     return entity;
 }
 
-void EntityManager::checkEntities() {
+void EntityManager::update() {
     std::queue<Entity*> remove_queue;
 
     // check script status of every entity in each group list

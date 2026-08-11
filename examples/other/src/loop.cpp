@@ -51,7 +51,7 @@ void loop(CoreResources* core) {
         core->entityscriptexecutor.runKillQueue();
         core->entityscriptexecutor.runUpdate();
 
-        core->entitymanager.checkEntities();
+        core->entitymanager.update();
 
         core->glenv.update();
         core->glenv.drawQuads();

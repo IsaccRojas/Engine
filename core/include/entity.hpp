@@ -390,7 +390,7 @@ public:
    void addEntity(EntityInfo info, const char* name);
    Entity* spawnEntity(const char* name, Transform transform);
    
-   void checkEntities();
+   void update();
 
    std::list<Entity*>::iterator groupBegin(const char* group);
 

@@ -23,9 +23,6 @@ void Quad::applyTransform(Transform transform) {
     _bv_scale.v *= transform.scale;
 }
 
-   /* Applies provided Transform to pos and scale BVecs. */
-   void applyTransform(Transform transform);
-
 AnimationState& Quad::animationstate() {
     return _animationstate;
 }
