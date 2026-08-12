@@ -53,7 +53,7 @@ public:
     Frame& frame(unsigned i);
 
     /* Returns number of frames contained in this cycle. */
-    unsigned count() const;
+    unsigned count();
 };
 
 /* class Animation

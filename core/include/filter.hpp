@@ -19,17 +19,24 @@ bool isIn(std::vector<int>& v, int x);
     Blacklist is ignored if it is empty, and whitelist is ignored if it is empty.
 */
 class Filter {
+    std::string _name;
     int _id;
     std::vector<int> _whitelist;
     std::vector<int> _blacklist;
     std::vector<int> _correction_whitelist;
     std::vector<int> _correction_blacklist;
 public:
-    Filter(int id);
+    Filter(const char* name, int id, std::vector<int> whitelist, std::vector<int> blacklist, std::vector<int> correction_whitelist, std::vector<int> correction_blacklist);
     Filter();
     ~Filter();
 
     // default copy assignment/construction are fine
+
+    /* Sets name of Filter. */
+    Filter& setName(const char* name);
+
+    /* Sets ID of Filter. */
+    Filter& setID(int id);
 
     /* Push integers to Filter's blacklists and whitelists, for global or correction filtering. */
     Filter& pushWhitelist(int x);
@@ -39,12 +46,14 @@ public:
 
     void clearLists();
 
+    std::string name();
+
+    int id();
+
     std::vector<int>& getWhitelist();
     std::vector<int>& getBlacklist();
     std::vector<int>& getCorrectionWhitelist();
     std::vector<int>& getCorrectionBlacklist();
-
-    int& getID();
 };
 
 class FilterState {
@@ -69,23 +78,5 @@ public:
     int id();
 
 };
-
-/* Searches the provided directory for .json files, and parses them to load filter data. Returns
-   an unordered map mapping .json file names (excluding the .json extension) to their defined
-   Filter data.
-
-   All .json files parsed are expected to have the following format:
-
-   e.g.
-   {
-        "name" : "testname",
-        "id" : 0,
-        "whitelist" : [1, 2, 3, 4],
-        "blacklist" : [3],
-        "correctionWhitelist" : [1, 2],
-        "correctionBlacklist" : [2]
-   }
-*/
-std::unordered_map<std::string, Filter> loadFilters(std::string dir);
 
 #endif

@@ -7,6 +7,7 @@
 #include "..\..\..\core\include\entity.hpp"
 
 #include "animations.hpp"
+#include "filters.hpp"
 #include "implementations.hpp"
 
 struct CoreResources {

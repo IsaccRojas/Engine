@@ -58,7 +58,7 @@ void initializeCore(CoreResources *core) {
     // get animation and filter maps
     std::cout << "Loading Animations and Filters" << std::endl;
     core->animations = loadAnimations();
-    core->filters = loadFilters(FILTER_DIR);
+    core->filters = loadFilters();
 
     // set up Executor
     std::cout << "Setting up EntityExecutor" << std::endl;
