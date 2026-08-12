@@ -36,7 +36,7 @@ Frame& Cycle::frame(unsigned i) {
     return _frames[i];
 }
 
-unsigned Cycle::count() const {
+unsigned Cycle::count() {
     return _frames.size();
 }
 
