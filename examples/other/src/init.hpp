@@ -1,11 +1,6 @@
 #ifndef COREINIT_HPP_
 #define COREINIT_HPP_
 
-#include "C:\dev\include\GL\glew.h"
-#include "..\..\..\core\include\glfwstate.hpp"
-#include "..\..\..\core\include\glfwinput.hpp"
-#include "..\..\..\core\include\entity.hpp"
-
 #include "assets.hpp"
 #include "implementations.hpp"
 

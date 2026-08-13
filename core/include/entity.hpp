@@ -350,23 +350,17 @@ class EntityManager {
    GLEnv* _glenv;
    CollisionSpace* _collisionspace;
 
-   bool _initialized = false;
-
    // can only be called from checkEntities() if entity's entityscript is killed
    void _removeEntity(Entity* entity);
    
 public:
    EntityManager(EntityScriptExecutor* entityscriptexecutor, GLEnv* glenv, CollisionSpace* physspace_box);
    EntityManager(EntityManager&& other);
-   EntityManager();
    EntityManager(const EntityManager& other) = delete;
    ~EntityManager();
 
    EntityManager& operator=(EntityManager&& other);
    EntityManager& operator=(const EntityManager& other) = delete;
-
-   void init(EntityScriptExecutor* entityscriptexecutor, GLEnv* glenv, CollisionSpace* physspace_box);
-   void uninit();
 
    void addEntity(EntityInfo info, const char* name);
    Entity* spawnEntity(const char* name, Transform transform);

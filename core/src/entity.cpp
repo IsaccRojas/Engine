@@ -361,9 +361,10 @@ void EntityManager::_removeEntity(Entity* entity) {
     _entities[entity->_group].erase(entity->_this_iter);
 }
 
-EntityManager::EntityManager(EntityScriptExecutor* entityscriptexecutor, GLEnv* glenv, CollisionSpace* collisionspace) : _initialized(false) { init(entityscriptexecutor, glenv, collisionspace); }
+EntityManager::EntityManager(EntityScriptExecutor* entityscriptexecutor, GLEnv* glenv, CollisionSpace* collisionspace) :
+    _entityscriptexecutor(entityscriptexecutor), _glenv(glenv), _collisionspace(collisionspace)
+{}
 EntityManager::EntityManager(EntityManager&& other) { operator=(std::move(other)); }
-EntityManager::EntityManager() : _entityscriptexecutor(nullptr), _glenv(nullptr), _collisionspace(nullptr), _initialized(false) {}
 EntityManager::~EntityManager() { /* automatic destruction is fine */ }
 
 EntityManager& EntityManager::operator=(EntityManager&& other) {
@@ -382,37 +383,14 @@ EntityManager& EntityManager::operator=(EntityManager&& other) {
         for (std::unordered_map<std::string, ManagedList<Entity>>::iterator i = other._entities.begin(); i != other._entities.end(); ++i)
             _entities[i->first] = std::move(i->second);
 
+        other._entities.clear();
+
         _entityscriptexecutor = other._entityscriptexecutor;
         _glenv = other._glenv;
         _collisionspace = other._collisionspace;
-
-        // safe as structures owning memory are already moved
-        other.uninit();
     }
+    
     return *this;
-}
-
-void EntityManager::init(EntityScriptExecutor* entityscriptexecutor, GLEnv* glenv, CollisionSpace* collisionspace) {
-    if (_initialized)
-        throw InitializedException();
-    
-    _entityscriptexecutor = entityscriptexecutor;
-    _glenv = glenv;
-    _collisionspace = collisionspace;
-    _initialized = true;
-}
-
-void EntityManager::uninit() {
-    if (!_initialized)
-        return;
-    
-    _entityinfos.clear();
-    _entity_group_names.clear();
-    _entities.clear();
-    _entityscriptexecutor = nullptr;
-    _glenv = nullptr;
-    _collisionspace = nullptr;
-    _initialized = false;
 }
 
 void EntityManager::addEntity(EntityInfo info, const char* name) {
