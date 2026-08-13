@@ -73,11 +73,10 @@ void EntityScriptExecutor::_setupEntityScript(EntityScriptInterface* entityscrip
     entityscript->_entity = entity;
 }
 
-EntityScriptExecutor::EntityScriptExecutor(unsigned queues) : ScriptExecutor() { 
-    init(queues);
+EntityScriptExecutor::EntityScriptExecutor(unsigned queues) : ScriptExecutor(queues) { 
+
 }
 EntityScriptExecutor::EntityScriptExecutor(EntityScriptExecutor &&other) : ScriptExecutor() { operator=(std::move(other)); }
-EntityScriptExecutor::EntityScriptExecutor() : ScriptExecutor() {}
 EntityScriptExecutor::~EntityScriptExecutor() { /* automatic destruction is fine */ }
 
 EntityScriptExecutor& EntityScriptExecutor::operator=(EntityScriptExecutor&& other) {
@@ -87,15 +86,6 @@ EntityScriptExecutor& EntityScriptExecutor::operator=(EntityScriptExecutor&& oth
         other._entityscriptinfos.clear();
     }
     return *this;
-}
-
-void EntityScriptExecutor::init(unsigned queues) {
-    ScriptExecutor::init(queues);
-}
-
-void EntityScriptExecutor::uninit() {
-    ScriptExecutor::uninit();
-    _entityscriptinfos.clear();
 }
 
 void EntityScriptExecutor::addEntityScript(EntityScriptInfo entityscriptinfo, const char* name) {
@@ -263,34 +253,16 @@ bool& EntityCollider::collision_enabled() { return _collision_enabled; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-CollisionSpace::CollisionSpace() : _initialized(false) {}
+CollisionSpace::CollisionSpace() {}
 CollisionSpace::CollisionSpace(CollisionSpace&& other) { operator=(std::move(other)); }
 CollisionSpace::~CollisionSpace() { /* automatic destruction is fine */ }
 
 CollisionSpace& CollisionSpace::operator=(CollisionSpace&& other) {
     if (this != &other) {
         _colliders = std::move(other._colliders);
-
-        // safe as structures owning memory are already moved
-        other.uninit();
+        other._colliders.clear();
     }
     return *this;
-}
-
-void CollisionSpace::init() {
-    if (_initialized)
-        throw InitializedException();
-    
-    _initialized = true;
-}
-
-void CollisionSpace::uninit() {
-    if (!_initialized)
-        return;
-
-    _colliders.clear();
-    _entitycolliderinfos.clear();
-    _initialized = false;
 }
 
 void CollisionSpace::addCollider(EntityColliderInfo entitycolliderinfo, const char* name) {
@@ -377,8 +349,6 @@ void CollisionSpace::detectCollisionAABB() {
 }
 
 unsigned CollisionSpace::getCount() { return _colliders.size(); }
-
-bool CollisionSpace::initialized() { return _initialized; }
 
 // --------------------------------------------------------------------------------------------------------------------------
 

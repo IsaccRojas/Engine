@@ -101,8 +101,6 @@ const char * const frag_shader_str = R"(
 
     layout(location = 9) uniform sampler2DArray texsamplerarray;
     layout(location = 10) uniform uvec3 texarraydims;
-    // layout(location = 11) uniform uvec2 windowspace;
-    // layout(location = 12) uniform uvec3 pixelspace;
 
     in vec3 f_pos;
     in vec3 f_scale;
@@ -133,15 +131,11 @@ const char * const frag_shader_str = R"(
 
 // _______________________________________ GLEnv _______________________________________
 
-GLEnv::GLEnv(unsigned maxcount) : _initialized(false) {
-    init(maxcount);
-}
-
 GLEnv::GLEnv(GLEnv&& other) {
     operator=(std::move(other));
 }
 
-GLEnv::GLEnv() : _max_count(0), _initialized(false) {}
+GLEnv::GLEnv() : _max_count(0), _count(0), _initialized(false) {}
 GLEnv::~GLEnv() {
     uninit();
 }
@@ -176,6 +170,8 @@ GLEnv& GLEnv::operator=(GLEnv&& other) {
 void GLEnv::init(unsigned max_count) {
     if (_initialized)
         throw InitializedException();
+    
+    GLUtil::glinit(true);
     
     /* initialize members */
     _glb_modelbuf = GLUtil::GLBuffer(GL_STATIC_DRAW, 16 * sizeof(GLfloat));
@@ -391,14 +387,15 @@ void GLEnv::setProj(glm::mat4 proj) {
     _stage.uniformmat4f(8, proj);
 }
 
-void GLEnv::setWindowSpace(GLuint width, GLuint height) {
-    // NOTE: not currently needed, so related attribute is being optimized out
-    // _stage.uniform2ui(11, glm::uvec2(width, height));
+
+void GLEnv::setViewTopDown(float x, float y, float z) {
+    setView(glm::lookAt(glm::vec3(x, y, z), glm::vec3(x, y, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
 }
 
-void GLEnv::setPixelSpace(GLuint width, GLuint height, GLuint depth) {
-    // NOTE: not currently needed, so related attribute is being optimized out
-    // _stage.uniform3ui(12, glm::uvec3(width, height, depth));
+void GLEnv::setProjOrthographic(float width, float height, float depth) {
+    float halfwidth = float(width) * 0.5f;
+    float halfheight = float(height) * 0.5f;
+    setProj(glm::ortho(-1.0f * halfwidth, halfwidth, -1.0f * halfheight, halfheight, 0.0f, depth));
 }
 
 void GLEnv::update() {

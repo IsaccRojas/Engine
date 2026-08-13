@@ -1,8 +1,0 @@
-{
-	"name" : "Filter_Interactable",
-    "id" : 2,
-    "whitelist" : [0],
-    "blacklist" : [],
-    "correctionWhitelist" : [],
-    "correctionBlacklist" : []
-}

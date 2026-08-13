@@ -12,8 +12,8 @@ GLFWInput::GLFWInput() :
     _win_h(nullptr),
     _win_width(0),
     _win_height(0),
-    _pixel_width(0), 
-    _pixel_height(0)
+    _target_width(0), 
+    _target_height(0)
 {
     reset();
 }
@@ -21,8 +21,8 @@ GLFWInput::~GLFWInput() { /* automatic destruction is fine */ }
 
 void GLFWInput::setWindow(GLFWwindow* window, int pixel_width, int pixel_height) {
     _win_h = window;
-    _pixel_width = pixel_width;
-    _pixel_height = pixel_height;
+    _target_width = pixel_width;
+    _target_height = pixel_height;
 
     if (_win_h)
         glfwGetWindowSize(_win_h, &_win_width, &_win_height);
@@ -49,8 +49,8 @@ void GLFWInput::reset() {
 
     _win_mouse_x = 0.0f;
     _win_mouse_y = 0.0f;
-    _pixel_mouse_x = 0.0f;
-    _pixel_mouse_y = 0.0f;
+    _target_mouse_x = 0.0f;
+    _target_mouse_y = 0.0f;
     
     _has_joystick = false;
     _leftbumper_p = false;
@@ -84,8 +84,8 @@ void GLFWInput::update() {
     _m2_p = _checkMouseButton(GLFW_MOUSE_BUTTON_RIGHT);
 
     glfwGetCursorPos(_win_h, &_win_mouse_x, &_win_mouse_y);
-    _pixel_mouse_x = (_pixel_width * (_win_mouse_x / _win_width)) - (_pixel_width / 2.0f);
-    _pixel_mouse_y = (_pixel_height - (_pixel_height * (_win_mouse_y / _win_height))) - (_pixel_height / 2.0f);
+    _target_mouse_x = (_target_width * (_win_mouse_x / _win_width)) - (_target_width / 2.0f);
+    _target_mouse_y = (_target_height - (_target_height * (_win_mouse_y / _win_height))) - (_target_height / 2.0f);
 
     _has_joystick = glfwJoystickIsGamepad(GLFW_JOYSTICK_1);
     if (_has_joystick) {
@@ -149,7 +149,7 @@ glm::vec2 GLFWInput::inputdir() {
 }
 
 glm::vec2 GLFWInput::mousepos() {
-    return glm::vec2(_pixel_mouse_x, _pixel_mouse_y);
+    return glm::vec2(_target_mouse_x, _target_mouse_y);
 }
 
 bool GLFWInput::has_joystick() {

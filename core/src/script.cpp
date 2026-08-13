@@ -131,16 +131,14 @@ ScriptInterface* ScriptExecutor::ScriptEnqueue::spawn() {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-ScriptExecutor::ScriptExecutor(unsigned queues) { init(queues); }
-ScriptExecutor::ScriptExecutor() : _initialized(false) {}
+ScriptExecutor::ScriptExecutor(unsigned queues) {
+    _queuepairs = std::vector<QueuePair>(queues, QueuePair{});
+}
 ScriptExecutor::ScriptExecutor(ScriptExecutor&& other) { operator=(std::move(other)); }
-ScriptExecutor::~ScriptExecutor() { /* automatic destruction is fine */ }
+ScriptExecutor::~ScriptExecutor() { /* default destruction is fine */ }
 
 ScriptExecutor &ScriptExecutor::operator=(ScriptExecutor&& other) {
     if (this != &other) {
-        std::queue<ScriptInterface*> empty1;
-        std::queue<ScriptInterface*> empty2;
-
         _scripts = std::move(other._scripts);
         _scriptinfos = other._scriptinfos;
         _scriptenqueues = std::move(other._scriptenqueues);
@@ -148,9 +146,17 @@ ScriptExecutor &ScriptExecutor::operator=(ScriptExecutor&& other) {
         _push_killqueue = other._push_killqueue;
         _run_killqueue = other._run_killqueue;
 
-        // safe as structures owning memory are already moved
-        other.uninit();
+        other._scripts.clear();
+        other._scriptinfos.clear();
+        other._scriptenqueues.clear();
+        other._queuepairs.clear();
+    
+        std::queue<ScriptInterface*> empty1;
+        std::queue<ScriptInterface*> empty2;
+        other._push_killqueue.swap(empty1);
+        other._run_killqueue.swap(empty2);
     }
+
     return *this;
 }
 
@@ -194,31 +200,6 @@ void ScriptExecutor::_erase(ScriptInterface* script) {
 
     script->_scriptallocator->_removeReference(script);
     _scripts.erase(script->_this_iter);
-}
-
-
-void ScriptExecutor::init(unsigned queues) {
-    if (_initialized)
-        throw InitializedException();
-    
-    _queuepairs = std::vector<QueuePair>(queues, QueuePair{});
-    _initialized = true;
-}
-
-void ScriptExecutor::uninit() {
-    if (!_initialized)
-        return;
-
-    std::queue<ScriptInterface*> empty1;
-    std::queue<ScriptInterface*> empty2;
-
-    _scripts.clear();
-    _scriptinfos.clear();
-    _scriptenqueues.clear();
-    _queuepairs.clear();
-    _push_killqueue.swap(empty1);
-    _run_killqueue.swap(empty2);
-    _initialized = false;
 }
 
 void ScriptExecutor::addScript(ScriptInfo scriptinfo, const char* name) {  
@@ -330,5 +311,3 @@ bool ScriptExecutor::hasAdded(const char* scriptname) { return !(_scriptinfos.fi
 unsigned ScriptExecutor::getCount() { return _scripts.size(); }
 
 int ScriptExecutor::getQueueCount() { return _queuepairs.size(); }
-
-bool ScriptExecutor::initialized() { return _initialized; }

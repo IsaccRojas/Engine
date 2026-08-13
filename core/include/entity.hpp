@@ -109,20 +109,13 @@ protected:
     
 public:
    /* Calls init() with the provided arguments. */
-   EntityScriptExecutor(unsigned queues);
+   EntityScriptExecutor(unsigned queues = 1);
    EntityScriptExecutor(EntityScriptExecutor&& other);
-   EntityScriptExecutor();
    EntityScriptExecutor(const EntityScriptExecutor& other) = delete;
    virtual ~EntityScriptExecutor() override;
 
    EntityScriptExecutor& operator=(EntityScriptExecutor&& other);
    EntityScriptExecutor& operator=(const EntityScriptExecutor& other) = delete;
-
-   /* Initializes internal EntityScriptExecutor data. It is undefined behavior to make calls on this instance
-      before calling this and after uninit().
-   */
-   void init(unsigned queues);
-   void uninit();
 
    /* Adds an EntityScriptInterface allocator with initialization information to this executor, allowing its given
       name to be used for future spawns.
@@ -295,9 +288,6 @@ class CollisionSpace {
 
    // map of EntityColliderInfos
    std::unordered_map<std::string, EntityColliderInfo> _entitycolliderinfos;
-
-   // flag to store if instance was initialized or not
-   bool _initialized;
     
 public:
    CollisionSpace();
@@ -307,12 +297,6 @@ public:
 
    CollisionSpace& operator=(CollisionSpace&& other);
    CollisionSpace& operator=(const CollisionSpace& other) = delete;
-
-   /* Initializes internal CollisionSpace data. It is undefined behavior to make calls on this instance
-      before calling this and after uninit().
-   */
-   void init();
-   void uninit();
 
    void addCollider(EntityColliderInfo entitycolliderinfo, const char* name);
 
@@ -329,9 +313,6 @@ public:
 
    /* Returns the number of EntityColliders in this CollisionSpace. */
    unsigned getCount();
-
-   /* Returns whether or not this CollisionSpace instance has been initialized or not. */
-   bool initialized();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

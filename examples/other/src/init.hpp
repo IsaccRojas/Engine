@@ -6,8 +6,7 @@
 #include "..\..\..\core\include\glfwinput.hpp"
 #include "..\..\..\core\include\entity.hpp"
 
-#include "animations.hpp"
-#include "filters.hpp"
+#include "assets.hpp"
 #include "implementations.hpp"
 
 struct CoreResources {

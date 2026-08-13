@@ -12,8 +12,8 @@ class GLFWInput {
 
     int _win_width;
     int _win_height;
-    int _pixel_width;
-    int _pixel_height;
+    int _target_width;
+    int _target_height;
 
     bool _w_p;
     bool _a_p;
@@ -33,8 +33,8 @@ class GLFWInput {
 
     double _win_mouse_x;
     double _win_mouse_y;
-    double _pixel_mouse_x;
-    double _pixel_mouse_y;
+    double _target_mouse_x;
+    double _target_mouse_y;
     
     GLFWgamepadstate _state;
     bool _has_joystick;
@@ -55,7 +55,7 @@ public:
     GLFWInput();
     ~GLFWInput();
 
-    void setWindow(GLFWwindow* window, int pixelwidth, int pixelheight);
+    void setWindow(GLFWwindow* window, int targetwidth, int targetheight);
 
     // default copy assignment/construction are fine (reference is read only)
 

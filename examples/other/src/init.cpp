@@ -3,8 +3,8 @@
 const char *ANIMATION_DIR = "./animconfig";
 const char *FILTER_DIR = "./filterconfig";
 
-const unsigned MAX_COUNT = 2048;
 const unsigned EXECUTION_QUEUES = 2;
+const unsigned MAX_QUADS = 2048;
 
 const unsigned WINDOW_WIDTH = 512;
 const unsigned WINDOW_HEIGHT = 512;
@@ -13,10 +13,10 @@ const unsigned VIEW_PIXEL_HEIGHT = WINDOW_HEIGHT / 2;
 const unsigned PIXEL_LEVELS = 16;
 const unsigned UNIT_PIXEL_WIDTH = 16;
 const unsigned UNIT_PIXEL_HEIGHT = 16;
-const unsigned COORD_WIDTH = 15;
-const unsigned COORD_HEIGHT = 13;
 
 // tile 0, 0 would be located above and to the right of this position
+const unsigned COORD_WIDTH = 15;
+const unsigned COORD_HEIGHT = 13;
 const int COORD_ORIGIN_PIXEL_X = 0;
 const int COORD_ORIGIN_PIXEL_Y = 0;
 
@@ -27,6 +27,7 @@ const unsigned TEX_SPACE_LEVELS = 2;
 const float CLEAR_COLOR_GRAY = 0.0f;
 
 CoreResources::CoreResources() :
+    entityscriptexecutor(EXECUTION_QUEUES),
     globalresources(&(this->entitymanager), &(this->entityscriptexecutor), &(this->glfwinput)),
     allocator_Correction(&globalresources),
     allocator_Player(&globalresources),
@@ -45,51 +46,23 @@ CoreResources::CoreResources() :
 }
 
 void initializeCore(CoreResources *core) {
-    // initialize GLFW, OpenGL, and GLFWInput
-    std::cout << "Setting up GLFWState" << std::endl;
-    core->glfwstate.init(WINDOW_WIDTH, WINDOW_HEIGHT, "title", true);
-
-    std::cout << "Setting up OpenGL" << std::endl;
-    GLUtil::glinit(true);
-
-    std::cout << "Setting up GLFWInput" << std::endl;
-    core->glfwinput.setWindow(core->glfwstate.getWindowHandle(), VIEW_PIXEL_WIDTH, VIEW_PIXEL_HEIGHT);
-
     // get animation and filter maps
-    std::cout << "Loading Animations and Filters" << std::endl;
     core->animations = loadAnimations();
     core->filters = loadFilters();
 
-    // set up Executor
-    std::cout << "Setting up EntityExecutor" << std::endl;
-    core->entityscriptexecutor.init(EXECUTION_QUEUES);
-
-    // set up GLEnv
-    std::cout << "Setting up GLEnv" << std::endl;
-    core->glenv.init(MAX_COUNT);
+    // initialize GLFW, OpenGL, and GLFWInput
+    core->glfwstate.init(WINDOW_WIDTH, WINDOW_HEIGHT, "title", true);
+    core->glfwinput.setWindow(core->glfwstate.getWindowHandle(), VIEW_PIXEL_WIDTH, VIEW_PIXEL_HEIGHT);
+    core->glenv.init(MAX_QUADS);
     core->glenv.setTexArray(TEX_SPACE_WIDTH, TEX_SPACE_HEIGHT, TEX_SPACE_LEVELS);
     core->glenv.setTexture(Image("gfx/sprites.png"), 0, 0, 0);
     core->glenv.setTexture(Image("gfx/tiles.png"), 0, 0, 1);
-    
-    // set up view and projection matrices
-    float halfwidth = float(VIEW_PIXEL_WIDTH) * 0.5f;
-    float halfheight = float(VIEW_PIXEL_HEIGHT) * 0.5f;
-    float camera_x = (UNIT_PIXEL_WIDTH * 7) + (UNIT_PIXEL_WIDTH / 2.0f);
-    float camera_y = (UNIT_PIXEL_HEIGHT * 6) + (UNIT_PIXEL_HEIGHT / 2.0f);
-    core->glenv.setView(glm::lookAt(glm::vec3(camera_x, camera_y, 1.0f), glm::vec3(camera_x, camera_y, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
-    core->glenv.setProj(glm::ortho(-1.0f * halfwidth, halfwidth, -1.0f * halfheight, halfheight, 0.0f, float(PIXEL_LEVELS)));
-    core->glenv.setWindowSpace(WINDOW_WIDTH, WINDOW_HEIGHT);
-    core->glenv.setPixelSpace(VIEW_PIXEL_WIDTH, VIEW_PIXEL_HEIGHT, PIXEL_LEVELS);
-
-    // set up CollisionSpace
-    std::cout << "Setting up CollisionSpace" << std::endl;
-    core->collisionspace.init();
+    core->glenv.setViewTopDown((UNIT_PIXEL_WIDTH * 7) + (UNIT_PIXEL_WIDTH / 2.0f), (UNIT_PIXEL_HEIGHT * 6) + (UNIT_PIXEL_HEIGHT / 2.0f), 1.0f);
+    core->glenv.setProjOrthographic(VIEW_PIXEL_WIDTH, VIEW_PIXEL_HEIGHT, float(PIXEL_LEVELS));
 
     // set up Manager
-    std::cout << "Setting up EntityManager" << std::endl;
     core->entitymanager.init(&core->entityscriptexecutor, &core->glenv, &core->collisionspace);
 
-    std::cout << "Setting some OpenGL parameters" << std::endl;
     glfwSwapInterval(1);
     glClearColor(CLEAR_COLOR_GRAY, CLEAR_COLOR_GRAY, CLEAR_COLOR_GRAY, 0.0f);
     glEnable(GL_DEPTH_TEST);

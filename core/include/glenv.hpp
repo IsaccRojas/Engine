@@ -4,6 +4,7 @@
 #include "util.hpp"
 #include "glutil.hpp"
 #include "animation.hpp"
+#include <limits>
 
 class GLEnv;
 
@@ -132,10 +133,8 @@ class GLEnv {
    bool _initialized;
 
 public:
-   /* Calls init() with the provided arguments. */
-   GLEnv(unsigned max_count);
-   GLEnv(GLEnv&& other);
    GLEnv();
+   GLEnv(GLEnv&& other);
    GLEnv(const GLEnv& Other) = delete;
    ~GLEnv();
 
@@ -178,6 +177,7 @@ public:
       z_offset - z offset in image space to write image data into
    */
    void setTexture(Image img, GLuint x_offset, GLuint y_offset, GLuint z_offset);
+
    /* Sets view matrix for vertex shader.
       view - GLM mat4 matrix
    */
@@ -186,10 +186,10 @@ public:
       proj - GLM mat4 matrix
    */
    void setProj(glm::mat4 proj);
-   /* Stores the provided width and height as window space, for use in the fragment shader. */
-   void setWindowSpace(GLuint width, GLuint height);
-   /* Stores the provided width and height as pixel space, for use in the fragment shader. */
-   void setPixelSpace(GLuint width, GLuint height, GLuint depth);
+   /* Sets the view matrix to a top-down view, at the specified coordinates with the Y axis as up and looking at the negative Z axis. */
+   void setViewTopDown(float x, float y, float z);
+   /* Sets projection matrix to orthographic volume centered at the origin. */
+   void setProjOrthographic(float width, float height, float depth);
 
    /* Writes data of all quads in system to their respective buffers. */
    void update();

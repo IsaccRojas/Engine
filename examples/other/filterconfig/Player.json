@@ -1,8 +1,0 @@
-{
-	"name" : "Filter_Player",
-    "id" : 0,
-    "whitelist" : [1, 2],
-    "blacklist" : [],
-    "correctionWhitelist" : [],
-    "correctionBlacklist" : []
-}

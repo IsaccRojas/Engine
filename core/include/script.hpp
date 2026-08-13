@@ -191,8 +191,6 @@ private:
    std::queue<ScriptInterface*> _push_killqueue;
    std::queue<ScriptInterface*> _run_killqueue;
 
-   bool _initialized;
-
 protected:
    // initializes ScriptInterface's ScriptExecutor-related fields
    void _setupScript(ScriptInterface* script, const char* script_name, ScriptAllocatorInterface* scriptallocator);
@@ -205,20 +203,13 @@ protected:
 
 public:
    /* Calls init() with the provided arguments. */
-   ScriptExecutor(unsigned queues);
-   ScriptExecutor();
+   ScriptExecutor(unsigned queues = 1);
    ScriptExecutor(ScriptExecutor&& other);
    ScriptExecutor(const ScriptExecutor& other) = delete;
    virtual ~ScriptExecutor();
 
    ScriptExecutor& operator=(ScriptExecutor&& other);
    ScriptExecutor& operator=(const ScriptExecutor& other) = delete;
-
-   /* Initializes internal ScriptExecutor data. It is undefined behavior to make calls on this instance
-      before calling this and after uninit().
-   */
-   void init(unsigned queues);
-   void uninit();
 
    /* Stores ScriptInfo with allocator and initialization information in this ScriptExecutor, mapped to the provided name.
       - ScriptInfo - instance of ScriptInfo with allocation/initialization information
@@ -253,9 +244,6 @@ public:
    unsigned getCount();
    /* Returns number of execution queues in this ScriptExecutor. */
    int getQueueCount();
-
-   /* Returns whether or not this ScriptExecutor instance has been initialized or not. */
-   bool initialized();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

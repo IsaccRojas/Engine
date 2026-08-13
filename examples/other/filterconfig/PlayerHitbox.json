@@ -1,8 +1,0 @@
-{
-	"name" : "Filter_PlayerHitbox",
-    "id" : 4,
-    "whitelist" : [1, 3],
-    "blacklist" : [],
-    "correctionWhitelist" : [],
-    "correctionBlacklist" : []
-}
