@@ -24,8 +24,6 @@ const unsigned TEX_SPACE_WIDTH = 224;
 const unsigned TEX_SPACE_HEIGHT = 80;
 const unsigned TEX_SPACE_LEVELS = 2;
 
-const float CLEAR_COLOR_GRAY = 0.0f;
-
 CoreResources::CoreResources() :
     entityscriptexecutor(EXECUTION_QUEUES),
     entitymanager(&entityscriptexecutor, &glenv, &collisionspace),
@@ -60,10 +58,6 @@ void initializeCore(CoreResources *core) {
     core->glenv.setTexture(Image("gfx/tiles.png"), 0, 0, 1);
     core->glenv.setViewTopDown((UNIT_PIXEL_WIDTH * 7) + (UNIT_PIXEL_WIDTH / 2.0f), (UNIT_PIXEL_HEIGHT * 6) + (UNIT_PIXEL_HEIGHT / 2.0f), 1.0f);
     core->glenv.setProjOrthographic(VIEW_PIXEL_WIDTH, VIEW_PIXEL_HEIGHT, float(PIXEL_LEVELS));
-
-    glfwSwapInterval(1);
-    glClearColor(CLEAR_COLOR_GRAY, CLEAR_COLOR_GRAY, CLEAR_COLOR_GRAY, 0.0f);
-    glEnable(GL_DEPTH_TEST);
 }
 
 /* Initializes script, graphics, and collision assets.

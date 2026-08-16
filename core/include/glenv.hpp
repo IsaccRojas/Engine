@@ -191,6 +191,9 @@ public:
    /* Sets projection matrix to orthographic volume centered at the origin. */
    void setProjOrthographic(float width, float height, float depth);
 
+   /* Sets clear color. */
+   void setClearColor(glm::vec4 color);
+
    /* Writes data of all quads in system to their respective buffers. */
    void update();
    /* Draws Quads in memory using internal shader program. This is done by drawing a number of unit Quad

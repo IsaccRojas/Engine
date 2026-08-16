@@ -254,6 +254,10 @@ void GLEnv::init(unsigned max_count) {
     _stage.uniform1i(9, 0);
     glActiveTexture(GL_TEXTURE0);
 
+    // set clear color to 0 and enable depth test by default
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glEnable(GL_DEPTH_TEST);
+
     _initialized = true;
 }
 
@@ -396,6 +400,10 @@ void GLEnv::setProjOrthographic(float width, float height, float depth) {
     float halfwidth = float(width) * 0.5f;
     float halfheight = float(height) * 0.5f;
     setProj(glm::ortho(-1.0f * halfwidth, halfwidth, -1.0f * halfheight, halfheight, 0.0f, depth));
+}
+
+void GLEnv::setClearColor(glm::vec4 color) {
+    glClearColor(color.x, color.y, color.z, color.w);
 }
 
 void GLEnv::update() {
