@@ -29,21 +29,21 @@ const float CLEAR_COLOR_GRAY = 0.0f;
 CoreResources::CoreResources() :
     entityscriptexecutor(EXECUTION_QUEUES),
     entitymanager(&entityscriptexecutor, &glenv, &collisionspace),
-    globalresources(&(this->entitymanager), &(this->entityscriptexecutor), &(this->glfwinput)),
-    allocator_Correction(&globalresources),
-    allocator_Player(&globalresources),
-    allocator_Mover(&globalresources),
-    allocator_Pickup(&globalresources),
-    allocator_Stairs(&globalresources),
-    allocator_BreakableTile(&globalresources),
+    globalstate(&(this->entitymanager), &(this->entityscriptexecutor), &(this->glfwinput)),
+    allocator_Correction(&globalstate),
+    allocator_Player(&globalstate),
+    allocator_Mover(&globalstate),
+    allocator_Pickup(&globalstate),
+    allocator_Stairs(&globalstate),
+    allocator_BreakableTile(&globalstate),
     allocator_Lifetime(),
-    allocator_Spell_LightBallSpell(&globalresources)
+    allocator_Spell_LightBallSpell(&globalstate)
 {
-    allocator_Player.provider().attach(&globalresources.container_Player);
-    allocator_Mover.provider().attach(&globalresources.container_Mover);
-    allocator_Lifetime.provider().attach(&globalresources.container_Lifetime);
-    allocator_Pickup.provider().attach(&globalresources.container_Pickup);
-    allocator_Spell_LightBallSpell.provider().attachType<SpellInterface>(&globalresources.container_Spells);
+    allocator_Player.provider().attach(&globalstate.container_Player);
+    allocator_Mover.provider().attach(&globalstate.container_Mover);
+    allocator_Lifetime.provider().attach(&globalstate.container_Lifetime);
+    allocator_Pickup.provider().attach(&globalstate.container_Pickup);
+    allocator_Spell_LightBallSpell.provider().attachType<SpellInterface>(&globalstate.container_Spells);
 }
 
 void initializeCore(CoreResources *core) {
@@ -106,16 +106,16 @@ void initializeAssets(CoreResources *core) {
 
     // initialize map
     for (unsigned x = 0; x < COORD_WIDTH; x++) {
-        core->globalresources.map.push_back(std::vector<TileInfo>());
+        core->globalstate.map.push_back(std::vector<TileInfo>());
         for (unsigned y = 0; y < COORD_HEIGHT; y++)
-            core->globalresources.map.back().push_back(TileInfo{-1, -1});
+            core->globalstate.map.back().push_back(TileInfo{-1, -1});
     }
     
-    core->globalresources.mapinfo = MapInfo{
+    core->globalstate.mapinfo = MapInfo{
         glm::vec2(UNIT_PIXEL_WIDTH, UNIT_PIXEL_HEIGHT),
         glm::vec2(COORD_WIDTH, COORD_HEIGHT),
         glm::vec2(COORD_ORIGIN_PIXEL_X, COORD_ORIGIN_PIXEL_Y)
     };
 
-    core->globalresources.inventory["key"] = 0;
+    core->globalstate.inventory["key"] = 0;
 }

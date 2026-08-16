@@ -1,16 +1,70 @@
 #ifndef IMPLEMENTATIONS_HPP_
 #define IMPLEMENTATIONS_HPP_
 
-#include "resource.hpp"
+#include "../../../core/include/entity.hpp"
 #include "../../../core/include/glfwinput.hpp"
 
 const float diag_factor = glm::sin(glm::radians(45.0f));
 
-struct GlobalResources;
+struct GlobalState;
+
+class GSScriptInterface : public ScriptInterface {
+    GlobalState *_globalstate;
+protected:
+    virtual void _init() = 0;
+    virtual void _exec() = 0;
+    virtual void _kill() = 0;
+    virtual void _update() = 0;
+public:
+    GSScriptInterface();
+    void setGlobalState(GlobalState* globalstate);
+    GlobalState* globalstate();
+};
+
+class GSEntityScriptInterface : public EntityScriptInterface {
+    GlobalState *_globalstate;
+protected:
+    virtual void _initEntity() = 0;
+    virtual void _execEntity() = 0;
+    virtual void _killEntity() = 0;
+    virtual void _updateEntity() = 0;
+    virtual void _receive(Entity* other, std::string message) = 0;
+    virtual void _collide(Entity* other) = 0;
+public:
+    GSEntityScriptInterface();
+    void setGlobalState(GlobalState* globalstate);
+    GlobalState* globalstate();
+};
+
+template <class T>
+class GSScriptAllocator : public ProvidingScriptAllocatorInterface<T> {
+    GlobalState *_globalstate;
+    T* _providingAllocate() override {
+        T* t = new T;
+        t->setGlobalState(_globalstate);
+        return t;
+    };
+    void _providingOnDeallocation(ScriptInterface* script) override {}
+public:
+    GSScriptAllocator(GlobalState* globalstate) : ProvidingScriptAllocatorInterface<T>(), _globalstate(globalstate) {}
+};
+
+template <class T>
+class GSEntityScriptAllocator : public ProvidingEntityScriptAllocatorInterface<T> {
+    GlobalState *_globalstate;
+    T* _providingAllocate() override {
+        T* t = new T;
+        t->setGlobalState(_globalstate);
+        return t;
+    };
+    void _providingOnDeallocation(ScriptInterface* script) override {}
+public:
+    GSEntityScriptAllocator(GlobalState* globalstate) : ProvidingEntityScriptAllocatorInterface<T>(), _globalstate(globalstate) {}
+};
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-class SpellInterface : public ScriptInterface, public Resource<GlobalResources> {
+class SpellInterface : public GSScriptInterface {
     void _init() override;
     void _exec() override;
     void _kill() override;
@@ -42,7 +96,7 @@ public:
     Assumes Tile and Collider are both squares and the same size
     Assumes Tile does not move
 */
-class ES_Correction : public EntityScriptInterface, public Resource<GlobalResources> {
+class ES_Correction : public GSEntityScriptInterface {
     void _initEntity() override;
     void _execEntity() override;
     void _killEntity() override;
@@ -81,7 +135,7 @@ struct Castable {
     class ES_Player 
     Player script.
 */
-class ES_Player : public EntityScriptInterface, public Resource<GlobalResources> {
+class ES_Player : public GSEntityScriptInterface {
     std::list<Castable> _castables;
     std::list<Castable> _casts;
     float _hurt_cooldown_max;
@@ -107,7 +161,7 @@ public:
     class Mover
     Chases assigned target directly.
 */
-class ES_Mover : public EntityScriptInterface, public Resource<GlobalResources> {
+class ES_Mover : public GSEntityScriptInterface {
     void _initEntity() override;
     void _execEntity() override;
     void _killEntity() override;
@@ -127,7 +181,7 @@ public:
 
     message "target" - assigns target Entity to copy position of
 */
-class ES_Lifetime : public EntityScriptInterface {
+class ES_Lifetime : public GSEntityScriptInterface {
     Entity* _target;
     void _initEntity() override;
     void _execEntity() override;
@@ -149,7 +203,7 @@ public:
 
     std::string item_name - name to increment in GlobalResources' inventory
 */
-class ES_Pickup : public EntityScriptInterface, public Resource<GlobalResources> {
+class ES_Pickup : public GSEntityScriptInterface {
     void _initEntity() override;
     void _execEntity() override;
     void _killEntity() override;
@@ -167,7 +221,7 @@ public:
     Entity Script Stairs
     Interactable stairs.
 */
-class ES_Stairs : public EntityScriptInterface, public Resource<GlobalResources> {
+class ES_Stairs : public GSEntityScriptInterface {
     bool _stairs_locked;
     void _initEntity() override;
     void _execEntity() override;
@@ -186,7 +240,7 @@ public:
     Breakable tile behavior. Does not move and can be destroyed.
     Sets the coordinate tile it spawns on to a solid state, and reverts it to its original state after being destroyed.
 */
-class ES_BreakableTile : public EntityScriptInterface, public Resource<GlobalResources> {
+class ES_BreakableTile : public GSEntityScriptInterface {
     int _prev_tile_state;
     glm::uvec2 _initial_coords;
     void _initEntity() override;
@@ -217,11 +271,8 @@ struct MapInfo {
     bool isValid(glm::vec2 v);
 };
 
-/* struct Global Resources
-   Aggregates resources for classes with Resource<GlobalResources> inherited to access.
-*/
-struct GlobalResources {
-    GlobalResources(EntityManager* entitymanager, EntityScriptExecutor* entityscriptexecutor, GLFWInput* glfwinput);
+struct GlobalState {
+    GlobalState(EntityManager* entitymanager, EntityScriptExecutor* entityscriptexecutor, GLFWInput* glfwinput);
 
     EntityManager* manager;
     EntityScriptExecutor* executor;

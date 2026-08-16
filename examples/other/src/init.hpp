@@ -18,16 +18,16 @@ struct CoreResources {
     CollisionSpace collisionspace;
     EntityManager entitymanager;
 
-    GlobalResources globalresources;
+    GlobalState globalstate;
 
-    ResourceEntityScriptAllocator<ES_Correction, GlobalResources> allocator_Correction;
-    ResourceEntityScriptAllocator<ES_Player, GlobalResources> allocator_Player;
-    ResourceEntityScriptAllocator<ES_Mover, GlobalResources> allocator_Mover;
-    ResourceEntityScriptAllocator<ES_Pickup, GlobalResources> allocator_Pickup;
-    ResourceEntityScriptAllocator<ES_Stairs, GlobalResources> allocator_Stairs;
-    ResourceEntityScriptAllocator<ES_BreakableTile, GlobalResources> allocator_BreakableTile;
+    GSEntityScriptAllocator<ES_Correction> allocator_Correction;
+    GSEntityScriptAllocator<ES_Player> allocator_Player;
+    GSEntityScriptAllocator<ES_Mover> allocator_Mover;
+    GSEntityScriptAllocator<ES_Pickup> allocator_Pickup;
+    GSEntityScriptAllocator<ES_Stairs> allocator_Stairs;
+    GSEntityScriptAllocator<ES_BreakableTile> allocator_BreakableTile;
     GenericProvidingEntityScriptAllocator<ES_Lifetime> allocator_Lifetime;
-    ResourceScriptAllocator<Spell_LightBallSpell, GlobalResources> allocator_Spell_LightBallSpell;
+    GSScriptAllocator<Spell_LightBallSpell> allocator_Spell_LightBallSpell;
 };
 
 /* Initializes core library data structures. */
