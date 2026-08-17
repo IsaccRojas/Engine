@@ -17,7 +17,6 @@ LIBDIR = -L./../../core -LC:/dev/lib
 SRCS = src/main.cpp
 SRCS += src/loop.cpp
 SRCS += src/init.cpp
-SRCS += src/assets.cpp
 SRCS += src/implementations.cpp
 
 all: out
