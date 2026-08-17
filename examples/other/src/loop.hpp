@@ -11,10 +11,10 @@
 
 /* Primary program execution loop.
 */
-void loop(CoreResources* core);
+void loop();
 
-void clearLevel(CoreResources* core);
+void clearLevel();
 
-void genLevel(CoreResources* core);
+void genLevel();
 
 #endif

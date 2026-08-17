@@ -1,21 +1,24 @@
 #include "implementations.hpp"
 
-GSScriptInterface::GSScriptInterface() : ScriptInterface(), _globalstate(nullptr) {}
-void GSScriptInterface::setGlobalState(GlobalState* globalstate) { _globalstate = globalstate; }
-GlobalState* GSScriptInterface::globalstate() { return _globalstate; }
+GlobalState globalstate;
 
-GSEntityScriptInterface::GSEntityScriptInterface() : EntityScriptInterface(), _globalstate(nullptr) {}
-void GSEntityScriptInterface::setGlobalState(GlobalState* globalstate) { _globalstate = globalstate; }
-GlobalState* GSEntityScriptInterface::globalstate() { return _globalstate; }
+const unsigned EXECUTION_QUEUES = 2;
 
-GlobalState::GlobalState(EntityManager* entitymanager, EntityScriptExecutor* entityscriptexecutor, GLFWInput* glfwinput) : 
-    manager(entitymanager),
-    executor(entityscriptexecutor),
-    input(glfwinput),
+const float diag_factor = glm::sin(glm::radians(45.0f));
+
+GlobalState::GlobalState() : 
+    executor(EXECUTION_QUEUES),
+    manager(&executor, &glenv, &collisionspace),
     stairs_entered(false),
     level_generated(false),
     level_clear_started(false)
-{}
+{
+    allocator_Player.provider().attach(&globalstate.container_Player);
+    allocator_Mover.provider().attach(&globalstate.container_Mover);
+    allocator_Lifetime.provider().attach(&globalstate.container_Lifetime);
+    allocator_Pickup.provider().attach(&globalstate.container_Pickup);
+    allocator_Spell_LightBallSpell.provider().attachType<SpellInterface>(&globalstate.container_Spells);
+}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -53,13 +56,13 @@ void SpellInterface::_init() { _initSpell(); }
 void SpellInterface::_exec() { _execSpell(); }
 void SpellInterface::_kill() { _killSpell(); }
 void SpellInterface::_update() { _updateSpell(); }
-SpellInterface::SpellInterface() : GSScriptInterface(), pos(glm::vec3(0.0f)), dir(glm::vec3(0.0f)) {}
+SpellInterface::SpellInterface() : ScriptInterface(), pos(glm::vec3(0.0f)), dir(glm::vec3(0.0f)) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 void ES_Correction::_initEntity() {}
 void ES_Correction::_execEntity() {
-    MapInfo &mi = globalstate()->mapinfo;
+    MapInfo &mi = globalstate.mapinfo;
 
     glm::vec3 base_nontile_pos = entity().globaltransform().pos;
     glm::vec3 base_nontile_prev_pos = entity().getPrevGlobalTransform().pos;
@@ -80,14 +83,14 @@ void ES_Correction::_execEntity() {
         tile_in_dir_pos = mi.toPixels(tile_in_dir_coord);
 
         // check if tile in direction of travel is solid; only used if travel is only along one axis
-        can_assist = (mi.isValid(tile_in_dir_coord) && globalstate()->map[tile_in_dir_coord.x][tile_in_dir_coord.y].value <= 0);
+        can_assist = (mi.isValid(tile_in_dir_coord) && globalstate.map[tile_in_dir_coord.x][tile_in_dir_coord.y].value <= 0);
         
         // skip if tile position is outside of map range
         if (!mi.isValid(tile_pos))
             continue;
 
         // check if tile value should cause correction
-        if (globalstate()->map[tile_pos.x][tile_pos.y].value <= 0)
+        if (globalstate.map[tile_pos.x][tile_pos.y].value <= 0)
             continue;
         
         // detect collision
@@ -156,7 +159,7 @@ void ES_Correction::_killEntity() {}
 void ES_Correction::_updateEntity() {}
 void ES_Correction::_receive(Entity *other, std::string message) {}
 void ES_Correction::_collide(Entity *other) {}
-ES_Correction::ES_Correction() : GSEntityScriptInterface(), collider_index(0), assist_speed(0.5f) {}
+ES_Correction::ES_Correction() : EntityScriptInterface(), collider_index(0), assist_speed(0.5f) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -164,8 +167,8 @@ void Spell_LightBallSpell::_initSpell() {}
 
 void Spell_LightBallSpell::_execSpell() {
     // spawn light ball
-    globalstate()->manager->spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
-    ES_Lifetime* lightball_lifetime = globalstate()->container_Lifetime.getLastInstance();
+    globalstate.manager.spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
+    ES_Lifetime* lightball_lifetime = globalstate.container_Lifetime.getLastInstance();
     lightball_lifetime->lifetime = 90;
     lightball_lifetime->vel = dir;
     
@@ -200,8 +203,8 @@ void ES_Player::_execEntity() {
 
     // get velocity as sum of input directions
     glm::vec3 vel = glm::vec3(
-        float(-1.0f * globalstate()->input->get_a()) + float(globalstate()->input->get_d()),
-        float(-1.0f * globalstate()->input->get_s()) + float(globalstate()->input->get_w()),
+        float(-1.0f * globalstate.input.get_a()) + float(globalstate.input.get_d()),
+        float(-1.0f * globalstate.input.get_s()) + float(globalstate.input.get_w()),
         0.0f
     );
     
@@ -213,7 +216,7 @@ void ES_Player::_execEntity() {
 
     pos += vel;
     
-    if (_cast_cooldown <= 0.0f && globalstate()->input->get_space()) {
+    if (_cast_cooldown <= 0.0f && globalstate.input.get_space()) {
         /*
         // select first cast for now
         Castable &castable = *(_castables.begin());
@@ -235,8 +238,8 @@ void ES_Player::_execEntity() {
         }
         */
 
-        globalstate()->manager->spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
-        ES_Lifetime* es_lifetime = globalstate()->container_Lifetime.getLastInstance();
+        globalstate.manager.spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
+        ES_Lifetime* es_lifetime = globalstate.container_Lifetime.getLastInstance();
         es_lifetime->lifetime = 90;
         es_lifetime->vel = 1.0f * _last_input_dir;
 
@@ -261,7 +264,7 @@ void ES_Player::_collide(Entity* other) {
 }
 
 ES_Player::ES_Player() :
-    GSEntityScriptInterface(),
+    EntityScriptInterface(),
     _hurt_cooldown_max(120.0f),
     _hurt_cooldown(0.0f),
     _cast_cooldown_max(24.0f),
@@ -277,8 +280,8 @@ void ES_Player::checkCasts() {
 
         if (cast.cast_time <= 0) {
             // spawn spell
-            globalstate()->executor->spawnScript(cast.spell_entity_name.c_str());
-            SpellInterface* spell = globalstate()->container_Spells.getLastInstance();
+            globalstate.executor.spawnScript(cast.spell_entity_name.c_str());
+            SpellInterface* spell = globalstate.container_Spells.getLastInstance();
             spell->pos = (cast.type == CASTTYPE_TOME) ? cast.pos : entity().globaltransform().pos;
             spell->dir = cast.dir;
             
@@ -301,7 +304,7 @@ void ES_Mover::_updateEntity() {}
 void ES_Mover::_receive(Entity *other, std::string message) {}
 void ES_Mover::_collide(Entity *other) {}
 
-ES_Mover::ES_Mover() : GSEntityScriptInterface() {}
+ES_Mover::ES_Mover() : EntityScriptInterface() {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -331,7 +334,7 @@ void ES_Lifetime::_collide(Entity *other) {
     entity().kill();
 }
 
-ES_Lifetime::ES_Lifetime() : GSEntityScriptInterface(), _target(nullptr), lifetime(0), vel(glm::vec3(0.0f)) {}
+ES_Lifetime::ES_Lifetime() : EntityScriptInterface(), _target(nullptr), lifetime(0), vel(glm::vec3(0.0f)) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -342,13 +345,13 @@ void ES_Pickup::_updateEntity() {}
 void ES_Pickup::_receive(Entity *other, std::string message) {}
 
 void ES_Pickup::_collide(Entity *other) {
-    auto& i = globalstate()->inventory;
+    auto& i = globalstate.inventory;
     if (i.find(item_name) != i.end())
         i[item_name] += 1;
     entity().kill();
 }
 
-ES_Pickup::ES_Pickup() : GSEntityScriptInterface(), item_name("") {}
+ES_Pickup::ES_Pickup() : EntityScriptInterface(), item_name("") {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -358,8 +361,8 @@ void ES_Stairs::_killEntity() {}
 void ES_Stairs::_updateEntity() {}
 void ES_Stairs::_receive(Entity *other, std::string message) {}
 void ES_Stairs::_collide(Entity *other) {
-    GlobalState* gr = globalstate();
-    if (gr->input->get_e()) {
+    GlobalState* gr = &globalstate;
+    if (gr->input.get_e()) {
         if (_stairs_locked) {
             if (gr->inventory["key"] > 0) {
                 gr->inventory["key"]--;
@@ -371,15 +374,15 @@ void ES_Stairs::_collide(Entity *other) {
     }
 }
 
-ES_Stairs::ES_Stairs() : GSEntityScriptInterface(), _stairs_locked(true) {}
+ES_Stairs::ES_Stairs() : EntityScriptInterface(), _stairs_locked(true) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 void ES_BreakableTile::_initEntity() {
     entity().quads()[0]->animationstate().setCycleState("brick");
 
-    auto& mi = globalstate()->mapinfo;
-    auto& m = globalstate()->map;
+    auto& mi = globalstate.mapinfo;
+    auto& m = globalstate.map;
     
     _initial_coords = mi.toCoords(toVec2(entity().globaltransform().pos));
     _prev_tile_state = m[_initial_coords.x][_initial_coords.y].value;
@@ -387,7 +390,7 @@ void ES_BreakableTile::_initEntity() {
 }
 void ES_BreakableTile::_execEntity() {}
 void ES_BreakableTile::_killEntity() {
-    globalstate()->map[_initial_coords.x][_initial_coords.y].value = _prev_tile_state;
+    globalstate.map[_initial_coords.x][_initial_coords.y].value = _prev_tile_state;
 }
 void ES_BreakableTile::_updateEntity() {}
 void ES_BreakableTile::_receive(Entity *other, std::string message) {}
@@ -397,4 +400,4 @@ void ES_BreakableTile::_collide(Entity *other) {
         entity().kill();
 }
 
-ES_BreakableTile::ES_BreakableTile() : GSEntityScriptInterface(), _prev_tile_state(-1), _initial_coords(0), health(10) {}
+ES_BreakableTile::ES_BreakableTile() : EntityScriptInterface(), _prev_tile_state(-1), _initial_coords(0), health(10) {}

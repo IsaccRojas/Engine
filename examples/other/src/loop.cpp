@@ -1,8 +1,8 @@
 #include "loop.hpp"
 
-void loop(CoreResources* core) {
+void loop() {
     std::cout << "Running loop" << std::endl;
-    while (!glfwWindowShouldClose(core->glfwstate.getWindowHandle()) && !core->glfwinput.get_esc()) {
+    while (!glfwWindowShouldClose(globalstate.glfwstate.getWindowHandle()) && !globalstate.input.get_esc()) {
         /*
         std::cout 
             << core->globalresources.level_clear_started
@@ -17,23 +17,23 @@ void loop(CoreResources* core) {
         */
         
         // poll for entities if level clear started; else, initiate generation or clear as needed
-        if (core->globalstate.level_clear_started) {
-            if (!core->entitymanager.groupSize("Group_Spawnable")) {
-                core->globalstate.level_generated = false;
-                core->globalstate.level_clear_started = false;
+        if (globalstate.level_clear_started) {
+            if (!globalstate.manager.groupSize("Group_Spawnable")) {
+                globalstate.level_generated = false;
+                globalstate.level_clear_started = false;
             }
 
         } else {
             // generate level if none generated; else, check if level needs to be cleared
-            if (!core->globalstate.level_generated) {
-                genLevel(core);
-                core->globalstate.level_generated = true;
+            if (!globalstate.level_generated) {
+                genLevel();
+                globalstate.level_generated = true;
 
             } else {
-                if (core->globalstate.stairs_entered) {
-                    clearLevel(core);
-                    core->globalstate.stairs_entered = false;
-                    core->globalstate.level_clear_started = true;
+                if (globalstate.stairs_entered) {
+                    clearLevel();
+                    globalstate.stairs_entered = false;
+                    globalstate.level_clear_started = true;
                 }
             }
         }
@@ -41,38 +41,38 @@ void loop(CoreResources* core) {
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        core->collisionspace.detectCollisionAABB();
+        globalstate.collisionspace.detectCollisionAABB();
 
-        core->glfwinput.update();
+        globalstate.input.update();
 
-        core->entityscriptexecutor.runExecQueue(0);
-        core->entityscriptexecutor.runExecQueue(1);
-        core->entityscriptexecutor.runSpawnQueue();
-        core->entityscriptexecutor.runKillQueue();
-        core->entityscriptexecutor.runUpdate();
+        globalstate.executor.runExecQueue(0);
+        globalstate.executor.runExecQueue(1);
+        globalstate.executor.runSpawnQueue();
+        globalstate.executor.runKillQueue();
+        globalstate.executor.runUpdate();
 
-        core->entitymanager.update();
+        globalstate.manager.update();
 
-        core->glenv.update();
-        core->glenv.drawQuads();
+        globalstate.glenv.update();
+        globalstate.glenv.drawQuads();
 
-        glfwSwapBuffers(core->glfwstate.getWindowHandle());
+        glfwSwapBuffers(globalstate.glfwstate.getWindowHandle());
     };
 
     std::cout << "Ending loop" << std::endl;
 }
 
-void clearLevel(CoreResources* core) {
+void clearLevel() {
     // remove existing map and entities
-    if (!core->globalstate.level_generated)
+    if (!globalstate.level_generated)
         throw std::runtime_error("Attempt to clear level when none is generated");
 
     // remove existing map and entities
-    if (core->globalstate.level_clear_started)
+    if (globalstate.level_clear_started)
         throw std::runtime_error("Attempt to clear level when clear is already in progress");
     
-    auto& m = core->globalstate.map;
-    auto& mi = core->globalstate.mapinfo;
+    auto& m = globalstate.map;
+    auto& mi = globalstate.mapinfo;
 
     // remove quads and unset tile fields
     for (unsigned x = 0; x < mi.coord_dimensions.x; x++) {
@@ -80,9 +80,9 @@ void clearLevel(CoreResources* core) {
             TileInfo& tile = m[x][y];
 
             if (tile.quad_id_lower >= 0)
-                core->glenv.remove(tile.quad_id_lower);
+                globalstate.glenv.remove(tile.quad_id_lower);
             if (tile.quad_id_upper >= 0)
-                core->glenv.remove(tile.quad_id_upper);
+                globalstate.glenv.remove(tile.quad_id_upper);
 
             tile.value = -1;
             tile.quad_id_lower = -1;
@@ -91,19 +91,19 @@ void clearLevel(CoreResources* core) {
     }
 
     // kill all entities
-    for (auto iter = core->entitymanager.groupBegin("Group_Spawnable"); iter != core->entitymanager.groupEnd("Group_Spawnable"); iter++)
+    for (auto iter = globalstate.manager.groupBegin("Group_Spawnable"); iter != globalstate.manager.groupEnd("Group_Spawnable"); iter++)
         (*iter)->kill();
 }
 
-void genLevel(CoreResources* core) {
-    if (core->globalstate.level_generated)
+void genLevel() {
+    if (globalstate.level_generated)
         throw std::runtime_error("Attempt to generate level when it already exists");
 
-    if (core->globalstate.level_clear_started)
+    if (globalstate.level_clear_started)
         throw std::runtime_error("Attempt to generate level when level clearing is in progress");
     
-    auto& m = core->globalstate.map;
-    auto& mi = core->globalstate.mapinfo;
+    auto& m = globalstate.map;
+    auto& mi = globalstate.mapinfo;
 
     // initialize map
     for (unsigned x = 0; x < mi.coord_dimensions.x; x++) {
@@ -117,14 +117,14 @@ void genLevel(CoreResources* core) {
                 tile.value = 1;
             
             // create graphics
-            tile.quad_id_lower = core->glenv.genQuad("Quad_Tile",
+            tile.quad_id_lower = globalstate.glenv.genQuad("Quad_Tile",
                 Transform{glm::vec3(
                     ((x * mi.unit_pixel_dimensions.x) + (mi.unit_pixel_dimensions.x / 2.0f)) + mi.coord_origin.x,
                     ((y * mi.unit_pixel_dimensions.y) + (mi.unit_pixel_dimensions.y / 2.0f)) + mi.coord_origin.y, 
                     -2.0f
                 ), glm::vec3(1.0f)}
             );
-            tile.quad_id_upper = core->glenv.genQuad("Quad_Tile",
+            tile.quad_id_upper = globalstate.glenv.genQuad("Quad_Tile",
                 Transform{glm::vec3(
                     ((x * mi.unit_pixel_dimensions.x) + (mi.unit_pixel_dimensions.x / 2.0f)) + mi.coord_origin.x,
                     ((y * mi.unit_pixel_dimensions.y) + (mi.unit_pixel_dimensions.y / 2.0f)) + mi.coord_origin.y, 
@@ -132,8 +132,8 @@ void genLevel(CoreResources* core) {
                 ), glm::vec3(1.0f)}
             );
 
-            Quad *q_lower = core->glenv.getQuad(tile.quad_id_lower);
-            Quad *q_upper = core->glenv.getQuad(tile.quad_id_upper);
+            Quad *q_lower = globalstate.glenv.getQuad(tile.quad_id_lower);
+            Quad *q_upper = globalstate.glenv.getQuad(tile.quad_id_upper);
 
             // set lower tile graphic
             if (isEven(x + y))
@@ -155,7 +155,7 @@ void genLevel(CoreResources* core) {
 
             // spawn bricks
             if (!fixed_solid && (rand() % 4 == 0) && false)
-                core->entitymanager.spawnEntity("Entity_BreakableTile", Transform{toVec3(mi.toPixels(glm::uvec2(x, y)), 0.0f), glm::vec3(1.0f)});
+                globalstate.manager.spawnEntity("Entity_BreakableTile", Transform{toVec3(mi.toPixels(glm::uvec2(x, y)), 0.0f), glm::vec3(1.0f)});
         }
     }
 
@@ -166,7 +166,7 @@ void genLevel(CoreResources* core) {
         player_pos.y = (rand() % unsigned(mi.coord_dimensions.y - 1)) + 1;
         if (m[player_pos.x][player_pos.y].value > 0)
             continue;
-        core->entitymanager.spawnEntity("Entity_Player", Transform{toVec3(mi.toPixels(player_pos), 0.0f), glm::vec3(1.0f)});
+        globalstate.manager.spawnEntity("Entity_Player", Transform{toVec3(mi.toPixels(player_pos), 0.0f), glm::vec3(1.0f)});
         break;
     }
 
@@ -177,8 +177,8 @@ void genLevel(CoreResources* core) {
         key_pos.y = (rand() % unsigned(mi.coord_dimensions.y - 1)) + 1;
         if (m[key_pos.x][key_pos.y].value > 0 || key_pos == player_pos)
             continue;
-        core->entitymanager.spawnEntity("Entity_Key", Transform{toVec3(mi.toPixels(key_pos), 0.0f), glm::vec3(1.0f)});
-        core->globalstate.container_Pickup.getLastInstance()->item_name = "key";
+        globalstate.manager.spawnEntity("Entity_Key", Transform{toVec3(mi.toPixels(key_pos), 0.0f), glm::vec3(1.0f)});
+        globalstate.container_Pickup.getLastInstance()->item_name = "key";
         break;
     }
 
@@ -189,7 +189,7 @@ void genLevel(CoreResources* core) {
         stairs_pos.y = (rand() % unsigned(mi.coord_dimensions.y - 1)) + 1;
         if (m[stairs_pos.x][stairs_pos.y].value > 0 || stairs_pos == player_pos || stairs_pos == key_pos)
             continue;
-        core->entitymanager.spawnEntity("Entity_Stairs", Transform{toVec3(mi.toPixels(stairs_pos), 0.0f), glm::vec3(1.0f)});
+        globalstate.manager.spawnEntity("Entity_Stairs", Transform{toVec3(mi.toPixels(stairs_pos), 0.0f), glm::vec3(1.0f)});
         break;
     }
 
@@ -200,7 +200,7 @@ void genLevel(CoreResources* core) {
         enemy_pos.y = (rand() % unsigned(mi.coord_dimensions.y - 1)) + 1;
         if (m[enemy_pos.x][enemy_pos.y].value > 0 || enemy_pos == player_pos || enemy_pos == key_pos || enemy_pos == stairs_pos)
             continue;
-        core->entitymanager.spawnEntity("Entity_BasicEnemy", Transform{toVec3(mi.toPixels(enemy_pos), 0.0f), glm::vec3(1.0f)});
+        globalstate.manager.spawnEntity("Entity_BasicEnemy", Transform{toVec3(mi.toPixels(enemy_pos), 0.0f), glm::vec3(1.0f)});
         break;
     }
 }
