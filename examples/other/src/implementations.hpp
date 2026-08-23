@@ -8,32 +8,6 @@
 
 struct GlobalState;
 
-class SpellInterface : public ScriptInterface {
-    void _init() override;
-    void _exec() override;
-    void _kill() override;
-    void _update() override;
-    virtual void _initSpell() = 0;
-    virtual void _execSpell() = 0;
-    virtual void _killSpell() = 0;
-    virtual void _updateSpell() = 0;
-public:
-    SpellInterface();
-    glm::vec3 pos;
-    glm::vec3 dir;
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-class Spell_LightBallSpell : public SpellInterface {
-    void _initSpell() override;
-    void _execSpell() override;
-    void _killSpell() override;
-    void _updateSpell() override;
-public:
-    Spell_LightBallSpell();
-};
-
 // --------------------------------------------------------------------------------------------------------------------------
 
 /*
@@ -55,37 +29,13 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-enum CastType {CASTTYPE_TOME, CASTTYPE_STAVE};
-/* struct Castable
-   source - can be used to avoid casting twice
-   type - type of cast
-   spell_entity_name - EntityScript name to be spawned
-   cast_time - duration for spell_name to be used
-   pos - cast position; may not be used
-   dir - cast direction; may not be used
-*/
-struct Castable {
-    Castable* source;
-    CastType type;
-    std::string spell_entity_name;
-    int cast_time;
-    glm::vec3 pos;
-    glm::vec3 dir;
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
 /*
     class ES_Player 
     Player script.
 */
 class ES_Player : public EntityScriptInterface {
-    std::list<Castable> _castables;
-    std::list<Castable> _casts;
     float _hurt_cooldown_max;
     float _hurt_cooldown;
-    float _cast_cooldown_max;
-    float _cast_cooldown;
     float _speed;
     glm::vec3 _last_input_dir;
     void _initEntity() override;
@@ -96,24 +46,6 @@ class ES_Player : public EntityScriptInterface {
     void _collide(Entity* other) override;
 public:
     ES_Player();
-    void checkCasts();
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-/*
-    class Mover
-    Chases assigned target directly.
-*/
-class ES_Mover : public EntityScriptInterface {
-    void _initEntity() override;
-    void _execEntity() override;
-    void _killEntity() override;
-    void _updateEntity() override;
-    void _receive(Entity *other, std::string message) override;
-    void _collide(Entity *other) override;
-public:
-    ES_Mover();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -161,45 +93,6 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/*
-    Entity Script Stairs
-    Interactable stairs.
-*/
-class ES_Stairs : public EntityScriptInterface {
-    bool _stairs_locked;
-    void _initEntity() override;
-    void _execEntity() override;
-    void _killEntity() override;
-    void _updateEntity() override;
-    void _receive(Entity *other, std::string message) override;
-    void _collide(Entity *other) override;
-public:
-    ES_Stairs();
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-/*
-    Entity Script BreakableTile
-    Breakable tile behavior. Does not move and can be destroyed.
-    Sets the coordinate tile it spawns on to a solid state, and reverts it to its original state after being destroyed.
-*/
-class ES_BreakableTile : public EntityScriptInterface {
-    int _prev_tile_state;
-    glm::uvec2 _initial_coords;
-    void _initEntity() override;
-    void _execEntity() override;
-    void _killEntity() override;
-    void _updateEntity() override;
-    void _receive(Entity *other, std::string message) override;
-    void _collide(Entity *other) override;
-public:
-    ES_BreakableTile();
-    unsigned health;
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
 struct TileInfo {
     int value;
     int quad_id_lower;
@@ -230,17 +123,11 @@ struct GlobalState {
 
     GenericProvidingEntityScriptAllocator<ES_Correction> allocator_Correction;
     GenericProvidingEntityScriptAllocator<ES_Player> allocator_Player;
-    GenericProvidingEntityScriptAllocator<ES_Mover> allocator_Mover;
     GenericProvidingEntityScriptAllocator<ES_Pickup> allocator_Pickup;
-    GenericProvidingEntityScriptAllocator<ES_Stairs> allocator_Stairs;
-    GenericProvidingEntityScriptAllocator<ES_BreakableTile> allocator_BreakableTile;
     GenericProvidingEntityScriptAllocator<ES_Lifetime> allocator_Lifetime;
-    GenericProvidingScriptAllocator<Spell_LightBallSpell> allocator_Spell_LightBallSpell;
     
     RefContainer<ES_Player> container_Player;
-    RefContainer<ES_Mover> container_Mover;
     RefContainer<ES_Lifetime> container_Lifetime;
-    RefContainer<SpellInterface> container_Spells;
     RefContainer<ES_Pickup> container_Pickup;
 
     MapInfo mapinfo;

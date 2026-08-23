@@ -169,38 +169,4 @@ void genLevel() {
         globalstate.manager.spawnEntity("Entity_Player", Transform{toVec3(mi.toPixels(player_pos), 0.0f), glm::vec3(1.0f)});
         break;
     }
-
-    // try to place key randomly
-    glm::uvec2 key_pos;
-    while (true) {
-        key_pos.x = (rand() % unsigned(mi.coord_dimensions.x - 1)) + 1;
-        key_pos.y = (rand() % unsigned(mi.coord_dimensions.y - 1)) + 1;
-        if (m[key_pos.x][key_pos.y].value > 0 || key_pos == player_pos)
-            continue;
-        globalstate.manager.spawnEntity("Entity_Key", Transform{toVec3(mi.toPixels(key_pos), 0.0f), glm::vec3(1.0f)});
-        globalstate.container_Pickup.getLastInstance()->item_name = "key";
-        break;
-    }
-
-    // try to place stairs randomly
-    glm::uvec2 stairs_pos;
-    while (true) {
-        stairs_pos.x = (rand() % unsigned(mi.coord_dimensions.x - 1)) + 1;
-        stairs_pos.y = (rand() % unsigned(mi.coord_dimensions.y - 1)) + 1;
-        if (m[stairs_pos.x][stairs_pos.y].value > 0 || stairs_pos == player_pos || stairs_pos == key_pos)
-            continue;
-        globalstate.manager.spawnEntity("Entity_Stairs", Transform{toVec3(mi.toPixels(stairs_pos), 0.0f), glm::vec3(1.0f)});
-        break;
-    }
-
-    // try to place enemy randomly
-    glm::uvec2 enemy_pos;
-    while (true) {
-        enemy_pos.x = (rand() % unsigned(mi.coord_dimensions.x - 1)) + 1;
-        enemy_pos.y = (rand() % unsigned(mi.coord_dimensions.y - 1)) + 1;
-        if (m[enemy_pos.x][enemy_pos.y].value > 0 || enemy_pos == player_pos || enemy_pos == key_pos || enemy_pos == stairs_pos)
-            continue;
-        globalstate.manager.spawnEntity("Entity_BasicEnemy", Transform{toVec3(mi.toPixels(enemy_pos), 0.0f), glm::vec3(1.0f)});
-        break;
-    }
 }

@@ -135,21 +135,10 @@ void loadAssets() {
 
     globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_Correction, 1, true, nullptr, nullptr}, "ES_Correction");
     globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_Player, 0, true, nullptr, nullptr}, "ES_Player");
-    globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_Mover, 0, true, nullptr, nullptr}, "ES_Mover");
     globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_Lifetime, 0, true, nullptr, nullptr}, "ES_Lifetime");
     globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_Pickup, 0, true, nullptr, nullptr}, "ES_Pickup");
-    globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_Stairs, 0, true, nullptr, nullptr}, "ES_Stairs");
-    globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_BreakableTile, 0, false, nullptr, nullptr}, "ES_BreakableTile");
-    globalstate.executor.addScript(ScriptInfo{&globalstate.allocator_Spell_LightBallSpell, 1, true, nullptr, nullptr}, "Spell_LightBallSpell");
     
     globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Player", "ES_Correction"}, {"Quad_Player"}, {"EntityCollider_Player"}, {{0}}, nullptr}, "Entity_Player");
-    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Mover"}, {"Quad_BasicEnemy"}, {"EntityCollider_Enemy"}, {{0}}, nullptr}, "Entity_BasicEnemy");
-    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {}, {"EntityCollider_PlayerHitbox"}, {{0}}, nullptr}, "Entity_GenericPlayerHitbox");
-    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {"Quad_Slash"}, {}, {}, nullptr}, "Entity_Slash");
-    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {"Quad_LightBall"}, {"EntityCollider_PlayerHitbox"}, {{0}}, nullptr}, "Entity_LightBall");
-    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Pickup"}, {"Quad_Key"}, {"EntityCollider_Interactable"}, {{0}}, nullptr}, "Entity_Key");
-    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Stairs"}, {"Quad_Stairs"}, {"EntityCollider_Interactable"}, {{0}}, nullptr}, "Entity_Stairs");
-    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_BreakableTile"}, {"Quad_Tile"}, {"EntityCollider_BreakableTile"}, {{0}}, nullptr}, "Entity_BreakableTile");
 }
 
 void initialize() {

@@ -14,10 +14,8 @@ GlobalState::GlobalState() :
     level_clear_started(false)
 {
     allocator_Player.provider().attach(&globalstate.container_Player);
-    allocator_Mover.provider().attach(&globalstate.container_Mover);
     allocator_Lifetime.provider().attach(&globalstate.container_Lifetime);
     allocator_Pickup.provider().attach(&globalstate.container_Pickup);
-    allocator_Spell_LightBallSpell.provider().attachType<SpellInterface>(&globalstate.container_Spells);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -49,14 +47,6 @@ glm::vec2 MapInfo::toPixels(glm::ivec2 v) {
 bool MapInfo::isValid(glm::vec2 v) {
     return (v.x >= 0 && v.x < coord_dimensions.x && v.y >= 0 && v.y < coord_dimensions.y);
 }
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-void SpellInterface::_init() { _initSpell(); }
-void SpellInterface::_exec() { _execSpell(); }
-void SpellInterface::_kill() { _killSpell(); }
-void SpellInterface::_update() { _updateSpell(); }
-SpellInterface::SpellInterface() : ScriptInterface(), pos(glm::vec3(0.0f)), dir(glm::vec3(0.0f)) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -163,35 +153,7 @@ ES_Correction::ES_Correction() : EntityScriptInterface(), collider_index(0), ass
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Spell_LightBallSpell::_initSpell() {}
-
-void Spell_LightBallSpell::_execSpell() {
-    // spawn light ball
-    globalstate.manager.spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
-    ES_Lifetime* lightball_lifetime = globalstate.container_Lifetime.getLastInstance();
-    lightball_lifetime->lifetime = 90;
-    lightball_lifetime->vel = dir;
-    
-    enqueueKill();
-}
-
-void Spell_LightBallSpell::_killSpell() {}
-void Spell_LightBallSpell::_updateSpell() {}
-
-Spell_LightBallSpell::Spell_LightBallSpell() : SpellInterface() {}
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-void ES_Player::_initEntity() {
-    _castables.push_back(Castable{
-        nullptr,
-        CASTTYPE_STAVE,
-        "Spell_LightBallSpell",
-        30,
-        glm::vec3(0.0f),
-        glm::vec3(0.0f, -0.5f, 0.0f)
-    });
-}
+void ES_Player::_initEntity() {}
 
 void ES_Player::_execEntity() {
     // check if hurt (does nothing for now)
@@ -215,41 +177,6 @@ void ES_Player::_execEntity() {
     }
 
     pos += vel;
-    
-    if (_cast_cooldown <= 0.0f && globalstate.input.get_space()) {
-        /*
-        // select first cast for now
-        Castable &castable = *(_castables.begin());
-        
-        // check if already casted
-        bool cast_found = false;
-        for (auto &c : _casts) {
-            if (&castable == c.source) {
-                cast_found = true;
-                break;
-            }
-        }
-        
-        // cast
-        if (!cast_found) {
-            _casts.push_back(castable);
-            _casts.back().source = &castable;
-            _cast_cooldown = _cast_cooldown_max;
-        }
-        */
-
-        globalstate.manager.spawnEntity("Entity_LightBall", Transform{pos, glm::vec3(1.0f)});
-        ES_Lifetime* es_lifetime = globalstate.container_Lifetime.getLastInstance();
-        es_lifetime->lifetime = 90;
-        es_lifetime->vel = 1.0f * _last_input_dir;
-
-        _cast_cooldown = _cast_cooldown_max;
-    }
-
-    if (_cast_cooldown > 0.0f)
-        _cast_cooldown -= 1.0f;
-    
-    checkCasts();
 
     if (false)
         entity().kill();
@@ -267,44 +194,9 @@ ES_Player::ES_Player() :
     EntityScriptInterface(),
     _hurt_cooldown_max(120.0f),
     _hurt_cooldown(0.0f),
-    _cast_cooldown_max(24.0f),
-    _cast_cooldown(0.0f),
     _speed(0.5f),
     _last_input_dir(0.0f, 1.0f, 0.0f)
 {}
-
-void ES_Player::checkCasts() {
-    auto iter = _casts.begin();
-    while (iter != _casts.end()) {
-        Castable& cast = *iter;
-
-        if (cast.cast_time <= 0) {
-            // spawn spell
-            globalstate.executor.spawnScript(cast.spell_entity_name.c_str());
-            SpellInterface* spell = globalstate.container_Spells.getLastInstance();
-            spell->pos = (cast.type == CASTTYPE_TOME) ? cast.pos : entity().globaltransform().pos;
-            spell->dir = cast.dir;
-            
-            iter = _casts.erase(iter);
-            continue;
-        }
-
-        // advance cast time
-        cast.cast_time--;
-        iter++;
-    }
-}
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-void ES_Mover::_initEntity() {}
-void ES_Mover::_execEntity() {}
-void ES_Mover::_killEntity() {}
-void ES_Mover::_updateEntity() {}
-void ES_Mover::_receive(Entity *other, std::string message) {}
-void ES_Mover::_collide(Entity *other) {}
-
-ES_Mover::ES_Mover() : EntityScriptInterface() {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -352,52 +244,3 @@ void ES_Pickup::_collide(Entity *other) {
 }
 
 ES_Pickup::ES_Pickup() : EntityScriptInterface(), item_name("") {}
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-void ES_Stairs::_initEntity() {}
-void ES_Stairs::_execEntity() {}
-void ES_Stairs::_killEntity() {}
-void ES_Stairs::_updateEntity() {}
-void ES_Stairs::_receive(Entity *other, std::string message) {}
-void ES_Stairs::_collide(Entity *other) {
-    GlobalState* gr = &globalstate;
-    if (gr->input.get_e()) {
-        if (_stairs_locked) {
-            if (gr->inventory["key"] > 0) {
-                gr->inventory["key"]--;
-                _stairs_locked = false;
-                entity().quads()[0]->animationstate().setCycleState("unlocked");
-            }
-        } else
-            gr->stairs_entered = true;
-    }
-}
-
-ES_Stairs::ES_Stairs() : EntityScriptInterface(), _stairs_locked(true) {}
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-void ES_BreakableTile::_initEntity() {
-    entity().quads()[0]->animationstate().setCycleState("brick");
-
-    auto& mi = globalstate.mapinfo;
-    auto& m = globalstate.map;
-    
-    _initial_coords = mi.toCoords(toVec2(entity().globaltransform().pos));
-    _prev_tile_state = m[_initial_coords.x][_initial_coords.y].value;
-    m[_initial_coords.x][_initial_coords.y].value = 1;
-}
-void ES_BreakableTile::_execEntity() {}
-void ES_BreakableTile::_killEntity() {
-    globalstate.map[_initial_coords.x][_initial_coords.y].value = _prev_tile_state;
-}
-void ES_BreakableTile::_updateEntity() {}
-void ES_BreakableTile::_receive(Entity *other, std::string message) {}
-void ES_BreakableTile::_collide(Entity *other) {
-    health--;
-    if (health <= 0)
-        entity().kill();
-}
-
-ES_BreakableTile::ES_BreakableTile() : EntityScriptInterface(), _prev_tile_state(-1), _initial_coords(0), health(10) {}
