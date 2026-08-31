@@ -13,8 +13,4 @@
 */
 void loop();
 
-void clearLevel();
-
-void genLevel();
-
 #endif

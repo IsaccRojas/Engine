@@ -133,7 +133,6 @@ void loadAssets() {
     globalstate.collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_PlayerHitbox"]}, "EntityCollider_PlayerHitbox");
     globalstate.collisionspace.addCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_BreakableTile"]}, "EntityCollider_BreakableTile");
 
-    globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_Correction, 1, true, nullptr, nullptr}, "ES_Correction");
     globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_Player, 0, true, nullptr, nullptr}, "ES_Player");
     globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_Lifetime, 0, true, nullptr, nullptr}, "ES_Lifetime");
     globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_Pickup, 0, true, nullptr, nullptr}, "ES_Pickup");
@@ -153,19 +152,6 @@ void initialize() {
     globalstate.glenv.setTexture(Image("gfx/tiles.png"), 0, 0, 1);
     globalstate.glenv.setViewTopDown((UNIT_PIXEL_WIDTH * 7) + (UNIT_PIXEL_WIDTH / 2.0f), (UNIT_PIXEL_HEIGHT * 6) + (UNIT_PIXEL_HEIGHT / 2.0f), 1.0f);
     globalstate.glenv.setProjOrthographic(VIEW_PIXEL_WIDTH, VIEW_PIXEL_HEIGHT, float(PIXEL_LEVELS));
-
-    // initialize map
-    for (unsigned x = 0; x < COORD_WIDTH; x++) {
-        globalstate.map.push_back(std::vector<TileInfo>());
-        for (unsigned y = 0; y < COORD_HEIGHT; y++)
-            globalstate.map.back().push_back(TileInfo{-1, -1});
-    }
-    
-    globalstate.mapinfo = MapInfo{
-        glm::vec2(UNIT_PIXEL_WIDTH, UNIT_PIXEL_HEIGHT),
-        glm::vec2(COORD_WIDTH, COORD_HEIGHT),
-        glm::vec2(COORD_ORIGIN_PIXEL_X, COORD_ORIGIN_PIXEL_Y)
-    };
 
     globalstate.inventory["key"] = 0;
 }

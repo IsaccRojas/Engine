@@ -8,27 +8,6 @@
 
 struct GlobalState;
 
-// --------------------------------------------------------------------------------------------------------------------------
-
-/*
-    Assumes Tile and Collider are both squares and the same size
-    Assumes Tile does not move
-*/
-class ES_Correction : public EntityScriptInterface {
-    void _initEntity() override;
-    void _execEntity() override;
-    void _killEntity() override;
-    void _updateEntity() override;
-    void _receive(Entity* other, std::string message) override;
-    void _collide(Entity* other) override;
-public:
-    ES_Correction();
-    unsigned collider_index;
-    float assist_speed;
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
 /*
     class ES_Player 
     Player script.
@@ -93,21 +72,6 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-struct TileInfo {
-    int value;
-    int quad_id_lower;
-    int quad_id_upper;
-};
-
-struct MapInfo {
-    glm::vec2 unit_pixel_dimensions;
-    glm::vec2 coord_dimensions;
-    glm::vec2 coord_origin;
-    glm::ivec2 toCoords(glm::vec2 v);
-    glm::vec2 toPixels(glm::ivec2 v);
-    bool isValid(glm::vec2 v);
-};
-
 struct GlobalState {
     GlobalState();
 
@@ -121,7 +85,6 @@ struct GlobalState {
     CollisionSpace collisionspace;
     EntityManager manager;
 
-    GenericProvidingEntityScriptAllocator<ES_Correction> allocator_Correction;
     GenericProvidingEntityScriptAllocator<ES_Player> allocator_Player;
     GenericProvidingEntityScriptAllocator<ES_Pickup> allocator_Pickup;
     GenericProvidingEntityScriptAllocator<ES_Lifetime> allocator_Lifetime;
@@ -130,12 +93,7 @@ struct GlobalState {
     RefContainer<ES_Lifetime> container_Lifetime;
     RefContainer<ES_Pickup> container_Pickup;
 
-    MapInfo mapinfo;
-    std::vector<std::vector<TileInfo>> map;
     std::unordered_map<std::string, int> inventory;
-    bool stairs_entered;
-    bool level_generated;
-    bool level_clear_started;
 };
 
 extern GlobalState globalstate;
