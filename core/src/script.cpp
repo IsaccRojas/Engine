@@ -203,16 +203,20 @@ void ScriptExecutor::_erase(ScriptInterface* script) {
 }
 
 void ScriptExecutor::addScript(ScriptInfo scriptinfo, const char* name) {  
-    if (!hasAdded(name))
-        _scriptinfos[name] = scriptinfo;
-    else
-        throw std::runtime_error("Attempt to add already added ScriptInterface name");
+    if (hasAdded(name))
+        throw std::runtime_error((std::string("Attempt to add existing ScriptInfo name '") + name) + std::string("'"));
+    _scriptinfos[name] = scriptinfo;
+        
 }
 
 ScriptInterface* ScriptExecutor::spawnScript(const char* script_name) {
+    auto si_iter = _scriptinfos.find(script_name);
+    if (si_iter == _scriptinfos.end())
+        throw std::runtime_error((std::string("Attempt to spawn Script with non-existent ScriptInfo name '") + script_name) + std::string("'"));
+
     // allocate instance and set it up
-    ScriptInterface* script = _scriptinfos[script_name].allocator->_allocate();
-    _setupScript(script, script_name, _scriptinfos[script_name].allocator);
+    ScriptInterface* script = si_iter->second.allocator->_allocate();
+    _setupScript(script, script_name, si_iter->second.allocator);
 
     // run initialization method
     script->runInit();

@@ -207,6 +207,8 @@ public:
    std::vector<unsigned> getOffsets();
    /* Returns true if the provided offset is active. */
    bool hasOffset(unsigned offset);
+   /* Returns true if the provided quad name has been previously added to this GLEnv. */
+   bool hasAdded(const char* quad_name);
    /* Returns whether this instance has been initialized or not. */
    bool getInitialized();
 };

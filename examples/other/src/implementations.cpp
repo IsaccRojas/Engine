@@ -58,7 +58,7 @@ ES_Player::ES_Player() :
     EntityScriptInterface(),
     _hurt_cooldown_max(120.0f),
     _hurt_cooldown(0.0f),
-    _speed(0.5f),
+    _speed(0.75f),
     _last_input_dir(0.0f, 1.0f, 0.0f)
 {}
 

@@ -103,9 +103,13 @@ void EntityScriptExecutor::addEntityScript(EntityScriptInfo entityscriptinfo, co
 }
 
 EntityScriptInterface* EntityScriptExecutor::spawnEntityScript(const char* entityscript_name, Entity* entity) {
+    auto esi_iter = _entityscriptinfos.find(entityscript_name);
+    if (esi_iter == _entityscriptinfos.end())
+        throw std::runtime_error((std::string("Attempt to spawn EntityScript with non-existent EntityScriptInfo name '") + entityscript_name) + std::string("'"));
+
     // allocate instance and set it up
-    EntityScriptInterface* entityscript = _entityscriptinfos[entityscript_name].allocator->_allocate();
-    _setupScript(entityscript, entityscript_name, _entityscriptinfos[entityscript_name].allocator);
+    EntityScriptInterface* entityscript = esi_iter->second.allocator->_allocate();
+    _setupScript(entityscript, entityscript_name, esi_iter->second.allocator);
     _setupEntityScript(entityscript, entity);
 
     // run initialization method
@@ -265,16 +269,22 @@ CollisionSpace& CollisionSpace::operator=(CollisionSpace&& other) {
     return *this;
 }
 
-void CollisionSpace::addCollider(EntityColliderInfo entitycolliderinfo, const char* name) {
+void CollisionSpace::addEntityCollider(EntityColliderInfo entitycolliderinfo, const char* name) {
+    if (hasAdded(name))
+        throw std::runtime_error((std::string("Attempt to add existing EntityColliderInfo name '") + name) + std::string("'"));
     _entitycolliderinfos[name] = entitycolliderinfo;
 }
 
-EntityCollider* CollisionSpace::spawnCollider(const char* name, Entity* entity, Transform transform) {
+EntityCollider* CollisionSpace::spawnEntityCollider(const char* entitycollider_name, Entity* entity, Transform transform) {
     if (!entity)
         throw std::runtime_error("Attempt to spawn EntityCollider with null Entity reference");
 
+    auto eci_iter = _entitycolliderinfos.find(entitycollider_name);
+    if (eci_iter == _entitycolliderinfos.end())
+        throw std::runtime_error((std::string("Attempt to spawn EntityCollider with non-existent EntityColliderInfo name '") + entitycollider_name) + std::string("'"));
+
     EntityCollider* collider = new EntityCollider;
-    EntityColliderInfo &eci = _entitycolliderinfos[name];
+    EntityColliderInfo &eci = eci_iter->second;
     
     collider->_collisionspace = this;
     collider->_this_iter = _colliders.push_back(collider);
@@ -348,6 +358,8 @@ void CollisionSpace::detectCollisionAABB() {
     }
 }
 
+bool CollisionSpace::hasAdded(const char* collider_name) { return !(_entitycolliderinfos.find(collider_name) == _entitycolliderinfos.end()); }
+
 unsigned CollisionSpace::getCount() { return _colliders.size(); }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -404,6 +416,34 @@ void EntityManager::addEntity(EntityInfo info, const char* name) {
             if (i >= info.entityscript_names.size())
                 throw std::runtime_error("EntityInfo has attachment index greater than EntityScript initializer list size");
 
+    // check names
+    if (hasAdded(name))
+        throw std::runtime_error((std::string("Attempt to add existing EntityInfo name '") + name) + std::string("'"));
+    for (auto &i: info.quad_names)
+        if (!_glenv->hasAdded(i.c_str()))
+            throw std::runtime_error(
+                (std::string("Attempt to add EntityInfo name '") + name) 
+                + std::string("'") 
+                + (std::string(" with non-existent QuadInfo name '") + i) 
+                + std::string("'")
+            );
+    for (auto &i: info.entitycollider_names)
+        if (!_collisionspace->hasAdded(i.c_str()))
+            throw std::runtime_error(
+                (std::string("Attempt to add EntityInfo name '") + name) 
+                + std::string("'") 
+                + (std::string(" with non-existent EntityColliderInfo name '") + i) 
+                + std::string("'")
+            );
+    for (auto &i: info.entityscript_names)
+        if (!_entityscriptexecutor->hasAdded(i.c_str()))
+            throw std::runtime_error(
+                (std::string("Attempt to add EntityInfo name '") + name) 
+                + std::string("'") 
+                + (std::string(" with non-existent EntityScriptInfo name '") + i) 
+                + std::string("'")
+            );
+
     // insert info and create group if it does not exist
     _entityinfos[name] = info;
     if (_entities.find(info.group) == _entities.end()) {
@@ -412,8 +452,12 @@ void EntityManager::addEntity(EntityInfo info, const char* name) {
     }
 }
 
-Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
-    EntityInfo& ei = _entityinfos[name];
+Entity* EntityManager::spawnEntity(const char* entity_name, Transform transform) {
+    auto ei_iter = _entityinfos.find(entity_name);
+    if (ei_iter == _entityinfos.end())
+        throw std::runtime_error((std::string("Attempt to spawn Entity with non-existent EntityInfo name '") + entity_name) + std::string("'"));
+
+    EntityInfo& ei = ei_iter->second;
     Entity* entity = new Entity();
 
     // reserve memory for each stored vector to guarantee memory addresses
@@ -432,7 +476,7 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     auto ecn_iter = ei.entitycollider_names.begin();
     auto eca_iter = ei.entitycollider_attachments.begin();
     for (; ecn_iter != ei.entitycollider_names.end(); ecn_iter++, eca_iter++) {
-        entity->_entitycolliders.push_back(_collisionspace->spawnCollider(ecn_iter->c_str(), entity, transform));
+        entity->_entitycolliders.push_back(_collisionspace->spawnEntityCollider(ecn_iter->c_str(), entity, transform));
 
         // attach scripts
         for (auto &i : *eca_iter)
@@ -440,7 +484,7 @@ Entity* EntityManager::spawnEntity(const char* name, Transform transform) {
     }
 
     // initialize fields before running init methods
-    entity->_entity_name = name;
+    entity->_entity_name = entity_name;
     entity->_entitymanager = this;
     entity->_this_iter = _entities[ei.group].push_back(entity);
     entity->_group = ei.group;
@@ -506,6 +550,8 @@ void EntityManager::update() {
         remove_queue.pop();
     }
 }
+
+bool EntityManager::hasAdded(const char* entity_name) { return !(_entityinfos.find(entity_name) == _entityinfos.end()); }
 
 std::list<Entity*>::iterator EntityManager::groupBegin(const char *group) {
     if (_entities.find(group) == _entities.end())

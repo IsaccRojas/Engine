@@ -298,10 +298,10 @@ public:
    CollisionSpace& operator=(CollisionSpace&& other);
    CollisionSpace& operator=(const CollisionSpace& other) = delete;
 
-   void addCollider(EntityColliderInfo entitycolliderinfo, const char* name);
+   void addEntityCollider(EntityColliderInfo entitycolliderinfo, const char* name);
 
    /* Spawns a EntityCollider and returns a reference to it. */
-   EntityCollider* spawnCollider(const char* name, Entity* entity, Transform transform);
+   EntityCollider* spawnEntityCollider(const char* entitycollider_name, Entity* entity, Transform transform);
 
    /* Erases the EntityCollider referenced by the provided EntityCollider. */
    void erase(EntityCollider* collider);
@@ -311,6 +311,8 @@ public:
    */
    void detectCollisionAABB();
 
+   /* Returns true if the provided collider name has been previously added to this CollisionSpace. */
+   bool hasAdded(const char* collider_name);
    /* Returns the number of EntityColliders in this CollisionSpace. */
    unsigned getCount();
 };
@@ -363,9 +365,12 @@ public:
    EntityManager& operator=(const EntityManager& other) = delete;
 
    void addEntity(EntityInfo info, const char* name);
-   Entity* spawnEntity(const char* name, Transform transform);
+   Entity* spawnEntity(const char* entity_name, Transform transform);
    
    void update();
+
+   /* Returns true if the provided entity name has been previously added to this EntityManager. */
+   bool hasAdded(const char* entity_name);
 
    std::list<Entity*>::iterator groupBegin(const char* group);
 

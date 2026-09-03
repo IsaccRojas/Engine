@@ -283,6 +283,8 @@ void GLEnv::uninit() {
 }
 
 void GLEnv::addQuad(QuadInfo quadinfo, const char* name) {
+    if (hasAdded(name))
+        throw std::runtime_error((std::string("Attempt to add existing QuadInfo name '") + name) + std::string("'"));
     _quadinfos[name] = quadinfo;
 }
 
@@ -323,6 +325,10 @@ unsigned GLEnv::genQuad(const char* quad_name, Transform transform) {
     // if number of active offsets is greater than or equal to maximum allowed count, throw
     if (_count >= _max_count)
         throw CountLimitException();
+    
+    auto q_iter = _quadinfos.find(quad_name);
+    if (q_iter == _quadinfos.end())
+        throw std::runtime_error((std::string("Attempt to generate Quad with non-existent QuadInfo name '") + quad_name) + std::string("'"));
 
     // get a new unique offset and prepare clean Quad instance
     unsigned offset = _quad_offsets.push();
@@ -336,7 +342,7 @@ unsigned GLEnv::genQuad(const char* quad_name, Transform transform) {
     q._bv_texpos.setBuffer(&_glb_texpos, offset * (3 * sizeof(GLfloat))); 
     q._bv_texsize.setBuffer(&_glb_texsize, offset * (2 * sizeof(GLfloat)));
 
-    QuadInfo &qi = _quadinfos[quad_name];
+    QuadInfo &qi = q_iter->second;
 
     q._bv_pos.v = qi.pos;
     q._bv_scale.v = qi.scale;
@@ -432,5 +438,7 @@ Quad *GLEnv::getQuad(unsigned offset) {
 std::vector<unsigned> GLEnv::getOffsets() { return _quad_offsets.getUsed(); }
 
 bool GLEnv::hasOffset(unsigned offset) { return _quad_offsets.at(offset); }
+
+bool GLEnv::hasAdded(const char* quad_name) { return !(_quadinfos.find(quad_name) == _quadinfos.end()); }
 
 bool GLEnv::getInitialized() { return _initialized; }

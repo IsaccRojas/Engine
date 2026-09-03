@@ -1,6 +1,8 @@
 #include "loop.hpp"
 
 void loop() {
+    globalstate.manager.spawnEntity("Entity_Player", Transform{});
+    
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(globalstate.glfwstate.getWindowHandle()) && !globalstate.input.get_esc()) {
         glfwPollEvents();
