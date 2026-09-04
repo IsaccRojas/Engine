@@ -15,6 +15,8 @@ struct GlobalState;
 class ES_Player : public EntityScriptInterface {
     float _hurt_cooldown_max;
     float _hurt_cooldown;
+    float _shoot_cooldown_max;
+    float _shoot_cooldown;
     float _speed;
     glm::vec3 _last_input_dir;
     void _initEntity() override;
@@ -46,7 +48,7 @@ class ES_Lifetime : public EntityScriptInterface {
     void _collide(Entity *other) override;
 public:
     ES_Lifetime();
-    unsigned lifetime;
+    int lifetime;
     glm::vec3 vel;
 };
 
@@ -72,6 +74,28 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+/*
+    Entity Script RepeatSpawn
+    Repeatedly spawns an entity at its position at the specified rate, and kills itself after the specified
+    lifetime. Does not kill itself if lifetime is negative. Spawns nothing if spawnrate is 0 or entity name is "".
+*/
+class ES_RepeatSpawn : public EntityScriptInterface {
+    void _initEntity() override;
+    void _execEntity() override;
+    void _killEntity() override;
+    void _updateEntity() override;
+    void _receive(Entity *other, std::string message) override;
+    void _collide(Entity *other) override;
+public:
+    ES_RepeatSpawn();
+    int lifetime;
+    int spawnrate;
+    int spawnrate_cooldown;
+    std::string entity_name;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 struct GlobalState {
     GlobalState();
 
@@ -88,10 +112,12 @@ struct GlobalState {
     GenericProvidingEntityScriptAllocator<ES_Player> allocator_Player;
     GenericProvidingEntityScriptAllocator<ES_Pickup> allocator_Pickup;
     GenericProvidingEntityScriptAllocator<ES_Lifetime> allocator_Lifetime;
+    GenericProvidingEntityScriptAllocator<ES_RepeatSpawn> allocator_RepeatSpawn;
     
     RefContainer<ES_Player> container_Player;
     RefContainer<ES_Lifetime> container_Lifetime;
     RefContainer<ES_Pickup> container_Pickup;
+    RefContainer<ES_RepeatSpawn> container_RepeatSpawn;
 
     std::unordered_map<std::string, int> inventory;
 };
