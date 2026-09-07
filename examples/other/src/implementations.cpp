@@ -16,6 +16,19 @@ GlobalState::GlobalState() :
     allocator_RepeatSpawn.provider().attach(&globalstate.container_RepeatSpawn);
 }
 
+void Entity_LightBall_initializer(Entity* e) {
+    ES_RepeatSpawn* repeatspawn = globalstate.container_RepeatSpawn.getInstance(e->entityscripts()[1]);
+    repeatspawn->entity_name = "Entity_LightParticle";
+    repeatspawn->lifetime = 90.0f;
+    repeatspawn->spawnrate = 4.0f;
+}
+
+void Entity_LightParticle_initializer(Entity* e) {
+    ES_Lifetime* particle = globalstate.container_Lifetime.getInstance(e->entityscripts()[0]);
+    particle->lifetime = 24.0f;
+    particle->vel = glm::vec3(-1.0f * (float(rand() % 5) / 10.0f), 0.0f, 0.0f);
+}
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 void ES_Player::_initEntity() {}
@@ -46,15 +59,9 @@ void ES_Player::_execEntity() {
         _shoot_cooldown = _shoot_cooldown_max;
 
         globalstate.manager.spawnEntity("Entity_LightBall", entity().globaltransform());
-
-        // TODO: address having to specify these parameters every time for each script
         ES_Lifetime* ball = globalstate.container_Lifetime.getLastInstance();
-        ES_RepeatSpawn* repeatspawn = globalstate.container_RepeatSpawn.getLastInstance();
         ball->lifetime = 90.0f;
-        ball->vel = glm::vec3(1.25f, 0.0f, 0.0f);
-        repeatspawn->entity_name = "Entity_LightParticle";
-        repeatspawn->lifetime = 90.0f;
-        repeatspawn->spawnrate = 4.0f;
+        ball->vel = glm::vec3(1.75f, 0.0f, 0.0f);
     }
 
     pos += vel;
@@ -140,12 +147,10 @@ void ES_RepeatSpawn::_execEntity() {
     if (spawnrate >= 0 && entity_name != "") {
         if (spawnrate_cooldown == 0) {
             spawnrate_cooldown = spawnrate;
-            globalstate.manager.spawnEntity(entity_name.c_str(), entity().globaltransform());
 
-            // TODO: find way to avoid having to specify this in "chain"
-            ES_Lifetime* particle = globalstate.container_Lifetime.getLastInstance();
-            particle->lifetime = 12.0f;
-            particle->vel = glm::vec3(0.0f);
+            Transform spawn_transform = entity().globaltransform();
+            spawn_transform.pos = spawn_transform.pos + glm::vec3(0.0f, (float(rand() % 50) / 10.0f) - 2.5f, 0.0f);
+            globalstate.manager.spawnEntity(entity_name.c_str(), spawn_transform);
         }
     }
     

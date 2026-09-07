@@ -8,6 +8,9 @@
 
 struct GlobalState;
 
+void Entity_LightBall_initializer(Entity* e);
+void Entity_LightParticle_initializer(Entity* e);
+
 /*
     class ES_Player 
     Player script.

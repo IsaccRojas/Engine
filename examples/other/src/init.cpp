@@ -28,6 +28,7 @@ void loadAssets() {
     globalstate.animations["Animation_LightParticle"] =
         Animation("Animation_LightParticle", {
             Cycle("default", false, {
+                Frame(vec3(16.0f, 16.0f, 0.0f), vec2(16.0f), 6),
                 Frame(vec3(32.0f, 16.0f, 0.0f), vec2(16.0f), 6),
                 Frame(vec3(48.0f, 16.0f, 0.0f), vec2(16.0f), 6),
                 Frame(vec3(64.0f, 16.0f, 0.0f), vec2(16.0f), 6),
@@ -71,8 +72,8 @@ void loadAssets() {
     globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_RepeatSpawn, 0, true, nullptr, nullptr}, "ES_RepeatSpawn");
     
     globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Player"}, {"Quad_Player"}, {"EntityCollider_Player"}, {{0}}, nullptr}, "Entity_Player");
-    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime", "ES_RepeatSpawn"}, {"Quad_LightBall"}, {"EntityCollider_LightBall"}, {{0}}}, "Entity_LightBall");
-    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {"Quad_LightParticle"}, {}, {}}, "Entity_LightParticle");
+    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime", "ES_RepeatSpawn"}, {"Quad_LightBall"}, {"EntityCollider_LightBall"}, {{0}}, Entity_LightBall_initializer}, "Entity_LightBall");
+    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {"Quad_LightParticle"}, {}, {}, Entity_LightParticle_initializer}, "Entity_LightParticle");
 }
 
 void initialize() {
