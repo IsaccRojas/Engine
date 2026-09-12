@@ -36,16 +36,16 @@ protected:
       - _kill() is called by runKill(). runKill() is called on erasure.
       - _update() is called by runUpdate(). runUpdate() is called when update() is called by the owning Executor.
    */
-   virtual void _initEntity() = 0;
-   virtual void _execEntity() = 0;
-   virtual void _killEntity() = 0;
-   virtual void _updateEntity() = 0;
+   virtual void _initEntity();
+   virtual void _execEntity();
+   virtual void _killEntity();
+   virtual void _updateEntity();
 
    /* Call to handle a passed Entity and message. */
-   virtual void _receive(Entity* entity, std::string message) = 0;
+   virtual void _receive(Entity* entity, std::string message);
 
    /* Call invoked by EntityColliders. */
-   virtual void _collide(Entity* entity) = 0;
+   virtual void _collide(Entity* entity);
 
    EntityScriptInterface(EntityScriptInterface&& other);
    EntityScriptInterface();

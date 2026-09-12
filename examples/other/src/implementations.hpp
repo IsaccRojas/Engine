@@ -22,11 +22,7 @@ class ES_Player : public EntityScriptInterface {
     float _shoot_cooldown;
     float _speed;
     glm::vec3 _last_input_dir;
-    void _initEntity() override;
     void _execEntity() override;
-    void _killEntity() override;
-    void _updateEntity() override;
-    void _receive(Entity* other, std::string message) override;
     void _collide(Entity* other) override;
 public:
     ES_Player();
@@ -43,10 +39,7 @@ public:
 */
 class ES_Lifetime : public EntityScriptInterface {
     Entity* _target;
-    void _initEntity() override;
     void _execEntity() override;
-    void _killEntity() override;
-    void _updateEntity() override;
     void _receive(Entity *other, std::string message) override;
     void _collide(Entity *other) override;
 public:
@@ -64,11 +57,6 @@ public:
     std::string item_name - name to increment in GlobalResources' inventory
 */
 class ES_Pickup : public EntityScriptInterface {
-    void _initEntity() override;
-    void _execEntity() override;
-    void _killEntity() override;
-    void _updateEntity() override;
-    void _receive(Entity *other, std::string message) override;
     void _collide(Entity *other) override;
 public:
     ES_Pickup();
@@ -83,12 +71,7 @@ public:
     lifetime. Does not kill itself if lifetime is negative. Spawns nothing if spawnrate is 0 or entity name is "".
 */
 class ES_RepeatSpawn : public EntityScriptInterface {
-    void _initEntity() override;
     void _execEntity() override;
-    void _killEntity() override;
-    void _updateEntity() override;
-    void _receive(Entity *other, std::string message) override;
-    void _collide(Entity *other) override;
 public:
     ES_RepeatSpawn();
     int lifetime;

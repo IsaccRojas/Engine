@@ -35,6 +35,13 @@ void EntityScriptInterface::_kill() {
         *r = nullptr;
 }
 
+void EntityScriptInterface::_initEntity() {}
+void EntityScriptInterface::_execEntity() {}
+void EntityScriptInterface::_killEntity() {}
+void EntityScriptInterface::_updateEntity() {}
+void EntityScriptInterface::_receive(Entity* entity, std::string message) {}
+void EntityScriptInterface::_collide(Entity* entity) {}
+
 void EntityScriptInterface::_update() {
     _updateEntity();
 }

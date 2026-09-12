@@ -31,8 +31,6 @@ void Entity_LightParticle_initializer(Entity* e) {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Player::_initEntity() {}
-
 void ES_Player::_execEntity() {
     // check cooldowns
     if (_hurt_cooldown > 0.0f)
@@ -69,11 +67,6 @@ void ES_Player::_execEntity() {
     if (false)
         entity().kill();
 }
-
-void ES_Player::_killEntity() {}
-void ES_Player::_updateEntity() {}
-void ES_Player::_receive(Entity* other, std::string message) {}
-
 void ES_Player::_collide(Entity* other) {
     _hurt_cooldown = _hurt_cooldown_max;
 }
@@ -90,7 +83,6 @@ ES_Player::ES_Player() :
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Lifetime::_initEntity() {}
 void ES_Lifetime::_execEntity() {
     if (lifetime > 0)
         lifetime--;
@@ -103,8 +95,6 @@ void ES_Lifetime::_execEntity() {
     if (lifetime == 0)
         entity().kill();
 }
-void ES_Lifetime::_killEntity() {}
-void ES_Lifetime::_updateEntity() {}
 void ES_Lifetime::_receive(Entity *other, std::string message) {
     if (message == "target") {
         _target = other;
@@ -120,12 +110,6 @@ ES_Lifetime::ES_Lifetime() : EntityScriptInterface(), _target(nullptr), lifetime
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Pickup::_initEntity() {}
-void ES_Pickup::_execEntity() {}
-void ES_Pickup::_killEntity() {}
-void ES_Pickup::_updateEntity() {}
-void ES_Pickup::_receive(Entity *other, std::string message) {}
-
 void ES_Pickup::_collide(Entity *other) {
     auto& i = globalstate.inventory;
     if (i.find(item_name) != i.end())
@@ -137,7 +121,6 @@ ES_Pickup::ES_Pickup() : EntityScriptInterface(), item_name("") {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_RepeatSpawn::_initEntity() {}
 void ES_RepeatSpawn::_execEntity() {
     if (lifetime > 0)
         lifetime--;
@@ -157,14 +140,5 @@ void ES_RepeatSpawn::_execEntity() {
     if (lifetime == 0)
         entity().kill();
 }
-void ES_RepeatSpawn::_killEntity() {}
-void ES_RepeatSpawn::_updateEntity() {}
-void ES_RepeatSpawn::_receive(Entity *other, std::string message) {}
-void ES_RepeatSpawn::_collide(Entity *other) {}
 
 ES_RepeatSpawn::ES_RepeatSpawn() : EntityScriptInterface(), lifetime(0), spawnrate(-1), spawnrate_cooldown(0), entity_name("") {}
-
-/*
-    int spawnrate;
-    std::string entity_name;
-*/
