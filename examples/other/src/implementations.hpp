@@ -8,8 +8,19 @@
 
 struct GlobalState;
 
-void Entity_LightBall_initializer(Entity* e);
-void Entity_LightParticle_initializer(Entity* e);
+// --------------------------------------------------------------------------------------------------------------------------
+
+class ES_LightBall_Master : public EntityScriptInterface {
+    void _initEntity() override;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+class ES_LightParticle_Master : public EntityScriptInterface {
+    void _initEntity() override;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
 
 /*
     class ES_Player 
@@ -95,6 +106,8 @@ struct GlobalState {
     CollisionSpace collisionspace;
     EntityManager manager;
 
+    GenericProvidingEntityScriptAllocator<ES_LightBall_Master> allocator_LightBall_Master;
+    GenericProvidingEntityScriptAllocator<ES_LightParticle_Master> allocator_LightParticle_Master;
     GenericProvidingEntityScriptAllocator<ES_Player> allocator_Player;
     GenericProvidingEntityScriptAllocator<ES_Pickup> allocator_Pickup;
     GenericProvidingEntityScriptAllocator<ES_Lifetime> allocator_Lifetime;

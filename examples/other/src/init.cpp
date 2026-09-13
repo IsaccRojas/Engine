@@ -66,14 +66,16 @@ void loadAssets() {
     globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Player"]}, "EntityCollider_Player");
     globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_PlayerHitbox"]}, "EntityCollider_LightBall");
 
+    globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_LightBall_Master, 0, true, nullptr, nullptr}, "ES_LightBall_Master");
+    globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_LightParticle_Master, 0, true, nullptr, nullptr}, "ES_LightParticle_Master");
     globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_Player, 0, true, nullptr, nullptr}, "ES_Player");
     globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_Lifetime, 0, true, nullptr, nullptr}, "ES_Lifetime");
     globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_Pickup, 0, true, nullptr, nullptr}, "ES_Pickup");
     globalstate.executor.addEntityScript(EntityScriptInfo{&globalstate.allocator_RepeatSpawn, 0, true, nullptr, nullptr}, "ES_RepeatSpawn");
     
     globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Player"}, {"Quad_Player"}, {"EntityCollider_Player"}, {{0}}, nullptr}, "Entity_Player");
-    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime", "ES_RepeatSpawn"}, {"Quad_LightBall"}, {"EntityCollider_LightBall"}, {{0}}, Entity_LightBall_initializer}, "Entity_LightBall");
-    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_Lifetime"}, {"Quad_LightParticle"}, {}, {}, Entity_LightParticle_initializer}, "Entity_LightParticle");
+    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_LightBall_Master", "ES_Lifetime", "ES_RepeatSpawn"}, {"Quad_LightBall"}, {"EntityCollider_LightBall"}, {{0}}, nullptr}, "Entity_LightBall");
+    globalstate.manager.addEntity(EntityInfo{"Group_Spawnable", {"ES_LightParticle_Master", "ES_Lifetime"}, {"Quad_LightParticle"}, {}, {}, nullptr}, "Entity_LightParticle");
 }
 
 void initialize() {

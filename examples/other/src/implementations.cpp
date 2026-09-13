@@ -16,15 +16,19 @@ GlobalState::GlobalState() :
     allocator_RepeatSpawn.provider().attach(&globalstate.container_RepeatSpawn);
 }
 
-void Entity_LightBall_initializer(Entity* e) {
-    ES_RepeatSpawn* repeatspawn = globalstate.container_RepeatSpawn.getInstance(e->entityscripts()[1]);
+// --------------------------------------------------------------------------------------------------------------------------
+
+void ES_LightBall_Master::_initEntity() {
+    ES_RepeatSpawn* repeatspawn = globalstate.container_RepeatSpawn.getInstance(entity().entityscripts()[2]);
     repeatspawn->entity_name = "Entity_LightParticle";
     repeatspawn->lifetime = 90.0f;
     repeatspawn->spawnrate = 4.0f;
 }
 
-void Entity_LightParticle_initializer(Entity* e) {
-    ES_Lifetime* particle = globalstate.container_Lifetime.getInstance(e->entityscripts()[0]);
+// --------------------------------------------------------------------------------------------------------------------------
+
+void ES_LightParticle_Master::_initEntity() {
+    ES_Lifetime* particle = globalstate.container_Lifetime.getInstance(entity().entityscripts()[1]);
     particle->lifetime = 24.0f;
     particle->vel = glm::vec3(-1.0f * (float(rand() % 5) / 10.0f), 0.0f, 0.0f);
 }

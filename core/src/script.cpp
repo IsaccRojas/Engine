@@ -10,6 +10,7 @@ ScriptInterface::ScriptInterface() :
     _scriptallocator(nullptr),
     _preferred_queue(-1),
     _auto_enqueue(false),
+    _initialized(false),
     _exec_enqueued(false), 
     _kill_enqueued(false),
     _kill_started(false),
@@ -24,6 +25,7 @@ ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
         _this_iter = other._this_iter;
         _preferred_queue = other._preferred_queue;
         _auto_enqueue = other._auto_enqueue;
+        _initialized = other._initialized;
         _exec_enqueued = other._exec_enqueued;
         _kill_enqueued = other._kill_enqueued;
         _kill_started = other._kill_started;
@@ -33,6 +35,7 @@ ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
         other._executor = nullptr;
         other._preferred_queue = -1;
         other._auto_enqueue = false;
+        other._initialized = false;
         other._exec_enqueued = false;
         other._exec_enqueued = false;
         other._kill_started = false;
@@ -44,14 +47,17 @@ ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
 }
 
 void ScriptInterface::runInit() {
-    if (_executor)
+    if (_executor && !_initialized) {
         _init();
+        _initialized = true;
+    }
 
 }
 void ScriptInterface::runExec() {
     if (_executor)
         _exec();
-    enqueueExec();
+    if (_auto_enqueue && !_kill_enqueued)
+        enqueueExec();
 }
 
 void ScriptInterface::runKill() {
@@ -66,6 +72,7 @@ void ScriptInterface::runUpdate() {
 
 int& ScriptInterface::preferred_queue() { return _preferred_queue; }
 bool& ScriptInterface::auto_enqueue() { return _auto_enqueue; }
+bool ScriptInterface::getInitialized() { return _initialized; }
 bool ScriptInterface::getExecEnqueued() { return _exec_enqueued; }
 bool ScriptInterface::getKillEnqueued() { return _kill_enqueued; }
 bool ScriptInterface::getKillStarted() { return _kill_started; }
@@ -121,12 +128,12 @@ bool ScriptAllocatorInterface::hasReference(ScriptInterface* script) {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-ScriptExecutor::ScriptEnqueue::ScriptEnqueue(ScriptExecutor* executor, std::string name) :
-    _executor(executor), _name(name)
+ScriptExecutor::ScriptEnqueue::ScriptEnqueue(ScriptExecutor* executor, std::string name, bool initialize) :
+    _executor(executor), _name(name), _initialize(initialize)
 {}
 ScriptExecutor::ScriptEnqueue::~ScriptEnqueue() { /* automatic destruction is fine */ }
 ScriptInterface* ScriptExecutor::ScriptEnqueue::spawn() {
-    return _executor->spawnScript(_name.c_str());
+    return _executor->spawnScript(_name.c_str(), _initialize);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -209,7 +216,7 @@ void ScriptExecutor::addScript(ScriptInfo scriptinfo, const char* name) {
         
 }
 
-ScriptInterface* ScriptExecutor::spawnScript(const char* script_name) {
+ScriptInterface* ScriptExecutor::spawnScript(const char* script_name, bool initialize) {
     auto si_iter = _scriptinfos.find(script_name);
     if (si_iter == _scriptinfos.end())
         throw std::runtime_error((std::string("Attempt to spawn Script with non-existent ScriptInfo name '") + script_name) + std::string("'"));
@@ -219,13 +226,14 @@ ScriptInterface* ScriptExecutor::spawnScript(const char* script_name) {
     _setupScript(script, script_name, si_iter->second.allocator);
 
     // run initialization method
-    script->runInit();
+    if (initialize)
+        script->runInit();
 
     return script;
 }
 
-void ScriptExecutor::enqueueSpawn(const char* script_name) {
-    _pushSpawnEnqueue(new ScriptEnqueue(this, script_name));
+void ScriptExecutor::enqueueSpawn(const char* script_name, bool initialize) {
+    _pushSpawnEnqueue(new ScriptEnqueue(this, script_name, initialize));
 }
 
 void ScriptExecutor::enqueueExec(ScriptInterface* script, unsigned queue) {
@@ -274,6 +282,9 @@ void ScriptExecutor::runExecQueue(unsigned queue) {
     while (!(run_execqueue.empty())) {
         script = run_execqueue.front();
         
+        if (!script->_initialized)
+            script->runInit();
+
         script->_exec_enqueued = false;
         script->runExec();
         
@@ -290,7 +301,7 @@ void ScriptExecutor::runKillQueue() {
         script = _run_killqueue.front();
 
         // check if script can be killed
-        if (script->lockoutCount() == 0) {
+        if (script->lockoutCount() == 0 && !script->_exec_enqueued) {
             script->_kill_started = true;
             script->runKill();
 

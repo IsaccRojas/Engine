@@ -40,6 +40,7 @@ class ScriptInterface {
    std::list<ScriptInterface*>::iterator _this_iter;
    int _preferred_queue;
    bool _auto_enqueue;
+   bool _initialized;
    bool _exec_enqueued;
    bool _kill_enqueued; 
    bool _kill_started;
@@ -95,6 +96,7 @@ public:
    */
    int& preferred_queue();
    bool& auto_enqueue();
+   bool getInitialized();
    bool getExecEnqueued();
    bool getKillEnqueued();
    bool getKillStarted();
@@ -164,8 +166,9 @@ protected:
       ScriptExecutor* _executor;
    protected:
       std::string _name;
+      bool _initialize;
       virtual ScriptInterface* spawn();
-      ScriptEnqueue(ScriptExecutor *executor, std::string name);
+      ScriptEnqueue(ScriptExecutor *executor, std::string name, bool initialize);
       // default copy assignment/construction are fine (copying implies another enqueue in the same ScriptExecutor)
    public:
       virtual ~ScriptEnqueue();
@@ -217,12 +220,12 @@ public:
    */
    void addScript(ScriptInfo scriptinfo, const char* name);
 
-   /* Spawns a script using a name previously added to this ScriptExecutor, calls its runInit() method, and returns a script reference of it. */
-   ScriptInterface* spawnScript(const char* script_name);
+   /* Spawns a script using a name previously added to this ScriptExecutor, calls its runInit() method if specified, and returns a script reference of it. */
+   ScriptInterface* spawnScript(const char* script_name, bool initialize);
 
    /* Enqueues a script to be spawned when calling runSpawnQueue(). */
-   void enqueueSpawn(const char* script_name);
-   /* Enqueues a script instance to be executed when runExecQueue() is called. */
+   void enqueueSpawn(const char* script_name, bool initialize);
+   /* Enqueues a script instance to be executed when runExecQueue() is called. Calls runInit() method if not yet initialized. */
    void enqueueExec(ScriptInterface* script, unsigned queue);
    /* Enqueues a script instance to be killed and removed when runKillQueue() is called. */
    void enqueueKill(ScriptInterface* script);

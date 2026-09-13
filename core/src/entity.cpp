@@ -69,11 +69,11 @@ void EntityScriptInterface::detachNullableRef(EntityScriptInterface** ref) {
 // --------------------------------------------------------------------------------------------------------------------------
 
 ScriptInterface* EntityScriptExecutor::EntityScriptEnqueue::spawn() {
-    return _entityscriptexecutor->spawnEntityScript(_name.c_str(), _entity);
+    return _entityscriptexecutor->spawnEntityScript(_name.c_str(), _entity, _initialize);
 }
 
-EntityScriptExecutor::EntityScriptEnqueue::EntityScriptEnqueue(EntityScriptExecutor* entityscriptexecutor, std::string name, Entity* entity) :
-    ScriptEnqueue(nullptr, name), _entityscriptexecutor(entityscriptexecutor), _entity(entity)
+EntityScriptExecutor::EntityScriptEnqueue::EntityScriptEnqueue(EntityScriptExecutor* entityscriptexecutor, std::string name, bool initialize, Entity* entity) :
+    ScriptEnqueue(nullptr, name, initialize), _entityscriptexecutor(entityscriptexecutor), _entity(entity)
 {}
 
 void EntityScriptExecutor::_setupEntityScript(EntityScriptInterface* entityscript, Entity* entity) {
@@ -109,7 +109,7 @@ void EntityScriptExecutor::addEntityScript(EntityScriptInfo entityscriptinfo, co
         throw std::runtime_error("Attempt to add already added name");
 }
 
-EntityScriptInterface* EntityScriptExecutor::spawnEntityScript(const char* entityscript_name, Entity* entity) {
+EntityScriptInterface* EntityScriptExecutor::spawnEntityScript(const char* entityscript_name, Entity* entity, bool initialize) {
     auto esi_iter = _entityscriptinfos.find(entityscript_name);
     if (esi_iter == _entityscriptinfos.end())
         throw std::runtime_error((std::string("Attempt to spawn EntityScript with non-existent EntityScriptInfo name '") + entityscript_name) + std::string("'"));
@@ -120,13 +120,14 @@ EntityScriptInterface* EntityScriptExecutor::spawnEntityScript(const char* entit
     _setupEntityScript(entityscript, entity);
 
     // run initialization method
-    entityscript->runInit();
+    if (initialize)
+        entityscript->runInit();
 
     return entityscript;
 }
 
-void EntityScriptExecutor::enqueueSpawnEntityScript(const char* entityscript_name, Entity* entity) {
-    _pushSpawnEnqueue(new EntityScriptEnqueue(this, entityscript_name, entity));
+void EntityScriptExecutor::enqueueSpawnEntityScript(const char* entityscript_name, bool initialize, Entity* entity) {
+    _pushSpawnEnqueue(new EntityScriptEnqueue(this, entityscript_name, initialize, entity));
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -502,9 +503,12 @@ Entity* EntityManager::spawnEntity(const char* entity_name, Transform transform)
     auto esn_iter = ei.entityscript_names.begin();
     int i = 0;
     for (; esn_iter != ei.entityscript_names.end(); esn_iter++, i++) {
-        entity->_entityscripts[i] = _entityscriptexecutor->spawnEntityScript(esn_iter->c_str(), entity);
+        entity->_entityscripts[i] = _entityscriptexecutor->spawnEntityScript(esn_iter->c_str(), entity, false);
         entity->_entityscripts[i]->attachNullableRef(&(entity->_entityscripts[i]));
     }
+
+    for (auto& es : entity->_entityscripts)
+        es->runInit();
 
     if (ei.spawn_callback)
         ei.spawn_callback(entity);

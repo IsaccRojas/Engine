@@ -95,7 +95,7 @@ protected:
    protected:
       // invokes the containing EntityScriptExecutor's _spawnEntityScript() method and returns the spawned instance's reference
       virtual ScriptInterface* spawn() override;
-      EntityScriptEnqueue(EntityScriptExecutor* entityscriptexecutor, std::string name, Entity* entity);
+      EntityScriptEnqueue(EntityScriptExecutor* entityscriptexecutor, std::string name, bool initialize, Entity* entity);
       // default copy assignment/construction are fine (copying implies another enqueue in the same EntityScriptExecutor)
    };
 
@@ -125,10 +125,10 @@ public:
    void addEntityScript(EntityScriptInfo entityscriptinfo, const char* name);
 
    /* Spawns a EntityScript using a name previously added to this executor, and returns its ID. */
-   EntityScriptInterface* spawnEntityScript(const char* entityscript_name, Entity* entity);
+   EntityScriptInterface* spawnEntityScript(const char* entityscript_name, Entity* entity, bool initialize);
 
    /* Enqueues an EntityScript to be spawned when calling runSpawnQueue(). */
-   void enqueueSpawnEntityScript(const char* entityscript_name, Entity* entity);
+   void enqueueSpawnEntityScript(const char* entityscript_name, bool initialize, Entity* entity);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -323,7 +323,7 @@ public:
    Specifies information for instantiating Entities.
 
    group - named group for Entity to be inserted into; created if it does not already exist
-   entityscript_names - names of EntityScriptInterfaces to use for script instantiation, in order
+   entityscript_names - names of EntityScriptInterfaces to use for script instantiation, in order (always calls runInit() method after all have been instantiated)
    quad_names - names of QuadInfos to use for Quad instantiation, in order
    entitycollider_names - names of ColliderInfos to use for Collider instantiation, in order
    entitycollider_attachments - indices per collider to use of instantiated scripts to attach to colliders
