@@ -7,21 +7,35 @@
 #include "C:\dev\include\glm\glm.hpp"
 #include "C:\dev\include\glm\gtx\rotate_vector.hpp"
 
-class EntityScriptExecutor;
+class EntityExecutor;
 class EntityCollider;
 class CollisionSpace;
-class Entity;
-class EntityScriptAllocatorInterface;
-class EntityManager;
+class EntityAllocatorInterface;
 
-/* class EntityScriptInterface
+/* class EntityInterface
    Represents a ScriptInterface that belongs to an Entity.
 */
-class EntityScriptInterface : public ScriptInterface {
-   friend EntityScriptExecutor;
+class EntityInterface : public ScriptInterface {
+   friend EntityExecutor;
 
-   Entity* _entity;
-   std::unordered_set<EntityScriptInterface**> _nullablerefs;
+   EntityInterface* _parent;
+   std::string _entity_name;
+
+   EntityExecutor* _entityexecutor;
+   std::list<EntityInterface*>::iterator _this_iter;
+   std::string _group;
+
+   std::vector<EntityInterface*> _entities;
+   std::vector<unsigned> _quad_ids;
+   std::vector<Quad*> _quads;
+   std::vector<EntityCollider*> _entitycolliders;
+
+   bool _kill_started;
+
+   Transform _globaltransform;
+   Transform _prevglobaltransform;
+
+   std::unordered_set<EntityInterface**> _nullablerefs;
 
    // called by execution environment
    void _init() override;
@@ -32,153 +46,49 @@ class EntityScriptInterface : public ScriptInterface {
 protected:
    /* Functions to be overridden by children.
       - _init() is called by runInit(). runInit() is called on spawn.
-      - _exec() is called by runExec(). runExec() is called on execution, each time the script is queued.
+      - _exec() is called by runExec(). runExec() is called on execution, each time the entity is queued.
       - _kill() is called by runKill(). runKill() is called on erasure.
       - _update() is called by runUpdate(). runUpdate() is called when update() is called by the owning Executor.
+      - _receive() may be called to pass an Entity reference to this instance.
+      - _collide() is called by EntityCollider associated with this instance.
    */
    virtual void _initEntity();
    virtual void _execEntity();
    virtual void _killEntity();
    virtual void _updateEntity();
+   virtual void _receive(EntityInterface* entity, std::string message);
+   virtual void _collide(EntityInterface* entity);
 
-   /* Call to handle a passed Entity and message. */
-   virtual void _receive(Entity* entity, std::string message);
-
-   /* Call invoked by EntityColliders. */
-   virtual void _collide(Entity* entity);
-
-   EntityScriptInterface(EntityScriptInterface&& other);
-   EntityScriptInterface();
+   EntityInterface(EntityInterface&& other);
+   EntityInterface(EntityInterface* parent = nullptr);
 
 public:
-   EntityScriptInterface(const EntityScriptInterface& other) = delete;
-   virtual ~EntityScriptInterface();
+   EntityInterface(const EntityInterface& other) = delete;
+   virtual ~EntityInterface();
 
-   EntityScriptInterface& operator=(EntityScriptInterface&& other);
-   EntityScriptInterface& operator=(const EntityScriptInterface& other) = delete;
+   EntityInterface& operator=(EntityInterface&& other);
+   EntityInterface& operator=(const EntityInterface& other) = delete;
 
-   Entity& entity();
+   void receive(EntityInterface* entity, std::string message);
+   void collide(EntityInterface* entity);
 
-   void receive(Entity* entity, std::string message);
-   
-   void collide(Entity* entity);
+   /* Inserts reference to pointer to EntityInterface that is nulled on invocation of this instance's kill method. */
+   void attachNullableRef(EntityInterface** ref);
+   /* Removes reference to pointer to EntityInterface. */
+   void detachNullableRef(EntityInterface** ref);
 
-   /* Inserts reference to pointer to EntityScriptInterface that is nulled on invocation of this instance's kill method. */
-   void attachNullableRef(EntityScriptInterface** ref);
-
-   /* Removes reference to pointer to EntityScriptInterface. */
-   void detachNullableRef(EntityScriptInterface** ref);
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-// struct holding EntityScript information mapped to a name
-struct EntityScriptInfo {
-   EntityScriptAllocatorInterface* allocator;
-   int preferred_queue;
-   bool auto_enqueue;
-   std::function<void(ScriptInterface*)> spawn_callback;
-   std::function<void(ScriptInterface*)> remove_callback;
-   // default copy assignment/construction are fine
-};
-
-class EntityScriptExecutor : public ScriptExecutor {
-   std::unordered_map<unsigned, EntityScriptInterface*> _entityscripts_id;
-
-protected:
-   // class to store enqueues and polymorphically spawn later
-   class EntityScriptEnqueue : public ScriptEnqueue {
-      friend EntityScriptExecutor;
-      EntityScriptExecutor* _entityscriptexecutor;
-      Entity* _entity;
-   
-   protected:
-      // invokes the containing EntityScriptExecutor's _spawnEntityScript() method and returns the spawned instance's reference
-      virtual ScriptInterface* spawn() override;
-      EntityScriptEnqueue(EntityScriptExecutor* entityscriptexecutor, std::string name, bool initialize, Entity* entity);
-      // default copy assignment/construction are fine (copying implies another enqueue in the same EntityScriptExecutor)
-   };
-
-private:
-   // internal variables for added EntityScriptInterface information and enqueued EntityScriptInterfaces
-   std::unordered_map<std::string, EntityScriptInfo> _entityscriptinfos;
-
-protected:
-   // initializes EntityScriptInterface's EntityScriptExecutor-related fields
-   void _setupEntityScript(EntityScriptInterface* entityscript, Entity* entity);
-    
-public:
-   /* Calls init() with the provided arguments. */
-   EntityScriptExecutor(unsigned queues = 1);
-   EntityScriptExecutor(EntityScriptExecutor&& other);
-   EntityScriptExecutor(const EntityScriptExecutor& other) = delete;
-   virtual ~EntityScriptExecutor() override;
-
-   EntityScriptExecutor& operator=(EntityScriptExecutor&& other);
-   EntityScriptExecutor& operator=(const EntityScriptExecutor& other) = delete;
-
-   /* Adds an EntityScriptInterface allocator with initialization information to this executor, allowing its given
-      name to be used for future spawns.
-      - EntityScriptInfo - instance of EntityScriptInfo with allocation/initialization information
-      - name - name to associate with the EntityScriptInfo instance
-   */
-   void addEntityScript(EntityScriptInfo entityscriptinfo, const char* name);
-
-   /* Spawns a EntityScript using a name previously added to this executor, and returns its ID. */
-   EntityScriptInterface* spawnEntityScript(const char* entityscript_name, Entity* entity, bool initialize);
-
-   /* Enqueues an EntityScript to be spawned when calling runSpawnQueue(). */
-   void enqueueSpawnEntityScript(const char* entityscript_name, bool initialize, Entity* entity);
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-class Entity {
-   friend EntityManager;
-
-   std::unordered_set<Entity**> _nullablerefs;
-
-   std::string _entity_name;
-
-   EntityManager* _entitymanager;
-   std::list<Entity*>::iterator _this_iter;
-   std::string _group;
-
-   std::vector<EntityScriptInterface*> _entityscripts;
-   std::vector<unsigned> _quad_ids;
-   std::vector<Quad*> _quads;
-   std::vector<EntityCollider*> _entitycolliders;
-
-   bool _kill_started;
-
-   Transform _globaltransform;
-   Transform _prevglobaltransform;
-
-   Entity();
-
-public:
-   ~Entity();
-
-   //TODO: revise copy/move semantics
-
-   /* Flags Entity for to be removed from owning EntityManager, and kill enqueues all contained scripts. */
-   void kill();
+   /* Enqueues this entity and all contained entities for being killed. */
+   void enqueueKillAll();
    
    /* Entries may be nulled by removal of individual instances from owners. */
-   std::vector<EntityScriptInterface*>& entityscripts();
+   std::vector<EntityInterface*>& entities();
    std::vector<Quad*>& quads();
    std::vector<EntityCollider*>& entitycolliders();
 
    /* Current global transform. */
    Transform& globaltransform();
-   /* Global transform at the time of the last invocation of update() on an owning EntityManager. */
+   /* Global transform at the time of the last invocation of update() on an owning EntityExecutor. */
    Transform getPrevGlobalTransform();
-
-   /* Attaches a nullable Entity reference to null on kill */
-   void attachNullableEntity(Entity** ref);
-
-   /* Detaches a nullable Entity reference to null on kill */
-   void detachNullableEntity(Entity** ref);
 
    const char* getName();
    const char* getGroup();
@@ -187,23 +97,115 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+// struct holding EntityInterface information mapped to a name
+/*
+   group - named group for this entity to be inserted into; created if it does not already exist
+   entity_names - names of EntityInterfaces to use for owned entity instantiation, in order (always calls runInit() method after all have been instantiated)
+   quad_names - names of QuadInfos to use for Quad instantiation, in order
+   entitycollider_names - names of ColliderInfos to use for Collider instantiation, in order
+   entitycollider_attachments - indices per collider to use of instantiated entities to attach to colliders
+   spawn_callback - callback to call when spawning an instance
+*/
+
+struct EntityInfo {
+   EntityAllocatorInterface* allocator;
+   int preferred_queue;
+   bool auto_enqueue;
+   std::function<void(ScriptInterface*)> spawn_callback;
+   std::function<void(ScriptInterface*)> remove_callback;
+   std::string group;
+   std::list<std::string> entity_names;
+   std::list<std::string> quad_names;
+   std::list<std::string> entitycollider_names;
+   std::list<std::vector<unsigned>> entitycollider_attachments;
+   // default copy assignment/construction are fine
+};
+
+class EntityExecutor : public ScriptExecutor {
+   std::unordered_map<unsigned, EntityInterface*> _entities_id;
+
+   // storage of entity info, mapped to names
+   std::unordered_map<std::string, EntityInfo> _entityinfos;
+
+   // storage of entity group names
+   std::list<std::string> _entity_group_names;
+
+   // storage of entities, mapped to group names
+   std::unordered_map<std::string, ManagedList<EntityInterface>> _entities;
+
+   GLEnv* _glenv;
+   CollisionSpace* _collisionspace;
+
+   // can only be called from checkEntities() if entity is killed
+   void _removeEntity(EntityInterface* entity);
+
+protected:
+   // class to store enqueues and polymorphically spawn later
+   class EntityEnqueue : public ScriptEnqueue {
+      friend EntityExecutor;
+      EntityExecutor* _entityexecutor;
+      EntityInterface* _parent;
+   
+   protected:
+      // invokes the containing EntityExecutor's _spawnEntity() method and returns the spawned instance's reference
+      virtual ScriptInterface* spawn() override;
+      EntityEnqueue(EntityExecutor* entityexecutor, std::string name, EntityInterface* parent, bool initialize);
+      // default copy assignment/construction are fine (copying implies another enqueue in the same EntityExecutor)
+   };
+
+private:
+   // internal variables for added EntityInterface information and enqueued EntityInterfaces
+   std::unordered_map<std::string, EntityInfo> _entityinfos;
+    
+public:
+   /* Calls init() with the provided arguments. */
+   EntityExecutor(unsigned queues, GLEnv* glenv, CollisionSpace* collisionspace);
+   EntityExecutor(EntityExecutor&& other);
+   EntityExecutor(const EntityExecutor& other) = delete;
+   virtual ~EntityExecutor() override;
+
+   EntityExecutor& operator=(EntityExecutor&& other);
+   EntityExecutor& operator=(const EntityExecutor& other) = delete;
+
+   /* Adds an EntityInterface allocator with initialization information to this executor, allowing its given
+      name to be used for future spawns.
+      - info - instance of EntityInfo with allocation/initialization information
+      - name - name to associate with the EntityInfo instance
+   */
+   void addEntity(EntityInfo info, const char* name);
+
+   /* Spawns an entity using a name previously added to this executor, and returns its ID. */
+   EntityInterface* spawnEntity(const char* entity_name, EntityInterface* parent, bool initialize);
+
+   /* Enqueues an Entity to be spawned when calling runSpawnQueue(). */
+   void enqueueSpawnEntity(const char* entity_name, EntityInterface* parent, bool initialize);
+
+   void update();
+
+   std::list<EntityInterface*>::iterator groupBegin(const char* group);
+   std::list<EntityInterface*>::iterator groupEnd(const char* group);
+   unsigned groupSize(const char* group);
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 /* abstract class EntityAllocatorInterface
    Is used to invoke _allocate(), which must return heap-allocated memory to be owned
-   by the invoking EntityScriptExecutor instance.
+   by the invoking EntityExecutor instance.
 
    Stores a reference that can be checked against for existence by subtypes.
 */
-class EntityScriptAllocatorInterface : public ScriptAllocatorInterface {
-   friend EntityScriptExecutor;
+class EntityAllocatorInterface : public ScriptAllocatorInterface {
+   friend EntityExecutor;
 
 protected:
-   // must return a heap-allocated instance of a covariant type of EntityScriptInterface
-   virtual EntityScriptInterface* _allocate() = 0;
+   // must return a heap-allocated instance of a covariant type of EntityInterface
+   virtual EntityInterface* _allocate() = 0;
 
    // called on deallocation; should not deallocate anything
    virtual void _onDeallocation(ScriptInterface* script) = 0;
 
-   EntityScriptAllocatorInterface();
+   EntityAllocatorInterface();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -319,42 +321,8 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/* class EntityInfo
-   Specifies information for instantiating Entities.
-
-   group - named group for Entity to be inserted into; created if it does not already exist
-   entityscript_names - names of EntityScriptInterfaces to use for script instantiation, in order (always calls runInit() method after all have been instantiated)
-   quad_names - names of QuadInfos to use for Quad instantiation, in order
-   entitycollider_names - names of ColliderInfos to use for Collider instantiation, in order
-   entitycollider_attachments - indices per collider to use of instantiated scripts to attach to colliders
-   spawn_callback - callback to call when spawning an instance
-*/
-struct EntityInfo {
-   std::string group;
-   std::list<std::string> entityscript_names;
-   std::list<std::string> quad_names;
-   std::list<std::string> entitycollider_names;
-   std::list<std::vector<unsigned>> entitycollider_attachments;
-   std::function<void(Entity*)> spawn_callback;
-};
-
+/*
 class EntityManager {
-   // storage of entity info, mapped to names
-   std::unordered_map<std::string, EntityInfo> _entityinfos;
-
-   // storage of entity group names
-   std::list<std::string> _entity_group_names;
-
-   // storage of entities, mapped to group names
-   std::unordered_map<std::string, ManagedList<Entity>> _entities;
-
-   EntityScriptExecutor* _entityscriptexecutor;
-   GLEnv* _glenv;
-   CollisionSpace* _collisionspace;
-
-   // can only be called from checkEntities() if entity's entityscript is killed
-   void _removeEntity(Entity* entity);
-   
 public:
    EntityManager(EntityScriptExecutor* entityscriptexecutor, GLEnv* glenv, CollisionSpace* physspace_box);
    EntityManager(EntityManager&& other);
@@ -366,18 +334,8 @@ public:
 
    void addEntity(EntityInfo info, const char* name);
    Entity* spawnEntity(const char* entity_name, Transform transform);
-   
-   void update();
-
-   /* Returns true if the provided entity name has been previously added to this EntityManager. */
-   bool hasAdded(const char* entity_name);
-
-   std::list<Entity*>::iterator groupBegin(const char* group);
-
-   std::list<Entity*>::iterator groupEnd(const char* group);
-
-   unsigned groupSize(const char* group);
 };
+*/
 
 // --------------------------------------------------------------------------------------------------------------------------
 

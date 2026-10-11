@@ -42,6 +42,22 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 /*
+    class ES_Being 
+    Being script.
+*/
+class ES_Being : public EntityScriptInterface {
+    float hurt_cooldown;
+    void _execEntity() override;
+    void _collide(Entity* other) override;
+public:
+    ES_Being();
+    float health;
+    float hurt_cooldown_max;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+/*
     Entity Script Lifetime
     Kills itself after assigned lifetime. Can be assigned a velocity to adjust its own position during its lifetime.
     Can also be assigned a target to follow position of. Overrides application of velocity.

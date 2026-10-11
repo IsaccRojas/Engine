@@ -87,6 +87,30 @@ ES_Player::ES_Player() :
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+void ES_Being::_execEntity() {
+    if (health <= 0.0f) {
+        entity().kill();
+        return;
+    }
+
+    // check cooldowns
+    if (hurt_cooldown > 0.0f)
+        hurt_cooldown -= 1.0f;
+}
+void ES_Being::_collide(Entity* other) {
+    if (hurt_cooldown <= 0.0f)
+        hurt_cooldown = hurt_cooldown_max;
+}
+
+ES_Being::ES_Being() :
+    EntityScriptInterface(),
+    hurt_cooldown(0.0f),
+    hurt_cooldown_max(120.0f),
+    health(0.0f)
+{}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 void ES_Lifetime::_execEntity() {
     if (lifetime > 0)
         lifetime--;
