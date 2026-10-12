@@ -32,7 +32,8 @@ class EntityInterface : public ScriptInterface {
 
    bool _kill_started;
 
-   Transform _globaltransform;
+   // reference to parents' transforms, or otherwise a heap-allocated transform
+   Transform* _globaltransform;
    Transform _prevglobaltransform;
 
    std::unordered_set<EntityInterface**> _nullablerefs;
@@ -139,17 +140,18 @@ class EntityExecutor : public ScriptExecutor {
    // can only be called from checkEntities() if entity is killed
    void _removeEntity(EntityInterface* entity);
 
+   // spawn entity with specified parent. transform parameter is ignored if parent is not nullptr
+   EntityInterface* _spawnEntityNode(const char* entity_name, EntityInterface* parent, Transform transform);
 protected:
    // class to store enqueues and polymorphically spawn later
    class EntityEnqueue : public ScriptEnqueue {
       friend EntityExecutor;
       EntityExecutor* _entityexecutor;
-      EntityInterface* _parent;
-   
+      Transform _transform;
    protected:
       // invokes the containing EntityExecutor's _spawnEntity() method and returns the spawned instance's reference
       virtual ScriptInterface* spawn() override;
-      EntityEnqueue(EntityExecutor* entityexecutor, std::string name, EntityInterface* parent, bool initialize);
+      EntityEnqueue(EntityExecutor* entityexecutor, std::string name, Transform transform);
       // default copy assignment/construction are fine (copying implies another enqueue in the same EntityExecutor)
    };
 
@@ -175,10 +177,10 @@ public:
    void addEntity(EntityInfo info, const char* name);
 
    /* Spawns an entity using a name previously added to this executor, and returns its ID. */
-   EntityInterface* spawnEntity(const char* entity_name, EntityInterface* parent, bool initialize);
+   EntityInterface* spawnEntity(const char* entity_name, Transform transform);
 
    /* Enqueues an Entity to be spawned when calling runSpawnQueue(). */
-   void enqueueSpawnEntity(const char* entity_name, EntityInterface* parent, bool initialize);
+   void enqueueSpawnEntity(const char* entity_name, Transform transform);
 
    void update();
 
