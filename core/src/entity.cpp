@@ -149,13 +149,8 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     // instantiate each EntityCollider in info and push to entity's storage (size match guaranteed by addEntity())
     auto ecn_iter = ei.entitycollider_names.begin();
     auto eca_iter = ei.entitycollider_attachments.begin();
-    for (; ecn_iter != ei.entitycollider_names.end(); ecn_iter++, eca_iter++) {
+    for (; ecn_iter != ei.entitycollider_names.end(); ecn_iter++, eca_iter++)
         entity->_entitycolliders.push_back(_collisionspace->spawnEntityCollider(ecn_iter->c_str(), entity, *active_transform));
-
-        // attach entities
-        for (auto &i : *eca_iter)
-            entity->_entitycolliders.back()->attachNullableEntity(&(entity->_entities[i]));
-    }
 
     // initialize fields before running init methods
     entity->_entity_name = entity_name;
@@ -331,7 +326,8 @@ EntityCollider::EntityCollider() :
     _cur_pos(glm::vec3(0.0f)),
     _cur_scale(glm::vec3(1.0f)),
     _prev_pos(glm::vec3(0.0f)),
-    _prev_scale(glm::vec3(1.0f))
+    _prev_scale(glm::vec3(1.0f)),
+    _entity(nullptr)
 {}
 EntityCollider::~EntityCollider() {}
 
@@ -348,6 +344,7 @@ EntityCollider& EntityCollider::operator=(EntityCollider&& other) {
         _cur_scale = other._cur_scale;
         _prev_pos = other._prev_pos;
         _prev_scale = other._prev_scale;
+        _entity = other._entity;
         other._collisionspace = nullptr;
         other._collision_enabled = false;
         other._transformation_is_reset = true;
@@ -357,6 +354,7 @@ EntityCollider& EntityCollider::operator=(EntityCollider&& other) {
         other._cur_scale = glm::vec3(1.0f);
         other._prev_pos = glm::vec3(0.0f);
         other._prev_scale = glm::vec3(1.0f);
+        other._entity = nullptr;
     }
     return *this;
 }
@@ -394,14 +392,6 @@ Transform EntityCollider::getPrevTransformation() {
     return Transform{_prev_pos, _prev_scale};
 }
 
-void EntityCollider::attachNullableEntity(EntityInterface** entity) {
-    _scripts.insert(entity);
-}
-
-void EntityCollider::detachNullableEntity(EntityInterface** entity) {
-    _scripts.erase(entity);
-}
-
 FilterState& EntityCollider::filterstate() { return _filterstate; }
 bool& EntityCollider::collision_enabled() { return _collision_enabled; }
 
@@ -425,7 +415,7 @@ void CollisionSpace::addEntityCollider(EntityColliderInfo entitycolliderinfo, co
     _entitycolliderinfos[name] = entitycolliderinfo;
 }
 
-EntityCollider* CollisionSpace::spawnEntityCollider(const char* entitycollider_name, Transform transform) {
+EntityCollider* CollisionSpace::spawnEntityCollider(const char* entitycollider_name, EntityInterface* entity, Transform transform) {
     auto eci_iter = _entitycolliderinfos.find(entitycollider_name);
     if (eci_iter == _entitycolliderinfos.end())
         throw std::runtime_error((std::string("Attempt to spawn EntityCollider with non-existent EntityColliderInfo name '") + entitycollider_name) + std::string("'"));
@@ -446,6 +436,8 @@ EntityCollider* CollisionSpace::spawnEntityCollider(const char* entitycollider_n
     // force previous transformation to be current transformation
     collider->_prev_pos = collider->_cur_pos;
     collider->_prev_scale = collider->_cur_scale;
+
+    collider->_entity = entity;
 
     return collider;
 }
@@ -487,15 +479,9 @@ void CollisionSpace::detectCollisionAABB() {
             ) {
                 // detect and handle collision
                 if (computeCollisionAABB({c1->_cur_pos, c1->_cur_scale}, {c2->_cur_pos, c2->_cur_scale})) {
-                    // call collider on all of c1's attached scripts with c2's entity as arg
-                    for (auto& es : c1->_scripts)
-                        if (es != nullptr)
-                            (*es)->collide(c2->_entity);
-                    
-                    // call collider on all of c2's attached scripts with c1's entity as arg
-                    for (auto& es : c2->_scripts)
-                        if (es != nullptr)
-                            (*es)->collide(c1->_entity);
+                    // call collision method on collider's attached entity with other collider's attached entity as arg
+                    c1->_entity->collide(c2->_entity);
+                    c2->_entity->collide(c1->_entity);
                 }
             }
 

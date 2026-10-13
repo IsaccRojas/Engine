@@ -233,8 +233,7 @@ class EntityCollider {
    glm::vec3 _prev_pos;
    glm::vec3 _prev_scale;
 
-   // scripts to invoke collision method on
-   std::unordered_set<EntityInterface**> _scripts;
+   EntityInterface* _entity;
 
    void _storePrevTransformation();
 
@@ -262,12 +261,6 @@ public:
 
    /* Get previous transformation of position and scale as a Transform */
    Transform getPrevTransformation();
-
-   /* Attaches a nullable EntityInterface reference to call collision method on */
-   void attachNullableEntity(EntityInterface** entity);
-
-   /* Detaches a nullable EntityInterface reference */
-   void detachNullableEntity(EntityInterface** entity);
 
    FilterState& filterstate();
    bool& collision_enabled();
@@ -303,7 +296,7 @@ public:
    void addEntityCollider(EntityColliderInfo entitycolliderinfo, const char* name);
 
    /* Spawns a EntityCollider and returns a reference to it. */
-   EntityCollider* spawnEntityCollider(const char* entitycollider_name, Transform transform);
+   EntityCollider* spawnEntityCollider(const char* entitycollider_name, EntityInterface* entity, Transform transform);
 
    /* Erases the EntityCollider referenced by the provided EntityCollider. */
    void erase(EntityCollider* collider);
@@ -321,35 +314,17 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-/*
-class EntityManager {
-public:
-   EntityManager(EntityScriptExecutor* entityscriptexecutor, GLEnv* glenv, CollisionSpace* physspace_box);
-   EntityManager(EntityManager&& other);
-   EntityManager(const EntityManager& other) = delete;
-   ~EntityManager();
-
-   EntityManager& operator=(EntityManager&& other);
-   EntityManager& operator=(const EntityManager& other) = delete;
-
-   void addEntity(EntityInfo info, const char* name);
-   Entity* spawnEntity(const char* entity_name, Transform transform);
-};
-*/
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-/* class ProvidingEntityScriptAllocatorInterface<T>
-   Templated implementation of the ProvidingEntityScriptAllocatorInterface, that contains a RefProvider for passing allocations
+/* class ProvidingEntityAllocatorInterface<T>
+   Templated implementation of the ProvidingEntityAllocatorInterface, that contains a RefProvider for passing allocations
    to attached receivers. The scope of any attached RefReceiverInterface must be equal to or a subset of this instance; 
    it is undefined behavior to make calls on this instance or attached receiver instances otherwise.
-   T - type allocated; must be covariant of EntityScriptInterface
+   T - type allocated; must be covariant of EntityInterface
 */
 template<class T>
-class ProvidingEntityScriptAllocatorInterface : public EntityScriptAllocatorInterface {
+class ProvidingEntityAllocatorInterface : public EntityAllocatorInterface {
    RefProvider<T> _refprovider;
 
-   EntityScriptInterface* _allocate() override {
+   EntityInterface* _allocate() override {
       T* t = _providingAllocate();
       _refprovider.receiveInstance(t);
       return t;
@@ -365,22 +340,22 @@ protected:
    virtual void _providingOnDeallocation(ScriptInterface* script) = 0;
 
 public:
-   ProvidingEntityScriptAllocatorInterface() {}
+   ProvidingEntityAllocatorInterface() {}
 
    RefProviderView<T> provider() {
       return RefProviderView<T>(&_refprovider);
    }
 };
 
-/* class GenericEntityScriptProvider<T>
-   Generic implementation of EntityScriptProviderInterface<T>. Allocates instances of T with default constructor.
+/* class GenericEntityProvider<T>
+   Generic implementation of EntityProviderInterface<T>. Allocates instances of T with default constructor.
 */
 template<class T>
-class GenericProvidingEntityScriptAllocator : public ProvidingEntityScriptAllocatorInterface<T> {
+class GenericProvidingEntityAllocator : public ProvidingEntityAllocatorInterface<T> {
    T* _providingAllocate() override { return new T; }
    void _providingOnDeallocation(ScriptInterface* script) override {}
 public:
-   GenericProvidingEntityScriptAllocator() {}
+   GenericProvidingEntityAllocator() {}
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
