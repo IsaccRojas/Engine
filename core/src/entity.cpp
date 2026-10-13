@@ -4,7 +4,7 @@ EntityInterface::EntityInterface(EntityInterface&& other) {
     operator=(std::move(other));
 }
 EntityInterface::EntityInterface(EntityInterface* parent) : 
-    ScriptInterface(), _parent(_parent), _entity_name(""), _entityexecutor(nullptr), _kill_started(false), _globaltransform(nullptr), _prevglobaltransform(nullptr)
+    ScriptInterface(), _parent(_parent), _entity_name(""), _entityexecutor(nullptr), _kill_started(false), _globaltransform(nullptr)
 {}
 EntityInterface::~EntityInterface() {}
 
@@ -152,9 +152,9 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     for (; ecn_iter != ei.entitycollider_names.end(); ecn_iter++, eca_iter++) {
         entity->_entitycolliders.push_back(_collisionspace->spawnEntityCollider(ecn_iter->c_str(), entity, *active_transform));
 
-        // attach scripts
+        // attach entities
         for (auto &i : *eca_iter)
-            entity->_entitycolliders.back()->attachNullableEntityScript(&(entity->_entities[i]));
+            entity->_entitycolliders.back()->attachNullableEntity(&(entity->_entities[i]));
     }
 
     // initialize fields before running init methods
@@ -251,9 +251,8 @@ EntityInterface* EntityExecutor::spawnEntity(const char* entity_name, Transform 
     return _spawnEntityNode(entity_name, nullptr, transform);
 }
 
-// ================================================================================================================================================
-void EntityManager::update() {
-    std::queue<Entity*> remove_queue;
+void EntityExecutor::update() {
+    std::queue<EntityInterface*> remove_queue;
 
     // check script status of every entity in each group list
     for (auto &[name, mlist] : _entities)
@@ -264,7 +263,7 @@ void EntityManager::update() {
             if (entity->getKillStarted()) {
                 // check if all scripts nulled
                 bool non_null_found = false;
-                for (auto &es : entity->entityscripts()) {
+                for (auto &es : entity->entities()) {
                     if (es != nullptr) {
                         non_null_found = true;
                         break;
@@ -297,7 +296,6 @@ void EntityManager::update() {
         remove_queue.pop();
     }
 }
-// ================================================================================================================================================
 
 std::list<EntityInterface*>::iterator EntityExecutor::groupBegin(const char *group) {
     if (_entities.find(group) == _entities.end())
@@ -333,8 +331,7 @@ EntityCollider::EntityCollider() :
     _cur_pos(glm::vec3(0.0f)),
     _cur_scale(glm::vec3(1.0f)),
     _prev_pos(glm::vec3(0.0f)),
-    _prev_scale(glm::vec3(1.0f)),
-    _entity(nullptr)
+    _prev_scale(glm::vec3(1.0f))
 {}
 EntityCollider::~EntityCollider() {}
 
@@ -351,7 +348,6 @@ EntityCollider& EntityCollider::operator=(EntityCollider&& other) {
         _cur_scale = other._cur_scale;
         _prev_pos = other._prev_pos;
         _prev_scale = other._prev_scale;
-        _entity = other._entity;
         other._collisionspace = nullptr;
         other._collision_enabled = false;
         other._transformation_is_reset = true;
@@ -361,7 +357,6 @@ EntityCollider& EntityCollider::operator=(EntityCollider&& other) {
         other._cur_scale = glm::vec3(1.0f);
         other._prev_pos = glm::vec3(0.0f);
         other._prev_scale = glm::vec3(1.0f);
-        other._entity = nullptr;
     }
     return *this;
 }
@@ -399,16 +394,15 @@ Transform EntityCollider::getPrevTransformation() {
     return Transform{_prev_pos, _prev_scale};
 }
 
-void EntityCollider::attachNullableEntityScript(EntityScriptInterface** script) {
-    _scripts.insert(script);
+void EntityCollider::attachNullableEntity(EntityInterface** entity) {
+    _scripts.insert(entity);
 }
 
-void EntityCollider::detachNullableEntityScript(EntityScriptInterface** script) {
-    _scripts.erase(script);
+void EntityCollider::detachNullableEntity(EntityInterface** entity) {
+    _scripts.erase(entity);
 }
 
 FilterState& EntityCollider::filterstate() { return _filterstate; }
-Entity& EntityCollider::entity() {return *_entity; }
 bool& EntityCollider::collision_enabled() { return _collision_enabled; }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -431,10 +425,7 @@ void CollisionSpace::addEntityCollider(EntityColliderInfo entitycolliderinfo, co
     _entitycolliderinfos[name] = entitycolliderinfo;
 }
 
-EntityCollider* CollisionSpace::spawnEntityCollider(const char* entitycollider_name, Entity* entity, Transform transform) {
-    if (!entity)
-        throw std::runtime_error("Attempt to spawn EntityCollider with null Entity reference");
-
+EntityCollider* CollisionSpace::spawnEntityCollider(const char* entitycollider_name, Transform transform) {
     auto eci_iter = _entitycolliderinfos.find(entitycollider_name);
     if (eci_iter == _entitycolliderinfos.end())
         throw std::runtime_error((std::string("Attempt to spawn EntityCollider with non-existent EntityColliderInfo name '") + entitycollider_name) + std::string("'"));
@@ -445,7 +436,6 @@ EntityCollider* CollisionSpace::spawnEntityCollider(const char* entitycollider_n
     collider->_collisionspace = this;
     collider->_this_iter = _colliders.push_back(collider);
     collider->_filterstate.setFilter(&(eci.filter));
-    collider->_entity = entity;
 
     collider->collision_enabled() = true;
     collider->_base_pos = eci.pos;

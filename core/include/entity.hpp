@@ -233,9 +233,8 @@ class EntityCollider {
    glm::vec3 _prev_pos;
    glm::vec3 _prev_scale;
 
-   // containing Entity, and scripts to invoke collision method on
-   Entity* _entity;
-   std::unordered_set<EntityScriptInterface**> _scripts;
+   // scripts to invoke collision method on
+   std::unordered_set<EntityInterface**> _scripts;
 
    void _storePrevTransformation();
 
@@ -264,14 +263,13 @@ public:
    /* Get previous transformation of position and scale as a Transform */
    Transform getPrevTransformation();
 
-   /* Attaches a nullable EntityScriptInterface reference to call collision method on */
-   void attachNullableEntityScript(EntityScriptInterface** script);
+   /* Attaches a nullable EntityInterface reference to call collision method on */
+   void attachNullableEntity(EntityInterface** entity);
 
-   /* Detaches a nullable EntityScriptInterface reference */
-   void detachNullableEntityScript(EntityScriptInterface** script);
+   /* Detaches a nullable EntityInterface reference */
+   void detachNullableEntity(EntityInterface** entity);
 
    FilterState& filterstate();
-   Entity& entity();
    bool& collision_enabled();
 };
 
@@ -305,7 +303,7 @@ public:
    void addEntityCollider(EntityColliderInfo entitycolliderinfo, const char* name);
 
    /* Spawns a EntityCollider and returns a reference to it. */
-   EntityCollider* spawnEntityCollider(const char* entitycollider_name, Entity* entity, Transform transform);
+   EntityCollider* spawnEntityCollider(const char* entitycollider_name, Transform transform);
 
    /* Erases the EntityCollider referenced by the provided EntityCollider. */
    void erase(EntityCollider* collider);
