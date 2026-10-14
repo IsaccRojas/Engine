@@ -78,11 +78,11 @@ public:
    /* Removes reference to pointer to EntityInterface. */
    void detachNullableRef(EntityInterface** ref);
 
-   /* Enqueues this entity and all contained entities for being killed. */
-   void enqueueKillAll();
+   /* Starts kill on this entity and all contained entities via EntityExecutor checks. */
+   void startKill();
 
-   /* Enqueues all contained entities for being killed. */
-   void enqueueKillSub();
+   /* Starts kill on this entity and all contained entities, and parents, via EntityExecutor checks. */
+   void startKillAll();
    
    /* Entries may be nulled by removal of individual instances from owners. */
    std::vector<EntityInterface*>& entities();
@@ -131,11 +131,8 @@ class EntityExecutor : public ScriptExecutor {
    // storage of entity info, mapped to names
    std::unordered_map<std::string, EntityInfo> _entityinfos;
 
-   // storage of entity group names
-   std::list<std::string> _entity_group_names;
-
-   // storage of entities, mapped to group names
-   std::unordered_map<std::string, ManagedList<EntityInterface>> _entities;
+   // references to entities (does not own)
+   std::unordered_set<EntityInterface*> _entity_refs;
 
    GLEnv* _glenv;
    CollisionSpace* _collisionspace;
@@ -182,10 +179,6 @@ public:
    void enqueueSpawnEntity(const char* entity_name, Transform transform);
 
    void update();
-
-   std::list<EntityInterface*>::iterator groupBegin(const char* group);
-   std::list<EntityInterface*>::iterator groupEnd(const char* group);
-   unsigned groupSize(const char* group);
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

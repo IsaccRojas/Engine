@@ -54,30 +54,25 @@ void EntityInterface::detachNullableRef(EntityInterface** ref) {
     _nullablerefs.erase(ref);
 }
 
-void EntityInterface::enqueueKillAll() {
-    if (_parent) {
-        _parent->enqueueKillAll();
-        return;
-    }
-
+void EntityInterface::startKill() {
     if (!_kill_started) {
-        enqueueKillSub();
-        enqueueKill();
+        for (auto& e : _entities)
+            if (e != nullptr)
+                if (!e->_kill_started)
+                    e->startKill();
+
         _kill_started = true;
     }
 }
 
-void EntityInterface::enqueueKillSub() {
-    for (auto& es : _entities) {
-        if (es != nullptr) {
-            if (!_kill_started) {
-                enqueueKillSub();
-                enqueueKill();
-                _kill_started = true;
-            }
-        }
-    }
+void EntityInterface::startKillAll() {
+    if (_parent)
+        _parent->startKillAll();
+    else
+        startKill();
 }
+
+
 
 std::vector<EntityInterface*>& EntityInterface::entities() { return _entities; }
 std::vector<Quad*>& EntityInterface::quads() { return _quads; }
@@ -122,7 +117,8 @@ void EntityExecutor::_removeEntity(EntityInterface* entity) {
     if (!entity->_parent)
         delete entity->_globaltransform;
 
-    _entities[entity->_group].erase(entity->_this_iter);
+    entity->enqueueKill();
+    _entity_refs.erase(entity);
 }
 
 EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, EntityInterface* parent, Transform transform) {
@@ -170,8 +166,8 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     // initialize fields before running init methods
     entity->_entity_name = entity_name;
     entity->_entityexecutor = this;
-    entity->_this_iter = _entities[ei.group].push_back(entity);
     entity->_group = ei.group;
+    _entity_refs.insert(entity);
 
     // instantiate each entity in info and push to storage
     auto esn_iter = ei.entity_names.begin();
@@ -242,11 +238,6 @@ void EntityExecutor::addEntity(EntityInfo info, const char* name) {
         info.remove_callback
         }, name);
     _entityinfos[name] = info;
-
-    if (_entities.find(info.group) == _entities.end()) {
-        _entity_group_names.push_back(info.group);
-        _entities[info.group] = ManagedList<EntityInterface>();
-    }
 }
 
 void EntityExecutor::enqueueSpawnEntity(const char* entity_name, Transform transform) {
@@ -265,64 +256,43 @@ void EntityExecutor::update() {
     std::queue<EntityInterface*> remove_queue;
 
     // check script status of every entity in each group list
-    for (auto &[name, mlist] : _entities)
-        for (auto iter = mlist.begin(); iter != mlist.end(); ++iter) {
-            auto& entity = *iter;
-
-            // check if entity needs to be removed
-            if (entity->getKillStarted()) {
-                // check if all scripts nulled
-                bool non_null_found = false;
-                for (auto &es : entity->entities()) {
-                    if (es != nullptr) {
-                        non_null_found = true;
-                        break;
-                    }
+    for (auto& entity : _entity_refs) {
+        // check if entity needs to be removed
+        if (entity->getKillStarted()) {
+            // check if all scripts nulled
+            bool non_null_found = false;
+            for (auto &es : entity->entities()) {
+                if (es != nullptr) {
+                    non_null_found = true;
+                    break;
                 }
-
-                if (!non_null_found)
-                    remove_queue.push(entity);
-                
-                continue;
             }
 
-            // update transforms
-            entity->_prevglobaltransform = entity->globaltransform();
-            for (auto &q : entity->quads()) {
-                q->resetTransformation();
-                q->applyTransform(entity->globaltransform());
-                
-                q->animationstate().step();
-                q->writeAnimation();
-            }
-            for (auto &ec : entity->entitycolliders()) {
-                ec->resetTransformation();
-                ec->applyTransform(entity->globaltransform());
-            }
+            if (!non_null_found)
+                remove_queue.push(entity);
+            
+            continue;
         }
+
+        // update transforms
+        entity->_prevglobaltransform = entity->globaltransform();
+        for (auto &q : entity->quads()) {
+            q->resetTransformation();
+            q->applyTransform(entity->globaltransform());
+            
+            q->animationstate().step();
+            q->writeAnimation();
+        }
+        for (auto &ec : entity->entitycolliders()) {
+            ec->resetTransformation();
+            ec->applyTransform(entity->globaltransform());
+        }
+    }
 
     while (!remove_queue.empty()) {
         _removeEntity(remove_queue.front());
         remove_queue.pop();
     }
-}
-
-std::list<EntityInterface*>::iterator EntityExecutor::groupBegin(const char *group) {
-    if (_entities.find(group) == _entities.end())
-        throw std::runtime_error(std::string("Attempt to get begin iterator of nonexistent group ") + group);
-    return _entities[group].begin();
-}
-
-std::list<EntityInterface*>::iterator EntityExecutor::groupEnd(const char *group) {
-    if (_entities.find(group) == _entities.end())
-        throw std::runtime_error(std::string("Attempt to get end iterator of nonexistent group ") + group);
-    return _entities[group].end();
-}
-
-unsigned EntityExecutor::groupSize(const char* group) {
-    if (_entities.find(group) == _entities.end())
-        throw std::runtime_error(std::string("Attempt to get size of nonexistent group ") + group);
-    return _entities[group].size();
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
