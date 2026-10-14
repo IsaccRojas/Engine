@@ -7,8 +7,7 @@ const unsigned EXECUTION_QUEUES = 2;
 const float diag_factor = glm::sin(glm::radians(45.0f));
 
 GlobalState::GlobalState() : 
-    executor(EXECUTION_QUEUES),
-    manager(&executor, &glenv, &collisionspace)
+    executor(EXECUTION_QUEUES, &glenv, &collisionspace)
 {
     allocator_Player.provider().attach(&globalstate.container_Player);
     allocator_Lifetime.provider().attach(&globalstate.container_Lifetime);
@@ -19,7 +18,7 @@ GlobalState::GlobalState() :
 // --------------------------------------------------------------------------------------------------------------------------
 
 void ES_LightBall_Master::_initEntity() {
-    ES_RepeatSpawn* repeatspawn = globalstate.container_RepeatSpawn.getInstance(entity().entityscripts()[2]);
+    ES_RepeatSpawn* repeatspawn = globalstate.container_RepeatSpawn.getInstance(entities()[2]);
     repeatspawn->entity_name = "Entity_LightParticle";
     repeatspawn->lifetime = 90.0f;
     repeatspawn->spawnrate = 4.0f;
@@ -28,7 +27,7 @@ void ES_LightBall_Master::_initEntity() {
 // --------------------------------------------------------------------------------------------------------------------------
 
 void ES_LightParticle_Master::_initEntity() {
-    ES_Lifetime* particle = globalstate.container_Lifetime.getInstance(entity().entityscripts()[1]);
+    ES_Lifetime* particle = globalstate.container_Lifetime.getInstance(entities()[1]);
     particle->lifetime = 24.0f;
     particle->vel = glm::vec3(-1.0f * (float(rand() % 5) / 10.0f), 0.0f, 0.0f);
 }
@@ -42,7 +41,7 @@ void ES_Player::_execEntity() {
     if (_shoot_cooldown > 0.0f)
         _shoot_cooldown -= 1.0f;
 
-    glm::vec3 &pos = entity().globaltransform().pos;
+    glm::vec3 &pos = globaltransform().pos;
 
     // get velocity as sum of input directions
     glm::vec3 vel = glm::vec3(
@@ -60,7 +59,7 @@ void ES_Player::_execEntity() {
     if (_shoot_cooldown <= 0.0f && globalstate.input.get_space()) {
         _shoot_cooldown = _shoot_cooldown_max;
 
-        globalstate.manager.spawnEntity("Entity_LightBall", entity().globaltransform());
+        globalstate.executor.spawnEntity("Entity_LightBall", globaltransform());
         ES_Lifetime* ball = globalstate.container_Lifetime.getLastInstance();
         ball->lifetime = 90.0f;
         ball->vel = glm::vec3(1.75f, 0.0f, 0.0f);
@@ -69,14 +68,14 @@ void ES_Player::_execEntity() {
     pos += vel;
 
     if (false)
-        entity().kill();
+        enqueueKillAll();
 }
-void ES_Player::_collide(Entity* other) {
+void ES_Player::_collide(EntityInterface* other) {
     _hurt_cooldown = _hurt_cooldown_max;
 }
 
 ES_Player::ES_Player() :
-    EntityScriptInterface(),
+    EntityInterface(),
     _hurt_cooldown_max(120.0f),
     _hurt_cooldown(0.0f),
     _shoot_cooldown_max(30.0f),
@@ -89,7 +88,7 @@ ES_Player::ES_Player() :
 
 void ES_Being::_execEntity() {
     if (health <= 0.0f) {
-        entity().kill();
+        enqueueKillAll();
         return;
     }
 
@@ -97,13 +96,13 @@ void ES_Being::_execEntity() {
     if (hurt_cooldown > 0.0f)
         hurt_cooldown -= 1.0f;
 }
-void ES_Being::_collide(Entity* other) {
+void ES_Being::_collide(EntityInterface* other) {
     if (hurt_cooldown <= 0.0f)
         hurt_cooldown = hurt_cooldown_max;
 }
 
 ES_Being::ES_Being() :
-    EntityScriptInterface(),
+    EntityInterface(),
     hurt_cooldown(0.0f),
     hurt_cooldown_max(120.0f),
     health(0.0f)
@@ -116,12 +115,12 @@ void ES_Lifetime::_execEntity() {
         lifetime--;
     
     if (_target)
-        entity().globaltransform().pos = _target->globaltransform().pos;
+        globaltransform().pos = _target->globaltransform().pos;
     else
-        entity().globaltransform().pos += vel;
+        globaltransform().pos += vel;
     
     if (lifetime == 0)
-        entity().kill();
+        enqueueKillAll();
 }
 void ES_Lifetime::_receive(Entity *other, std::string message) {
     if (message == "target") {

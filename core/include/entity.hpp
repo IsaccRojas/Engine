@@ -80,6 +80,9 @@ public:
 
    /* Enqueues this entity and all contained entities for being killed. */
    void enqueueKillAll();
+
+   /* Enqueues all contained entities for being killed. */
+   void enqueueKillSub();
    
    /* Entries may be nulled by removal of individual instances from owners. */
    std::vector<EntityInterface*>& entities();
@@ -154,10 +157,6 @@ protected:
       EntityEnqueue(EntityExecutor* entityexecutor, std::string name, Transform transform);
       // default copy assignment/construction are fine (copying implies another enqueue in the same EntityExecutor)
    };
-
-private:
-   // internal variables for added EntityInterface information and enqueued EntityInterfaces
-   std::unordered_map<std::string, EntityInfo> _entityinfos;
     
 public:
    /* Calls init() with the provided arguments. */

@@ -4,7 +4,7 @@ EntityInterface::EntityInterface(EntityInterface&& other) {
     operator=(std::move(other));
 }
 EntityInterface::EntityInterface(EntityInterface* parent) : 
-    ScriptInterface(), _parent(_parent), _entity_name(""), _entityexecutor(nullptr), _kill_started(false), _globaltransform(nullptr)
+    ScriptInterface(), _parent(parent), _entity_name(""), _entityexecutor(nullptr), _kill_started(false), _globaltransform(nullptr)
 {}
 EntityInterface::~EntityInterface() {}
 
@@ -55,13 +55,27 @@ void EntityInterface::detachNullableRef(EntityInterface** ref) {
 }
 
 void EntityInterface::enqueueKillAll() {
+    if (_parent) {
+        _parent->enqueueKillAll();
+        return;
+    }
+
     if (!_kill_started) {
-        _kill_started = true;
-        for (auto& es : _entities)
-            if (es != nullptr)
-                es->enqueueKill();
-            
+        enqueueKillSub();
         enqueueKill();
+        _kill_started = true;
+    }
+}
+
+void EntityInterface::enqueueKillSub() {
+    for (auto& es : _entities) {
+        if (es != nullptr) {
+            if (!_kill_started) {
+                enqueueKillSub();
+                enqueueKill();
+                _kill_started = true;
+            }
+        }
     }
 }
 
@@ -105,7 +119,8 @@ void EntityExecutor::_removeEntity(EntityInterface* entity) {
     for (EntityCollider* collider : entity->_entitycolliders)
         _collisionspace->erase(collider);
 
-    /* delete transforms */
+    if (!entity->_parent)
+        delete entity->_globaltransform;
 
     _entities[entity->_group].erase(entity->_this_iter);
 }
