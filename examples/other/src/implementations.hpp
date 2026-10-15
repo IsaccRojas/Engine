@@ -10,19 +10,19 @@ struct GlobalState;
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-class ES_LightBall_Master : public EntityInterface {
+class Entity_LightBall : public EntityInterface {
     void _initEntity() override;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-class ES_LightParticle_Master : public EntityInterface {
+class Entity_LightParticle : public EntityInterface {
     void _initEntity() override;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-class ES_Player : public EntityInterface {
+class Entity_Player : public EntityInterface {
     float _hurt_cooldown_max;
     float _hurt_cooldown;
     float _shoot_cooldown_max;
@@ -32,19 +32,19 @@ class ES_Player : public EntityInterface {
     void _execEntity() override;
     void _collide(EntityInterface* other) override;
 public:
-    ES_Player();
+    Entity_Player();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-class ES_Being : public EntityInterface {
+class Entity_Being : public EntityInterface {
     float hurt_cooldown;
     void _execEntity() override;
     void _collide(EntityInterface* other) override;
 public:
-    ES_Being();
-    float health;
+    Entity_Being();
     float hurt_cooldown_max;
+    float health;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -56,13 +56,13 @@ public:
 
     message "target" - assigns target Entity to copy position of
 */
-class ES_Lifetime : public EntityInterface {
+class Entity_Lifetime : public EntityInterface {
     EntityInterface* _target;
     void _execEntity() override;
     void _receive(EntityInterface* other, std::string message) override;
     void _collide(EntityInterface* other) override;
 public:
-    ES_Lifetime();
+    Entity_Lifetime();
     int lifetime;
     glm::vec3 vel;
 };
@@ -75,10 +75,10 @@ public:
 
     std::string item_name - name to increment in GlobalResources' inventory
 */
-class ES_Pickup : public EntityInterface {
+class Entity_Pickup : public EntityInterface {
     void _collide(EntityInterface* other) override;
 public:
-    ES_Pickup();
+    Entity_Pickup();
     std::string item_name;
 };
 
@@ -89,10 +89,10 @@ public:
     Repeatedly spawns an entity at its position at the specified rate, and kills itself after the specified
     lifetime. Does not kill itself if lifetime is negative. Spawns nothing if spawnrate is 0 or entity name is "".
 */
-class ES_RepeatSpawn : public EntityInterface {
+class Entity_RepeatSpawn : public EntityInterface {
     void _execEntity() override;
 public:
-    ES_RepeatSpawn();
+    Entity_RepeatSpawn();
     int lifetime;
     int spawnrate;
     int spawnrate_cooldown;
@@ -114,17 +114,17 @@ struct GlobalState {
     CollisionSpace collisionspace;
     EntityExecutor executor;
 
-    GenericProvidingEntityAllocator<ES_LightBall_Master> allocator_LightBall_Master;
-    GenericProvidingEntityAllocator<ES_LightParticle_Master> allocator_LightParticle_Master;
-    GenericProvidingEntityAllocator<ES_Player> allocator_Player;
-    GenericProvidingEntityAllocator<ES_Pickup> allocator_Pickup;
-    GenericProvidingEntityAllocator<ES_Lifetime> allocator_Lifetime;
-    GenericProvidingEntityAllocator<ES_RepeatSpawn> allocator_RepeatSpawn;
+    GenericProvidingEntityAllocator<Entity_LightBall> allocator_LightBall;
+    GenericProvidingEntityAllocator<Entity_LightParticle> allocator_LightParticle;
+    GenericProvidingEntityAllocator<Entity_Player> allocator_Player;
+    GenericProvidingEntityAllocator<Entity_Pickup> allocator_Pickup;
+    GenericProvidingEntityAllocator<Entity_Lifetime> allocator_Lifetime;
+    GenericProvidingEntityAllocator<Entity_RepeatSpawn> allocator_RepeatSpawn;
     
-    RefContainer<ES_Player> container_Player;
-    RefContainer<ES_Lifetime> container_Lifetime;
-    RefContainer<ES_Pickup> container_Pickup;
-    RefContainer<ES_RepeatSpawn> container_RepeatSpawn;
+    RefContainer<Entity_Player> container_Player;
+    RefContainer<Entity_Lifetime> container_Lifetime;
+    RefContainer<Entity_Pickup> container_Pickup;
+    RefContainer<Entity_RepeatSpawn> container_RepeatSpawn;
 
     std::unordered_map<std::string, int> inventory;
 };

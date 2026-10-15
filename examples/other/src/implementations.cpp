@@ -17,8 +17,8 @@ GlobalState::GlobalState() :
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_LightBall_Master::_initEntity() {
-    ES_RepeatSpawn* repeatspawn = globalstate.container_RepeatSpawn.getInstance(entities()[2]);
+void Entity_LightBall::_initEntity() {
+    Entity_RepeatSpawn* repeatspawn = globalstate.container_RepeatSpawn.getInstance(entities()[1]);
     repeatspawn->entity_name = "Entity_LightParticle";
     repeatspawn->lifetime = 90.0f;
     repeatspawn->spawnrate = 4.0f;
@@ -26,15 +26,15 @@ void ES_LightBall_Master::_initEntity() {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_LightParticle_Master::_initEntity() {
-    ES_Lifetime* particle = globalstate.container_Lifetime.getInstance(entities()[1]);
+void Entity_LightParticle::_initEntity() {
+    Entity_Lifetime* particle = globalstate.container_Lifetime.getInstance(entities()[0]);
     particle->lifetime = 24.0f;
     particle->vel = glm::vec3(-1.0f * (float(rand() % 5) / 10.0f), 0.0f, 0.0f);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Player::_execEntity() {
+void Entity_Player::_execEntity() {
     // check cooldowns
     if (_hurt_cooldown > 0.0f)
         _hurt_cooldown -= 1.0f;
@@ -60,7 +60,7 @@ void ES_Player::_execEntity() {
         _shoot_cooldown = _shoot_cooldown_max;
 
         globalstate.executor.spawnEntity("Entity_LightBall", globaltransform());
-        ES_Lifetime* ball = globalstate.container_Lifetime.getLastInstance();
+        Entity_Lifetime* ball = globalstate.container_Lifetime.getLastInstance();
         ball->lifetime = 90.0f;
         ball->vel = glm::vec3(1.75f, 0.0f, 0.0f);
     }
@@ -68,13 +68,13 @@ void ES_Player::_execEntity() {
     pos += vel;
 
     if (false)
-        enqueueKillAll();
+        startKillAll();
 }
-void ES_Player::_collide(EntityInterface* other) {
+void Entity_Player::_collide(EntityInterface* other) {
     _hurt_cooldown = _hurt_cooldown_max;
 }
 
-ES_Player::ES_Player() :
+Entity_Player::Entity_Player() :
     EntityInterface(),
     _hurt_cooldown_max(120.0f),
     _hurt_cooldown(0.0f),
@@ -86,9 +86,9 @@ ES_Player::ES_Player() :
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Being::_execEntity() {
+void Entity_Being::_execEntity() {
     if (health <= 0.0f) {
-        enqueueKillAll();
+        startKillAll();
         return;
     }
 
@@ -96,12 +96,12 @@ void ES_Being::_execEntity() {
     if (hurt_cooldown > 0.0f)
         hurt_cooldown -= 1.0f;
 }
-void ES_Being::_collide(EntityInterface* other) {
+void Entity_Being::_collide(EntityInterface* other) {
     if (hurt_cooldown <= 0.0f)
         hurt_cooldown = hurt_cooldown_max;
 }
 
-ES_Being::ES_Being() :
+Entity_Being::Entity_Being() :
     EntityInterface(),
     hurt_cooldown(0.0f),
     hurt_cooldown_max(120.0f),
@@ -110,7 +110,7 @@ ES_Being::ES_Being() :
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Lifetime::_execEntity() {
+void Entity_Lifetime::_execEntity() {
     if (lifetime > 0)
         lifetime--;
     
@@ -120,35 +120,35 @@ void ES_Lifetime::_execEntity() {
         globaltransform().pos += vel;
     
     if (lifetime == 0)
-        enqueueKillAll();
+        startKillAll();
 }
-void ES_Lifetime::_receive(Entity *other, std::string message) {
+void Entity_Lifetime::_receive(EntityInterface* other, std::string message) {
     if (message == "target") {
         _target = other;
         if (_target)
-            _target->attachNullableEntity(&_target);
+            _target->attachNullableRef(&_target);
     }
 }
-void ES_Lifetime::_collide(Entity *other) {
-    entity().kill();
+void Entity_Lifetime::_collide(EntityInterface* other) {
+    startKillAll();
 }
 
-ES_Lifetime::ES_Lifetime() : EntityScriptInterface(), _target(nullptr), lifetime(0), vel(glm::vec3(0.0f)) {}
+Entity_Lifetime::Entity_Lifetime() : EntityInterface(), _target(nullptr), lifetime(0), vel(glm::vec3(0.0f)) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_Pickup::_collide(Entity *other) {
+void Entity_Pickup::_collide(EntityInterface* other) {
     auto& i = globalstate.inventory;
     if (i.find(item_name) != i.end())
         i[item_name] += 1;
-    entity().kill();
+    startKillAll();
 }
 
-ES_Pickup::ES_Pickup() : EntityScriptInterface(), item_name("") {}
+Entity_Pickup::Entity_Pickup() : EntityInterface(), item_name("") {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void ES_RepeatSpawn::_execEntity() {
+void Entity_RepeatSpawn::_execEntity() {
     if (lifetime > 0)
         lifetime--;
     if (spawnrate_cooldown > 0)
@@ -158,14 +158,14 @@ void ES_RepeatSpawn::_execEntity() {
         if (spawnrate_cooldown == 0) {
             spawnrate_cooldown = spawnrate;
 
-            Transform spawn_transform = entity().globaltransform();
+            Transform spawn_transform = globaltransform();
             spawn_transform.pos = spawn_transform.pos + glm::vec3(0.0f, (float(rand() % 50) / 10.0f) - 2.5f, 0.0f);
-            globalstate.manager.spawnEntity(entity_name.c_str(), spawn_transform);
+            globalstate.executor.spawnEntity(entity_name.c_str(), spawn_transform);
         }
     }
     
     if (lifetime == 0)
-        entity().kill();
+        startKillAll();
 }
 
-ES_RepeatSpawn::ES_RepeatSpawn() : EntityScriptInterface(), lifetime(0), spawnrate(-1), spawnrate_cooldown(0), entity_name("") {}
+Entity_RepeatSpawn::Entity_RepeatSpawn() : EntityInterface(), lifetime(0), spawnrate(-1), spawnrate_cooldown(0), entity_name("") {}

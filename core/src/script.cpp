@@ -65,11 +65,6 @@ void ScriptInterface::runKill() {
         _kill();
 }
 
-void ScriptInterface::runUpdate() {
-    if (_executor)
-        _update();
-}
-
 int& ScriptInterface::preferred_queue() { return _preferred_queue; }
 bool& ScriptInterface::auto_enqueue() { return _auto_enqueue; }
 bool ScriptInterface::getInitialized() { return _initialized; }
@@ -314,11 +309,6 @@ void ScriptExecutor::runKillQueue() {
 
         _run_killqueue.pop();
     }
-}
-
-void ScriptExecutor::runUpdate() {
-    for (auto iter = _scripts.begin(); iter != _scripts.end(); ++iter)
-        (*iter)->runUpdate();
 }
 
 bool ScriptExecutor::hasAdded(const char* scriptname) { return !(_scriptinfos.find(scriptname) == _scriptinfos.end()); }

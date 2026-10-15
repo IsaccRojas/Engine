@@ -56,12 +56,10 @@ protected:
       - _init() is called by runInit(). runInit() is called on spawn.
       - _exec() is called by runExec(). runExec() is called on execution, each time the ScriptInterface is queued.
       - _kill() is called by runKill(). runKill() is called on erasure.
-      - _update() is called by runUpdate(). runUpdate() is called when update() is called by the owning ScriptExecutor.
    */
    virtual void _init() = 0;
    virtual void _exec() = 0;
    virtual void _kill() = 0;
-   virtual void _update() = 0;
 
    ScriptInterface(ScriptInterface&& other);
    ScriptInterface();
@@ -77,12 +75,10 @@ public:
       - runInit() is called on spawn.
       - runExec() is called on execution, each time the ScriptInterface is queued.
       - runKill() is called on erasure.
-      - runUpdate() is called when update() is called by the owning ScriptExecutor.
    */
    void runInit();
    void runExec();
    void runKill();
-   void runUpdate();
 
    /* Enqueues the ScriptInterface for execution. */
    void enqueueExec();
@@ -238,8 +234,6 @@ public:
    void runExecQueue(unsigned queue);
    /* Calls the runKill() method on all kill-queued scripts if it has not been called yet, and erases the scripts. */
    void runKillQueue();
-   /* Calls runUpdate() method on all scripts. */
-   void runUpdate();
 
    /* Returns true if the provided script name has been previously added to this ScriptExecutor. */
    bool hasAdded(const char* script_name);

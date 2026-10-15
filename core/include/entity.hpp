@@ -42,21 +42,18 @@ class EntityInterface : public ScriptInterface {
    void _init() override;
    void _exec() override;
    void _kill() override;
-   void _update() override;
 
 protected:
    /* Functions to be overridden by children.
       - _init() is called by runInit(). runInit() is called on spawn.
       - _exec() is called by runExec(). runExec() is called on execution, each time the entity is queued.
       - _kill() is called by runKill(). runKill() is called on erasure.
-      - _update() is called by runUpdate(). runUpdate() is called when update() is called by the owning Executor.
       - _receive() may be called to pass an Entity reference to this instance.
       - _collide() is called by EntityCollider associated with this instance.
    */
    virtual void _initEntity();
    virtual void _execEntity();
    virtual void _killEntity();
-   virtual void _updateEntity();
    virtual void _receive(EntityInterface* entity, std::string message);
    virtual void _collide(EntityInterface* entity);
 
@@ -107,7 +104,6 @@ public:
    entity_names - names of EntityInterfaces to use for owned entity instantiation, in order (always calls runInit() method after all have been instantiated)
    quad_names - names of QuadInfos to use for Quad instantiation, in order
    entitycollider_names - names of ColliderInfos to use for Collider instantiation, in order
-   entitycollider_attachments - indices per collider to use of instantiated entities to attach to colliders
    spawn_callback - callback to call when spawning an instance
 */
 
@@ -115,13 +111,11 @@ struct EntityInfo {
    EntityAllocatorInterface* allocator;
    int preferred_queue;
    bool auto_enqueue;
-   std::function<void(ScriptInterface*)> spawn_callback;
-   std::function<void(ScriptInterface*)> remove_callback;
-   std::string group;
    std::list<std::string> entity_names;
    std::list<std::string> quad_names;
    std::list<std::string> entitycollider_names;
-   std::list<std::vector<unsigned>> entitycollider_attachments;
+   std::function<void(ScriptInterface*)> spawn_callback;
+   std::function<void(ScriptInterface*)> remove_callback;
    // default copy assignment/construction are fine
 };
 

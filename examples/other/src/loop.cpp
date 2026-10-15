@@ -1,7 +1,7 @@
 #include "loop.hpp"
 
 void loop() {
-    globalstate.manager.spawnEntity("Entity_Player", Transform{});
+    globalstate.executor.spawnEntity("Entity_Player", Transform{});
     
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(globalstate.glfwstate.getWindowHandle()) && !globalstate.input.get_esc()) {
@@ -16,9 +16,7 @@ void loop() {
         globalstate.executor.runExecQueue(1);
         globalstate.executor.runSpawnQueue();
         globalstate.executor.runKillQueue();
-        globalstate.executor.runUpdate();
-
-        globalstate.manager.update();
+        globalstate.executor.update();
 
         globalstate.glenv.update();
         globalstate.glenv.drawQuads();

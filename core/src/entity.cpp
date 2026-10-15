@@ -30,14 +30,9 @@ void EntityInterface::_kill() {
         *r = nullptr;
 }
 
-void EntityInterface::_update() {
-    _updateEntity();
-}
-
 void EntityInterface::_initEntity() {}
 void EntityInterface::_execEntity() {}
 void EntityInterface::_killEntity() {}
-void EntityInterface::_updateEntity() {}
 void EntityInterface::_receive(EntityInterface* entity, std::string message) {}
 void EntityInterface::_collide(EntityInterface* entity) {}
 void EntityInterface::receive(EntityInterface* entity, std::string message) {
@@ -157,16 +152,13 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
         entity->_quads.push_back(_glenv->getQuad(entity->_quad_ids.back()));
     }
     
-    // instantiate each EntityCollider in info and push to entity's storage (size match guaranteed by addEntity())
-    auto ecn_iter = ei.entitycollider_names.begin();
-    auto eca_iter = ei.entitycollider_attachments.begin();
-    for (; ecn_iter != ei.entitycollider_names.end(); ecn_iter++, eca_iter++)
-        entity->_entitycolliders.push_back(_collisionspace->spawnEntityCollider(ecn_iter->c_str(), entity, *active_transform));
+    // instantiate each EntityCollider in info and push to entity's storage
+    for (const std::string& ecn : ei.entitycollider_names)
+        entity->_entitycolliders.push_back(_collisionspace->spawnEntityCollider(ecn.c_str(), entity, *active_transform));
 
     // initialize fields before running init methods
     entity->_entity_name = entity_name;
     entity->_entityexecutor = this;
-    entity->_group = ei.group;
     _entity_refs.insert(entity);
 
     // instantiate each entity in info and push to storage
@@ -191,16 +183,6 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
 }
 
 void EntityExecutor::addEntity(EntityInfo info, const char* name) {
-    // check if number of colliders matches number of attachment vectors
-    if (info.entitycollider_names.size() != info.entitycollider_attachments.size())
-        throw std::runtime_error("EntityInfo EntityCollider initializer list size is not equal to attachments initializer list size");
-    
-    // check if any index in attachment vector exceeds amount of entityscripts that will be instantiated with this EntityInfo
-    for (auto &a : info.entitycollider_attachments)
-        for (auto &i : a)
-            if (i >= info.entity_names.size())
-                throw std::runtime_error("EntityInfo has attachment index greater than EntityScript initializer list size");
-
     // check names
     if (hasAdded(name))
         throw std::runtime_error((std::string("Attempt to add existing EntityInfo name '") + name) + std::string("'"));
