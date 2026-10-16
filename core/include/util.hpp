@@ -240,19 +240,19 @@ public:
             _last_inst = nullptr;
     }
 
-    /* Returns instance of type T corresponding to address vt. */
+    /* Returns instance of type T corresponding to address vt. Returns nullptr if it does not exist. */
     T* getInstance(void* vt) {
         if (_Ts.empty())
             throw std::runtime_error("Attempt to get instance from empty Container");
         if (_Ts.find(reinterpret_cast<uintptr_t>(vt)) == _Ts.end())
-            throw std::runtime_error("Attempt to get instance from Container with address it does not contain");
+            return nullptr;
         return _Ts[reinterpret_cast<uintptr_t>(vt)];
     }
 
-    /* Returns the last instance inserted. Returns nullptr if last insertion was removed before calling this. */
+    /* Returns the last instance inserted. Returns nullptr if empty. */
     T* getLastInstance() {
         if (_Ts.empty())
-            throw std::runtime_error("Attempt to get last instance from empty Container");
+            return nullptr;
         return _last_inst;
     }
 
