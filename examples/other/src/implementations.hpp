@@ -37,12 +37,19 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-class Entity_Being : public EntityInterface {
+class BeingInterface : public EntityInterface {
     float hurt_cooldown;
+    void _initEntity() override;
     void _execEntity() override;
+    void _killEntity() override;
     void _collide(EntityInterface* other) override;
+
+    virtual void _initBeing();
+    virtual void _execBeing();
+    virtual void _killBeing();
+    virtual void _collideBeing(EntityInterface* other);
 public:
-    Entity_Being();
+    BeingInterface();
     float hurt_cooldown_max;
     float health;
 };
@@ -59,10 +66,10 @@ public:
 class Entity_Lifetime : public EntityInterface {
     EntityInterface* _target;
     void _execEntity() override;
-    void _receive(EntityInterface* other, std::string message) override;
     void _collide(EntityInterface* other) override;
 public:
     Entity_Lifetime();
+    void setTarget(EntityInterface* target);
     int lifetime;
     glm::vec3 vel;
 };

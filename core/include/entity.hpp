@@ -48,13 +48,11 @@ protected:
       - _init() is called by runInit(). runInit() is called on spawn.
       - _exec() is called by runExec(). runExec() is called on execution, each time the entity is queued.
       - _kill() is called by runKill(). runKill() is called on erasure.
-      - _receive() may be called to pass an Entity reference to this instance.
       - _collide() is called by EntityCollider associated with this instance.
    */
    virtual void _initEntity();
    virtual void _execEntity();
    virtual void _killEntity();
-   virtual void _receive(EntityInterface* entity, std::string message);
    virtual void _collide(EntityInterface* entity);
 
    EntityInterface(EntityInterface&& other);

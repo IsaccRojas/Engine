@@ -86,7 +86,13 @@ Entity_Player::Entity_Player() :
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Entity_Being::_execEntity() {
+void BeingInterface::_initEntity() {
+    _initBeing();
+}
+
+void BeingInterface::_execEntity() {
+    _execBeing();
+
     if (health <= 0.0f) {
         startKillAll();
         return;
@@ -96,17 +102,36 @@ void Entity_Being::_execEntity() {
     if (hurt_cooldown > 0.0f)
         hurt_cooldown -= 1.0f;
 }
-void Entity_Being::_collide(EntityInterface* other) {
+
+void BeingInterface::_killEntity() {
+    _killBeing();
+}
+
+void BeingInterface::_collide(EntityInterface* other) {
+    _collide(other);
     if (hurt_cooldown <= 0.0f)
         hurt_cooldown = hurt_cooldown_max;
 }
 
-Entity_Being::Entity_Being() :
+BeingInterface::BeingInterface() :
     EntityInterface(),
     hurt_cooldown(0.0f),
     hurt_cooldown_max(120.0f),
     health(0.0f)
 {}
+
+/*
+    float hurt_cooldown;
+    void _initEntity() override;
+    void _execEntity() override;
+    void _killEntity() override;
+    void _collide(EntityInterface* other) override;
+
+    virtual void _initBeing();
+    virtual void _execBeing();
+    virtual void _killBeing();
+    virtual void _collideBeing(EntityInterface* other);
+*/
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -122,18 +147,17 @@ void Entity_Lifetime::_execEntity() {
     if (lifetime == 0)
         startKillAll();
 }
-void Entity_Lifetime::_receive(EntityInterface* other, std::string message) {
-    if (message == "target") {
-        _target = other;
-        if (_target)
-            _target->attachNullableRef(&_target);
-    }
-}
 void Entity_Lifetime::_collide(EntityInterface* other) {
     startKillAll();
 }
 
 Entity_Lifetime::Entity_Lifetime() : EntityInterface(), _target(nullptr), lifetime(0), vel(glm::vec3(0.0f)) {}
+
+void Entity_Lifetime::setTarget(EntityInterface* target) {
+    _target = target;
+    if (_target)
+        _target->attachNullableRef(&_target);
+}
 
 // --------------------------------------------------------------------------------------------------------------------------
 

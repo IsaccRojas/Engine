@@ -33,11 +33,7 @@ void EntityInterface::_kill() {
 void EntityInterface::_initEntity() {}
 void EntityInterface::_execEntity() {}
 void EntityInterface::_killEntity() {}
-void EntityInterface::_receive(EntityInterface* entity, std::string message) {}
 void EntityInterface::_collide(EntityInterface* entity) {}
-void EntityInterface::receive(EntityInterface* entity, std::string message) {
-    _receive(entity, message);
-}
 void EntityInterface::collide(EntityInterface* entity) {
     _collide(entity);
 }
