@@ -108,10 +108,15 @@ void BeingInterface::_killEntity() {
 }
 
 void BeingInterface::_collide(EntityInterface* other) {
-    _collide(other);
+    _collideBeing(other);
     if (hurt_cooldown <= 0.0f)
         hurt_cooldown = hurt_cooldown_max;
 }
+
+void BeingInterface::_initBeing() {}
+void BeingInterface::_execBeing() {}
+void BeingInterface::_killBeing() {}
+void BeingInterface::_collideBeing(EntityInterface* other) {}
 
 BeingInterface::BeingInterface() :
     EntityInterface(),
@@ -119,19 +124,6 @@ BeingInterface::BeingInterface() :
     hurt_cooldown_max(120.0f),
     health(0.0f)
 {}
-
-/*
-    float hurt_cooldown;
-    void _initEntity() override;
-    void _execEntity() override;
-    void _killEntity() override;
-    void _collide(EntityInterface* other) override;
-
-    virtual void _initBeing();
-    virtual void _execBeing();
-    virtual void _killBeing();
-    virtual void _collideBeing(EntityInterface* other);
-*/
 
 // --------------------------------------------------------------------------------------------------------------------------
 

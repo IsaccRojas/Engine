@@ -3,8 +3,11 @@
 EntityInterface::EntityInterface(EntityInterface&& other) {
     operator=(std::move(other));
 }
-EntityInterface::EntityInterface(EntityInterface* parent) : 
-    ScriptInterface(), _parent(parent), _entity_name(""), _entityexecutor(nullptr), _kill_started(false), _globaltransform(nullptr)
+EntityInterface::EntityInterface(EntityInterface* root, EntityInterface* parent) : 
+    ScriptInterface(), _root(root), _parent(parent), _entity_name(""), _entityexecutor(nullptr), _kill_started(false), _globaltransform(nullptr)
+{}
+EntityInterface::EntityInterface() : 
+    ScriptInterface(), _root(nullptr), _parent(nullptr), _entity_name(""), _entityexecutor(nullptr), _kill_started(false), _globaltransform(nullptr)
 {}
 EntityInterface::~EntityInterface() {}
 
@@ -76,6 +79,9 @@ const char* EntityInterface::getName() { return _entity_name.c_str(); }
 const char* EntityInterface::getGroup() { return _group.c_str(); }
 bool EntityInterface::getKillStarted() { return _kill_started; }
 
+EntityInterface* EntityInterface::root() { return _root; }
+EntityInterface* EntityInterface::parent() { return _parent; };
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 ScriptInterface* EntityExecutor::EntityEnqueue::spawn() {
@@ -112,7 +118,7 @@ void EntityExecutor::_removeEntity(EntityInterface* entity) {
     _entity_refs.erase(entity);
 }
 
-EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, EntityInterface* parent, Transform transform) {
+EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, EntityInterface* root, EntityInterface* parent, Transform transform) {
     auto ei_iter = _entityinfos.find(entity_name);
     if (ei_iter == _entityinfos.end())
         throw std::runtime_error((std::string("Attempt to spawn Entity with non-existent EntityInfo name '") + entity_name) + std::string("'"));
@@ -129,11 +135,15 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
         entity->_globaltransform = new Transform(transform);
         entity->_prevglobaltransform = transform;
         active_transform = entity->_globaltransform;
+        
+        entity->_root = entity;
     }
     else {
         entity->_globaltransform = parent->_globaltransform;
         entity->_prevglobaltransform = parent->_prevglobaltransform;
         active_transform = parent->_globaltransform;
+
+        entity->_root = root;
     }
 
     // reserve memory for each stored vector to guarantee memory addresses
@@ -162,9 +172,9 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     int i = 0;
     for (; esn_iter != ei.entity_names.end(); esn_iter++, i++) {
         if (!parent)
-            entity->_entities[i] = _spawnEntityNode(esn_iter->c_str(), entity, transform);
+            entity->_entities[i] = _spawnEntityNode(esn_iter->c_str(), entity, entity, transform);
         else
-            entity->_entities[i] = _spawnEntityNode(esn_iter->c_str(), parent, transform);
+            entity->_entities[i] = _spawnEntityNode(esn_iter->c_str(), root, entity, transform);
         
         entity->_entities[i]->attachNullableRef(&(entity->_entities[i]));
     }
@@ -227,7 +237,7 @@ EntityInterface* EntityExecutor::spawnEntity(const char* entity_name, Transform 
     if (ei_iter == _entityinfos.end())
         throw std::runtime_error((std::string("Attempt to spawn Entity with non-existent EntityInfo name '") + entity_name) + std::string("'"));
 
-    return _spawnEntityNode(entity_name, nullptr, transform);
+    return _spawnEntityNode(entity_name, nullptr, nullptr, transform);
 }
 
 void EntityExecutor::update() {

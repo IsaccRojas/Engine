@@ -18,6 +18,7 @@ class EntityAllocatorInterface;
 class EntityInterface : public ScriptInterface {
    friend EntityExecutor;
 
+   EntityInterface* _root;
    EntityInterface* _parent;
    std::string _entity_name;
 
@@ -56,7 +57,8 @@ protected:
    virtual void _collide(EntityInterface* entity);
 
    EntityInterface(EntityInterface&& other);
-   EntityInterface(EntityInterface* parent = nullptr);
+   EntityInterface(EntityInterface* root, EntityInterface* parent);
+   EntityInterface();
 
 public:
    EntityInterface(const EntityInterface& other) = delete;
@@ -65,7 +67,6 @@ public:
    EntityInterface& operator=(EntityInterface&& other);
    EntityInterface& operator=(const EntityInterface& other) = delete;
 
-   void receive(EntityInterface* entity, std::string message);
    void collide(EntityInterface* entity);
 
    /* Inserts reference to pointer to EntityInterface that is nulled on invocation of this instance's kill method. */
@@ -92,6 +93,9 @@ public:
    const char* getName();
    const char* getGroup();
    bool getKillStarted();
+   
+   EntityInterface* root();
+   EntityInterface* parent();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -133,7 +137,7 @@ class EntityExecutor : public ScriptExecutor {
    void _removeEntity(EntityInterface* entity);
 
    // spawn entity with specified parent. transform parameter is ignored if parent is not nullptr
-   EntityInterface* _spawnEntityNode(const char* entity_name, EntityInterface* parent, Transform transform);
+   EntityInterface* _spawnEntityNode(const char* entity_name, EntityInterface* root, EntityInterface* parent, Transform transform);
 protected:
    // class to store enqueues and polymorphically spawn later
    class EntityEnqueue : public ScriptEnqueue {
