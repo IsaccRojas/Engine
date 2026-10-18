@@ -36,9 +36,10 @@ void EntityInterface::_kill() {
 void EntityInterface::_initEntity() {}
 void EntityInterface::_execEntity() {}
 void EntityInterface::_killEntity() {}
-void EntityInterface::_collide(EntityInterface* entity) {}
+void EntityInterface::_collideEntity(EntityInterface* entity) {}
+
 void EntityInterface::collide(EntityInterface* entity) {
-    _collide(entity);
+    _collideEntity(entity);
 }
 
 void EntityInterface::attachNullableRef(EntityInterface** ref) {

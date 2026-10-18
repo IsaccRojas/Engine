@@ -46,15 +46,15 @@ class EntityInterface : public ScriptInterface {
 
 protected:
    /* Functions to be overridden by children.
-      - _init() is called by runInit(). runInit() is called on spawn.
-      - _exec() is called by runExec(). runExec() is called on execution, each time the entity is queued.
-      - _kill() is called by runKill(). runKill() is called on erasure.
-      - _collide() is called by EntityCollider associated with this instance.
+      - _initEntity() is called by runInit(). runInit() is called on spawn.
+      - _execEntity() is called by runExec(). runExec() is called on execution, each time the entity is queued.
+      - _killEntity() is called by runKill(). runKill() is called on erasure.
+      - _collideEntity() is called by EntityCollider associated with this instance.
    */
    virtual void _initEntity();
    virtual void _execEntity();
    virtual void _killEntity();
-   virtual void _collide(EntityInterface* entity);
+   virtual void _collideEntity(EntityInterface* entity);
 
    EntityInterface(EntityInterface&& other);
    EntityInterface(EntityInterface* root, EntityInterface* parent);
@@ -344,6 +344,68 @@ class GenericProvidingEntityAllocator : public ProvidingEntityAllocatorInterface
    void _providingOnDeallocation(ScriptInterface* script) override {}
 public:
    GenericProvidingEntityAllocator() {}
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+/* class EntityNodeContainer<EntityT>
+   Templated container of references of EntityT that implements RefReceiverInterface. Maps received EntityInterface references
+   to their root. EntityT must be a covariant of EntityInterface.
+   EntityT - EntityInterface covariant type to store
+*/
+template<class EntityT>
+class EntityNodeContainer : public RefReceiverInterface<EntityT> {
+   std::unordered_map<uintptr_t, EntityT*> _Ts;
+   EntityT* _last_inst;
+
+public:
+   EntityNodeContainer() : RefReceiverInterface<EntityT>(), _last_inst(nullptr) {}
+
+   /* Stores instance passed. */
+   void receiveInstance(EntityT* t) override {
+      if (!t->root())
+         std::runtime_error("Attempt to receive instance with nullptr root");
+      _Ts[reinterpret_cast<uintptr_t>(t->root())] = t;
+      _last_inst = t;
+   }
+
+   /* Removes instance passed. */
+   void receiveInstanceAddr(void* vt) override {
+      _Ts.erase(reinterpret_cast<uintptr_t>(vt));
+      if (vt == (void*)(_last_inst))
+         _last_inst = nullptr;
+   }
+
+   /* Returns instance of type T corresponding to address vt. Returns nullptr if it does not exist. */
+   EntityT* getInstance(EntityInterface* t) {
+      if (_Ts.empty())
+         throw std::runtime_error("Attempt to get instance from empty Container");
+      if (_Ts.find(reinterpret_cast<uintptr_t>(t->root())) == _Ts.end())
+         return nullptr;
+      return _Ts[reinterpret_cast<uintptr_t>(t->root())];
+   }
+
+   /* Returns the last instance inserted. Returns nullptr if empty. */
+   EntityT* getLastInstance() {
+      if (_Ts.empty())
+         return nullptr;
+      return _last_inst;
+   }
+
+   /* Returns internal unordered map begin() iterator. Key is a void pointer cast of value. */
+   typename std::unordered_map<void*, EntityT*>::iterator begin() {
+      return _Ts.begin();
+   }
+
+   /* Returns internal unordered map end() iterator. Key is a void pointer cast of value. */
+   typename std::unordered_map<void*, EntityT*>::iterator end() {
+      return _Ts.end();
+   }
+
+   /* Erases all entries. */
+   void clear() {
+      _Ts.clear();
+   }
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

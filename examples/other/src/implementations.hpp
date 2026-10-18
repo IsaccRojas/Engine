@@ -30,7 +30,7 @@ class Entity_Player : public EntityInterface {
     float _speed;
     glm::vec3 _last_input_dir;
     void _execEntity() override;
-    void _collide(EntityInterface* other) override;
+    void _collideEntity(EntityInterface* other) override;
 public:
     Entity_Player();
 };
@@ -42,7 +42,7 @@ class BeingInterface : public EntityInterface {
     void _initEntity() override;
     void _execEntity() override;
     void _killEntity() override;
-    void _collide(EntityInterface* other) override;
+    void _collideEntity(EntityInterface* other) override;
 
     virtual void _initBeing();
     virtual void _execBeing();
@@ -66,7 +66,7 @@ public:
 class Entity_Lifetime : public EntityInterface {
     EntityInterface* _target;
     void _execEntity() override;
-    void _collide(EntityInterface* other) override;
+    void _collideEntity(EntityInterface* other) override;
 public:
     Entity_Lifetime();
     void setTarget(EntityInterface* target);
@@ -83,7 +83,7 @@ public:
     std::string item_name - name to increment in GlobalResources' inventory
 */
 class Entity_Pickup : public EntityInterface {
-    void _collide(EntityInterface* other) override;
+    void _collideEntity(EntityInterface* other) override;
 public:
     Entity_Pickup();
     std::string item_name;
@@ -132,6 +132,8 @@ struct GlobalState {
     RefContainer<Entity_Lifetime> container_Lifetime;
     RefContainer<Entity_Pickup> container_Pickup;
     RefContainer<Entity_RepeatSpawn> container_RepeatSpawn;
+
+    EntityNodeContainer<Entity_Lifetime> nodecontainer_Lifetime;
 
     std::unordered_map<std::string, int> inventory;
 };

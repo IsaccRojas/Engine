@@ -11,6 +11,7 @@ GlobalState::GlobalState() :
 {
     allocator_Player.provider().attach(&globalstate.container_Player);
     allocator_Lifetime.provider().attach(&globalstate.container_Lifetime);
+    allocator_Lifetime.provider().attach(&globalstate.nodecontainer_Lifetime);
     allocator_Pickup.provider().attach(&globalstate.container_Pickup);
     allocator_RepeatSpawn.provider().attach(&globalstate.container_RepeatSpawn);
 }
@@ -70,7 +71,7 @@ void Entity_Player::_execEntity() {
     if (false)
         startKillAll();
 }
-void Entity_Player::_collide(EntityInterface* other) {
+void Entity_Player::_collideEntity(EntityInterface* other) {
     _hurt_cooldown = _hurt_cooldown_max;
 }
 
@@ -107,7 +108,7 @@ void BeingInterface::_killEntity() {
     _killBeing();
 }
 
-void BeingInterface::_collide(EntityInterface* other) {
+void BeingInterface::_collideEntity(EntityInterface* other) {
     _collideBeing(other);
     if (hurt_cooldown <= 0.0f)
         hurt_cooldown = hurt_cooldown_max;
@@ -139,7 +140,7 @@ void Entity_Lifetime::_execEntity() {
     if (lifetime == 0)
         startKillAll();
 }
-void Entity_Lifetime::_collide(EntityInterface* other) {
+void Entity_Lifetime::_collideEntity(EntityInterface* other) {
     startKillAll();
 }
 
@@ -153,7 +154,7 @@ void Entity_Lifetime::setTarget(EntityInterface* target) {
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Entity_Pickup::_collide(EntityInterface* other) {
+void Entity_Pickup::_collideEntity(EntityInterface* other) {
     auto& i = globalstate.inventory;
     if (i.find(item_name) != i.end())
         i[item_name] += 1;
