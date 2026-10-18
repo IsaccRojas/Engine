@@ -13,7 +13,7 @@ class CollisionSpace;
 class EntityAllocatorInterface;
 
 /* class EntityInterface
-   Represents a ScriptInterface that belongs to an Entity.
+   Represents a ScriptInterface that belongs to an Entity. Not abstract.
 */
 class EntityInterface : public ScriptInterface {
    friend EntityExecutor;
@@ -56,11 +56,10 @@ protected:
    virtual void _killEntity();
    virtual void _collideEntity(EntityInterface* entity);
 
+public:
    EntityInterface(EntityInterface&& other);
    EntityInterface(EntityInterface* root, EntityInterface* parent);
    EntityInterface();
-
-public:
    EntityInterface(const EntityInterface& other) = delete;
    virtual ~EntityInterface();
 
@@ -349,13 +348,13 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 /* class EntityNodeContainer<EntityT>
-   Templated container of references of EntityT that implements RefReceiverInterface. Maps received EntityInterface references
-   to their root. EntityT must be a covariant of EntityInterface.
+   Templated container of references of EntityT that implements RefReceiverInterface. Retrieval of received instances is
+   done by matching the root of the Entity.
    EntityT - EntityInterface covariant type to store
 */
 template<class EntityT>
 class EntityNodeContainer : public RefReceiverInterface<EntityT> {
-   std::unordered_map<uintptr_t, EntityT*> _Ts;
+   std::unordered_set<EntityT*> _Ts;
    EntityT* _last_inst;
 
 public:
@@ -363,30 +362,34 @@ public:
 
    /* Stores instance passed. */
    void receiveInstance(EntityT* t) override {
-      if (!t->root())
-         std::runtime_error("Attempt to receive instance with nullptr root");
-      _Ts[reinterpret_cast<uintptr_t>(t->root())] = t;
+      _Ts.insert(t);
       _last_inst = t;
    }
 
    /* Removes instance passed. */
    void receiveInstanceAddr(void* vt) override {
-      _Ts.erase(reinterpret_cast<uintptr_t>(vt));
-      if (vt == (void*)(_last_inst))
-         _last_inst = nullptr;
+      for (auto& t : _Ts) {
+         if (reinterpret_cast<uintptr_t>(t) == reinterpret_cast<uintptr_t>(vt)) {
+            _Ts.erase(t);
+            _last_inst = nullptr;
+            return;
+         }
+      }
    }
 
    /* Returns instance of type T corresponding to address vt. Returns nullptr if it does not exist. */
-   EntityT* getInstance(EntityInterface* t) {
+   EntityT* getNode(EntityInterface* t) {
       if (_Ts.empty())
          throw std::runtime_error("Attempt to get instance from empty Container");
-      if (_Ts.find(reinterpret_cast<uintptr_t>(t->root())) == _Ts.end())
-         return nullptr;
-      return _Ts[reinterpret_cast<uintptr_t>(t->root())];
+
+      for (auto& t_stored : _Ts)
+         if (t_stored->root() == t->root())
+            return t_stored;
+      return nullptr;
    }
 
    /* Returns the last instance inserted. Returns nullptr if empty. */
-   EntityT* getLastInstance() {
+   EntityT* getLastNode() {
       if (_Ts.empty())
          return nullptr;
       return _last_inst;

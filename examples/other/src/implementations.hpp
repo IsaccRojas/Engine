@@ -121,6 +121,7 @@ struct GlobalState {
     CollisionSpace collisionspace;
     EntityExecutor executor;
 
+    GenericProvidingEntityAllocator<EntityInterface> genericallocator;
     GenericProvidingEntityAllocator<Entity_LightBall> allocator_LightBall;
     GenericProvidingEntityAllocator<Entity_LightParticle> allocator_LightParticle;
     GenericProvidingEntityAllocator<Entity_Player> allocator_Player;
@@ -128,12 +129,10 @@ struct GlobalState {
     GenericProvidingEntityAllocator<Entity_Lifetime> allocator_Lifetime;
     GenericProvidingEntityAllocator<Entity_RepeatSpawn> allocator_RepeatSpawn;
     
-    RefContainer<Entity_Player> container_Player;
-    RefContainer<Entity_Lifetime> container_Lifetime;
-    RefContainer<Entity_Pickup> container_Pickup;
-    RefContainer<Entity_RepeatSpawn> container_RepeatSpawn;
-
-    EntityNodeContainer<Entity_Lifetime> nodecontainer_Lifetime;
+    EntityNodeContainer<Entity_Player> container_Player;
+    EntityNodeContainer<Entity_Lifetime> container_Lifetime;
+    EntityNodeContainer<Entity_Pickup> container_Pickup;
+    EntityNodeContainer<Entity_RepeatSpawn> container_RepeatSpawn;
 
     std::unordered_map<std::string, int> inventory;
 };

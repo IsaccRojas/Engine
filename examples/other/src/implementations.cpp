@@ -11,7 +11,6 @@ GlobalState::GlobalState() :
 {
     allocator_Player.provider().attach(&globalstate.container_Player);
     allocator_Lifetime.provider().attach(&globalstate.container_Lifetime);
-    allocator_Lifetime.provider().attach(&globalstate.nodecontainer_Lifetime);
     allocator_Pickup.provider().attach(&globalstate.container_Pickup);
     allocator_RepeatSpawn.provider().attach(&globalstate.container_RepeatSpawn);
 }
@@ -19,7 +18,7 @@ GlobalState::GlobalState() :
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_LightBall::_initEntity() {
-    Entity_RepeatSpawn* repeatspawn = globalstate.container_RepeatSpawn.getInstance(entities()[1]);
+    Entity_RepeatSpawn* repeatspawn = globalstate.container_RepeatSpawn.getNode(this);
     repeatspawn->entity_name = "Entity_LightParticle";
     repeatspawn->lifetime = 90.0f;
     repeatspawn->spawnrate = 4.0f;
@@ -28,7 +27,7 @@ void Entity_LightBall::_initEntity() {
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_LightParticle::_initEntity() {
-    Entity_Lifetime* particle = globalstate.container_Lifetime.getInstance(entities()[0]);
+    Entity_Lifetime* particle = globalstate.container_Lifetime.getNode(entities()[0]);
     particle->lifetime = 24.0f;
     particle->vel = glm::vec3(-1.0f * (float(rand() % 5) / 10.0f), 0.0f, 0.0f);
 }
@@ -61,7 +60,7 @@ void Entity_Player::_execEntity() {
         _shoot_cooldown = _shoot_cooldown_max;
 
         globalstate.executor.spawnEntity("Entity_LightBall", globaltransform());
-        Entity_Lifetime* ball = globalstate.container_Lifetime.getLastInstance();
+        Entity_Lifetime* ball = globalstate.container_Lifetime.getLastNode();
         ball->lifetime = 90.0f;
         ball->vel = glm::vec3(1.75f, 0.0f, 0.0f);
     }

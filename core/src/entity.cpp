@@ -128,23 +128,24 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     // allocate instance and set it up
     EntityInterface* entity = ei_iter->second.allocator->_allocate();
     _setupScript(entity, entity_name, ei_iter->second.allocator);
-    entity->_parent = parent;
     
     // if no parent, allocate transform; else, use parent's
     Transform* active_transform;
     if (!parent) {
         entity->_globaltransform = new Transform(transform);
         entity->_prevglobaltransform = transform;
-        active_transform = entity->_globaltransform;
-        
         entity->_root = entity;
+        entity->_parent = nullptr;
+
+        active_transform = entity->_globaltransform;
     }
     else {
         entity->_globaltransform = parent->_globaltransform;
         entity->_prevglobaltransform = parent->_prevglobaltransform;
-        active_transform = parent->_globaltransform;
-
         entity->_root = root;
+        entity->_parent = parent;
+
+        active_transform = parent->_globaltransform;
     }
 
     // reserve memory for each stored vector to guarantee memory addresses
