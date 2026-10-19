@@ -244,9 +244,10 @@ public:
     T* getInstance(void* vt) {
         if (_Ts.empty())
             throw std::runtime_error("Attempt to get instance from empty Container");
-        if (_Ts.find(reinterpret_cast<uintptr_t>(vt)) == _Ts.end())
+        auto iter = _Ts.find(reinterpret_cast<uintptr_t>(vt));
+        if (iter == _Ts.end())
             return nullptr;
-        return _Ts[reinterpret_cast<uintptr_t>(vt)];
+        return *iter;
     }
 
     /* Returns the last instance inserted. Returns nullptr if empty. */

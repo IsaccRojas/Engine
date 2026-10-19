@@ -191,6 +191,9 @@ protected:
    // must return a heap-allocated instance of a covariant type of EntityInterface
    virtual EntityInterface* _allocate() = 0;
 
+   // called after allocation and member initialization
+   virtual void _onInitialization(EntityInterface* entity) = 0;
+
    // called on deallocation; should not deallocate anything
    virtual void _onDeallocation(ScriptInterface* script) = 0;
 
@@ -309,21 +312,28 @@ public:
 */
 template<class T>
 class ProvidingEntityAllocatorInterface : public EntityAllocatorInterface {
+   std::unordered_map<uintptr_t, T*> _Ts;
    RefProvider<T> _refprovider;
 
    EntityInterface* _allocate() override {
       T* t = _providingAllocate();
-      _refprovider.receiveInstance(t);
+      _Ts[reinterpret_cast<uintptr_t>(t)] = t;
       return t;
+   }
+
+   void _onInitialization(EntityInterface* entity) override {
+      _refprovider.receiveInstance(_Ts[reinterpret_cast<uintptr_t>(entity)]);
    }
 
    void _onDeallocation(ScriptInterface* script) override {
       _providingOnDeallocation(script);
+      _Ts.erase(reinterpret_cast<uintptr_t>(script));
       _refprovider.receiveInstanceAddr(script);
    }
 
 protected:
    virtual T* _providingAllocate() = 0;
+   virtual void _providingOnInitialization(EntityInterface* entity) = 0;
    virtual void _providingOnDeallocation(ScriptInterface* script) = 0;
 
 public:
@@ -340,6 +350,7 @@ public:
 template<class T>
 class GenericProvidingEntityAllocator : public ProvidingEntityAllocatorInterface<T> {
    T* _providingAllocate() override { return new T; }
+   void _providingOnInitialization(EntityInterface* entity) override {}
    void _providingOnDeallocation(ScriptInterface* script) override {}
 public:
    GenericProvidingEntityAllocator() {}
@@ -354,7 +365,7 @@ public:
 */
 template<class EntityT>
 class EntityNodeContainer : public RefReceiverInterface<EntityT> {
-   std::unordered_set<EntityT*> _Ts;
+   std::unordered_map<uintptr_t, EntityT*> _Ts;
    EntityT* _last_inst;
 
 public:
@@ -362,19 +373,17 @@ public:
 
    /* Stores instance passed. */
    void receiveInstance(EntityT* t) override {
-      _Ts.insert(t);
+      if (!t->root())
+         std::runtime_error("Attempt to receive instance with nullptr root");
+      _Ts[reinterpret_cast<uintptr_t>(t->root())] = t;
       _last_inst = t;
    }
 
    /* Removes instance passed. */
    void receiveInstanceAddr(void* vt) override {
-      for (auto& t : _Ts) {
-         if (reinterpret_cast<uintptr_t>(t) == reinterpret_cast<uintptr_t>(vt)) {
-            _Ts.erase(t);
-            _last_inst = nullptr;
-            return;
-         }
-      }
+      _Ts.erase(reinterpret_cast<uintptr_t>(vt));
+      if (vt == (void*)(_last_inst))
+         _last_inst = nullptr;
    }
 
    /* Returns instance of type T corresponding to address vt. Returns nullptr if it does not exist. */
@@ -382,10 +391,11 @@ public:
       if (_Ts.empty())
          throw std::runtime_error("Attempt to get instance from empty Container");
 
-      for (auto& t_stored : _Ts)
-         if (t_stored->root() == t->root())
-            return t_stored;
-      return nullptr;
+      auto iter = _Ts.find(reinterpret_cast<uintptr_t>(t->root()));
+      if (iter == _Ts.end())
+         return nullptr;
+
+      return iter->second;
    }
 
    /* Returns the last instance inserted. Returns nullptr if empty. */

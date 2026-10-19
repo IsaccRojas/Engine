@@ -126,8 +126,8 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     EntityInfo& ei = ei_iter->second;
 
     // allocate instance and set it up
-    EntityInterface* entity = ei_iter->second.allocator->_allocate();
-    _setupScript(entity, entity_name, ei_iter->second.allocator);
+    EntityInterface* entity = ei.allocator->_allocate();
+    _setupScript(entity, entity_name, ei.allocator);
     
     // if no parent, allocate transform; else, use parent's
     Transform* active_transform;
@@ -181,8 +181,8 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
         entity->_entities[i]->attachNullableRef(&(entity->_entities[i]));
     }
 
-    for (auto& es : entity->_entities)
-        es->runInit();
+    ei.allocator->_onInitialization(entity);
+    entity->runInit();
 
     if (ei.spawn_callback)
         ei.spawn_callback(entity);
