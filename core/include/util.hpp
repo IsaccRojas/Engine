@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include <list>
 #include "C:\dev\include\glm\glm.hpp"
+#include "C:\dev\include\glm\gtx\rotate_vector.hpp"
 
 #define PI_UTIL 3.14159265358979323846264338327950288
 
@@ -167,6 +168,28 @@ bool endsWith(const std::string& str, const std::string& suffix);
 /* Checks if provided string starts with the provided prefix
 */
 bool startsWith(const std::string& str, const std::string& prefix);
+
+std::string hasDuplicate(const std::list<std::string>& list);
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+bool computeCollisionAABB(Transform transf1, Transform transf2);
+
+/* Returns AABB distance along specified axis; if multiple components of axis are set, prioritizes x, then y, then z. 
+   Returns 0 if none are set.
+*/
+float computeDistanceAABB(Transform transf1, Transform transf2, glm::bvec3 axis);
+
+glm::vec3 toVec3(glm::vec2 v, float z);
+
+glm::vec2 toVec2(glm::vec3 v);
+
+glm::vec3 randomAngle(glm::vec3 v, float deg_range);
+
+bool isEven(int x);
+
+/* Returns the value with the lower absolute value. */
+float absMin(float a, float b);
 
 // --------------------------------------------------------------------------------------------------------------------------
 

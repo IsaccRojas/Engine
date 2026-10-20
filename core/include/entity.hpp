@@ -4,8 +4,6 @@
 #include "script.hpp"
 #include "glenv.hpp"
 #include "filter.hpp"
-#include "C:\dev\include\glm\glm.hpp"
-#include "C:\dev\include\glm\gtx\rotate_vector.hpp"
 
 class EntityExecutor;
 class EntityCollider;
@@ -99,16 +97,22 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-// struct holding EntityInterface information mapped to a name
+// 
 /*
-   group - named group for this entity to be inserted into; created if it does not already exist
-   entity_names - names of EntityInterfaces to use for owned entity instantiation, in order (always calls runInit() method after all have been instantiated)
-   quad_names - names of QuadInfos to use for Quad instantiation, in order
-   entitycollider_names - names of ColliderInfos to use for Collider instantiation, in order
-   spawn_callback - callback to call when spawning an instance
-*/
+   Struct EntityInfo
+   Holds EntityInterface information mapped to a name.
 
+   EntityAllocatorInterface* allocator - allocator for use with this info
+   int preferred_queue - preferred queue to use when automatically enqueuing this entity
+   bool auto_enqueue - if this entity should be automatically enqueued again after execution
+   std::list<std::string> entity_names - list of EntityInfo names for this entity to contain
+   std::list<std::string> quad_names - list of QuadInfo names for this entity to contain
+   std::list<std::string> entitycollider_names - list of EntityCollider names for this entity to contain
+   std::function<void(ScriptInterface*)> spawn_callback - called on instantiation (before initialization)
+   std::function<void(ScriptInterface*)> remove_callback - called on deletion (after kill processing)
+*/
 struct EntityInfo {
+public:
    EntityAllocatorInterface* allocator;
    int preferred_queue;
    bool auto_enqueue;
@@ -137,6 +141,7 @@ class EntityExecutor : public ScriptExecutor {
 
    // spawn entity with specified parent. transform parameter is ignored if parent is not nullptr
    EntityInterface* _spawnEntityNode(const char* entity_name, EntityInterface* root, EntityInterface* parent, Transform transform);
+
 protected:
    // class to store enqueues and polymorphically spawn later
    class EntityEnqueue : public ScriptEnqueue {
@@ -162,6 +167,8 @@ public:
 
    /* Adds an EntityInterface allocator with initialization information to this executor, allowing its given
       name to be used for future spawns.
+      An EntityInfo name may only appear once within the Entity hierarchy defined by the instance to be added.
+      Contained EntityInfos in the instance to be added must already be added.
       - info - instance of EntityInfo with allocation/initialization information
       - name - name to associate with the EntityInfo instance
    */
@@ -375,7 +382,12 @@ public:
    void receiveInstance(EntityT* t) override {
       if (!t->root())
          std::runtime_error("Attempt to receive instance with nullptr root");
-      _Ts[reinterpret_cast<uintptr_t>(t->root())] = t;
+      
+      uintptr_t root = reinterpret_cast<uintptr_t>(t->root());
+      if (_Ts.find(root) != _Ts.end())
+         std::runtime_error("Attempt to receive instance with existing root");
+      
+      _Ts[root] = t;
       _last_inst = t;
    }
 
@@ -420,25 +432,5 @@ public:
       _Ts.clear();
    }
 };
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-bool computeCollisionAABB(Transform transf1, Transform transf2);
-
-/* Returns AABB distance along specified axis; if multiple components of axis are set, prioritizes x, then y, then z. 
-   Returns 0 if none are set.
-*/
-float computeDistanceAABB(Transform transf1, Transform transf2, glm::bvec3 axis);
-
-glm::vec3 toVec3(glm::vec2 v, float z);
-
-glm::vec2 toVec2(glm::vec3 v);
-
-glm::vec3 randomAngle(glm::vec3 v, float deg_range);
-
-bool isEven(int x);
-
-/* Returns the value with the lower absolute value. */
-float absMin(float a, float b);
 
 #endif

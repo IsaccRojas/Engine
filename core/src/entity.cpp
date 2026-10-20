@@ -210,14 +210,31 @@ void EntityExecutor::addEntity(EntityInfo info, const char* name) {
                 + (std::string(" with non-existent EntityColliderInfo name '") + i) 
                 + std::string("'")
             );
-    for (auto &i: info.entity_names)
+
+    std::list<std::string> _entity_names_flat;
+    for (auto &i: info.entity_names) {
         if (!hasAdded(i.c_str()))
             throw std::runtime_error(
                 (std::string("Attempt to add EntityInfo name '") + name) 
                 + std::string("'") 
-                + (std::string(" with non-existent EntityScriptInfo name '") + i) 
+                + (std::string(" with non-existent contained EntityInfo name '") + i) 
                 + std::string("'")
             );
+    
+        // flatten existing EntityInfo names into this one
+        _entity_names_flat.insert(_entity_names_flat.end(), _entityinfos[i].entity_names.begin(), _entityinfos[i].entity_names.end());
+        _entity_names_flat.insert(_entity_names_flat.end(), i);
+    }
+
+    // check if duplicate EntityInfo name
+    std::string s = hasDuplicate(_entity_names_flat);
+    if (s != "")
+        throw std::runtime_error(
+            (std::string("Attempt to add EntityInfo name '") + name) 
+            + std::string("'") 
+            + (std::string(" with multiple contained EntityInfo names '") + s) 
+            + std::string("'")
+        );
 
     // insert info and create group if it does not exist
     ScriptExecutor::addScript(ScriptInfo{
@@ -468,64 +485,3 @@ void CollisionSpace::detectCollisionAABB() {
 bool CollisionSpace::hasAdded(const char* collider_name) { return !(_entitycolliderinfos.find(collider_name) == _entitycolliderinfos.end()); }
 
 unsigned CollisionSpace::getCount() { return _colliders.size(); }
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-bool computeCollisionAABB(Transform transf1, Transform transf2) {
-    glm::vec3& pos1 = transf1.pos;
-    glm::vec3& dim1 = transf1.scale;
-    glm::vec3& pos2 = transf2.pos;
-    glm::vec3& dim2 = transf2.scale;
-
-    // get current collision
-    float coll_x_space = glm::abs(pos1.x - pos2.x) - ((dim1.x + dim2.x) / 2.0f);
-    float coll_y_space = glm::abs(pos1.y - pos2.y) - ((dim1.y + dim2.y) / 2.0f);
-    float coll_z_space = glm::abs(pos1.z - pos2.z) - ((dim1.z + dim2.z) / 2.0f);
-
-    if (coll_x_space < 0.0f && coll_y_space < 0.0f && coll_z_space < 0.0f)
-        return true;
-    return false;
-}
-
-float computeDistanceAABB(Transform transf1, Transform transf2, glm::bvec3 axis) {
-    glm::vec3& pos1 = transf1.pos;
-    glm::vec3& dim1 = transf1.scale;
-    glm::vec3& pos2 = transf2.pos;
-    glm::vec3& dim2 = transf2.scale;
-
-    // get current collision
-    if (axis.x) {
-        float coll_x_space = glm::abs(pos1.x - pos2.x) - ((dim1.x + dim2.x) / 2.0f);
-        return coll_x_space;
-    }
-
-    if (axis.y) {
-        float coll_y_space = glm::abs(pos1.y - pos2.y) - ((dim1.y + dim2.y) / 2.0f);
-        return coll_y_space;
-    }
-    
-    if (axis.z) {
-        float coll_z_space = glm::abs(pos1.z - pos2.z) - ((dim1.z + dim2.z) / 2.0f);
-        return coll_z_space;
-    }
-
-    return 0.0f;
-}
-
-glm::vec3 toVec3(glm::vec2 v, float z) { return glm::vec3(v.x, v.y, z); }
-
-glm::vec2 toVec2(glm::vec3 v) { return glm::vec2(v.x, v.y); }
-
-glm::vec3 randomAngle(glm::vec3 v, float deg_range) {
-    if (deg_range == 0.0f)
-        return v;
-    return glm::rotate(v, glm::radians((-1.0f * deg_range) + float(rand() % int(deg_range * 2.0f))), glm::vec3(0.0f, 0.0f, 1.0f));
-}
-
-bool isEven(int x) {
-    return (float(x) / 2.0f) == glm::floor(float(x) / 2.0f);
-}
-
-float absMin(float a, float b) {
-    return (glm::abs(a) >= glm::abs(b)) ? b : a;
-}
