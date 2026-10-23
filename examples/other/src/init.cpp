@@ -69,7 +69,8 @@ void loadAssets() {
     globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_Lifetime, 0, true, {}, {}, {}, nullptr, nullptr}, "Entity_Lifetime");
     globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_Pickup, 0, true, {}, {}, {}, nullptr, nullptr}, "Entity_Pickup");
     globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_RepeatSpawn, 0, true, {}, {}, {}, nullptr, nullptr}, "Entity_RepeatSpawn");
-    globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_Player, 0, true, {}, {"Quad_Player"}, {"EntityCollider_Player"}, nullptr, nullptr}, "Entity_Player");
+    globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_Being, 0, true, {}, {}, {}, nullptr, nullptr}, "Entity_Being");
+    globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_Player, 0, true, {"Entity_Being"}, {"Quad_Player"}, {"EntityCollider_Player"}, nullptr, nullptr}, "Entity_Player");
     globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_LightBall, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn"}, {"Quad_LightBall"}, {"EntityCollider_LightBall"}, nullptr, nullptr}, "Entity_LightBall");
     globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_LightParticle, 0, true, {"Entity_Lifetime"}, {"Quad_LightParticle"}, {}, nullptr, nullptr}, "Entity_LightParticle");
 }

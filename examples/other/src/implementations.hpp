@@ -23,35 +23,36 @@ class Entity_LightParticle : public EntityInterface {
 // --------------------------------------------------------------------------------------------------------------------------
 
 class Entity_Player : public EntityInterface {
-    float _hurt_cooldown_max;
-    float _hurt_cooldown;
     float _shoot_cooldown_max;
     float _shoot_cooldown;
     float _speed;
     glm::vec3 _last_input_dir;
+    void _initEntity() override;
     void _execEntity() override;
-    void _collideEntity(EntityInterface* other) override;
 public:
     Entity_Player();
 };
 
+
+
 // --------------------------------------------------------------------------------------------------------------------------
 
-class BeingInterface : public EntityInterface {
+class Entity_Being : public EntityInterface {
     float hurt_cooldown;
-    void _initEntity() override;
     void _execEntity() override;
-    void _killEntity() override;
     void _collideEntity(EntityInterface* other) override;
-
-    virtual void _initBeing();
-    virtual void _execBeing();
-    virtual void _killBeing();
-    virtual void _collideBeing(EntityInterface* other);
 public:
-    BeingInterface();
+    Entity_Being();
     float hurt_cooldown_max;
     float health;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+class Entity_Damaging : public EntityInterface {
+public:
+    Entity_Damaging();
+    float damage;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -125,11 +126,15 @@ struct GlobalState {
     GenericProvidingEntityAllocator<Entity_LightBall> allocator_LightBall;
     GenericProvidingEntityAllocator<Entity_LightParticle> allocator_LightParticle;
     GenericProvidingEntityAllocator<Entity_Player> allocator_Player;
+    GenericProvidingEntityAllocator<Entity_Being> allocator_Being;
+    GenericProvidingEntityAllocator<Entity_Damaging> allocator_Damaging;
     GenericProvidingEntityAllocator<Entity_Pickup> allocator_Pickup;
     GenericProvidingEntityAllocator<Entity_Lifetime> allocator_Lifetime;
     GenericProvidingEntityAllocator<Entity_RepeatSpawn> allocator_RepeatSpawn;
     
     EntityNodeContainer<Entity_Player> container_Player;
+    EntityNodeContainer<Entity_Being> container_Being;
+    EntityNodeContainer<Entity_Damaging> container_Damaging;
     EntityNodeContainer<Entity_Lifetime> container_Lifetime;
     EntityNodeContainer<Entity_Pickup> container_Pickup;
     EntityNodeContainer<Entity_RepeatSpawn> container_RepeatSpawn;

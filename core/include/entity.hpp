@@ -25,6 +25,7 @@ class EntityInterface : public ScriptInterface {
    std::string _group;
 
    std::vector<EntityInterface*> _entities;
+   std::vector<EntityInterface*> _entities_flat;
    std::vector<unsigned> _quad_ids;
    std::vector<Quad*> _quads;
    std::vector<EntityCollider*> _entitycolliders;
@@ -112,7 +113,20 @@ public:
    std::function<void(ScriptInterface*)> remove_callback - called on deletion (after kill processing)
 */
 struct EntityInfo {
+   friend EntityExecutor;
+   std::list<std::string> _entity_names_flat;
 public:
+   EntityInfo(
+      EntityAllocatorInterface* info_allocator,
+      int info_preferred_queue,
+      bool info_auto_enqueue,
+      std::list<std::string> info_entity_names,
+      std::list<std::string> info_quad_names,
+      std::list<std::string> info_entitycollider_names,
+      std::function<void(ScriptInterface*)> info_spawn_callback,
+      std::function<void(ScriptInterface*)> info_remove_callback
+   );
+   EntityInfo();
    EntityAllocatorInterface* allocator;
    int preferred_queue;
    bool auto_enqueue;
@@ -140,7 +154,7 @@ class EntityExecutor : public ScriptExecutor {
    void _removeEntity(EntityInterface* entity);
 
    // spawn entity with specified parent. transform parameter is ignored if parent is not nullptr
-   EntityInterface* _spawnEntityNode(const char* entity_name, EntityInterface* root, EntityInterface* parent, Transform transform);
+   EntityInterface* _spawnEntityNode(const char* entity_name, EntityInterface* root, EntityInterface* parent, Transform transform, std::vector<EntityInterface*>* entity_list);
 
 protected:
    // class to store enqueues and polymorphically spawn later
@@ -401,7 +415,7 @@ public:
    /* Returns instance of type T corresponding to address vt. Returns nullptr if it does not exist. */
    EntityT* getNode(EntityInterface* t) {
       if (_Ts.empty())
-         throw std::runtime_error("Attempt to get instance from empty Container");
+         return nullptr;
 
       auto iter = _Ts.find(reinterpret_cast<uintptr_t>(t->root()));
       if (iter == _Ts.end())

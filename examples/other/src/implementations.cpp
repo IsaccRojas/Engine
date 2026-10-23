@@ -10,6 +10,8 @@ GlobalState::GlobalState() :
     executor(EXECUTION_QUEUES, &glenv, &collisionspace)
 {
     allocator_Player.provider().attach(&globalstate.container_Player);
+    allocator_Being.provider().attach(&globalstate.container_Being);
+    allocator_Damaging.provider().attach(&globalstate.container_Damaging);
     allocator_Lifetime.provider().attach(&globalstate.container_Lifetime);
     allocator_Pickup.provider().attach(&globalstate.container_Pickup);
     allocator_RepeatSpawn.provider().attach(&globalstate.container_RepeatSpawn);
@@ -27,17 +29,20 @@ void Entity_LightBall::_initEntity() {
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_LightParticle::_initEntity() {
-    Entity_Lifetime* particle = globalstate.container_Lifetime.getNode(entities()[0]);
+    Entity_Lifetime* particle = globalstate.container_Lifetime.getNode(this);
     particle->lifetime = 24.0f;
     particle->vel = glm::vec3(-1.0f * (float(rand() % 5) / 10.0f), 0.0f, 0.0f);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+void Entity_Player::_initEntity() {
+    Entity_Being* being = globalstate.container_Being.getNode(this);
+    being->hurt_cooldown_max = 30.0f;
+}
+
 void Entity_Player::_execEntity() {
-    // check cooldowns
-    if (_hurt_cooldown > 0.0f)
-        _hurt_cooldown -= 1.0f;
+    // check cooldown
     if (_shoot_cooldown > 0.0f)
         _shoot_cooldown -= 1.0f;
 
@@ -70,14 +75,9 @@ void Entity_Player::_execEntity() {
     if (false)
         startKillAll();
 }
-void Entity_Player::_collideEntity(EntityInterface* other) {
-    _hurt_cooldown = _hurt_cooldown_max;
-}
 
 Entity_Player::Entity_Player() :
     EntityInterface(),
-    _hurt_cooldown_max(120.0f),
-    _hurt_cooldown(0.0f),
     _shoot_cooldown_max(30.0f),
     _shoot_cooldown(0.0f),
     _speed(0.75f),
@@ -86,13 +86,7 @@ Entity_Player::Entity_Player() :
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void BeingInterface::_initEntity() {
-    _initBeing();
-}
-
-void BeingInterface::_execEntity() {
-    _execBeing();
-
+void Entity_Being::_execEntity() {
     if (health <= 0.0f) {
         startKillAll();
         return;
@@ -103,27 +97,25 @@ void BeingInterface::_execEntity() {
         hurt_cooldown -= 1.0f;
 }
 
-void BeingInterface::_killEntity() {
-    _killBeing();
-}
-
-void BeingInterface::_collideEntity(EntityInterface* other) {
-    _collideBeing(other);
+void Entity_Being::_collideEntity(EntityInterface* other) {
+    Entity_Damaging* damaging = globalstate.container_Damaging.getNode(other);
+    if (damaging)
+        health -= damaging->damage;
+        
     if (hurt_cooldown <= 0.0f)
         hurt_cooldown = hurt_cooldown_max;
 }
 
-void BeingInterface::_initBeing() {}
-void BeingInterface::_execBeing() {}
-void BeingInterface::_killBeing() {}
-void BeingInterface::_collideBeing(EntityInterface* other) {}
-
-BeingInterface::BeingInterface() :
+Entity_Being::Entity_Being() :
     EntityInterface(),
     hurt_cooldown(0.0f),
     hurt_cooldown_max(120.0f),
     health(0.0f)
 {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+Entity_Damaging::Entity_Damaging() : damage(0.0f) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
