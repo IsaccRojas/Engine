@@ -4,10 +4,10 @@ EntityInterface::EntityInterface(EntityInterface&& other) {
     operator=(std::move(other));
 }
 EntityInterface::EntityInterface(EntityInterface* root, EntityInterface* parent) : 
-    ScriptInterface(), _root(root), _parent(parent), _entity_name(""), _entityexecutor(nullptr), _kill_started(false), _globaltransform(nullptr)
+    ScriptInterface(), _root(root), _parent(parent), _entity_name(""), _entityexecutor(nullptr), _entity_kill_started(false), _globaltransform(nullptr)
 {}
 EntityInterface::EntityInterface() : 
-    ScriptInterface(), _root(nullptr), _parent(nullptr), _entity_name(""), _entityexecutor(nullptr), _kill_started(false), _globaltransform(nullptr)
+    ScriptInterface(), _root(nullptr), _parent(nullptr), _entity_name(""), _entityexecutor(nullptr), _entity_kill_started(false), _globaltransform(nullptr)
 {}
 EntityInterface::~EntityInterface() {}
 
@@ -50,26 +50,22 @@ void EntityInterface::detachNullableRef(EntityInterface** ref) {
 }
 
 void EntityInterface::startKill() {
-    if (!_kill_started) {
+    if (!_entity_kill_started) {
         for (auto& e : _entities)
             if (e != nullptr)
-                if (!e->_kill_started)
+                if (!e->_entity_kill_started)
                     e->startKill();
 
-        _kill_started = true;
+        _entity_kill_started = true;
     }
 }
 
 void EntityInterface::startKillAll() {
-    if (_parent)
-        _parent->startKillAll();
-    else
-        startKill();
+    _root->startKill();
 }
 
-
-
 std::vector<EntityInterface*>& EntityInterface::entities() { return _entities; }
+std::vector<EntityInterface*>& EntityInterface::entitiesflat() { return _entities_flat; }
 std::vector<Quad*>& EntityInterface::quads() { return _quads; }
 std::vector<EntityCollider*>& EntityInterface::entitycolliders() { return _entitycolliders; }
 
@@ -78,40 +74,10 @@ Transform EntityInterface::getPrevGlobalTransform() { return _prevglobaltransfor
 
 const char* EntityInterface::getName() { return _entity_name.c_str(); }
 const char* EntityInterface::getGroup() { return _group.c_str(); }
-bool EntityInterface::getKillStarted() { return _kill_started; }
+bool EntityInterface::getEntityKillStarted() { return _entity_kill_started; }
 
 EntityInterface* EntityInterface::root() { return _root; }
 EntityInterface* EntityInterface::parent() { return _parent; };
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-EntityInfo::EntityInfo(
-    EntityAllocatorInterface* info_allocator,
-    int info_preferred_queue,
-    bool info_auto_enqueue,
-    std::list<std::string> info_entity_names,
-    std::list<std::string> info_quad_names,
-    std::list<std::string> info_entitycollider_names,
-    std::function<void(ScriptInterface*)> info_spawn_callback,
-    std::function<void(ScriptInterface*)> info_remove_callback
-) :
-   allocator(info_allocator),
-   preferred_queue(info_preferred_queue),
-   auto_enqueue(info_auto_enqueue),
-   entity_names(info_entity_names),
-   quad_names(info_quad_names),
-   entitycollider_names(info_entitycollider_names),
-   spawn_callback(info_spawn_callback),
-   remove_callback(info_remove_callback)
-{}
-EntityInfo::EntityInfo(
-) :
-   allocator(nullptr),
-   preferred_queue(0),
-   auto_enqueue(false),
-   spawn_callback(nullptr),
-   remove_callback(nullptr)
-{}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -149,7 +115,7 @@ void EntityExecutor::_removeEntity(EntityInterface* entity) {
     _entity_refs.erase(entity);
 }
 
-EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, EntityInterface* root, EntityInterface* parent, Transform transform, std::vector<EntityInterface*>* entity_list) {
+EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, EntityInterface* root, EntityInterface* parent, Transform transform) {
     auto ei_iter = _entityinfos.find(entity_name);
     if (ei_iter == _entityinfos.end())
         throw std::runtime_error((std::string("Attempt to spawn Entity with non-existent EntityInfo name '") + entity_name) + std::string("'"));
@@ -183,7 +149,6 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     entity->_quads.reserve(ei.quad_names.size());
     entity->_entitycolliders.reserve(ei.entitycollider_names.size());
     entity->_entities.resize(ei.entity_names.size());
-    entity->_entities_flat.resize(ei._entity_names_flat.size());
 
     // instantiate each Quad in info and push to entity's storage
     for (const std::string& qn : ei.quad_names) {
@@ -204,16 +169,20 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     auto esn_iter = ei.entity_names.begin();
     int i = 0;
     for (; esn_iter != ei.entity_names.end(); esn_iter++, i++) {
-        if (!parent)
-            entity->_entities[i] = _spawnEntityNode(esn_iter->c_str(), entity, entity, transform, &entity->_entities_flat);
-        else
-            entity->_entities[i] = _spawnEntityNode(esn_iter->c_str(), root, entity, transform, entity_list);
-        
-        entity->_entities_flat.push_back(entity->_entities[i]);
+        if (!parent) {
+            entity->_entities[i] = _spawnEntityNode(esn_iter->c_str(), entity, entity, transform);
+            entity->_entities_flat.push_back(entity->_entities[i]);
+        }
+        else {
+            entity->_entities[i] = _spawnEntityNode(esn_iter->c_str(), root, entity, transform);
+            root->_entities_flat.push_back(entity->_entities[i]);
+        }
 
         entity->_entities[i]->attachNullableRef(&(entity->_entities[i]));
-        entity->_entities[i]->attachNullableRef(&(entity->_entities_flat[entity->_entities_flat.size() - 1]));
     }
+
+    for (i = 0; i < entity->_entities_flat.size(); i++)
+        entity->_entities_flat[i]->attachNullableRef(&entity->_entities_flat[i]);
 
     ei.allocator->_onInitialization(entity);
     entity->runInit();
@@ -225,6 +194,8 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
 }
 
 void EntityExecutor::addEntity(EntityInfo info, const char* name) {
+    std::list<std::string> entity_names_flat;
+
     // check names
     if (hasAdded(name))
         throw std::runtime_error((std::string("Attempt to add existing EntityInfo name '") + name) + std::string("'"));
@@ -255,12 +226,12 @@ void EntityExecutor::addEntity(EntityInfo info, const char* name) {
             );
     
         // flatten existing EntityInfo names into this one
-        info._entity_names_flat.insert(info._entity_names_flat.end(), _entityinfos[i]._entity_names_flat.begin(), _entityinfos[i]._entity_names_flat.end());
-        info._entity_names_flat.insert(info._entity_names_flat.end(), i);
+        entity_names_flat.insert(entity_names_flat.end(), _entityinfos[i].entity_names.begin(), _entityinfos[i].entity_names.end());
+        entity_names_flat.insert(entity_names_flat.end(), i);
     }
 
     // check if duplicate EntityInfo name
-    std::string s = hasDuplicate(info._entity_names_flat);
+    std::string s = hasDuplicate(entity_names_flat);
     if (s != "")
         throw std::runtime_error(
             (std::string("Attempt to add EntityInfo name '") + name) 
@@ -289,7 +260,7 @@ EntityInterface* EntityExecutor::spawnEntity(const char* entity_name, Transform 
     if (ei_iter == _entityinfos.end())
         throw std::runtime_error((std::string("Attempt to spawn Entity with non-existent EntityInfo name '") + entity_name) + std::string("'"));
 
-    return _spawnEntityNode(entity_name, nullptr, nullptr, transform, nullptr);
+    return _spawnEntityNode(entity_name, nullptr, nullptr, transform);
 }
 
 void EntityExecutor::update() {
@@ -298,7 +269,7 @@ void EntityExecutor::update() {
     // check script status of every entity in each group list
     for (auto& entity : _entity_refs) {
         // check if entity needs to be removed
-        if (entity->getKillStarted()) {
+        if (entity->getEntityKillStarted()) {
             // check if all scripts nulled
             bool non_null_found = false;
             for (auto &es : entity->entities()) {
@@ -308,8 +279,8 @@ void EntityExecutor::update() {
                 }
             }
 
-            if (!non_null_found)
-                remove_queue.push(entity);
+            //if (!non_null_found)
+            //    remove_queue.push(entity);
             
             continue;
         }
@@ -504,9 +475,14 @@ void CollisionSpace::detectCollisionAABB() {
             ) {
                 // detect and handle collision
                 if (computeCollisionAABB({c1->_cur_pos, c1->_cur_scale}, {c2->_cur_pos, c2->_cur_scale})) {
-                    // call collision method on collider's attached entity with other collider's attached entity as arg
-                    c1->_entity->collide(c2->_entity);
-                    c2->_entity->collide(c1->_entity);
+                    // call collision methods on all entities in collider's attached entity tree, with other collider's attached entity as arg
+                    for (auto& e : c1->_entity->root()->entitiesflat())
+                        if (e)
+                            e->collide(c2->_entity);
+
+                    for (auto& e : c2->_entity->root()->entitiesflat())
+                        if (e)
+                            e->collide(c1->_entity);
                 }
             }
 

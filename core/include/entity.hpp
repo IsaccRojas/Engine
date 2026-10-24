@@ -30,7 +30,8 @@ class EntityInterface : public ScriptInterface {
    std::vector<Quad*> _quads;
    std::vector<EntityCollider*> _entitycolliders;
 
-   bool _kill_started;
+   // used to track when entity-level kill is started
+   bool _entity_kill_started;
 
    // reference to parents' transforms, or otherwise a heap-allocated transform
    Transform* _globaltransform;
@@ -72,14 +73,15 @@ public:
    /* Removes reference to pointer to EntityInterface. */
    void detachNullableRef(EntityInterface** ref);
 
-   /* Starts kill on this entity and all contained entities via EntityExecutor checks. */
+   /* Starts entity-level kill on this entity and all contained entities via EntityExecutor checks. */
    void startKill();
 
-   /* Starts kill on this entity and all contained entities, and parents, via EntityExecutor checks. */
+   /* Starts entity-level kill on this entity and all contained entities, and parents, via EntityExecutor checks. */
    void startKillAll();
    
    /* Entries may be nulled by removal of individual instances from owners. */
    std::vector<EntityInterface*>& entities();
+   std::vector<EntityInterface*>& entitiesflat();
    std::vector<Quad*>& quads();
    std::vector<EntityCollider*>& entitycolliders();
 
@@ -90,7 +92,7 @@ public:
 
    const char* getName();
    const char* getGroup();
-   bool getKillStarted();
+   bool getEntityKillStarted();
    
    EntityInterface* root();
    EntityInterface* parent();
@@ -113,20 +115,6 @@ public:
    std::function<void(ScriptInterface*)> remove_callback - called on deletion (after kill processing)
 */
 struct EntityInfo {
-   friend EntityExecutor;
-   std::list<std::string> _entity_names_flat;
-public:
-   EntityInfo(
-      EntityAllocatorInterface* info_allocator,
-      int info_preferred_queue,
-      bool info_auto_enqueue,
-      std::list<std::string> info_entity_names,
-      std::list<std::string> info_quad_names,
-      std::list<std::string> info_entitycollider_names,
-      std::function<void(ScriptInterface*)> info_spawn_callback,
-      std::function<void(ScriptInterface*)> info_remove_callback
-   );
-   EntityInfo();
    EntityAllocatorInterface* allocator;
    int preferred_queue;
    bool auto_enqueue;
@@ -154,7 +142,7 @@ class EntityExecutor : public ScriptExecutor {
    void _removeEntity(EntityInterface* entity);
 
    // spawn entity with specified parent. transform parameter is ignored if parent is not nullptr
-   EntityInterface* _spawnEntityNode(const char* entity_name, EntityInterface* root, EntityInterface* parent, Transform transform, std::vector<EntityInterface*>* entity_list);
+   EntityInterface* _spawnEntityNode(const char* entity_name, EntityInterface* root, EntityInterface* parent, Transform transform);
 
 protected:
    // class to store enqueues and polymorphically spawn later
