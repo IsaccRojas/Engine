@@ -46,7 +46,7 @@ class ScriptInterface {
    bool _kill_started;
    std::string _script_name;
 
-   // lockout variables
+   // locking variables
    ScriptKey _key;
    std::unordered_set<ScriptKey*> _keys;
    unsigned _keys_count;
@@ -98,9 +98,9 @@ public:
    bool getKillStarted();
    const char* getName();
    ScriptKey& key();
-   void lockout(ScriptKey* k);
+   void lock(ScriptKey* k);
    void unlock(ScriptKey* k);
-   unsigned lockoutCount();
+   unsigned lockCount();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -197,9 +197,6 @@ protected:
    // pushes an enqueue
    void _pushSpawnEnqueue(ScriptEnqueue* enqueue);
 
-   // erases the passed ScriptInterface; it is undefined behavior to use the script reference after this call
-   void _erase(ScriptInterface* script);
-
 public:
    /* Calls init() with the provided arguments. */
    ScriptExecutor(unsigned queues = 1);
@@ -218,6 +215,9 @@ public:
 
    /* Spawns a script using a name previously added to this ScriptExecutor, calls its runInit() method if specified, and returns a script reference of it. */
    ScriptInterface* spawnScript(const char* script_name, bool initialize);
+
+   /* Forcibly erases the passed ScriptInterface without execution or kill checks. It is undefined behavior to use the reference after this call. */
+   void erase(ScriptInterface* script);
 
    /* Enqueues a script to be spawned when calling runSpawnQueue(). */
    void enqueueSpawn(const char* script_name, bool initialize);

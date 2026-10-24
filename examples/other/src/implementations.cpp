@@ -39,6 +39,7 @@ void Entity_LightParticle::_initEntity() {
 void Entity_Player::_initEntity() {
     Entity_Being* being = globalstate.container_Being.getNode(this);
     being->hurt_cooldown_max = 30.0f;
+    being->health = 10.0f;
 }
 
 void Entity_Player::_execEntity() {
@@ -73,7 +74,7 @@ void Entity_Player::_execEntity() {
     pos += vel;
 
     if (false)
-        startKillAll();
+        root()->enqueueKillAll();
 }
 
 Entity_Player::Entity_Player() :
@@ -88,7 +89,7 @@ Entity_Player::Entity_Player() :
 
 void Entity_Being::_execEntity() {
     if (health <= 0.0f) {
-        startKillAll();
+        root()->enqueueKillAll();
         return;
     }
 
@@ -129,10 +130,10 @@ void Entity_Lifetime::_execEntity() {
         globaltransform().pos += vel;
     
     if (lifetime == 0)
-        startKillAll();
+        root()->enqueueKillAll();
 }
 void Entity_Lifetime::_collideEntity(EntityInterface* other) {
-    startKillAll();
+    root()->enqueueKillAll();
 }
 
 Entity_Lifetime::Entity_Lifetime() : EntityInterface(), _target(nullptr), lifetime(0), vel(glm::vec3(0.0f)) {}
@@ -149,7 +150,7 @@ void Entity_Pickup::_collideEntity(EntityInterface* other) {
     auto& i = globalstate.inventory;
     if (i.find(item_name) != i.end())
         i[item_name] += 1;
-    startKillAll();
+    root()->enqueueKillAll();
 }
 
 Entity_Pickup::Entity_Pickup() : EntityInterface(), item_name("") {}
@@ -173,7 +174,7 @@ void Entity_RepeatSpawn::_execEntity() {
     }
     
     if (lifetime == 0)
-        startKillAll();
+        root()->enqueueKillAll();
 }
 
 Entity_RepeatSpawn::Entity_RepeatSpawn() : EntityInterface(), lifetime(0), spawnrate(-1), spawnrate_cooldown(0), entity_name("") {}

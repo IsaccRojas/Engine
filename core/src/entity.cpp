@@ -20,7 +20,7 @@ EntityInterface& EntityInterface::operator=(EntityInterface&& other) {
 void EntityInterface::_init() {
     // lock parent to prevent kill before children are killed
     if (_parent)
-        _parent->lockout(&key());
+        _parent->lock(&key());
 
     _initEntity();
 }
@@ -38,6 +38,8 @@ void EntityInterface::_kill() {
     
     if (_parent)
         _parent->unlock(&key());
+    
+    _entityexecutor->eraseEntityResources(this);
 }
 
 void EntityInterface::_initEntity() {}
@@ -106,7 +108,7 @@ EntityExecutor& EntityExecutor::operator=(EntityExecutor&& other) {
     return *this;
 }
 
-void EntityExecutor::_removeEntity(EntityInterface* entity) {
+void EntityExecutor::eraseEntityResources(EntityInterface* entity) {
     for (const unsigned &id : entity->_quad_ids)
         _glenv->remove(id);
     for (EntityCollider* collider : entity->_entitycolliders)
@@ -115,7 +117,6 @@ void EntityExecutor::_removeEntity(EntityInterface* entity) {
     if (!entity->_parent)
         delete entity->_globaltransform;
 
-    entity->enqueueKill();
     _entity_refs.erase(entity);
 }
 
@@ -167,7 +168,6 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     // initialize fields before running init methods
     entity->_entity_name = entity_name;
     entity->_entityexecutor = this;
-    _entity_refs.insert(entity);
 
     // instantiate each entity in info and push to storage
     auto esn_iter = ei.entity_names.begin();
@@ -197,6 +197,7 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     if (ei.spawn_callback)
         ei.spawn_callback(entity);
 
+    _entity_refs.insert(entity);
     return entity;
 }
 
@@ -271,27 +272,8 @@ EntityInterface* EntityExecutor::spawnEntity(const char* entity_name, Transform 
 }
 
 void EntityExecutor::update() {
-    std::queue<EntityInterface*> remove_queue;
-
     // check script status of every entity in each group list
     for (auto& entity : _entity_refs) {
-        // check if entity needs to be removed
-        if (entity->getEntityKillStarted()) {
-            // check if all scripts nulled
-            bool non_null_found = false;
-            for (auto &es : entity->entities()) {
-                if (es != nullptr) {
-                    non_null_found = true;
-                    break;
-                }
-            }
-
-            //if (!non_null_found)
-            //    remove_queue.push(entity);
-            
-            continue;
-        }
-
         // update transforms
         entity->_prevglobaltransform = entity->globaltransform();
         for (auto &q : entity->quads()) {
@@ -305,11 +287,6 @@ void EntityExecutor::update() {
             ec->resetTransformation();
             ec->applyTransform(entity->globaltransform());
         }
-    }
-
-    while (!remove_queue.empty()) {
-        _removeEntity(remove_queue.front());
-        remove_queue.pop();
     }
 }
 

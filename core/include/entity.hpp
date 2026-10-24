@@ -136,9 +136,6 @@ class EntityExecutor : public ScriptExecutor {
    GLEnv* _glenv;
    CollisionSpace* _collisionspace;
 
-   // can only be called from checkEntities() if entity is killed
-   void _removeEntity(EntityInterface* entity);
-
    // spawn entity with specified parent. transform parameter is ignored if parent is not nullptr
    EntityInterface* _spawnEntityNode(const char* entity_name, EntityInterface* root, EntityInterface* parent, Transform transform);
 
@@ -176,6 +173,9 @@ public:
 
    /* Spawns an entity using a name previously added to this executor, and returns its ID. */
    EntityInterface* spawnEntity(const char* entity_name, Transform transform);
+
+   /* Forcibly erases the passed EntityInterface's resources without execution or kill checks. It does not erase the EntityInterface itself; use ScriptExecutor::erase() for this. */
+   void eraseEntityResources(EntityInterface* entity);
 
    /* Enqueues an Entity to be spawned when calling runSpawnQueue(). */
    void enqueueSpawnEntity(const char* entity_name, Transform transform);

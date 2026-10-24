@@ -91,7 +91,7 @@ void ScriptInterface::enqueueKill() {
 
 ScriptKey& ScriptInterface::key() { return _key; };
 
-void ScriptInterface::lockout(ScriptKey* k) {
+void ScriptInterface::lock(ScriptKey* k) {
     _keys.insert(k);
 }
 
@@ -99,7 +99,7 @@ void ScriptInterface::unlock(ScriptKey* k) {
     _keys.erase(k);
 }
 
-unsigned ScriptInterface::lockoutCount() {
+unsigned ScriptInterface::lockCount() {
     return _keys.size();
 }
 
@@ -190,20 +190,6 @@ void ScriptExecutor::_pushSpawnEnqueue(ScriptEnqueue *enqueue) {
     _scriptenqueues.push(enqueue);
 }
 
-void ScriptExecutor::_erase(ScriptInterface* script) {
-    // get values and info
-    ScriptInfo &scriptinfo = _scriptinfos[script->_script_name];
-
-    // try removal callback if it exists
-    if (scriptinfo.remove_callback)
-        scriptinfo.remove_callback(script);
-    
-    scriptinfo.allocator->_onDeallocation(script);
-
-    script->_scriptallocator->_removeReference(script);
-    _scripts.erase(script->_this_iter);
-}
-
 void ScriptExecutor::addScript(ScriptInfo scriptinfo, const char* name) {  
     if (hasAdded(name))
         throw std::runtime_error((std::string("Attempt to add existing ScriptInfo name '") + name) + std::string("'"));
@@ -225,6 +211,20 @@ ScriptInterface* ScriptExecutor::spawnScript(const char* script_name, bool initi
         script->runInit();
 
     return script;
+}
+
+void ScriptExecutor::erase(ScriptInterface* script) {
+    // get values and info
+    ScriptInfo &scriptinfo = _scriptinfos[script->_script_name];
+
+    // try removal callback if it exists
+    if (scriptinfo.remove_callback)
+        scriptinfo.remove_callback(script);
+    
+    scriptinfo.allocator->_onDeallocation(script);
+    scriptinfo.allocator->_removeReference(script);
+
+    _scripts.erase(script->_this_iter);
 }
 
 void ScriptExecutor::enqueueSpawn(const char* script_name, bool initialize) {
@@ -296,12 +296,12 @@ void ScriptExecutor::runKillQueue() {
         script = _run_killqueue.front();
 
         // check if script can be killed
-        if (script->lockoutCount() == 0 && !script->_exec_enqueued) {
+        if (script->lockCount() == 0 && !script->_exec_enqueued) {
             script->_kill_started = true;
             script->runKill();
 
             // remove the script after killing it
-            _erase(script);
+            erase(script);
         } else {
             // put script back into queue
             _push_killqueue.push(script);
