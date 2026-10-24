@@ -18,6 +18,10 @@ EntityInterface& EntityInterface::operator=(EntityInterface&& other) {
 }
 
 void EntityInterface::_init() {
+    // lock parent to prevent kill before children are killed
+    if (_parent)
+        _parent->lockout(&key());
+
     _initEntity();
 }
 
@@ -31,6 +35,9 @@ void EntityInterface::_kill() {
     // null all inserted nullable references
     for (EntityInterface** r : _nullablerefs)
         *r = nullptr;
+    
+    if (_parent)
+        _parent->unlock(&key());
 }
 
 void EntityInterface::_initEntity() {}
@@ -49,19 +56,16 @@ void EntityInterface::detachNullableRef(EntityInterface** ref) {
     _nullablerefs.erase(ref);
 }
 
-void EntityInterface::startKill() {
+void EntityInterface::enqueueKillAll() {
     if (!_entity_kill_started) {
         for (auto& e : _entities)
             if (e != nullptr)
                 if (!e->_entity_kill_started)
-                    e->startKill();
+                    e->enqueueKillAll();
 
+        enqueueKill();
         _entity_kill_started = true;
     }
-}
-
-void EntityInterface::startKillAll() {
-    _root->startKill();
 }
 
 std::vector<EntityInterface*>& EntityInterface::entities() { return _entities; }
@@ -178,11 +182,14 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
             root->_entities_flat.push_back(entity->_entities[i]);
         }
 
+        // attach entries in local non-flattened storage as nullable refs
         entity->_entities[i]->attachNullableRef(&(entity->_entities[i]));
     }
 
-    for (i = 0; i < entity->_entities_flat.size(); i++)
-        entity->_entities_flat[i]->attachNullableRef(&entity->_entities_flat[i]);
+    // attach entries in root's flattened storage as nullable refs
+    if (!parent)
+        for (i = 0; i < entity->_entities_flat.size(); i++)
+            entity->_entities_flat[i]->attachNullableRef(&entity->_entities_flat[i]);
 
     ei.allocator->_onInitialization(entity);
     entity->runInit();

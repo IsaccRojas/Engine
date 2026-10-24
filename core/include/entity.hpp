@@ -21,10 +21,10 @@ class EntityInterface : public ScriptInterface {
    std::string _entity_name;
 
    EntityExecutor* _entityexecutor;
-   std::list<EntityInterface*>::iterator _this_iter;
    std::string _group;
 
    std::vector<EntityInterface*> _entities;
+   // empty if not root
    std::vector<EntityInterface*> _entities_flat;
    std::vector<unsigned> _quad_ids;
    std::vector<Quad*> _quads;
@@ -74,13 +74,11 @@ public:
    void detachNullableRef(EntityInterface** ref);
 
    /* Starts entity-level kill on this entity and all contained entities via EntityExecutor checks. */
-   void startKill();
-
-   /* Starts entity-level kill on this entity and all contained entities, and parents, via EntityExecutor checks. */
-   void startKillAll();
+   void enqueueKillAll();
    
    /* Entries may be nulled by removal of individual instances from owners. */
    std::vector<EntityInterface*>& entities();
+   // empty if not root
    std::vector<EntityInterface*>& entitiesflat();
    std::vector<Quad*>& quads();
    std::vector<EntityCollider*>& entitycolliders();
