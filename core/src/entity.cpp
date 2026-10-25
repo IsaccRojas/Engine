@@ -187,9 +187,11 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     }
 
     // attach entries in root's flattened storage as nullable refs
-    if (!parent)
+    if (!parent) {
+        entity->_entities_flat.push_back(entity);
         for (i = 0; i < entity->_entities_flat.size(); i++)
             entity->_entities_flat[i]->attachNullableRef(&entity->_entities_flat[i]);
+    }
 
     ei.allocator->_onInitialization(entity);
     entity->runInit();

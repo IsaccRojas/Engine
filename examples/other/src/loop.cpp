@@ -2,7 +2,7 @@
 
 void loop() {
     globalstate.executor.spawnEntity("Entity_Player", Transform{});
-    globalstate.executor.spawnEntity("Entity_Chaser", Transform{glm::vec3(96.0f, 96.0f, 0.0f), glm::vec3(1.0f)});
+    globalstate.executor.spawnEntity("Entity_Enemy_Chaser", Transform{glm::vec3(96.0f, 96.0f, 0.0f), glm::vec3(1.0f)});
     
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(globalstate.glfwstate.getWindowHandle()) && !globalstate.input.get_esc()) {

@@ -12,6 +12,7 @@ GlobalState::GlobalState() :
     allocator_Player.provider().attach(&globalstate.container_Player);
     allocator_Being.provider().attach(&globalstate.container_Being);
     allocator_Hitbox.provider().attach(&globalstate.container_Hitbox);
+    allocator_Travel.provider().attach(&globalstate.container_Travel);
     allocator_Lifetime.provider().attach(&globalstate.container_Lifetime);
     allocator_Pickup.provider().attach(&globalstate.container_Pickup);
     allocator_RepeatSpawn.provider().attach(&globalstate.container_RepeatSpawn);
@@ -19,14 +20,41 @@ GlobalState::GlobalState() :
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Entity_Chaser::_initEntity() {
+void Entity_Enemy_Chaser::_initEntity() {
     Entity_Being* being = globalstate.container_Being.getNode(this);
     being->hurt_cooldown_max = 4.0f;
     being->health = 10.0f;
 
+    _entity_travel = globalstate.container_Travel.getNode(this);
+    _entity_travel->vel = glm::vec3(speed, 0.0f, 0.0f);
+    _entity_travel->lock(&key());
+
     Entity_Hitbox* hitbox = globalstate.container_Hitbox.getNode(this);
     hitbox->damage = 1.0f;
 }
+
+void Entity_Enemy_Chaser::_execEntity() {
+    // unlock player target and travel component
+    if (_entity_travel->getKillEnqueued()) {
+        if (_entity_travel->target)
+            _entity_travel->target->unlock(&key());
+        _entity_travel->unlock(&key());
+    } else {  
+        // get and lock player target
+        if (!_entity_travel->target) {
+            _entity_travel->target = globalstate.container_Player.getLastNode();
+            if (_entity_travel->target)
+                _entity_travel->target->lock(&key());
+        }
+    }
+}
+
+void Entity_Enemy_Chaser::_collideEntity(EntityInterface* other) {
+    if (!getKillEnqueued() && globalstate.container_Being.getNode(other))
+        root()->enqueueKillAll();
+}
+
+Entity_Enemy_Chaser::Entity_Enemy_Chaser() : _entity_travel(nullptr), speed(0.5f) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -36,12 +64,15 @@ void Entity_LightBall::_initEntity() {
     repeatspawn->lifetime = 90.0f;
     repeatspawn->spawnrate = 4.0f;
 
+    Entity_Travel* travel = globalstate.container_Travel.getNode(this);
+    travel->vel = glm::vec3(1.0f, 0.0f, 0.0f);
+
     Entity_Hitbox* hitbox = globalstate.container_Hitbox.getNode(this);
     hitbox->damage = 1.0f;
 }
 
 void Entity_LightBall::_collideEntity(EntityInterface* other) {
-    enqueueKillAll();
+    root()->enqueueKillAll();
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -49,7 +80,6 @@ void Entity_LightBall::_collideEntity(EntityInterface* other) {
 void Entity_LightParticle::_initEntity() {
     Entity_Lifetime* particle = globalstate.container_Lifetime.getNode(this);
     particle->lifetime = 24.0f;
-    particle->vel = glm::vec3(-1.0f * (float(rand() % 5) / 10.0f), 0.0f, 0.0f);
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -89,7 +119,6 @@ void Entity_Player::_execEntity() {
         globalstate.executor.spawnEntity("Entity_LightBall", globaltransform());
         Entity_Lifetime* ball = globalstate.container_Lifetime.getLastNode();
         ball->lifetime = 90.0f;
-        ball->vel = glm::vec3(1.75f, 0.0f, 0.0f);
     }
 
     pos += vel;
@@ -142,29 +171,29 @@ Entity_Hitbox::Entity_Hitbox() : damage(0.0f) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+void Entity_Travel::_execEntity() {
+    if (target) {
+        glm::vec3 dir = target->globaltransform().pos - globaltransform().pos;
+        if (glm::length(dir) > 0)
+            dir = glm::normalize(dir) * glm::length(vel);
+        globaltransform().pos += dir;
+    } else
+        globaltransform().pos += vel;
+}
+
+Entity_Travel::Entity_Travel() : vel(0.0f), target(nullptr) {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 void Entity_Lifetime::_execEntity() {
     if (lifetime > 0)
         lifetime--;
     
-    if (_target)
-        globaltransform().pos = _target->globaltransform().pos;
-    else
-        globaltransform().pos += vel;
-    
     if (lifetime == 0)
         root()->enqueueKillAll();
 }
-void Entity_Lifetime::_collideEntity(EntityInterface* other) {
-    root()->enqueueKillAll();
-}
 
-Entity_Lifetime::Entity_Lifetime() : EntityInterface(), _target(nullptr), lifetime(0), vel(glm::vec3(0.0f)) {}
-
-void Entity_Lifetime::setTarget(EntityInterface* target) {
-    _target = target;
-    if (_target)
-        _target->attachNullableRef(&_target);
-}
+Entity_Lifetime::Entity_Lifetime() : EntityInterface(), lifetime(0) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 

@@ -7,11 +7,17 @@
 #include "../../../core/include/glfwinput.hpp"
 
 struct GlobalState;
-
+class Entity_Travel;
 // --------------------------------------------------------------------------------------------------------------------------
 
-class Entity_Chaser : public EntityInterface {
+class Entity_Enemy_Chaser : public EntityInterface {
+    Entity_Travel* _entity_travel;
     void _initEntity() override;
+    void _execEntity() override;
+    void _collideEntity(EntityInterface* other) override;
+public:
+    Entity_Enemy_Chaser();
+    float speed;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -40,8 +46,6 @@ public:
     Entity_Player();
 };
 
-
-
 // --------------------------------------------------------------------------------------------------------------------------
 
 class Entity_Being : public EntityInterface {
@@ -65,6 +69,21 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 /*
+    Entity_Travel
+    Applies specified velocity to global transform. Applies difference in position between itself and target, normalized and
+    scaled with specified velocity's magnitude, if target is not nullptr.
+*/
+class Entity_Travel : public EntityInterface {
+    void _execEntity() override;
+public:
+    Entity_Travel();
+    glm::vec3 vel;
+    EntityInterface* target;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+/*
     Entity Lifetime
     Kills itself after assigned lifetime. Can be assigned a velocity to adjust its own position during its lifetime.
     Can also be assigned a target to follow position of. Overrides application of velocity.
@@ -72,14 +91,10 @@ public:
     message "target" - assigns target Entity to copy position of
 */
 class Entity_Lifetime : public EntityInterface {
-    EntityInterface* _target;
     void _execEntity() override;
-    void _collideEntity(EntityInterface* other) override;
 public:
     Entity_Lifetime();
-    void setTarget(EntityInterface* target);
     int lifetime;
-    glm::vec3 vel;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -130,19 +145,21 @@ struct GlobalState {
     EntityExecutor executor;
 
     GenericProvidingEntityAllocator<EntityInterface> genericallocator;
-    GenericProvidingEntityAllocator<Entity_Chaser> allocator_Chaser;
+    GenericProvidingEntityAllocator<Entity_Enemy_Chaser> allocator_Enemy_Chaser;
     GenericProvidingEntityAllocator<Entity_LightBall> allocator_LightBall;
     GenericProvidingEntityAllocator<Entity_LightParticle> allocator_LightParticle;
     GenericProvidingEntityAllocator<Entity_Player> allocator_Player;
     GenericProvidingEntityAllocator<Entity_Being> allocator_Being;
     GenericProvidingEntityAllocator<Entity_Hitbox> allocator_Hitbox;
-    GenericProvidingEntityAllocator<Entity_Pickup> allocator_Pickup;
+    GenericProvidingEntityAllocator<Entity_Travel> allocator_Travel;
     GenericProvidingEntityAllocator<Entity_Lifetime> allocator_Lifetime;
+    GenericProvidingEntityAllocator<Entity_Pickup> allocator_Pickup;
     GenericProvidingEntityAllocator<Entity_RepeatSpawn> allocator_RepeatSpawn;
     
     EntityNodeContainer<Entity_Player> container_Player;
     EntityNodeContainer<Entity_Being> container_Being;
     EntityNodeContainer<Entity_Hitbox> container_Hitbox;
+    EntityNodeContainer<Entity_Travel> container_Travel;
     EntityNodeContainer<Entity_Lifetime> container_Lifetime;
     EntityNodeContainer<Entity_Pickup> container_Pickup;
     EntityNodeContainer<Entity_RepeatSpawn> container_RepeatSpawn;
