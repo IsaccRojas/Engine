@@ -11,10 +11,21 @@ GlobalState::GlobalState() :
 {
     allocator_Player.provider().attach(&globalstate.container_Player);
     allocator_Being.provider().attach(&globalstate.container_Being);
-    allocator_Damaging.provider().attach(&globalstate.container_Damaging);
+    allocator_Hitbox.provider().attach(&globalstate.container_Hitbox);
     allocator_Lifetime.provider().attach(&globalstate.container_Lifetime);
     allocator_Pickup.provider().attach(&globalstate.container_Pickup);
     allocator_RepeatSpawn.provider().attach(&globalstate.container_RepeatSpawn);
+}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void Entity_Chaser::_initEntity() {
+    Entity_Being* being = globalstate.container_Being.getNode(this);
+    being->hurt_cooldown_max = 4.0f;
+    being->health = 10.0f;
+
+    Entity_Hitbox* hitbox = globalstate.container_Hitbox.getNode(this);
+    hitbox->damage = 1.0f;
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -24,6 +35,13 @@ void Entity_LightBall::_initEntity() {
     repeatspawn->entity_name = "Entity_LightParticle";
     repeatspawn->lifetime = 90.0f;
     repeatspawn->spawnrate = 4.0f;
+
+    Entity_Hitbox* hitbox = globalstate.container_Hitbox.getNode(this);
+    hitbox->damage = 1.0f;
+}
+
+void Entity_LightBall::_collideEntity(EntityInterface* other) {
+    enqueueKillAll();
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -40,6 +58,9 @@ void Entity_Player::_initEntity() {
     Entity_Being* being = globalstate.container_Being.getNode(this);
     being->hurt_cooldown_max = 30.0f;
     being->health = 10.0f;
+
+    Entity_Hitbox* hitbox = globalstate.container_Hitbox.getNode(this);
+    hitbox->damage = 1.0f;
 }
 
 void Entity_Player::_execEntity() {
@@ -99,12 +120,13 @@ void Entity_Being::_execEntity() {
 }
 
 void Entity_Being::_collideEntity(EntityInterface* other) {
-    Entity_Damaging* damaging = globalstate.container_Damaging.getNode(other);
-    if (damaging)
-        health -= damaging->damage;
-        
-    if (hurt_cooldown <= 0.0f)
-        hurt_cooldown = hurt_cooldown_max;
+    Entity_Hitbox* hitbox = globalstate.container_Hitbox.getNode(other);
+    if (hitbox) {
+        if (hurt_cooldown <= 0.0f) {
+            health -= hitbox->damage;
+            hurt_cooldown = hurt_cooldown_max;
+        }
+    }
 }
 
 Entity_Being::Entity_Being() :
@@ -116,7 +138,7 @@ Entity_Being::Entity_Being() :
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-Entity_Damaging::Entity_Damaging() : damage(0.0f) {}
+Entity_Hitbox::Entity_Hitbox() : damage(0.0f) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 

@@ -41,18 +41,24 @@ void loadAssets() {
                 Frame(vec3(0.0f, 0.0f, 0.0f), vec2(16.0f), 0)
             })
         });
+    globalstate.animations["Animation_Chaser"] =
+        Animation("Animation_Player", {
+            Cycle("default", false, {
+                Frame(vec3(16.0f, 0.0f, 0.0f), vec2(16.0f), 0)
+            })
+        });
 
     globalstate.filters["Filter_Player"] = 
         Filter("Filter_Player", 0,
-            {},
-            {0, 1}, 
+            {1},
+            {0},
             {}, 
             {}
         );
-    globalstate.filters["Filter_PlayerHitbox"] = 
+     globalstate.filters["Filter_Enemy"] = 
         Filter("Filter_PlayerHitbox", 1,
-            {},
-            {0, 1}, 
+            {0},
+            {1}, 
             {}, 
             {}
         );
@@ -60,19 +66,23 @@ void loadAssets() {
     glm::vec3 unit_scale = glm::vec3(UNIT_PIXEL_WIDTH, UNIT_PIXEL_HEIGHT, 0.0f);
 
     globalstate.glenv.addQuad(QuadInfo{glm::vec3(0.0f, 0.0f, 0.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_Player"]}, "Quad_Player");
+    globalstate.glenv.addQuad(QuadInfo{glm::vec3(0.0f, 0.0f, 0.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_Chaser"]}, "Quad_Chaser");
     globalstate.glenv.addQuad(QuadInfo{glm::vec3(0.0f, 0.0f, 1.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_LightBall"]}, "Quad_LightBall");
     globalstate.glenv.addQuad(QuadInfo{glm::vec3(0.0f, 0.0f, 0.5f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_LightParticle"]}, "Quad_LightParticle");
 
     globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Player"]}, "EntityCollider_Player");
-    globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_PlayerHitbox"]}, "EntityCollider_LightBall");
-    
+    globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Player"]}, "EntityCollider_LightBall");
+    globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), (0.75f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Enemy"]}, "EntityCollider_Chaser");
+
     globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_Lifetime, 0, true, {}, {}, {}, nullptr, nullptr}, "Entity_Lifetime");
     globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_Pickup, 0, true, {}, {}, {}, nullptr, nullptr}, "Entity_Pickup");
     globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_RepeatSpawn, 0, true, {}, {}, {}, nullptr, nullptr}, "Entity_RepeatSpawn");
     globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_Being, 0, true, {}, {}, {}, nullptr, nullptr}, "Entity_Being");
-    globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_Player, 0, true, {"Entity_Being"}, {"Quad_Player"}, {"EntityCollider_Player"}, nullptr, nullptr}, "Entity_Player");
-    globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_LightBall, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn"}, {"Quad_LightBall"}, {"EntityCollider_LightBall"}, nullptr, nullptr}, "Entity_LightBall");
+    globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_Hitbox, 0, true, {}, {}, {}, nullptr, nullptr}, "Entity_Hitbox");
+    globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_Player, 0, true, {"Entity_Being", "Entity_Hitbox"}, {"Quad_Player"}, {"EntityCollider_Player"}, nullptr, nullptr}, "Entity_Player");
+    globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_LightBall, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn", "Entity_Hitbox"}, {"Quad_LightBall"}, {"EntityCollider_LightBall"}, nullptr, nullptr}, "Entity_LightBall");
     globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_LightParticle, 0, true, {"Entity_Lifetime"}, {"Quad_LightParticle"}, {}, nullptr, nullptr}, "Entity_LightParticle");
+    globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_Chaser, 0, true, {"Entity_Being", "Entity_Hitbox"}, {"Quad_Chaser"}, {"EntityCollider_Chaser"}, nullptr, nullptr}, "Entity_Chaser");
 }
 
 void initialize() {

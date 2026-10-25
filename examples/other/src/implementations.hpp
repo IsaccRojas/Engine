@@ -10,8 +10,15 @@ struct GlobalState;
 
 // --------------------------------------------------------------------------------------------------------------------------
 
+class Entity_Chaser : public EntityInterface {
+    void _initEntity() override;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
 class Entity_LightBall : public EntityInterface {
     void _initEntity() override;
+    void _collideEntity(EntityInterface* other) override;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -49,9 +56,9 @@ public:
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-class Entity_Damaging : public EntityInterface {
+class Entity_Hitbox : public EntityInterface {
 public:
-    Entity_Damaging();
+    Entity_Hitbox();
     float damage;
 };
 
@@ -123,18 +130,19 @@ struct GlobalState {
     EntityExecutor executor;
 
     GenericProvidingEntityAllocator<EntityInterface> genericallocator;
+    GenericProvidingEntityAllocator<Entity_Chaser> allocator_Chaser;
     GenericProvidingEntityAllocator<Entity_LightBall> allocator_LightBall;
     GenericProvidingEntityAllocator<Entity_LightParticle> allocator_LightParticle;
     GenericProvidingEntityAllocator<Entity_Player> allocator_Player;
     GenericProvidingEntityAllocator<Entity_Being> allocator_Being;
-    GenericProvidingEntityAllocator<Entity_Damaging> allocator_Damaging;
+    GenericProvidingEntityAllocator<Entity_Hitbox> allocator_Hitbox;
     GenericProvidingEntityAllocator<Entity_Pickup> allocator_Pickup;
     GenericProvidingEntityAllocator<Entity_Lifetime> allocator_Lifetime;
     GenericProvidingEntityAllocator<Entity_RepeatSpawn> allocator_RepeatSpawn;
     
     EntityNodeContainer<Entity_Player> container_Player;
     EntityNodeContainer<Entity_Being> container_Being;
-    EntityNodeContainer<Entity_Damaging> container_Damaging;
+    EntityNodeContainer<Entity_Hitbox> container_Hitbox;
     EntityNodeContainer<Entity_Lifetime> container_Lifetime;
     EntityNodeContainer<Entity_Pickup> container_Pickup;
     EntityNodeContainer<Entity_RepeatSpawn> container_RepeatSpawn;
