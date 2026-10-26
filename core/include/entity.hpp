@@ -292,7 +292,7 @@ public:
 
    void addEntityCollider(EntityColliderInfo entitycolliderinfo, const char* name);
 
-   /* Spawns a EntityCollider and returns a reference to it. */
+   /* Spawns a EntityCollider and returns a reference to it (attaches nullable ref to entity). */
    EntityCollider* spawnEntityCollider(const char* entitycollider_name, EntityInterface* entity, Transform transform);
 
    /* Erases the EntityCollider referenced by the provided EntityCollider. */

@@ -73,7 +73,6 @@ void loadAssets() {
     globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Player"]}, "EntityCollider_Player");
     globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Player"]}, "EntityCollider_LightBall");
     globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), (0.75f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Enemy"]}, "EntityCollider_Chaser");
-
     
     globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_RepeatSpawn, 0, true, {}, {}, {}, nullptr, nullptr}, "Entity_RepeatSpawn");
     globalstate.executor.addEntity(EntityInfo{&globalstate.allocator_Pickup, 0, true, {}, {}, {}, nullptr, nullptr}, "Entity_Pickup");

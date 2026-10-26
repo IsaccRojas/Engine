@@ -23,28 +23,33 @@ GlobalState::GlobalState() :
 void Entity_Enemy_Chaser::_initEntity() {
     Entity_Being* being = globalstate.container_Being.getNode(this);
     being->hurt_cooldown_max = 4.0f;
-    being->health = 10.0f;
+    being->health = 3.0f;
 
     _entity_travel = globalstate.container_Travel.getNode(this);
     _entity_travel->vel = glm::vec3(speed, 0.0f, 0.0f);
     _entity_travel->lock(&key());
 
     Entity_Hitbox* hitbox = globalstate.container_Hitbox.getNode(this);
-    hitbox->damage = 1.0f;
+    hitbox->damage = 5.0f;
 }
 
 void Entity_Enemy_Chaser::_execEntity() {
-    // unlock player target and travel component
+    // if travel component is kill enqueued, unlock travel and its target; otherwise, operate as normal
     if (_entity_travel->getKillEnqueued()) {
         if (_entity_travel->target)
             _entity_travel->target->unlock(&key());
         _entity_travel->unlock(&key());
-    } else {  
-        // get and lock player target
+    } else {
+        // if no target set, get and lock player; otherwise, check if it needs to be unlocked
         if (!_entity_travel->target) {
             _entity_travel->target = globalstate.container_Player.getLastNode();
             if (_entity_travel->target)
                 _entity_travel->target->lock(&key());
+        } else {
+            if (_entity_travel->target->getKillEnqueued()) {
+                _entity_travel->target->unlock(&key());
+                _entity_travel->target = nullptr;
+            }
         }
     }
 }
@@ -59,9 +64,11 @@ Entity_Enemy_Chaser::Entity_Enemy_Chaser() : _entity_travel(nullptr), speed(0.5f
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_LightBall::_initEntity() {
+    Entity_Lifetime* lifetime = globalstate.container_Lifetime.getNode(this);
+    lifetime->lifetime = 1.0f;
+
     Entity_RepeatSpawn* repeatspawn = globalstate.container_RepeatSpawn.getNode(this);
     repeatspawn->entity_name = "Entity_LightParticle";
-    repeatspawn->lifetime = 90.0f;
     repeatspawn->spawnrate = 4.0f;
 
     Entity_Travel* travel = globalstate.container_Travel.getNode(this);
@@ -78,8 +85,8 @@ void Entity_LightBall::_collideEntity(EntityInterface* other) {
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_LightParticle::_initEntity() {
-    Entity_Lifetime* particle = globalstate.container_Lifetime.getNode(this);
-    particle->lifetime = 24.0f;
+    Entity_Lifetime* lifetime = globalstate.container_Lifetime.getNode(this);
+    lifetime->lifetime = 24.0f;
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -209,8 +216,6 @@ Entity_Pickup::Entity_Pickup() : EntityInterface(), item_name("") {}
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_RepeatSpawn::_execEntity() {
-    if (lifetime > 0)
-        lifetime--;
     if (spawnrate_cooldown > 0)
         spawnrate_cooldown--;
     
@@ -223,9 +228,6 @@ void Entity_RepeatSpawn::_execEntity() {
             globalstate.executor.spawnEntity(entity_name.c_str(), spawn_transform);
         }
     }
-    
-    if (lifetime == 0)
-        root()->enqueueKillAll();
 }
 
-Entity_RepeatSpawn::Entity_RepeatSpawn() : EntityInterface(), lifetime(0), spawnrate(-1), spawnrate_cooldown(0), entity_name("") {}
+Entity_RepeatSpawn::Entity_RepeatSpawn() : EntityInterface(), spawnrate(-1), spawnrate_cooldown(0), entity_name("") {}

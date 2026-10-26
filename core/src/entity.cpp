@@ -161,7 +161,7 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
         entity->_quads.push_back(_glenv->getQuad(entity->_quad_ids.back()));
     }
     
-    // instantiate each EntityCollider in info and push to entity's storage
+    // instantiate each EntityCollider in info and push to entity's storage (attaches nullable ref internally)
     for (const std::string& ecn : ei.entitycollider_names)
         entity->_entitycolliders.push_back(_collisionspace->spawnEntityCollider(ecn.c_str(), entity, *active_transform));
 
@@ -420,6 +420,7 @@ EntityCollider* CollisionSpace::spawnEntityCollider(const char* entitycollider_n
     collider->_prev_scale = collider->_cur_scale;
 
     collider->_entity = entity;
+    entity->attachNullableRef(&collider->_entity);
 
     return collider;
 }
@@ -430,8 +431,11 @@ void CollisionSpace::detectCollisionAABB() {
     // perform pair-wise collision detection
     for (auto iter1 = _colliders.begin(); iter1 != _colliders.end(); iter1++) {
 
-        // get Collider and skip if scale is zeroed out
+        // get Collider and skip if entity is invalid or if scale is zeroed out
         EntityCollider* c1 = *iter1;
+
+        if (!c1->_entity || c1->_entity->getKillEnqueued())
+            continue;
         if (!(c1->_collision_enabled) || (c1->_cur_scale == glm::vec3(0.0f)))
             continue;
 
@@ -439,8 +443,10 @@ void CollisionSpace::detectCollisionAABB() {
         iter2++;
         for (;iter2 != _colliders.end(); iter2++) {
 
-            // get other T and skip if scale is zeroed out (check t1's enable flag again in case it was unset this outer loop iteration)
+            // get other T and skip if entity is invalid or if scale is zeroed out
             EntityCollider* c2 = *iter2;
+            if (!c2->_entity || c2->_entity->getKillEnqueued())
+                continue;
             if (!(c2->_collision_enabled) || (c2->_cur_scale == glm::vec3(0.0f)))
                 continue;
 
@@ -463,11 +469,11 @@ void CollisionSpace::detectCollisionAABB() {
                 if (computeCollisionAABB({c1->_cur_pos, c1->_cur_scale}, {c2->_cur_pos, c2->_cur_scale})) {
                     // call collision methods on all entities in collider's attached entity tree, with other collider's attached entity as arg
                     for (auto& e : c1->_entity->root()->entitiesflat())
-                        if (e)
+                        if (e && !e->getKillEnqueued())
                             e->collide(c2->_entity);
 
                     for (auto& e : c2->_entity->root()->entitiesflat())
-                        if (e)
+                        if (e && !e->getKillEnqueued())
                             e->collide(c1->_entity);
                 }
             }

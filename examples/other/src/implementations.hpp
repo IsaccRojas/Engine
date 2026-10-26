@@ -123,7 +123,6 @@ class Entity_RepeatSpawn : public EntityInterface {
     void _execEntity() override;
 public:
     Entity_RepeatSpawn();
-    int lifetime;
     int spawnrate;
     int spawnrate_cooldown;
     std::string entity_name;
