@@ -65,7 +65,7 @@ Entity_Enemy_Chaser::Entity_Enemy_Chaser() : _entity_travel(nullptr), speed(0.5f
 
 void Entity_LightBall::_initEntity() {
     Entity_Lifetime* lifetime = globalstate.container_Lifetime.getNode(this);
-    lifetime->lifetime = 1.0f;
+    lifetime->lifetime = 90.0f;
 
     Entity_RepeatSpawn* repeatspawn = globalstate.container_RepeatSpawn.getNode(this);
     repeatspawn->entity_name = "Entity_LightParticle";
@@ -121,11 +121,8 @@ void Entity_Player::_execEntity() {
     }
 
     if (_shoot_cooldown <= 0.0f && globalstate.input.get_space()) {
-        _shoot_cooldown = _shoot_cooldown_max;
-
         globalstate.executor.spawnEntity("Entity_LightBall", globaltransform());
-        Entity_Lifetime* ball = globalstate.container_Lifetime.getLastNode();
-        ball->lifetime = 90.0f;
+        _shoot_cooldown = _shoot_cooldown_max;
     }
 
     pos += vel;
