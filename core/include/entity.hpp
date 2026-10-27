@@ -397,7 +397,7 @@ public:
    }
 
    /* Returns instance of type T corresponding to address vt. Returns nullptr if it does not exist. */
-   EntityT* getNode(EntityInterface* t) {
+   EntityT* get(EntityInterface* t) {
       if (_Ts.empty())
          return nullptr;
 
@@ -409,7 +409,7 @@ public:
    }
 
    /* Returns the last instance inserted. Returns nullptr if empty. */
-   EntityT* getLastNode() {
+   EntityT* getLast() {
       if (_Ts.empty())
          return nullptr;
       return _last_inst;

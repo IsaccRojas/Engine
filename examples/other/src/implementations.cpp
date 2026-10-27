@@ -11,15 +11,15 @@ GlobalState::GlobalState() : executor(EXECUTION_QUEUES, &glenv, &collisionspace)
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_Enemy_Chaser::_initEntity() {
-    Entity_Being* being = globalstate.resource_Being.container.getNode(this);
+    Entity_Being* being = globalstate.resource_Being.container.get(this);
     being->hurt_cooldown_max = 4.0f;
     being->health = 3.0f;
 
-    _entity_travel = globalstate.resource_Travel.container.getNode(this);
+    _entity_travel = globalstate.resource_Travel.container.get(this);
     _entity_travel->vel = glm::vec3(speed, 0.0f, 0.0f);
     _entity_travel->lock(&key());
 
-    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.getNode(this);
+    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.get(this);
     hitbox->damage = 5.0f;
 }
 
@@ -32,7 +32,7 @@ void Entity_Enemy_Chaser::_execEntity() {
     } else {
         // if no target set, get and lock player; otherwise, check if it needs to be unlocked
         if (!_entity_travel->target) {
-            _entity_travel->target = globalstate.resource_Player.container.getLastNode();
+            _entity_travel->target = globalstate.resource_Player.container.getLast();
             if (_entity_travel->target)
                 _entity_travel->target->lock(&key());
         } else {
@@ -45,7 +45,7 @@ void Entity_Enemy_Chaser::_execEntity() {
 }
 
 void Entity_Enemy_Chaser::_collideEntity(EntityInterface* other) {
-    if (!getKillEnqueued() && globalstate.resource_Being.container.getNode(other))
+    if (!getKillEnqueued() && globalstate.resource_Being.container.get(other))
         root()->enqueueKillAll();
 }
 
@@ -54,17 +54,17 @@ Entity_Enemy_Chaser::Entity_Enemy_Chaser() : _entity_travel(nullptr), speed(0.5f
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_LightBall::_initEntity() {
-    Entity_Lifetime* lifetime = globalstate.resource_Lifetime.container.getNode(this);
+    Entity_Lifetime* lifetime = globalstate.resource_Lifetime.container.get(this);
     lifetime->lifetime = 90.0f;
 
-    Entity_RepeatSpawn* repeatspawn = globalstate.resource_RepeatSpawn.container.getNode(this);
+    Entity_RepeatSpawn* repeatspawn = globalstate.resource_RepeatSpawn.container.get(this);
     repeatspawn->entity_name = "Entity_LightParticle";
     repeatspawn->spawnrate = 4.0f;
 
-    Entity_Travel* travel = globalstate.resource_Travel.container.getNode(this);
+    Entity_Travel* travel = globalstate.resource_Travel.container.get(this);
     travel->vel = glm::vec3(1.0f, 0.0f, 0.0f);
 
-    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.getNode(this);
+    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.get(this);
     hitbox->damage = 1.0f;
 }
 
@@ -75,18 +75,18 @@ void Entity_LightBall::_collideEntity(EntityInterface* other) {
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_LightParticle::_initEntity() {
-    Entity_Lifetime* lifetime = globalstate.resource_Lifetime.container.getNode(this);
+    Entity_Lifetime* lifetime = globalstate.resource_Lifetime.container.get(this);
     lifetime->lifetime = 24.0f;
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_Player::_initEntity() {
-    Entity_Being* being = globalstate.resource_Being.container.getNode(this);
+    Entity_Being* being = globalstate.resource_Being.container.get(this);
     being->hurt_cooldown_max = 30.0f;
     being->health = 10.0f;
 
-    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.getNode(this);
+    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.get(this);
     hitbox->damage = 1.0f;
 }
 
@@ -143,7 +143,7 @@ void Entity_Being::_execEntity() {
 }
 
 void Entity_Being::_collideEntity(EntityInterface* other) {
-    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.getNode(other);
+    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.get(other);
     if (hitbox) {
         if (hurt_cooldown <= 0.0f) {
             health -= hitbox->damage;
