@@ -6,30 +6,20 @@ const unsigned EXECUTION_QUEUES = 2;
 
 const float diag_factor = glm::sin(glm::radians(45.0f));
 
-GlobalState::GlobalState() : 
-    executor(EXECUTION_QUEUES, &glenv, &collisionspace)
-{
-    allocator_Player.provider().attach(&globalstate.container_Player);
-    allocator_Being.provider().attach(&globalstate.container_Being);
-    allocator_Hitbox.provider().attach(&globalstate.container_Hitbox);
-    allocator_Travel.provider().attach(&globalstate.container_Travel);
-    allocator_Lifetime.provider().attach(&globalstate.container_Lifetime);
-    allocator_Pickup.provider().attach(&globalstate.container_Pickup);
-    allocator_RepeatSpawn.provider().attach(&globalstate.container_RepeatSpawn);
-}
+GlobalState::GlobalState() : executor(EXECUTION_QUEUES, &glenv, &collisionspace) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_Enemy_Chaser::_initEntity() {
-    Entity_Being* being = globalstate.container_Being.getNode(this);
+    Entity_Being* being = globalstate.resource_Being.container.getNode(this);
     being->hurt_cooldown_max = 4.0f;
     being->health = 3.0f;
 
-    _entity_travel = globalstate.container_Travel.getNode(this);
+    _entity_travel = globalstate.resource_Travel.container.getNode(this);
     _entity_travel->vel = glm::vec3(speed, 0.0f, 0.0f);
     _entity_travel->lock(&key());
 
-    Entity_Hitbox* hitbox = globalstate.container_Hitbox.getNode(this);
+    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.getNode(this);
     hitbox->damage = 5.0f;
 }
 
@@ -42,7 +32,7 @@ void Entity_Enemy_Chaser::_execEntity() {
     } else {
         // if no target set, get and lock player; otherwise, check if it needs to be unlocked
         if (!_entity_travel->target) {
-            _entity_travel->target = globalstate.container_Player.getLastNode();
+            _entity_travel->target = globalstate.resource_Player.container.getLastNode();
             if (_entity_travel->target)
                 _entity_travel->target->lock(&key());
         } else {
@@ -55,7 +45,7 @@ void Entity_Enemy_Chaser::_execEntity() {
 }
 
 void Entity_Enemy_Chaser::_collideEntity(EntityInterface* other) {
-    if (!getKillEnqueued() && globalstate.container_Being.getNode(other))
+    if (!getKillEnqueued() && globalstate.resource_Being.container.getNode(other))
         root()->enqueueKillAll();
 }
 
@@ -64,17 +54,17 @@ Entity_Enemy_Chaser::Entity_Enemy_Chaser() : _entity_travel(nullptr), speed(0.5f
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_LightBall::_initEntity() {
-    Entity_Lifetime* lifetime = globalstate.container_Lifetime.getNode(this);
+    Entity_Lifetime* lifetime = globalstate.resource_Lifetime.container.getNode(this);
     lifetime->lifetime = 90.0f;
 
-    Entity_RepeatSpawn* repeatspawn = globalstate.container_RepeatSpawn.getNode(this);
+    Entity_RepeatSpawn* repeatspawn = globalstate.resource_RepeatSpawn.container.getNode(this);
     repeatspawn->entity_name = "Entity_LightParticle";
     repeatspawn->spawnrate = 4.0f;
 
-    Entity_Travel* travel = globalstate.container_Travel.getNode(this);
+    Entity_Travel* travel = globalstate.resource_Travel.container.getNode(this);
     travel->vel = glm::vec3(1.0f, 0.0f, 0.0f);
 
-    Entity_Hitbox* hitbox = globalstate.container_Hitbox.getNode(this);
+    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.getNode(this);
     hitbox->damage = 1.0f;
 }
 
@@ -85,18 +75,18 @@ void Entity_LightBall::_collideEntity(EntityInterface* other) {
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_LightParticle::_initEntity() {
-    Entity_Lifetime* lifetime = globalstate.container_Lifetime.getNode(this);
+    Entity_Lifetime* lifetime = globalstate.resource_Lifetime.container.getNode(this);
     lifetime->lifetime = 24.0f;
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_Player::_initEntity() {
-    Entity_Being* being = globalstate.container_Being.getNode(this);
+    Entity_Being* being = globalstate.resource_Being.container.getNode(this);
     being->hurt_cooldown_max = 30.0f;
     being->health = 10.0f;
 
-    Entity_Hitbox* hitbox = globalstate.container_Hitbox.getNode(this);
+    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.getNode(this);
     hitbox->damage = 1.0f;
 }
 
@@ -153,7 +143,7 @@ void Entity_Being::_execEntity() {
 }
 
 void Entity_Being::_collideEntity(EntityInterface* other) {
-    Entity_Hitbox* hitbox = globalstate.container_Hitbox.getNode(other);
+    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.getNode(other);
     if (hitbox) {
         if (hurt_cooldown <= 0.0f) {
             health -= hitbox->damage;

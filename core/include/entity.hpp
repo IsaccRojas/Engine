@@ -431,4 +431,15 @@ public:
    }
 };
 
+/* class Resource<EntityT>
+   Helper class that aggregates an allocator and corresponding container of the templated type.
+   EntityT - EntityInterface covariant type to allocate and store
+*/
+template<class EntityT>
+struct Resource {
+    Resource() { allocator.provider().attach(&container); }
+    GenericProvidingEntityAllocator<EntityT> allocator;
+    EntityNodeContainer<EntityT> container;
+};
+
 #endif

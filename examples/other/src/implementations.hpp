@@ -143,25 +143,16 @@ struct GlobalState {
     CollisionSpace collisionspace;
     EntityExecutor executor;
 
-    GenericProvidingEntityAllocator<EntityInterface> genericallocator;
-    GenericProvidingEntityAllocator<Entity_Enemy_Chaser> allocator_Enemy_Chaser;
-    GenericProvidingEntityAllocator<Entity_LightBall> allocator_LightBall;
-    GenericProvidingEntityAllocator<Entity_LightParticle> allocator_LightParticle;
-    GenericProvidingEntityAllocator<Entity_Player> allocator_Player;
-    GenericProvidingEntityAllocator<Entity_Being> allocator_Being;
-    GenericProvidingEntityAllocator<Entity_Hitbox> allocator_Hitbox;
-    GenericProvidingEntityAllocator<Entity_Travel> allocator_Travel;
-    GenericProvidingEntityAllocator<Entity_Lifetime> allocator_Lifetime;
-    GenericProvidingEntityAllocator<Entity_Pickup> allocator_Pickup;
-    GenericProvidingEntityAllocator<Entity_RepeatSpawn> allocator_RepeatSpawn;
-    
-    EntityNodeContainer<Entity_Player> container_Player;
-    EntityNodeContainer<Entity_Being> container_Being;
-    EntityNodeContainer<Entity_Hitbox> container_Hitbox;
-    EntityNodeContainer<Entity_Travel> container_Travel;
-    EntityNodeContainer<Entity_Lifetime> container_Lifetime;
-    EntityNodeContainer<Entity_Pickup> container_Pickup;
-    EntityNodeContainer<Entity_RepeatSpawn> container_RepeatSpawn;
+    Resource<Entity_Enemy_Chaser> resource_Enemy_Chaser;
+    Resource<Entity_LightBall> resource_LightBall;
+    Resource<Entity_LightParticle> resource_LightParticle;
+    Resource<Entity_Player> resource_Player;
+    Resource<Entity_Being> resource_Being;
+    Resource<Entity_Hitbox> resource_Hitbox;
+    Resource<Entity_Travel> resource_Travel;
+    Resource<Entity_Lifetime> resource_Lifetime;
+    Resource<Entity_Pickup> resource_Pickup;
+    Resource<Entity_RepeatSpawn> resource_RepeatSpawn;
 
     std::unordered_map<std::string, int> inventory;
 };
