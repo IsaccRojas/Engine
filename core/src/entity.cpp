@@ -196,9 +196,6 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     ei.allocator->_onInitialization(entity);
     entity->runInit();
 
-    if (ei.spawn_callback)
-        ei.spawn_callback(entity);
-
     _entity_refs.insert(entity);
     return entity;
 }
@@ -254,9 +251,7 @@ void EntityExecutor::addEntity(EntityInfo info, const char* name) {
     ScriptExecutor::addScript(ScriptInfo{
         info.allocator, 
         info.preferred_queue, 
-        info.auto_enqueue, 
-        info.spawn_callback, 
-        info.remove_callback
+        info.auto_enqueue
         }, name);
     _entityinfos[name] = info;
 }

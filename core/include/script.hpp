@@ -144,8 +144,6 @@ struct ScriptInfo {
    ScriptAllocatorInterface* allocator;
    int preferred_queue;
    bool auto_enqueue;
-   std::function<void(ScriptInterface*)> spawn_callback;
-   std::function<void(ScriptInterface*)> remove_callback;
    // default copy assignment/construction are fine
 };
 

@@ -180,10 +180,6 @@ void ScriptExecutor::_setupScript(ScriptInterface* script, const char* script_na
     // enqueue if auto-enqueue set, and non-negative queue provided
     if (script->auto_enqueue() && script->preferred_queue() >= 0)
         enqueueExec(script, script->preferred_queue());
-    
-    // try spawn callback if it exists
-    if (info.spawn_callback)
-        info.spawn_callback(script);
 }
 
 void ScriptExecutor::_pushSpawnEnqueue(ScriptEnqueue *enqueue) {
@@ -216,10 +212,6 @@ ScriptInterface* ScriptExecutor::spawnScript(const char* script_name, bool initi
 void ScriptExecutor::erase(ScriptInterface* script) {
     // get values and info
     ScriptInfo &scriptinfo = _scriptinfos[script->_script_name];
-
-    // try removal callback if it exists
-    if (scriptinfo.remove_callback)
-        scriptinfo.remove_callback(script);
     
     scriptinfo.allocator->_onDeallocation(script);
     scriptinfo.allocator->_removeReference(script);

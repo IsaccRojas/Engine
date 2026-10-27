@@ -119,8 +119,6 @@ struct EntityInfo {
    std::list<std::string> entity_names;
    std::list<std::string> quad_names;
    std::list<std::string> entitycollider_names;
-   std::function<void(ScriptInterface*)> spawn_callback;
-   std::function<void(ScriptInterface*)> remove_callback;
    // default copy assignment/construction are fine
 };
 
