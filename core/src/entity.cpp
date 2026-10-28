@@ -392,10 +392,15 @@ CollisionSpace& CollisionSpace::operator=(CollisionSpace&& other) {
     return *this;
 }
 
-void CollisionSpace::addEntityCollider(EntityColliderInfo entitycolliderinfo, const char* name) {
-    if (hasAdded(name))
-        throw std::runtime_error((std::string("Attempt to add existing EntityColliderInfo name '") + name) + std::string("'"));
-    _entitycolliderinfos[name] = entitycolliderinfo;
+void CollisionSpace::addEntityCollider(EntityColliderInfo entitycolliderinfo) {
+    if (hasAdded(entitycolliderinfo.name.c_str()))
+        throw std::runtime_error((std::string("Attempt to add existing EntityColliderInfo name '") + entitycolliderinfo.name.c_str()) + std::string("'"));
+    _entitycolliderinfos[entitycolliderinfo.name.c_str()] = entitycolliderinfo;
+}
+
+void CollisionSpace::addEntityColliders(std::list<EntityColliderInfo> entitycolliderinfos) {
+    for (auto& i : entitycolliderinfos)
+        addEntityCollider(i);
 }
 
 EntityCollider* CollisionSpace::spawnEntityCollider(const char* entitycollider_name, EntityInterface* entity, Transform transform) {

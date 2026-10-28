@@ -269,6 +269,7 @@ struct EntityColliderInfo {
    glm::vec3 pos;
    glm::vec3 scale;
    Filter filter;
+   std::string name;
 };
 
 /* class CollisionSpace
@@ -290,7 +291,8 @@ public:
    CollisionSpace& operator=(CollisionSpace&& other);
    CollisionSpace& operator=(const CollisionSpace& other) = delete;
 
-   void addEntityCollider(EntityColliderInfo entitycolliderinfo, const char* name);
+   void addEntityCollider(EntityColliderInfo entitycolliderinfo);
+   void addEntityColliders(std::list<EntityColliderInfo> entitycolliderinfos);
 
    /* Spawns a EntityCollider and returns a reference to it (attaches nullable ref to entity). */
    EntityCollider* spawnEntityCollider(const char* entitycollider_name, EntityInterface* entity, Transform transform);

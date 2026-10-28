@@ -72,9 +72,11 @@ void loadAssets() {
         {glm::vec3(0.0f, 0.0f, 0.5f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_LightParticle"], "Quad_LightParticle"}
     });
 
-    globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Player"]}, "EntityCollider_Player");
-    globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Player"]}, "EntityCollider_LightBall");
-    globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), (0.75f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Enemy"]}, "EntityCollider_Chaser");
+    globalstate.collisionspace.addEntityColliders({
+        {glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Player"], "EntityCollider_Player"},
+        {glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Player"], "EntityCollider_LightBall"},
+        {glm::vec3(0.0f), (0.75f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Enemy"], "EntityCollider_Chaser"}
+    });
     
     globalstate.executor.addEntities({
         {&globalstate.resource_RepeatSpawn.allocator, 0, true, {}, {}, {}, "Entity_RepeatSpawn"},
