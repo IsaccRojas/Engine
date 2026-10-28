@@ -59,9 +59,10 @@ public:
 /* struct QuadInfo 
    Collection of information of a Quad that can be used when adding named Quad info to GLEnv instances.
    pos - position of Quad
-   scale = scale of Quad
-   color = color of Quad
-   animation = Animation for Quad to use
+   scale - scale of Quad
+   color - color of Quad
+   animation - Animation for Quad to use
+   name - name of the QuadInfo
 
 */
 struct QuadInfo {
@@ -69,6 +70,7 @@ struct QuadInfo {
    glm::vec3 scale;
    glm::vec4 color;
    Animation animation;
+   std::string name;
 };
 
 /* class GLEnv
@@ -146,7 +148,8 @@ public:
    void uninit();
    
    /* Stores QuadInfo mapped to provided name for use when generating Quads. */
-   void addQuad(QuadInfo quadinfo, const char* name);
+   void addQuad(QuadInfo quadinfo);
+   void addQuads(std::list<QuadInfo> quadinfos);
    /* Generates an active Quad in system using the specified QuadInfo and Transform (applied on top of QuadInfo transform), or values. 
       This call does not write the new Quad into graphic memory. You must call the updateBVecs() method on the environment or a 
       reference to the Quad itself.

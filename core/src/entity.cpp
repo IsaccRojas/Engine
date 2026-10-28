@@ -200,16 +200,16 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     return entity;
 }
 
-void EntityExecutor::addEntity(EntityInfo info, const char* name) {
+void EntityExecutor::addEntity(EntityInfo info) {
     std::list<std::string> entity_names_flat;
 
     // check names
-    if (hasAdded(name))
-        throw std::runtime_error((std::string("Attempt to add existing EntityInfo name '") + name) + std::string("'"));
+    if (hasAdded(info.info_name.c_str()))
+        throw std::runtime_error((std::string("Attempt to add existing EntityInfo name '") + info.info_name.c_str()) + std::string("'"));
     for (auto &i: info.quad_names)
         if (!_glenv->hasAdded(i.c_str()))
             throw std::runtime_error(
-                (std::string("Attempt to add EntityInfo name '") + name) 
+                (std::string("Attempt to add EntityInfo name '") + info.info_name.c_str()) 
                 + std::string("'") 
                 + (std::string(" with non-existent QuadInfo name '") + i) 
                 + std::string("'")
@@ -217,7 +217,7 @@ void EntityExecutor::addEntity(EntityInfo info, const char* name) {
     for (auto &i: info.entitycollider_names)
         if (!_collisionspace->hasAdded(i.c_str()))
             throw std::runtime_error(
-                (std::string("Attempt to add EntityInfo name '") + name) 
+                (std::string("Attempt to add EntityInfo name '") + info.info_name.c_str()) 
                 + std::string("'") 
                 + (std::string(" with non-existent EntityColliderInfo name '") + i) 
                 + std::string("'")
@@ -226,7 +226,7 @@ void EntityExecutor::addEntity(EntityInfo info, const char* name) {
     for (auto &i: info.entity_names) {
         if (!hasAdded(i.c_str()))
             throw std::runtime_error(
-                (std::string("Attempt to add EntityInfo name '") + name) 
+                (std::string("Attempt to add EntityInfo name '") + info.info_name.c_str()) 
                 + std::string("'") 
                 + (std::string(" with non-existent contained EntityInfo name '") + i) 
                 + std::string("'")
@@ -241,7 +241,7 @@ void EntityExecutor::addEntity(EntityInfo info, const char* name) {
     std::string s = hasDuplicate(entity_names_flat);
     if (s != "")
         throw std::runtime_error(
-            (std::string("Attempt to add EntityInfo name '") + name) 
+            (std::string("Attempt to add EntityInfo name '") + info.info_name.c_str()) 
             + std::string("'") 
             + (std::string(" with multiple contained EntityInfo names '") + s) 
             + std::string("'")
@@ -251,9 +251,15 @@ void EntityExecutor::addEntity(EntityInfo info, const char* name) {
     ScriptExecutor::addScript(ScriptInfo{
         info.allocator, 
         info.preferred_queue, 
-        info.auto_enqueue
-        }, name);
-    _entityinfos[name] = info;
+        info.auto_enqueue,
+        info.info_name
+    });
+    _entityinfos[info.info_name.c_str()] = info;
+}
+
+void EntityExecutor::addEntities(std::list<EntityInfo> infos) {
+    for (auto& i : infos)
+        addEntity(i);
 }
 
 void EntityExecutor::enqueueSpawnEntity(const char* entity_name, Transform transform) {

@@ -144,6 +144,7 @@ struct ScriptInfo {
    ScriptAllocatorInterface* allocator;
    int preferred_queue;
    bool auto_enqueue;
+   std::string info_name;
    // default copy assignment/construction are fine
 };
 
@@ -209,7 +210,7 @@ public:
       - ScriptInfo - instance of ScriptInfo with allocation/initialization information
       - name - name to associate with the ScriptInfo instance
    */
-   void addScript(ScriptInfo scriptinfo, const char* name);
+   void addScript(ScriptInfo scriptinfo);
 
    /* Spawns a script using a name previously added to this ScriptExecutor, calls its runInit() method if specified, and returns a script reference of it. */
    ScriptInterface* spawnScript(const char* script_name, bool initialize);

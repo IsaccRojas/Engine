@@ -282,10 +282,15 @@ void GLEnv::uninit() {
     _initialized = false;
 }
 
-void GLEnv::addQuad(QuadInfo quadinfo, const char* name) {
-    if (hasAdded(name))
-        throw std::runtime_error((std::string("Attempt to add existing QuadInfo name '") + name) + std::string("'"));
-    _quadinfos[name] = quadinfo;
+void GLEnv::addQuad(QuadInfo quadinfo) {
+    if (hasAdded(quadinfo.name.c_str()))
+        throw std::runtime_error((std::string("Attempt to add existing QuadInfo name '") + quadinfo.name.c_str()) + std::string("'"));
+    _quadinfos[quadinfo.name.c_str()] = quadinfo;
+}
+
+void GLEnv::addQuads(std::list<QuadInfo> quadinfos) {
+    for (auto& i : quadinfos)
+        addQuad(i);
 }
 
 unsigned GLEnv::genQuad(glm::vec3 pos, glm::vec3 scale, glm::vec4 color, glm::vec3 texpos, glm::vec2 texsize) {

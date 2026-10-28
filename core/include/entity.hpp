@@ -111,6 +111,7 @@ public:
    std::list<std::string> entitycollider_names - list of EntityCollider names for this entity to contain
    std::function<void(ScriptInterface*)> spawn_callback - called on instantiation (before initialization)
    std::function<void(ScriptInterface*)> remove_callback - called on deletion (after kill processing)
+   std::string entity_name - name this info is to correspond to
 */
 struct EntityInfo {
    EntityAllocatorInterface* allocator;
@@ -119,6 +120,7 @@ struct EntityInfo {
    std::list<std::string> entity_names;
    std::list<std::string> quad_names;
    std::list<std::string> entitycollider_names;
+   std::string info_name;
    // default copy assignment/construction are fine
 };
 
@@ -165,9 +167,9 @@ public:
       An EntityInfo name may only appear once within the Entity hierarchy defined by the instance to be added.
       Contained EntityInfos in the instance to be added must already be added.
       - info - instance of EntityInfo with allocation/initialization information
-      - name - name to associate with the EntityInfo instance
    */
-   void addEntity(EntityInfo info, const char* name);
+   void addEntity(EntityInfo info);
+   void addEntities(std::list<EntityInfo> infos);
 
    /* Spawns an entity using a name previously added to this executor, and returns its ID. */
    EntityInterface* spawnEntity(const char* entity_name, Transform transform);

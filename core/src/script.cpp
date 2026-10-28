@@ -186,10 +186,10 @@ void ScriptExecutor::_pushSpawnEnqueue(ScriptEnqueue *enqueue) {
     _scriptenqueues.push(enqueue);
 }
 
-void ScriptExecutor::addScript(ScriptInfo scriptinfo, const char* name) {  
-    if (hasAdded(name))
-        throw std::runtime_error((std::string("Attempt to add existing ScriptInfo name '") + name) + std::string("'"));
-    _scriptinfos[name] = scriptinfo;
+void ScriptExecutor::addScript(ScriptInfo scriptinfo) {  
+    if (hasAdded(scriptinfo.info_name.c_str()))
+        throw std::runtime_error((std::string("Attempt to add existing ScriptInfo name '") + scriptinfo.info_name.c_str()) + std::string("'"));
+    _scriptinfos[scriptinfo.info_name.c_str()] = scriptinfo;
         
 }
 

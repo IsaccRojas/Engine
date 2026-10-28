@@ -65,25 +65,29 @@ void loadAssets() {
     
     glm::vec3 unit_scale = glm::vec3(UNIT_PIXEL_WIDTH, UNIT_PIXEL_HEIGHT, 0.0f);
 
-    globalstate.glenv.addQuad(QuadInfo{glm::vec3(0.0f, 0.0f, 0.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_Player"]}, "Quad_Player");
-    globalstate.glenv.addQuad(QuadInfo{glm::vec3(0.0f, 0.0f, 0.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_Chaser"]}, "Quad_Chaser");
-    globalstate.glenv.addQuad(QuadInfo{glm::vec3(0.0f, 0.0f, 1.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_LightBall"]}, "Quad_LightBall");
-    globalstate.glenv.addQuad(QuadInfo{glm::vec3(0.0f, 0.0f, 0.5f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_LightParticle"]}, "Quad_LightParticle");
+    globalstate.glenv.addQuads({
+        {glm::vec3(0.0f, 0.0f, 0.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_Player"], "Quad_Player"},
+        {glm::vec3(0.0f, 0.0f, 0.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_Chaser"], "Quad_Chaser"},
+        {glm::vec3(0.0f, 0.0f, 1.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_LightBall"], "Quad_LightBall"},
+        {glm::vec3(0.0f, 0.0f, 0.5f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_LightParticle"], "Quad_LightParticle"}
+    });
 
     globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Player"]}, "EntityCollider_Player");
     globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Player"]}, "EntityCollider_LightBall");
     globalstate.collisionspace.addEntityCollider(EntityColliderInfo{glm::vec3(0.0f), (0.75f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f), globalstate.filters["Filter_Enemy"]}, "EntityCollider_Chaser");
     
-    globalstate.executor.addEntity(EntityInfo{&globalstate.resource_RepeatSpawn.allocator, 0, true}, "Entity_RepeatSpawn");
-    globalstate.executor.addEntity(EntityInfo{&globalstate.resource_Pickup.allocator, 0, true}, "Entity_Pickup");
-    globalstate.executor.addEntity(EntityInfo{&globalstate.resource_Lifetime.allocator, 0, true}, "Entity_Lifetime");
-    globalstate.executor.addEntity(EntityInfo{&globalstate.resource_Travel.allocator, 0, true}, "Entity_Travel");
-    globalstate.executor.addEntity(EntityInfo{&globalstate.resource_Hitbox.allocator, 0, true}, "Entity_Hitbox");
-    globalstate.executor.addEntity(EntityInfo{&globalstate.resource_Being.allocator, 0, true}, "Entity_Being");
-    globalstate.executor.addEntity(EntityInfo{&globalstate.resource_Player.allocator, 0, true, {"Entity_Being", "Entity_Hitbox"}, {"Quad_Player"}, {"EntityCollider_Player"}}, "Entity_Player");
-    globalstate.executor.addEntity(EntityInfo{&globalstate.resource_LightBall.allocator, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn", "Entity_Travel", "Entity_Hitbox"}, {"Quad_LightBall"}, {"EntityCollider_LightBall"}}, "Entity_LightBall");
-    globalstate.executor.addEntity(EntityInfo{&globalstate.resource_LightParticle.allocator, 0, true, {"Entity_Lifetime"}, {"Quad_LightParticle"}, {}}, "Entity_LightParticle");
-    globalstate.executor.addEntity(EntityInfo{&globalstate.resource_Enemy_Chaser.allocator, 0, true, {"Entity_Being", "Entity_Travel", "Entity_Hitbox"}, {"Quad_Chaser"}, {"EntityCollider_Chaser"}}, "Entity_Enemy_Chaser");
+    globalstate.executor.addEntities({
+        {&globalstate.resource_RepeatSpawn.allocator, 0, true, {}, {}, {}, "Entity_RepeatSpawn"},
+        {&globalstate.resource_Pickup.allocator, 0, true, {}, {}, {}, "Entity_Pickup"},
+        {&globalstate.resource_Lifetime.allocator, 0, true, {}, {}, {}, "Entity_Lifetime"},
+        {&globalstate.resource_Travel.allocator, 0, true, {}, {}, {}, "Entity_Travel"},
+        {&globalstate.resource_Hitbox.allocator, 0, true, {}, {}, {}, "Entity_Hitbox"},
+        {&globalstate.resource_Being.allocator, 0, true, {}, {}, {}, "Entity_Being"},
+        {&globalstate.resource_Player.allocator, 0, true, {"Entity_Being", "Entity_Hitbox"}, {"Quad_Player"}, {"EntityCollider_Player"}, "Entity_Player"},
+        {&globalstate.resource_LightBall.allocator, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn", "Entity_Travel", "Entity_Hitbox"}, {"Quad_LightBall"}, {"EntityCollider_LightBall"}, "Entity_LightBall"},
+        {&globalstate.resource_LightParticle.allocator, 0, true, {"Entity_Lifetime"}, {"Quad_LightParticle"}, {}, "Entity_LightParticle"},
+        {&globalstate.resource_Enemy_Chaser.allocator, 0, true, {"Entity_Being", "Entity_Travel", "Entity_Hitbox"}, {"Quad_Chaser"}, {"EntityCollider_Chaser"}, "Entity_Enemy_Chaser"}
+    });
 }
 
 void initialize() {
