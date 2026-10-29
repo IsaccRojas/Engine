@@ -152,7 +152,7 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     // reserve memory for each stored vector to guarantee memory addresses
     entity->_quad_ids.reserve(ei.quad_names.size());
     entity->_quads.reserve(ei.quad_names.size());
-    entity->_entitycolliders.reserve(ei.entitycollider_names.size());
+    entity->_entitycolliders.reserve(ei.entitycolliderargs.size());
     entity->_entities.resize(ei.entity_names.size());
 
     // instantiate each Quad in info and push to entity's storage
@@ -162,8 +162,8 @@ EntityInterface* EntityExecutor::_spawnEntityNode(const char* entity_name, Entit
     }
     
     // instantiate each EntityCollider in info and push to entity's storage (attaches nullable ref internally)
-    for (const std::string& ecn : ei.entitycollider_names)
-        entity->_entitycolliders.push_back(_collisionspace->spawnEntityCollider(ecn.c_str(), entity, *active_transform));
+    for (const EntityColliderArgs& eca : ei.entitycolliderargs)
+        entity->_entitycolliders.push_back(_collisionspace->spawnEntityCollider(eca, entity, *active_transform));
 
     // initialize fields before running init methods
     entity->_entity_name = entity_name;
@@ -214,15 +214,6 @@ void EntityExecutor::addEntity(EntityInfo info) {
                 + (std::string(" with non-existent QuadInfo name '") + i) 
                 + std::string("'")
             );
-    for (auto &i: info.entitycollider_names)
-        if (!_collisionspace->hasAdded(i.c_str()))
-            throw std::runtime_error(
-                (std::string("Attempt to add EntityInfo name '") + info.info_name.c_str()) 
-                + std::string("'") 
-                + (std::string(" with non-existent EntityColliderInfo name '") + i) 
-                + std::string("'")
-            );
-
     for (auto &i: info.entity_names) {
         if (!hasAdded(i.c_str()))
             throw std::runtime_error(
@@ -403,21 +394,16 @@ void CollisionSpace::addEntityColliders(std::list<EntityColliderInfo> entitycoll
         addEntityCollider(i);
 }
 
-EntityCollider* CollisionSpace::spawnEntityCollider(const char* entitycollider_name, EntityInterface* entity, Transform transform) {
-    auto eci_iter = _entitycolliderinfos.find(entitycollider_name);
-    if (eci_iter == _entitycolliderinfos.end())
-        throw std::runtime_error((std::string("Attempt to spawn EntityCollider with non-existent EntityColliderInfo name '") + entitycollider_name) + std::string("'"));
-
+EntityCollider* CollisionSpace::spawnEntityCollider(Transform base_transform, Filter* filter, EntityInterface* entity, Transform transform) {
     EntityCollider* collider = new EntityCollider;
-    EntityColliderInfo &eci = eci_iter->second;
     
     collider->_collisionspace = this;
     collider->_this_iter = _colliders.push_back(collider);
-    collider->_filterstate.setFilter(&(eci.filter));
+    collider->_filterstate.setFilter(filter);
 
     collider->collision_enabled() = true;
-    collider->_base_pos = eci.pos;
-    collider->_base_scale = eci.scale;
+    collider->_base_pos = base_transform.pos;
+    collider->_base_scale = base_transform.scale;
 
     collider->resetTransformation();
     collider->applyTransform(transform);
@@ -429,6 +415,19 @@ EntityCollider* CollisionSpace::spawnEntityCollider(const char* entitycollider_n
     entity->attachNullableRef(&collider->_entity);
 
     return collider;
+}
+
+EntityCollider* CollisionSpace::spawnEntityCollider(EntityColliderArgs args, EntityInterface* entity, Transform transform) {
+    return spawnEntityCollider(args.transform, args.filter, entity, transform);
+}
+
+EntityCollider* CollisionSpace::spawnEntityCollider(const char* entitycollider_name, EntityInterface* entity, Transform transform) {
+    auto eci_iter = _entitycolliderinfos.find(entitycollider_name);
+    if (eci_iter == _entitycolliderinfos.end())
+        throw std::runtime_error((std::string("Attempt to spawn EntityCollider with non-existent EntityColliderInfo name '") + entitycollider_name) + std::string("'"));
+
+    EntityColliderInfo &eci = eci_iter->second;
+    return spawnEntityCollider(eci.transform, &eci.filter, entity, transform);
 }
 
 void CollisionSpace::erase(EntityCollider* collider) { _colliders.erase(collider->_this_iter); }

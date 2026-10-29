@@ -7,6 +7,7 @@
 
 class EntityExecutor;
 class EntityCollider;
+struct EntityColliderArgs;
 class CollisionSpace;
 class EntityAllocatorInterface;
 
@@ -119,7 +120,7 @@ struct EntityInfo {
    bool auto_enqueue;
    std::list<std::string> entity_names;
    std::list<std::string> quad_names;
-   std::list<std::string> entitycollider_names;
+   std::list<EntityColliderArgs> entitycolliderargs;
    std::string info_name;
    // default copy assignment/construction are fine
 };
@@ -266,10 +267,14 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 struct EntityColliderInfo {
-   glm::vec3 pos;
-   glm::vec3 scale;
+   Transform transform;
    Filter filter;
    std::string name;
+};
+
+struct EntityColliderArgs {
+   Transform transform;
+   Filter* filter;
 };
 
 /* class CollisionSpace
@@ -295,6 +300,8 @@ public:
    void addEntityColliders(std::list<EntityColliderInfo> entitycolliderinfos);
 
    /* Spawns a EntityCollider and returns a reference to it (attaches nullable ref to entity). */
+   EntityCollider* spawnEntityCollider(Transform base_transform, Filter* filter, EntityInterface* entity, Transform transform);
+   EntityCollider* spawnEntityCollider(EntityColliderArgs args, EntityInterface* entity, Transform transform);
    EntityCollider* spawnEntityCollider(const char* entitycollider_name, EntityInterface* entity, Transform transform);
 
    /* Erases the EntityCollider referenced by the provided EntityCollider. */
