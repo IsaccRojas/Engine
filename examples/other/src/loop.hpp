@@ -12,5 +12,9 @@
 /* Primary program execution loop.
 */
 void loop();
+void checkState();
+void runState_Start();
+void runState_StageContinue();
+void runState_StageComplete();
 
 #endif

@@ -155,6 +155,11 @@ struct GlobalState {
     Resource<Entity_RepeatSpawn> resource_RepeatSpawn;
 
     std::unordered_map<std::string, int> inventory;
+
+    EntityInterface* player;
+    int game_state;
+    float progress;
+    int spawn_cooldown;
 };
 
 extern GlobalState globalstate;

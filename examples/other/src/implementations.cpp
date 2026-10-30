@@ -6,7 +6,7 @@ const unsigned EXECUTION_QUEUES = 2;
 
 const float diag_factor = glm::sin(glm::radians(45.0f));
 
-GlobalState::GlobalState() : executor(EXECUTION_QUEUES, &glenv, &collisionspace) {}
+GlobalState::GlobalState() : executor(EXECUTION_QUEUES, &glenv, &collisionspace), game_state(0), progress(0.0f), spawn_cooldown(120) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 

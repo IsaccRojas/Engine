@@ -1,24 +1,25 @@
 #include "loop.hpp"
 
 void loop() {
-    globalstate.executor.spawnEntity("Entity_Player", Transform{});
-    globalstate.executor.spawnEntity("Entity_Enemy_Chaser", Transform{glm::vec3(96.0f, 96.0f, 0.0f), glm::vec3(1.0f)});
-
-    int cooldown = 120;
-    
     std::cout << "Running loop" << std::endl;
     while (!glfwWindowShouldClose(globalstate.glfwstate.getWindowHandle()) && !globalstate.input.get_esc()) {
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        if (cooldown > 0)
-            cooldown--;
-        
-        if (cooldown == 0) {
-            globalstate.executor.spawnEntity("Entity_Enemy_Chaser", Transform{glm::vec3(32.0f + (rand() % 64), (rand() % 128) - 64, 0.0f), glm::vec3(1.0f)});
-            cooldown = 90 + (rand() % 90);
+        checkState();
+        switch (globalstate.game_state) {
+            case 0:
+                runState_Start();
+                break;
+            case 1:
+                runState_StageContinue();
+                break;
+            case 2:
+                runState_StageComplete();
+                break;
+            default:
+                throw std::runtime_error("Invalid state in loop()");
         }
-        
 
         globalstate.collisionspace.detectCollisionAABB();
 
@@ -37,4 +38,59 @@ void loop() {
     };
 
     std::cout << "Ending loop" << std::endl;
+}
+
+void checkState() {
+    switch (globalstate.game_state) {
+        case 0:
+            // transition to 1
+            if (globalstate.input.get_space()) {
+                if (!globalstate.player) {
+                    globalstate.player = globalstate.executor.spawnEntity("Entity_Player", Transform{});
+                    globalstate.player->attachNullableRef(&globalstate.player);
+                }
+                globalstate.game_state = 1;
+            }
+            break;
+
+        case 1:
+            // transition to 0
+            if (!globalstate.player) {
+                globalstate.game_state = 0;
+                break;
+            }
+
+            // transition to 2
+            if (globalstate.progress >= 100.0f) {
+                globalstate.game_state = 2;
+                break;
+            }
+            break;
+
+        case 2:
+            // transition to 1
+            globalstate.game_state = 1;
+            break;
+        
+        default:
+            throw std::runtime_error("Invalid state in checkState()");
+    }
+}
+
+void runState_Start() {
+
+}
+
+void runState_StageContinue() {
+    if (globalstate.spawn_cooldown > 0)
+        globalstate.spawn_cooldown--;
+    
+    if (globalstate.spawn_cooldown == 0) {
+        globalstate.executor.spawnEntity("Entity_Enemy_Chaser", Transform{glm::vec3(32.0f + (rand() % 64), (rand() % 128) - 64, 0.0f), glm::vec3(1.0f)});
+        globalstate.spawn_cooldown = 90 + (rand() % 90);
+    }
+}
+
+void runState_StageComplete() {
+
 }
