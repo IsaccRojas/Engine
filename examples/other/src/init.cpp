@@ -35,7 +35,8 @@ void loadAssets() {
             Cycle("default", false, {
                 Frame(vec3(16.0f, 16.0f, 0.0f), vec2(16.0f), 6),
                 Frame(vec3(32.0f, 16.0f, 0.0f), vec2(16.0f), 6),
-                Frame(vec3(48.0f, 16.0f, 0.0f), vec2(16.0f), 6)
+                Frame(vec3(48.0f, 16.0f, 0.0f), vec2(16.0f), 6),
+                Frame(vec3(64.0f, 16.0f, 0.0f), vec2(16.0f), 6)
             })
         });
     globalstate.animations["Animation_Player"] =
@@ -87,13 +88,14 @@ void loadAssets() {
         {&globalstate.resource_Pickup.allocator, 0, true, {}, {}, {}, "Entity_Pickup"},
         {&globalstate.resource_Lifetime.allocator, 0, true, {}, {}, {}, "Entity_Lifetime"},
         {&globalstate.resource_Travel.allocator, 0, true, {}, {}, {}, "Entity_Travel"},
+        {&globalstate.resource_AcquirePlayer.allocator, 0, true, {}, {}, {}, "Entity_AcquirePlayer"},
         {&globalstate.resource_Hitbox.allocator, 0, true, {}, {}, {}, "Entity_Hitbox"},
         {&globalstate.resource_Being.allocator, 0, true, {}, {}, {}, "Entity_Being"},
         {&globalstate.resource_Player.allocator, 0, true, {"Entity_Being", "Entity_Hitbox"}, {"Quad_Player"}, {{Transform{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Player"]}}, "Entity_Player"},
         {&globalstate.resource_LightBall.allocator, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn", "Entity_Travel", "Entity_Hitbox"}, {"Quad_LightBall"}, {{Transform{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Player"]}}, "Entity_LightBall"},
         {&globalstate.resource_LightBall.allocator, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn", "Entity_Travel", "Entity_Hitbox"}, {"Quad_SmallLightBall"}, {{Transform{glm::vec3(0.0f), (0.375f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Player"]}}, "Entity_SmallLightBall"},
         {&globalstate.resource_LightParticle.allocator, 0, true, {"Entity_Lifetime"}, {"Quad_LightParticle"}, {}, "Entity_LightParticle"},
-        {&globalstate.resource_Enemy_Chaser.allocator, 0, true, {"Entity_Being", "Entity_Travel", "Entity_Hitbox"}, {"Quad_Chaser"}, {{Transform{glm::vec3(0.0f), (0.75f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Enemy"]}}, "Entity_Enemy_Chaser"}
+        {&globalstate.resource_Enemy_Chaser.allocator, 0, true, {"Entity_Being", "Entity_AcquirePlayer", "Entity_Travel", "Entity_Hitbox"}, {"Quad_Chaser"}, {{Transform{glm::vec3(0.0f), (0.75f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Enemy"]}}, "Entity_Enemy_Chaser"}
     });
 }
 

@@ -8,14 +8,17 @@
 
 struct GlobalState;
 class Entity_Travel;
+class Entity_AcquirePlayer;
+
 // --------------------------------------------------------------------------------------------------------------------------
 
 class Entity_Enemy_Chaser : public EntityInterface {
-    Entity_Travel* _entity_travel;
-    EntityInterface* _entity_travel_nref;
-    void _initEntity() override;
-    void _execEntity() override;
-    void _collideEntity(EntityInterface* other) override;
+    Entity_Travel* t;
+    Entity_AcquirePlayer* aq;
+    void _onInitEntity() override;
+    void _onExecEntity() override;
+    void _onKillEnqueueEntity() override;
+    void _onCollisionEntity(EntityInterface* other) override;
 public:
     Entity_Enemy_Chaser();
 };
@@ -23,14 +26,14 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 class Entity_LightBall : public EntityInterface {
-    void _initEntity() override;
-    void _collideEntity(EntityInterface* other) override;
+    void _onInitEntity() override;
+    void _onCollisionEntity(EntityInterface* other) override;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 class Entity_LightParticle : public EntityInterface {
-    void _initEntity() override;
+    void _onInitEntity() override;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -40,8 +43,8 @@ class Entity_Player : public EntityInterface {
     float _shoot_cooldown;
     float _speed;
     glm::vec3 _last_input_dir;
-    void _initEntity() override;
-    void _execEntity() override;
+    void _onInitEntity() override;
+    void _onExecEntity() override;
 public:
     Entity_Player();
 };
@@ -50,8 +53,8 @@ public:
 
 class Entity_Being : public EntityInterface {
     float hurt_cooldown;
-    void _execEntity() override;
-    void _collideEntity(EntityInterface* other) override;
+    void _onExecEntity() override;
+    void _onCollisionEntity(EntityInterface* other) override;
 public:
     Entity_Being();
     float hurt_cooldown_max;
@@ -69,20 +72,34 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 /*
+    Entity_AcquirePlayer
+    Manages acquiring a random player. player is nullptr if none available.
+*/
+class Entity_AcquirePlayer : public EntityInterface {
+    void _onExecEntity() override;
+public:
+    Entity_AcquirePlayer();
+    Entity_Player* player;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+/*
     Entity_Travel
     Applies specified velocity to global transform. 
-    If target is not nullptr, applies difference in position between itself and target normalized by accel_speed, no greater 
+    If target is true, applies difference in position between itself and pos normalized by accel_speed, no greater 
     than max_speed.
-    If target is nullptr, uses current vel value.
+    If target is false, uses current vel value.
 */
 class Entity_Travel : public EntityInterface {
-    void _execEntity() override;
+    void _onExecEntity() override;
 public:
     Entity_Travel();
     glm::vec3 vel;
     float accel_speed;
     float max_speed;
-    EntityInterface* target;
+    bool target;
+    glm::vec3 pos;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -95,7 +112,7 @@ public:
     message "target" - assigns target Entity to copy position of
 */
 class Entity_Lifetime : public EntityInterface {
-    void _execEntity() override;
+    void _onExecEntity() override;
 public:
     Entity_Lifetime();
     int lifetime;
@@ -110,7 +127,7 @@ public:
     std::string item_name - name to increment in GlobalResources' inventory
 */
 class Entity_Pickup : public EntityInterface {
-    void _collideEntity(EntityInterface* other) override;
+    void _onCollisionEntity(EntityInterface* other) override;
 public:
     Entity_Pickup();
     std::string item_name;
@@ -124,7 +141,7 @@ public:
     lifetime. Does not kill itself if lifetime is negative. Spawns nothing if spawnrate is 0 or entity name is "".
 */
 class Entity_RepeatSpawn : public EntityInterface {
-    void _execEntity() override;
+    void _onExecEntity() override;
 public:
     Entity_RepeatSpawn();
     int spawnrate;
@@ -153,6 +170,7 @@ struct GlobalState {
     Resource<Entity_Player> resource_Player;
     Resource<Entity_Being> resource_Being;
     Resource<Entity_Hitbox> resource_Hitbox;
+    Resource<Entity_AcquirePlayer> resource_AcquirePlayer;
     Resource<Entity_Travel> resource_Travel;
     Resource<Entity_Lifetime> resource_Lifetime;
     Resource<Entity_Pickup> resource_Pickup;

@@ -54,13 +54,15 @@ class ScriptInterface {
    unsigned _keys_count;
 protected:
    /* Functions to be overridden by children.
-      - _init() is called by runInit(). runInit() is called on spawn.
-      - _exec() is called by runExec(). runExec() is called on execution, each time the ScriptInterface is queued.
-      - _kill() is called by runKill(). runKill() is called on erasure.
+      - _onInit() is called by runInit(). runInit() is called on spawn.
+      - _onExec() is called by runExec(). runExec() is called on execution, each time the ScriptInterface is queued.
+      - _onKill() is called by runKill(). runKill() is called on erasure.
+      - _onKillEnqueue() is called when this script is enqueued to be killed.
    */
-   virtual void _init() = 0;
-   virtual void _exec() = 0;
-   virtual void _kill() = 0;
+   virtual void _onInit() = 0;
+   virtual void _onExec() = 0;
+   virtual void _onKill() = 0;
+   virtual void _onKillEnqueue() = 0;
 
    ScriptInterface(ScriptInterface&& other);
    ScriptInterface();

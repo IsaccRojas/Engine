@@ -41,9 +41,10 @@ class EntityInterface : public ScriptInterface {
    std::unordered_set<EntityInterface**> _nullablerefs;
 
    // called by execution environment
-   void _init() override;
-   void _exec() override;
-   void _kill() override;
+   void _onInit() override;
+   void _onExec() override;
+   void _onKill() override;
+   void _onKillEnqueue() override;
 
 protected:
    /* Functions to be overridden by children.
@@ -52,10 +53,11 @@ protected:
       - _killEntity() is called by runKill(). runKill() is called on erasure.
       - _collideEntity() is called by EntityCollider associated with this instance.
    */
-   virtual void _initEntity();
-   virtual void _execEntity();
-   virtual void _killEntity();
-   virtual void _collideEntity(EntityInterface* entity);
+   virtual void _onInitEntity();
+   virtual void _onExecEntity();
+   virtual void _onKillEntity();
+   virtual void _onKillEnqueueEntity();
+   virtual void _onCollisionEntity(EntityInterface* entity);
 
 public:
    EntityInterface(EntityInterface&& other);
@@ -432,6 +434,10 @@ public:
 
    bool empty() {
       return _Ts.empty();
+   }
+
+   unsigned size() {
+      return _Ts.size();
    }
 };
 

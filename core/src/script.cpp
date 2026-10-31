@@ -51,21 +51,23 @@ ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
 
 void ScriptInterface::runInit() {
     if (_executor && !_initialized) {
-        _init();
+        _onInit();
         _initialized = true;
     }
 
 }
 void ScriptInterface::runExec() {
-    if (_executor)
-        _exec();
-    if (_auto_enqueue && !_kill_enqueued)
-        enqueueExec();
+    if (!_kill_enqueued) {
+        if (_executor)
+            _onExec();
+        if (_auto_enqueue)
+            enqueueExec();
+    }
 }
 
 void ScriptInterface::runKill() {
     if (_executor)
-        _kill();
+        _onKill();
 }
 
 int& ScriptInterface::preferred_queue() { return _preferred_queue; }
@@ -248,6 +250,7 @@ void ScriptExecutor::enqueueKill(ScriptInterface* script) {
         // push to kill queue
         _push_killqueue.push(script);
         script->_kill_enqueued = true;
+        script->_onKillEnqueue();
     }
 }
 

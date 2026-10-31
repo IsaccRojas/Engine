@@ -10,53 +10,42 @@ GlobalState::GlobalState() : executor(EXECUTION_QUEUES, &glenv, &collisionspace)
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Entity_Enemy_Chaser::_initEntity() {
+void Entity_Enemy_Chaser::_onInitEntity() {
     Entity_Being* being = globalstate.resource_Being.container.get(this);
     being->hurt_cooldown_max = 4.0f;
     being->health = 3.0f;
 
-    _entity_travel = globalstate.resource_Travel.container.get(this);
-    _entity_travel->accel_speed = 0.01f;
-    _entity_travel->max_speed = 0.75f;
-    _entity_travel_nref = _entity_travel;
-    _entity_travel->attachNullableRef(&_entity_travel_nref);
-
     Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.get(this);
     hitbox->damage = 5.0f;
+
+    t = globalstate.resource_Travel.container.get(this);
+    t->accel_speed = 0.01f;
+    t->max_speed = 0.75f;
+    t->target = true;
+
+    aq = globalstate.resource_AcquirePlayer.container.get(this);
+    aq->lock(&key());
 }
 
-void Entity_Enemy_Chaser::_execEntity() {
-    if (_entity_travel_nref) {
-        // if no target set, get and lock player; otherwise, check if it needs to be unlocked
-        if (!_entity_travel->target) {
-            Entity_Player* player;
-            if (!globalstate.resource_Player.container.empty()) {
-                player = globalstate.resource_Player.container.begin()->second;
-                if (!player->getKillEnqueued()) {
-                    player->lock(&key());
-                    _entity_travel->target = player;
-                }
-            }
-
-        } else {
-            if (_entity_travel->target->getKillEnqueued()) {
-                _entity_travel->target->unlock(&key());
-                _entity_travel->target = nullptr;
-            }
-        }
-    }
+void Entity_Enemy_Chaser::_onExecEntity() {
+    if (aq->player)
+        t->pos = aq->player->globaltransform().pos;
 }
 
-void Entity_Enemy_Chaser::_collideEntity(EntityInterface* other) {
+void Entity_Enemy_Chaser::_onKillEnqueueEntity() {
+    unlockAll();
+}
+
+void Entity_Enemy_Chaser::_onCollisionEntity(EntityInterface* other) {
     if (!getKillEnqueued() && globalstate.resource_Being.container.get(other))
         root()->enqueueKillAll();
 }
 
-Entity_Enemy_Chaser::Entity_Enemy_Chaser() : _entity_travel(nullptr), _entity_travel_nref(nullptr) {}
+Entity_Enemy_Chaser::Entity_Enemy_Chaser() : aq(nullptr) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Entity_LightBall::_initEntity() {
+void Entity_LightBall::_onInitEntity() {
     Entity_Lifetime* lifetime = globalstate.resource_Lifetime.container.get(this);
     lifetime->lifetime = 120.0f;
 
@@ -68,20 +57,20 @@ void Entity_LightBall::_initEntity() {
     hitbox->damage = 1.0f;
 }
 
-void Entity_LightBall::_collideEntity(EntityInterface* other) {
+void Entity_LightBall::_onCollisionEntity(EntityInterface* other) {
     root()->enqueueKillAll();
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Entity_LightParticle::_initEntity() {
+void Entity_LightParticle::_onInitEntity() {
     Entity_Lifetime* lifetime = globalstate.resource_Lifetime.container.get(this);
     lifetime->lifetime = 24.0f;
 }
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Entity_Player::_initEntity() {
+void Entity_Player::_onInitEntity() {
     Entity_Being* being = globalstate.resource_Being.container.get(this);
     being->hurt_cooldown_max = 30.0f;
     being->health = 10.0f;
@@ -90,7 +79,7 @@ void Entity_Player::_initEntity() {
     hitbox->damage = 1.0f;
 }
 
-void Entity_Player::_execEntity() {
+void Entity_Player::_onExecEntity() {
     // check cooldown
     if (_shoot_cooldown > 0.0f)
         _shoot_cooldown -= 1.0f;
@@ -139,7 +128,7 @@ Entity_Player::Entity_Player() :
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Entity_Being::_execEntity() {
+void Entity_Being::_onExecEntity() {
     if (health <= 0.0f) {
         root()->enqueueKillAll();
         return;
@@ -150,7 +139,7 @@ void Entity_Being::_execEntity() {
         hurt_cooldown -= 1.0f;
 }
 
-void Entity_Being::_collideEntity(EntityInterface* other) {
+void Entity_Being::_onCollisionEntity(EntityInterface* other) {
     Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.get(other);
     if (hitbox) {
         if (hurt_cooldown <= 0.0f) {
@@ -173,9 +162,33 @@ Entity_Hitbox::Entity_Hitbox() : damage(0.0f) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Entity_Travel::_execEntity() {
+void Entity_AcquirePlayer::_onExecEntity() {
+    if (!player) {
+        unsigned s = globalstate.resource_Player.container.size();
+        if (s > 0) {
+            auto iter = globalstate.resource_Player.container.begin();
+            std::advance(iter, rand() % s);
+            if (!iter->second->getKillEnqueued()) {
+                player = iter->second;
+                player->lock(&key());
+            }        
+        }
+
+    } else {
+        if (player->getKillEnqueued()) {
+            player->unlock(&key());
+            player = nullptr;
+        }
+    }
+}
+
+Entity_AcquirePlayer::Entity_AcquirePlayer() : player(nullptr) {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void Entity_Travel::_onExecEntity() {
     if (target) {
-        glm::vec3 dir = target->globaltransform().pos - globaltransform().pos;
+        glm::vec3 dir = pos - globaltransform().pos;
         if (glm::length(dir) > 0)
             dir = glm::normalize(dir);
         
@@ -186,11 +199,11 @@ void Entity_Travel::_execEntity() {
     globaltransform().pos += vel;
 }
 
-Entity_Travel::Entity_Travel() : vel(0.0f), accel_speed(0.0f), max_speed(0.0f), target(nullptr) {}
+Entity_Travel::Entity_Travel() : vel(0.0f), accel_speed(0.0f), max_speed(0.0f), target(false), pos(0.0f) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Entity_Lifetime::_execEntity() {
+void Entity_Lifetime::_onExecEntity() {
     if (lifetime > 0)
         lifetime--;
     
@@ -202,7 +215,7 @@ Entity_Lifetime::Entity_Lifetime() : EntityInterface(), lifetime(0) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Entity_Pickup::_collideEntity(EntityInterface* other) {
+void Entity_Pickup::_onCollisionEntity(EntityInterface* other) {
     auto& i = globalstate.inventory;
     if (i.find(item_name) != i.end())
         i[item_name] += 1;
@@ -213,7 +226,7 @@ Entity_Pickup::Entity_Pickup() : EntityInterface(), item_name("") {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Entity_RepeatSpawn::_execEntity() {
+void Entity_RepeatSpawn::_onExecEntity() {
     if (spawnrate_cooldown > 0)
         spawnrate_cooldown--;
     

@@ -17,20 +17,20 @@ EntityInterface& EntityInterface::operator=(EntityInterface&& other) {
     return *this;
 }
 
-void EntityInterface::_init() {
+void EntityInterface::_onInit() {
     // lock parent to prevent kill before children are killed
     if (_parent)
         _parent->lock(&key());
 
-    _initEntity();
+    _onInitEntity();
 }
 
-void EntityInterface::_exec() {
-    _execEntity();
+void EntityInterface::_onExec() {
+    _onExecEntity();
 }
 
-void EntityInterface::_kill() {
-    _killEntity();
+void EntityInterface::_onKill() {
+    _onKillEntity();
 
     // null all inserted nullable references and unlock any locked scripts
     for (EntityInterface** r : _nullablerefs)
@@ -40,13 +40,18 @@ void EntityInterface::_kill() {
     _entityexecutor->eraseEntityResources(this);
 }
 
-void EntityInterface::_initEntity() {}
-void EntityInterface::_execEntity() {}
-void EntityInterface::_killEntity() {}
-void EntityInterface::_collideEntity(EntityInterface* entity) {}
+void EntityInterface::_onKillEnqueue() {
+    _onKillEnqueueEntity();
+}
+
+void EntityInterface::_onInitEntity() {}
+void EntityInterface::_onExecEntity() {}
+void EntityInterface::_onKillEntity() {}
+void EntityInterface::_onKillEnqueueEntity() {}
+void EntityInterface::_onCollisionEntity(EntityInterface* entity) {}
 
 void EntityInterface::collide(EntityInterface* entity) {
-    _collideEntity(entity);
+    _onCollisionEntity(entity);
 }
 
 void EntityInterface::attachNullableRef(EntityInterface** ref) {
