@@ -18,24 +18,26 @@ void Entity_Enemy_Chaser::_initEntity() {
     _entity_travel = globalstate.resource_Travel.container.get(this);
     _entity_travel->accel_speed = 0.01f;
     _entity_travel->max_speed = 0.75f;
-    _entity_travel->lock(&key());
+    _entity_travel_nref = _entity_travel;
+    _entity_travel->attachNullableRef(&_entity_travel_nref);
 
     Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.get(this);
     hitbox->damage = 5.0f;
 }
 
 void Entity_Enemy_Chaser::_execEntity() {
-    // if travel component is kill enqueued, unlock travel and its target; otherwise, operate as normal
-    if (_entity_travel->getKillEnqueued()) {
-        if (_entity_travel->target)
-            _entity_travel->target->unlock(&key());
-        _entity_travel->unlock(&key());
-    } else {
+    if (_entity_travel_nref) {
         // if no target set, get and lock player; otherwise, check if it needs to be unlocked
         if (!_entity_travel->target) {
-            _entity_travel->target = globalstate.resource_Player.container.getLast();
-            if (_entity_travel->target)
-                _entity_travel->target->lock(&key());
+            Entity_Player* player;
+            if (!globalstate.resource_Player.container.empty()) {
+                player = globalstate.resource_Player.container.begin()->second;
+                if (!player->getKillEnqueued()) {
+                    player->lock(&key());
+                    _entity_travel->target = player;
+                }
+            }
+
         } else {
             if (_entity_travel->target->getKillEnqueued()) {
                 _entity_travel->target->unlock(&key());
@@ -50,7 +52,7 @@ void Entity_Enemy_Chaser::_collideEntity(EntityInterface* other) {
         root()->enqueueKillAll();
 }
 
-Entity_Enemy_Chaser::Entity_Enemy_Chaser() : _entity_travel(nullptr) {}
+Entity_Enemy_Chaser::Entity_Enemy_Chaser() : _entity_travel(nullptr), _entity_travel_nref(nullptr) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 

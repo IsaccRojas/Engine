@@ -1,10 +1,10 @@
 #include "../include/script.hpp"
 
-ScriptKey::ScriptKey() {}
+ScriptKey::ScriptKey(ScriptInterface* owner) : _owner(owner) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-ScriptInterface::ScriptInterface(ScriptInterface&& other) { operator=(std::move(other)); }
+ScriptInterface::ScriptInterface(ScriptInterface&& other) : _key(this) { operator=(std::move(other)); }
 ScriptInterface::ScriptInterface() :
     _executor(nullptr),
     _scriptallocator(nullptr),
@@ -15,6 +15,7 @@ ScriptInterface::ScriptInterface() :
     _kill_enqueued(false),
     _kill_started(false),
     _script_name(""),
+    _key(this),
     _keys_count(0)
 {}
 ScriptInterface::~ScriptInterface() {}
@@ -31,6 +32,7 @@ ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
         _kill_started = other._kill_started;
         _script_name = other._script_name;
         _keys = other._keys;
+        _key._locked_scripts = other._key._locked_scripts;
         _keys_count = other._keys_count;
         other._executor = nullptr;
         other._preferred_queue = -1;
@@ -41,6 +43,7 @@ ScriptInterface& ScriptInterface::operator=(ScriptInterface&& other) {
         other._kill_started = false;
         other._script_name = "";
         other._keys.clear();
+        other._key._locked_scripts.clear();
         other._keys_count = 0;
     }
     return *this;

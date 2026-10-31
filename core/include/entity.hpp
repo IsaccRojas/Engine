@@ -382,10 +382,9 @@ public:
 template<class EntityT>
 class EntityNodeContainer : public RefReceiverInterface<EntityT> {
    std::unordered_map<uintptr_t, EntityT*> _Ts;
-   EntityT* _last_inst;
 
 public:
-   EntityNodeContainer() : RefReceiverInterface<EntityT>(), _last_inst(nullptr) {}
+   EntityNodeContainer() : RefReceiverInterface<EntityT>() {}
 
    /* Stores instance passed. */
    void receiveInstance(EntityT* t) override {
@@ -397,14 +396,11 @@ public:
          std::runtime_error("Attempt to receive instance with existing root");
       
       _Ts[root] = t;
-      _last_inst = t;
    }
 
    /* Removes instance passed. */
    void receiveInstanceAddr(void* vt) override {
       _Ts.erase(reinterpret_cast<uintptr_t>(vt));
-      if (vt == (void*)(_last_inst))
-         _last_inst = nullptr;
    }
 
    /* Returns instance of type T corresponding to address vt. Returns nullptr if it does not exist. */
@@ -419,26 +415,23 @@ public:
       return iter->second;
    }
 
-   /* Returns the last instance inserted. Returns nullptr if empty. */
-   EntityT* getLast() {
-      if (_Ts.empty())
-         return nullptr;
-      return _last_inst;
-   }
-
-   /* Returns internal unordered map begin() iterator. Key is a void pointer cast of value. */
-   typename std::unordered_map<void*, EntityT*>::iterator begin() {
+   /* Returns internal unordered map begin() iterator. Key is a uintptr_t cast of value. */
+   typename std::unordered_map<uintptr_t, EntityT*>::iterator begin() {
       return _Ts.begin();
    }
 
-   /* Returns internal unordered map end() iterator. Key is a void pointer cast of value. */
-   typename std::unordered_map<void*, EntityT*>::iterator end() {
+   /* Returns internal unordered map end() iterator. Key is a uintptr_t cast of value. */
+   typename std::unordered_map<uintptr_t, EntityT*>::iterator end() {
       return _Ts.end();
    }
 
    /* Erases all entries. */
    void clear() {
       _Ts.clear();
+   }
+
+   bool empty() {
+      return _Ts.empty();
    }
 };
 

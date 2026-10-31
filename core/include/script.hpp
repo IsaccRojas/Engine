@@ -22,9 +22,10 @@ class ScriptAllocatorInterface;
    Used to lock-out a ScriptInterface, determining whether it can be removed or not. Held by ScriptInterfaces.
 */
 class ScriptKey {
-   std::unordered_set<ScriptInterface*> _locked_scripts;
    friend ScriptInterface;
-   ScriptKey();
+   ScriptInterface* _owner;
+   std::unordered_set<ScriptInterface*> _locked_scripts;
+   ScriptKey(ScriptInterface* owner);
 };
 
 /* class ScriptInterface

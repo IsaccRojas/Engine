@@ -12,6 +12,7 @@ class Entity_Travel;
 
 class Entity_Enemy_Chaser : public EntityInterface {
     Entity_Travel* _entity_travel;
+    EntityInterface* _entity_travel_nref;
     void _initEntity() override;
     void _execEntity() override;
     void _collideEntity(EntityInterface* other) override;
@@ -22,13 +23,6 @@ public:
 // --------------------------------------------------------------------------------------------------------------------------
 
 class Entity_LightBall : public EntityInterface {
-    void _initEntity() override;
-    void _collideEntity(EntityInterface* other) override;
-};
-
-// --------------------------------------------------------------------------------------------------------------------------
-
-class Entity_SmallLightBall : public EntityInterface {
     void _initEntity() override;
     void _collideEntity(EntityInterface* other) override;
 };
