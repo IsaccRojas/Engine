@@ -93,16 +93,22 @@ ScriptKey& ScriptInterface::key() { return _key; };
 
 void ScriptInterface::lock(ScriptKey* k) {
     _keys.insert(k);
+    k->_locked_scripts.insert(this);
 }
 
 void ScriptInterface::unlock(ScriptKey* k) {
     _keys.erase(k);
+    k->_locked_scripts.erase(this);
 }
 
 unsigned ScriptInterface::lockCount() {
     return _keys.size();
 }
 
+void ScriptInterface::unlockAll() {
+    while (!_key._locked_scripts.empty())
+        (*(_key._locked_scripts.begin()))->unlock(&_key);
+}
 // --------------------------------------------------------------------------------------------------------------------------
 
 void ScriptAllocatorInterface::_insertReference(ScriptInterface* script) {

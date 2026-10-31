@@ -17,12 +17,18 @@ class Entity_Enemy_Chaser : public EntityInterface {
     void _collideEntity(EntityInterface* other) override;
 public:
     Entity_Enemy_Chaser();
-    float speed;
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 class Entity_LightBall : public EntityInterface {
+    void _initEntity() override;
+    void _collideEntity(EntityInterface* other) override;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+class Entity_SmallLightBall : public EntityInterface {
     void _initEntity() override;
     void _collideEntity(EntityInterface* other) override;
 };
@@ -70,14 +76,18 @@ public:
 
 /*
     Entity_Travel
-    Applies specified velocity to global transform. Applies difference in position between itself and target, normalized and
-    scaled with specified velocity's magnitude, if target is not nullptr.
+    Applies specified velocity to global transform. 
+    If target is not nullptr, applies difference in position between itself and target normalized by accel_speed, no greater 
+    than max_speed.
+    If target is nullptr, uses current vel value.
 */
 class Entity_Travel : public EntityInterface {
     void _execEntity() override;
 public:
     Entity_Travel();
     glm::vec3 vel;
+    float accel_speed;
+    float max_speed;
     EntityInterface* target;
 };
 

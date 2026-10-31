@@ -32,12 +32,10 @@ void EntityInterface::_exec() {
 void EntityInterface::_kill() {
     _killEntity();
 
-    // null all inserted nullable references
+    // null all inserted nullable references and unlock any locked scripts
     for (EntityInterface** r : _nullablerefs)
         *r = nullptr;
-    
-    if (_parent)
-        _parent->unlock(&key());
+    unlockAll();
     
     _entityexecutor->eraseEntityResources(this);
 }

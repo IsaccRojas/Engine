@@ -49,6 +49,7 @@ void checkState() {
                     globalstate.player = globalstate.executor.spawnEntity("Entity_Player", Transform{});
                     globalstate.player->attachNullableRef(&globalstate.player);
                 }
+                globalstate.progress = 0.0f;
                 globalstate.game_state = 1;
             }
             break;
@@ -69,6 +70,7 @@ void checkState() {
 
         case 2:
             // transition to 1
+            globalstate.progress = 0.0f;
             globalstate.game_state = 1;
             break;
         
@@ -89,6 +91,8 @@ void runState_StageContinue() {
         globalstate.executor.spawnEntity("Entity_Enemy_Chaser", Transform{glm::vec3(32.0f + (rand() % 64), (rand() % 128) - 64, 0.0f), glm::vec3(1.0f)});
         globalstate.spawn_cooldown = 90 + (rand() % 90);
     }
+
+    globalstate.progress += 0.05f;
 }
 
 void runState_StageComplete() {

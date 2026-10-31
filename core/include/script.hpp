@@ -22,6 +22,7 @@ class ScriptAllocatorInterface;
    Used to lock-out a ScriptInterface, determining whether it can be removed or not. Held by ScriptInterfaces.
 */
 class ScriptKey {
+   std::unordered_set<ScriptInterface*> _locked_scripts;
    friend ScriptInterface;
    ScriptKey();
 };
@@ -50,7 +51,6 @@ class ScriptInterface {
    ScriptKey _key;
    std::unordered_set<ScriptKey*> _keys;
    unsigned _keys_count;
-   
 protected:
    /* Functions to be overridden by children.
       - _init() is called by runInit(). runInit() is called on spawn.
@@ -101,6 +101,9 @@ public:
    void lock(ScriptKey* k);
    void unlock(ScriptKey* k);
    unsigned lockCount();
+
+   /* Unlock all scripts locked by this script's key. */
+   void unlockAll();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------

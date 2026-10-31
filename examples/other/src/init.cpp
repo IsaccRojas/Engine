@@ -20,8 +20,13 @@ const unsigned UNIT_PIXEL_HEIGHT = 16;
 void loadAssets() {
     globalstate.animations["Animation_LightBall"] =
         Animation("Animation_LightBall", {
-            Cycle("default", true, {
-                Frame(vec3(0.0f, 16.0f, 0.0f), vec2(16.0f), 4),
+            Cycle("default", false, {
+                Frame(vec3(0.0f, 16.0f, 0.0f), vec2(16.0f), 4)
+            })
+        });
+    globalstate.animations["Animation_SmallLightBall"] =
+        Animation("Animation_SmallLightBall", {
+            Cycle("default", false, {
                 Frame(vec3(16.0f, 16.0f, 0.0f), vec2(16.0f), 4)
             })
         });
@@ -30,9 +35,7 @@ void loadAssets() {
             Cycle("default", false, {
                 Frame(vec3(16.0f, 16.0f, 0.0f), vec2(16.0f), 6),
                 Frame(vec3(32.0f, 16.0f, 0.0f), vec2(16.0f), 6),
-                Frame(vec3(48.0f, 16.0f, 0.0f), vec2(16.0f), 6),
-                Frame(vec3(64.0f, 16.0f, 0.0f), vec2(16.0f), 6),
-                Frame(vec3(80.0f, 16.0f, 0.0f), vec2(16.0f), 0)
+                Frame(vec3(48.0f, 16.0f, 0.0f), vec2(16.0f), 6)
             })
         });
     globalstate.animations["Animation_Player"] =
@@ -42,9 +45,15 @@ void loadAssets() {
             })
         });
     globalstate.animations["Animation_Chaser"] =
-        Animation("Animation_Player", {
+        Animation("Animation_Chaser", {
             Cycle("default", false, {
                 Frame(vec3(16.0f, 0.0f, 0.0f), vec2(16.0f), 0)
+            })
+        });
+    globalstate.animations["Animation_Shooter"] =
+        Animation("Animation_Shooter", {
+            Cycle("default", false, {
+                Frame(vec3(32.0f, 0.0f, 0.0f), vec2(16.0f), 0)
             })
         });
 
@@ -69,6 +78,7 @@ void loadAssets() {
         {glm::vec3(0.0f, 0.0f, 0.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_Player"], "Quad_Player"},
         {glm::vec3(0.0f, 0.0f, 0.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_Chaser"], "Quad_Chaser"},
         {glm::vec3(0.0f, 0.0f, 1.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_LightBall"], "Quad_LightBall"},
+        {glm::vec3(0.0f, 0.0f, 1.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_SmallLightBall"], "Quad_SmallLightBall"},
         {glm::vec3(0.0f, 0.0f, 0.5f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_LightParticle"], "Quad_LightParticle"}
     });
     
@@ -81,6 +91,7 @@ void loadAssets() {
         {&globalstate.resource_Being.allocator, 0, true, {}, {}, {}, "Entity_Being"},
         {&globalstate.resource_Player.allocator, 0, true, {"Entity_Being", "Entity_Hitbox"}, {"Quad_Player"}, {{Transform{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Player"]}}, "Entity_Player"},
         {&globalstate.resource_LightBall.allocator, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn", "Entity_Travel", "Entity_Hitbox"}, {"Quad_LightBall"}, {{Transform{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Player"]}}, "Entity_LightBall"},
+        {&globalstate.resource_LightBall.allocator, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn", "Entity_Travel", "Entity_Hitbox"}, {"Quad_SmallLightBall"}, {{Transform{glm::vec3(0.0f), (0.375f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Player"]}}, "Entity_SmallLightBall"},
         {&globalstate.resource_LightParticle.allocator, 0, true, {"Entity_Lifetime"}, {"Quad_LightParticle"}, {}, "Entity_LightParticle"},
         {&globalstate.resource_Enemy_Chaser.allocator, 0, true, {"Entity_Being", "Entity_Travel", "Entity_Hitbox"}, {"Quad_Chaser"}, {{Transform{glm::vec3(0.0f), (0.75f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Enemy"]}}, "Entity_Enemy_Chaser"}
     });

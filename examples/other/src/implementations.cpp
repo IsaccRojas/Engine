@@ -16,7 +16,8 @@ void Entity_Enemy_Chaser::_initEntity() {
     being->health = 3.0f;
 
     _entity_travel = globalstate.resource_Travel.container.get(this);
-    _entity_travel->vel = glm::vec3(speed, 0.0f, 0.0f);
+    _entity_travel->accel_speed = 0.01f;
+    _entity_travel->max_speed = 0.75f;
     _entity_travel->lock(&key());
 
     Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.get(this);
@@ -49,20 +50,17 @@ void Entity_Enemy_Chaser::_collideEntity(EntityInterface* other) {
         root()->enqueueKillAll();
 }
 
-Entity_Enemy_Chaser::Entity_Enemy_Chaser() : _entity_travel(nullptr), speed(0.5f) {}
+Entity_Enemy_Chaser::Entity_Enemy_Chaser() : _entity_travel(nullptr) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
 void Entity_LightBall::_initEntity() {
     Entity_Lifetime* lifetime = globalstate.resource_Lifetime.container.get(this);
-    lifetime->lifetime = 90.0f;
+    lifetime->lifetime = 120.0f;
 
     Entity_RepeatSpawn* repeatspawn = globalstate.resource_RepeatSpawn.container.get(this);
     repeatspawn->entity_name = "Entity_LightParticle";
     repeatspawn->spawnrate = 4.0f;
-
-    Entity_Travel* travel = globalstate.resource_Travel.container.get(this);
-    travel->vel = glm::vec3(1.0f, 0.0f, 0.0f);
 
     Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.get(this);
     hitbox->damage = 1.0f;
@@ -111,7 +109,15 @@ void Entity_Player::_execEntity() {
     }
 
     if (_shoot_cooldown <= 0.0f && globalstate.input.get_space()) {
-        globalstate.executor.spawnEntity("Entity_LightBall", globaltransform());
+        EntityInterface* b1 = globalstate.executor.spawnEntity("Entity_LightBall", globaltransform());
+        globalstate.resource_Travel.container.get(b1)->vel = glm::vec3(1.25f, 0.0f, 0.0f);
+
+        EntityInterface* b2 = globalstate.executor.spawnEntity("Entity_SmallLightBall", globaltransform());
+        globalstate.resource_Travel.container.get(b2)->vel = glm::rotate(glm::vec3(1.25f, 0.0f, 0.0f), glm::radians(30.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        
+        EntityInterface* b3 = globalstate.executor.spawnEntity("Entity_SmallLightBall", globaltransform());
+        globalstate.resource_Travel.container.get(b3)->vel = glm::rotate(glm::vec3(1.25f, 0.0f, 0.0f), glm::radians(-30.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
         _shoot_cooldown = _shoot_cooldown_max;
     }
 
@@ -169,13 +175,16 @@ void Entity_Travel::_execEntity() {
     if (target) {
         glm::vec3 dir = target->globaltransform().pos - globaltransform().pos;
         if (glm::length(dir) > 0)
-            dir = glm::normalize(dir) * glm::length(vel);
-        globaltransform().pos += dir;
-    } else
-        globaltransform().pos += vel;
+            dir = glm::normalize(dir);
+        
+        vel += dir * accel_speed;
+        if (glm::length(vel) > max_speed)
+            vel = glm::normalize(vel) * max_speed;
+    }
+    globaltransform().pos += vel;
 }
 
-Entity_Travel::Entity_Travel() : vel(0.0f), target(nullptr) {}
+Entity_Travel::Entity_Travel() : vel(0.0f), accel_speed(0.0f), max_speed(0.0f), target(nullptr) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -209,10 +218,7 @@ void Entity_RepeatSpawn::_execEntity() {
     if (spawnrate >= 0 && entity_name != "") {
         if (spawnrate_cooldown == 0) {
             spawnrate_cooldown = spawnrate;
-
-            Transform spawn_transform = globaltransform();
-            spawn_transform.pos = spawn_transform.pos + glm::vec3(0.0f, (float(rand() % 50) / 10.0f) - 2.5f, 0.0f);
-            globalstate.executor.spawnEntity(entity_name.c_str(), spawn_transform);
+            globalstate.executor.spawnEntity(entity_name.c_str(), globaltransform());
         }
     }
 }
