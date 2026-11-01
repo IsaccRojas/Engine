@@ -2,6 +2,8 @@
 
 void loop() {
     std::cout << "Running loop" << std::endl;
+    globalstate.enemy_pool = {"Entity_Chaser", "Entity_Shooter"};
+
     while (!glfwWindowShouldClose(globalstate.glfwstate.getWindowHandle()) && !globalstate.input.get_esc()) {
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -88,8 +90,11 @@ void runState_StageContinue() {
         globalstate.spawn_cooldown--;
     
     if (globalstate.spawn_cooldown == 0) {
-        globalstate.executor.spawnEntity("Entity_Enemy_Chaser", Transform{glm::vec3(32.0f + (rand() % 64), (rand() % 128) - 64, 0.0f), glm::vec3(1.0f)});
-        globalstate.spawn_cooldown = 90 + (rand() % 90);
+        if (globalstate.enemy_pool.size() > 0) {
+            int i = rand() % globalstate.enemy_pool.size();
+            globalstate.executor.spawnEntity(globalstate.enemy_pool[i].c_str(), Transform{glm::vec3(32.0f + (rand() % 64), (rand() % 128) - 64, 0.0f), glm::vec3(1.0f)});
+            globalstate.spawn_cooldown = 90 + (rand() % 90);
+        }
     }
 
     globalstate.progress += 0.05f;

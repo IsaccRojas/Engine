@@ -6,11 +6,81 @@ const unsigned EXECUTION_QUEUES = 2;
 
 const float diag_factor = glm::sin(glm::radians(45.0f));
 
-GlobalState::GlobalState() : executor(EXECUTION_QUEUES, &glenv, &collisionspace), game_state(0), progress(0.0f), spawn_cooldown(120) {}
+GlobalState::GlobalState() : executor(EXECUTION_QUEUES, &glenv, &collisionspace), game_state(0), progress(0.0f), spawn_cooldown(180) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-void Entity_Enemy_Chaser::_onInitEntity() {
+void Entity_FireParticle::_onInitEntity() {
+    Entity_Lifetime* lifetime = globalstate.resource_Lifetime.container.get(this);
+    lifetime->lifetime = 16.0f;
+}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void Entity_FireBall::_onInitEntity() {
+    Entity_Lifetime* lifetime = globalstate.resource_Lifetime.container.get(this);
+    lifetime->lifetime = 720.0f;
+
+    Entity_RepeatSpawn* repeatspawn = globalstate.resource_RepeatSpawn.container.get(this);
+    repeatspawn->entity_name = "Entity_FireParticle";
+    repeatspawn->spawnrate = 3.0f;
+
+    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.get(this);
+    hitbox->damage = 1.0f;
+}
+
+void Entity_FireBall::_onCollisionEntity(EntityInterface* other) {
+    root()->enqueueKillAll();
+}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void Entity_Shooter::_onInitEntity() {
+    Entity_Being* being = globalstate.resource_Being.container.get(this);
+    being->hurt_cooldown_max = 4.0f;
+    being->health = 4.0f;
+
+    Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.get(this);
+    hitbox->damage = 5.0f;
+
+    t = globalstate.resource_Travel.container.get(this);
+    t->accel_speed = 0.001f;
+    t->max_speed = 0.25f;
+    t->target = true;
+
+    aq = globalstate.resource_AcquirePlayer.container.get(this);
+    aq->lock(&key());
+}
+
+void Entity_Shooter::_onExecEntity() {
+    if (aq->player)
+        t->pos = globaltransform().pos - glm::vec3(0.0f, globaltransform().pos.y - aq->player->globaltransform().pos.y, 0.0f);
+
+    // check cooldown
+    if (_shoot_cooldown > 0.0f)
+        _shoot_cooldown -= 1.0f;
+
+    if (_shoot_cooldown <= 0.0f) {
+        EntityInterface* fireball = globalstate.executor.spawnEntity("Entity_FireBall", globaltransform());
+        globalstate.resource_Travel.container.get(fireball)->vel = randomAngle(glm::vec3(-0.25f, 0.0f, 0.0f), 30.0f);
+        _shoot_cooldown = _shoot_cooldown_max;
+    }
+}
+
+void Entity_Shooter::_onKillEnqueueEntity() {
+    unlockAll();
+}
+
+void Entity_Shooter::_onCollisionEntity(EntityInterface* other) {
+    if (!getKillEnqueued() && globalstate.resource_Being.container.get(other))
+        root()->enqueueKillAll();
+}
+
+Entity_Shooter::Entity_Shooter() : EntityInterface(), _shoot_cooldown_max(360.0f), _shoot_cooldown(360.0f), t(nullptr), aq(nullptr) {}
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+void Entity_Chaser::_onInitEntity() {
     Entity_Being* being = globalstate.resource_Being.container.get(this);
     being->hurt_cooldown_max = 4.0f;
     being->health = 3.0f;
@@ -27,21 +97,21 @@ void Entity_Enemy_Chaser::_onInitEntity() {
     aq->lock(&key());
 }
 
-void Entity_Enemy_Chaser::_onExecEntity() {
+void Entity_Chaser::_onExecEntity() {
     if (aq->player)
         t->pos = aq->player->globaltransform().pos;
 }
 
-void Entity_Enemy_Chaser::_onKillEnqueueEntity() {
+void Entity_Chaser::_onKillEnqueueEntity() {
     unlockAll();
 }
 
-void Entity_Enemy_Chaser::_onCollisionEntity(EntityInterface* other) {
+void Entity_Chaser::_onCollisionEntity(EntityInterface* other) {
     if (!getKillEnqueued() && globalstate.resource_Being.container.get(other))
         root()->enqueueKillAll();
 }
 
-Entity_Enemy_Chaser::Entity_Enemy_Chaser() : aq(nullptr) {}
+Entity_Chaser::Entity_Chaser() : EntityInterface(), t(nullptr), aq(nullptr) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -73,7 +143,7 @@ void Entity_LightParticle::_onInitEntity() {
 void Entity_Player::_onInitEntity() {
     Entity_Being* being = globalstate.resource_Being.container.get(this);
     being->hurt_cooldown_max = 30.0f;
-    being->health = 10.0f;
+    being->health = 20.0f;
 
     Entity_Hitbox* hitbox = globalstate.resource_Hitbox.container.get(this);
     hitbox->damage = 1.0f;
@@ -113,9 +183,6 @@ void Entity_Player::_onExecEntity() {
     }
 
     pos += vel;
-
-    if (false)
-        root()->enqueueKillAll();
 }
 
 Entity_Player::Entity_Player() :
@@ -158,7 +225,7 @@ Entity_Being::Entity_Being() :
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-Entity_Hitbox::Entity_Hitbox() : damage(0.0f) {}
+Entity_Hitbox::Entity_Hitbox() : EntityInterface(), damage(0.0f) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -182,7 +249,7 @@ void Entity_AcquirePlayer::_onExecEntity() {
     }
 }
 
-Entity_AcquirePlayer::Entity_AcquirePlayer() : player(nullptr) {}
+Entity_AcquirePlayer::Entity_AcquirePlayer() : EntityInterface(), player(nullptr) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -199,7 +266,7 @@ void Entity_Travel::_onExecEntity() {
     globaltransform().pos += vel;
 }
 
-Entity_Travel::Entity_Travel() : vel(0.0f), accel_speed(0.0f), max_speed(0.0f), target(false), pos(0.0f) {}
+Entity_Travel::Entity_Travel() : EntityInterface(), vel(0.0f), accel_speed(0.0f), max_speed(0.0f), target(false), pos(0.0f) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 

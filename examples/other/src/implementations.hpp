@@ -12,7 +12,22 @@ class Entity_AcquirePlayer;
 
 // --------------------------------------------------------------------------------------------------------------------------
 
-class Entity_Enemy_Chaser : public EntityInterface {
+class Entity_FireParticle : public EntityInterface {
+    void _onInitEntity() override;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+class Entity_FireBall : public EntityInterface {
+    void _onInitEntity() override;
+    void _onCollisionEntity(EntityInterface* other) override;
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+class Entity_Shooter : public EntityInterface {
+    float _shoot_cooldown_max;
+    float _shoot_cooldown;
     Entity_Travel* t;
     Entity_AcquirePlayer* aq;
     void _onInitEntity() override;
@@ -20,7 +35,20 @@ class Entity_Enemy_Chaser : public EntityInterface {
     void _onKillEnqueueEntity() override;
     void _onCollisionEntity(EntityInterface* other) override;
 public:
-    Entity_Enemy_Chaser();
+    Entity_Shooter();
+};
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+class Entity_Chaser : public EntityInterface {
+    Entity_Travel* t;
+    Entity_AcquirePlayer* aq;
+    void _onInitEntity() override;
+    void _onExecEntity() override;
+    void _onKillEnqueueEntity() override;
+    void _onCollisionEntity(EntityInterface* other) override;
+public:
+    Entity_Chaser();
 };
 
 // --------------------------------------------------------------------------------------------------------------------------
@@ -164,7 +192,10 @@ struct GlobalState {
     CollisionSpace collisionspace;
     EntityExecutor executor;
 
-    Resource<Entity_Enemy_Chaser> resource_Enemy_Chaser;
+    Resource<Entity_FireParticle> resource_FireParticle;
+    Resource<Entity_FireBall> resource_FireBall;
+    Resource<Entity_Shooter> resource_Shooter;
+    Resource<Entity_Chaser> resource_Chaser;
     Resource<Entity_LightBall> resource_LightBall;
     Resource<Entity_LightParticle> resource_LightParticle;
     Resource<Entity_Player> resource_Player;
@@ -181,7 +212,9 @@ struct GlobalState {
     EntityInterface* player;
     int game_state;
     float progress;
+
     int spawn_cooldown;
+    std::vector<std::string> enemy_pool;
 };
 
 extern GlobalState globalstate;

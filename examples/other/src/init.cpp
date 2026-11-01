@@ -57,30 +57,61 @@ void loadAssets() {
                 Frame(vec3(32.0f, 0.0f, 0.0f), vec2(16.0f), 0)
             })
         });
+    globalstate.animations["Animation_FireBall"] =
+        Animation("Animation_FireBall", {
+            Cycle("default", false, {
+                Frame(vec3(0.0f, 32.0f, 0.0f), vec2(16.0f), 0)
+            })
+        });
+    globalstate.animations["Animation_FireParticle"] =
+        Animation("Animation_FireParticle", {
+            Cycle("default", false, {
+                Frame(vec3(16.0f, 32.0f, 0.0f), vec2(16.0f), 6),
+                Frame(vec3(32.0f, 32.0f, 0.0f), vec2(16.0f), 6),
+                Frame(vec3(48.0f, 32.0f, 0.0f), vec2(16.0f), 6)
+            })
+        });
 
     globalstate.filters["Filter_Player"] = 
         Filter("Filter_Player", 0,
-            {1},
-            {0},
+            {1, 3},
+            {0, 2},
             {}, 
             {}
         );
-     globalstate.filters["Filter_Enemy"] = 
-        Filter("Filter_PlayerHitbox", 1,
-            {0},
-            {1}, 
-            {}, 
-            {}
-        );
+    globalstate.filters["Filter_Enemy"] = 
+    Filter("Filter_Enemy", 1,
+        {0, 2},
+        {1, 3}, 
+        {}, 
+        {}
+    );
+    globalstate.filters["Filter_PlayerProjectile"] = 
+    Filter("Filter_PlayerProjectile", 2,
+        {1},
+        {0, 2, 3}, 
+        {}, 
+        {}
+    );
+    globalstate.filters["Filter_EnemyProjectile"] = 
+    Filter("Filter_EnemyProjectile", 3,
+        {0},
+        {1, 2, 3}, 
+        {}, 
+        {}
+    );
     
     glm::vec3 unit_scale = glm::vec3(UNIT_PIXEL_WIDTH, UNIT_PIXEL_HEIGHT, 0.0f);
 
     globalstate.glenv.addQuads({
         {glm::vec3(0.0f, 0.0f, 0.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_Player"], "Quad_Player"},
         {glm::vec3(0.0f, 0.0f, 0.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_Chaser"], "Quad_Chaser"},
+        {glm::vec3(0.0f, 0.0f, 0.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_Shooter"], "Quad_Shooter"},
         {glm::vec3(0.0f, 0.0f, 1.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_LightBall"], "Quad_LightBall"},
         {glm::vec3(0.0f, 0.0f, 1.0f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_SmallLightBall"], "Quad_SmallLightBall"},
-        {glm::vec3(0.0f, 0.0f, 0.5f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_LightParticle"], "Quad_LightParticle"}
+        {glm::vec3(0.0f, 0.0f, 0.5f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_LightParticle"], "Quad_LightParticle"},
+        {glm::vec3(0.0f, 0.0f, 0.5f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_FireBall"], "Quad_FireBall"},
+        {glm::vec3(0.0f, 0.0f, 0.5f), unit_scale, glm::vec4(1.0f), globalstate.animations["Animation_FireParticle"], "Quad_FireParticle"}
     });
     
     globalstate.executor.addEntities({
@@ -92,10 +123,13 @@ void loadAssets() {
         {&globalstate.resource_Hitbox.allocator, 0, true, {}, {}, {}, "Entity_Hitbox"},
         {&globalstate.resource_Being.allocator, 0, true, {}, {}, {}, "Entity_Being"},
         {&globalstate.resource_Player.allocator, 0, true, {"Entity_Being", "Entity_Hitbox"}, {"Quad_Player"}, {{Transform{glm::vec3(0.0f), unit_scale + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Player"]}}, "Entity_Player"},
-        {&globalstate.resource_LightBall.allocator, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn", "Entity_Travel", "Entity_Hitbox"}, {"Quad_LightBall"}, {{Transform{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Player"]}}, "Entity_LightBall"},
-        {&globalstate.resource_LightBall.allocator, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn", "Entity_Travel", "Entity_Hitbox"}, {"Quad_SmallLightBall"}, {{Transform{glm::vec3(0.0f), (0.375f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Player"]}}, "Entity_SmallLightBall"},
+        {&globalstate.resource_LightBall.allocator, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn", "Entity_Travel", "Entity_Hitbox"}, {"Quad_LightBall"}, {{Transform{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_PlayerProjectile"]}}, "Entity_LightBall"},
+        {&globalstate.resource_LightBall.allocator, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn", "Entity_Travel", "Entity_Hitbox"}, {"Quad_SmallLightBall"}, {{Transform{glm::vec3(0.0f), (0.375f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_PlayerProjectile"]}}, "Entity_SmallLightBall"},
         {&globalstate.resource_LightParticle.allocator, 0, true, {"Entity_Lifetime"}, {"Quad_LightParticle"}, {}, "Entity_LightParticle"},
-        {&globalstate.resource_Enemy_Chaser.allocator, 0, true, {"Entity_Being", "Entity_AcquirePlayer", "Entity_Travel", "Entity_Hitbox"}, {"Quad_Chaser"}, {{Transform{glm::vec3(0.0f), (0.75f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Enemy"]}}, "Entity_Enemy_Chaser"}
+        {&globalstate.resource_Chaser.allocator, 0, true, {"Entity_Being", "Entity_AcquirePlayer", "Entity_Travel", "Entity_Hitbox"}, {"Quad_Chaser"}, {{Transform{glm::vec3(0.0f), (0.75f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Enemy"]}}, "Entity_Chaser"},
+        {&globalstate.resource_Shooter.allocator, 0, true, {"Entity_Being", "Entity_AcquirePlayer", "Entity_Travel", "Entity_Hitbox"}, {"Quad_Shooter"}, {{Transform{glm::vec3(0.0f), (0.75f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_Enemy"]}}, "Entity_Shooter"},
+        {&globalstate.resource_FireBall.allocator, 0, true, {"Entity_Lifetime", "Entity_RepeatSpawn", "Entity_Travel", "Entity_Hitbox"}, {"Quad_FireBall"}, {{Transform{glm::vec3(0.0f), (0.5f * unit_scale) + glm::vec3(0.0f, 0.0f, 1.0f)}, &globalstate.filters["Filter_EnemyProjectile"]}}, "Entity_FireBall"},
+        {&globalstate.resource_FireParticle.allocator, 0, true, {"Entity_Lifetime"}, {"Quad_FireParticle"}, {}, "Entity_FireParticle"}
     });
 }
 
