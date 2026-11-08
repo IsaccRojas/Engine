@@ -212,6 +212,7 @@ struct GlobalState {
     EntityInterface* player;
     int game_state;
     float progress;
+    int stage;
 
     int spawn_cooldown;
     std::vector<std::string> enemy_pool;

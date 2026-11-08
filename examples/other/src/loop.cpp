@@ -19,6 +19,9 @@ void loop() {
             case 2:
                 runState_StageComplete();
                 break;
+            case 3:
+                runState_StageFailed();
+                break;
             default:
                 throw std::runtime_error("Invalid state in loop()");
         }
@@ -51,30 +54,39 @@ void checkState() {
                     globalstate.player = globalstate.executor.spawnEntity("Entity_Player", Transform{});
                     globalstate.player->attachNullableRef(&globalstate.player);
                 }
+                globalstate.stage = 1;
                 globalstate.progress = 0.0f;
                 globalstate.game_state = 1;
             }
             break;
 
         case 1:
-            // transition to 0
-            if (!globalstate.player) {
-                globalstate.game_state = 0;
-                break;
-            }
-
             // transition to 2
             if (globalstate.progress >= 100.0f) {
                 globalstate.game_state = 2;
                 break;
             }
+
+            // transition to 3
+            if (!globalstate.player) {
+                globalstate.game_state = 3;
+                break;
+            }
+
             break;
 
         case 2:
             // transition to 1
+            globalstate.stage += 1;
             globalstate.progress = 0.0f;
             globalstate.game_state = 1;
             break;
+        
+        case 3:
+            // transition to 0
+            globalstate.stage = 1;
+            globalstate.progress = 0.0f;
+            globalstate.game_state = 0;
         
         default:
             throw std::runtime_error("Invalid state in checkState()");
@@ -101,5 +113,9 @@ void runState_StageContinue() {
 }
 
 void runState_StageComplete() {
+
+}
+
+void runState_StageFailed() {
 
 }

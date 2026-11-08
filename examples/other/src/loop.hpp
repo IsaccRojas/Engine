@@ -16,5 +16,6 @@ void checkState();
 void runState_Start();
 void runState_StageContinue();
 void runState_StageComplete();
+void runState_StageFailed();
 
 #endif

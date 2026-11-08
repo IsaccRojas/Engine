@@ -6,7 +6,7 @@ const unsigned EXECUTION_QUEUES = 2;
 
 const float diag_factor = glm::sin(glm::radians(45.0f));
 
-GlobalState::GlobalState() : executor(EXECUTION_QUEUES, &glenv, &collisionspace), game_state(0), progress(0.0f), spawn_cooldown(180) {}
+GlobalState::GlobalState() : executor(EXECUTION_QUEUES, &glenv, &collisionspace), game_state(0), progress(0.0f), stage(1), spawn_cooldown(180) {}
 
 // --------------------------------------------------------------------------------------------------------------------------
 
@@ -89,7 +89,7 @@ void Entity_Chaser::_onInitEntity() {
     hitbox->damage = 5.0f;
 
     t = globalstate.resource_Travel.container.get(this);
-    t->accel_speed = 0.01f;
+    t->accel_speed = 0.004f;
     t->max_speed = 0.75f;
     t->target = true;
 
